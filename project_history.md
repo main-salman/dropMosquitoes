@@ -32,6 +32,22 @@
 - User converted `moreparts.csv` from tab-delimited to comma-delimited
 - Removed outdoor extension cord and deburring tool entries
 
-### (this commit) — Add auto-push rule and project history
+### `a379d0a` — Add auto-push rule and project history
 - Added Rule 12 to `rules.md`: all changes must be committed, pushed, and logged
 - Created this `project_history.md` file with retroactive entries for all prior commits
+
+### `7db6016` — User CSV format cleanup (pushed retroactively)
+- User converted `moreparts.csv` from tab-delimited to comma-delimited
+- Removed outdoor extension cord and deburring tool entries
+
+### (this commit) — 3D printable parts + reference images
+- Created `3d_prints/` folder with 5 OpenSCAD parametric models:
+  - `01_nozzle_bracket.scad` — Gimbal nozzle mount (replaces $5 bracket)
+  - `02_scout_camera_mount.scad` — Scout camera plate (replaces $12 standoff kit)
+  - `03_post_clamp.scad` — Two-piece pole clamp (replaces $8 U-bolts)
+  - `04_cable_clips.scad` — Snap-on cable clips (replaces $9 zip tie mounts)
+  - `05_lens_retainer.scad` — Lens window retainer ring (new part)
+- Generated 5 dimensioned 3D reference renders (PNG)
+- Created `PRINT_GUIDE.md` with materials, settings, and assembly instructions
+- Net savings: ~$34 CAD replaced by ~$3 filament
+
