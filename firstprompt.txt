@@ -1,0 +1,24 @@
+Subsystem,Component & Purpose,Qty,Unit (CAD),Subtotal,Clean Copy/Paste URL
+Brain,NVIDIA Jetson Orin Nano Super (AI processing),1,~$348.60,$348.60,https://www.amazon.ca/dp/B0BZJTQ5YP
+Brain Case,Waveshare Orin Nano Case (Aluminum heatsink),1,~$31.50,$31.50,https://www.amazon.ca/s?k=Waveshare+Jetson+Orin+Nano+Case
+Master Box,IP67 Waterproof Box Large (Weatherproof housing),1,~$39.99,$39.99,https://www.amazon.ca/s?k=IP67+Waterproof+Project+Box+ABS
+Shielding,MG Chemicals Silicone Coating (Moisture protection),1,~$25.00,$25.00,https://www.amazon.ca/s?k=MG+Chemicals+422B+Silicone+Conformal+Coating
+Scout Cam,Arducam OV9281 Global Shutter (120FPS tracking),1,~$49.99,$49.99,https://www.amazon.ca/s?k=Arducam+OV9281+Global+Shutter+Camera+MIPI
+Sniper Cam,Arducam IMX477 12.3MP HQ (Target verification),1,~$85.70,$85.70,https://www.amazon.ca/s?k=Arducam+IMX477+12.3MP+HQ+Camera
+Extender,Arducam CSI to HDMI Extension Kit (Turret flexibility),1,~$28.00,$28.00,https://www.amazon.ca/s?k=Arducam+CSI+to+HDMI+Cable+Extension+Module
+Adapters,15-Pin to 22-Pin FPC Camera Cables (Jetson interface),1,~$10.00,$10.00,https://www.amazon.ca/s?k=15+pin+to+22+pin+camera+cable+jetson
+Night Vision,48-LED IR Illuminator 850nm (External yard lighting),2,~$22.42,$44.84,https://www.amazon.ca/s?k=48+LED+IR+Illuminator+850nm
+Turret Brain,Storm32 32-Bit BGC Controller (Gimbal logic),1,~$45.00,$45.00,https://www.amazon.ca/s?k=Storm32+BGC+32-Bit+Brushless+Gimbal+Controller
+Turret Muscle,iPower GBM2804 Brushless Motor (Targeting servos),2,~$30.00,$60.00,https://www.amazon.ca/s?k=iPower+GBM2804+Brushless+Gimbal+Motor
+Turret Wiring,30 AWG Ultra-Flexible Silicone Wire (Zero-drag cabling),1,~$14.00,$14.00,https://www.amazon.ca/s?k=30+AWG+Silicone+Wire+Flexible
+Water Engine,12V Submersible Water Pump (Placed directly in reservoir),1,~$15.00,$15.00,https://www.amazon.ca/s?k=12V+Submersible+Water+Pump+Micro
+Reservoir,Wide Shallow Plastic Storage Tote (Maintains constant head pressure),1,~$12.00,$12.00,https://www.amazon.ca/s?k=shallow+plastic+storage+tote
+Logic Switch,3.3V Opto-Isolated Trigger Relay Module (Hardware firewall for Jetson),1,~$14.00,$14.00,https://www.amazon.ca/s?k=3.3v+optocoupler+relay+module
+Protection,1N4007 Rectifier Diodes (Prevents flyback voltage),1,~$6.00,$6.00,https://www.amazon.ca/s?k=1N4007+Rectifier+Diode
+Barrel Tip,1.5mm to 2.0mm Plastic Nozzle (Wider aperture for a heavier droplet),1,~$8.00,$8.00,https://www.amazon.ca/s?k=plastic+barbed+nozzle+1%2F4+inch
+Barrel Line,"1/4"" Silicone Aquarium Tubing (Ultra-flexible fluid line)",1,~$12.00,$12.00,https://www.amazon.ca/s?k=1%2F4+silicone+aquarium+tubing
+Main Power,12V 10A DC Power Supply (System power core),1,~$22.00,$22.00,https://www.amazon.ca/s?k=12V+10A+Power+Supply
+Jetson Power,5.5x2.5mm DC Barrel Jack Pigtail (Direct power to board),1,~$8.00,$8.00,https://www.amazon.ca/s?k=5.5x2.5mm+DC+Barrel+Jack+Pigtail+Cable
+Weather,Raindrops Detection Sensor Module (Park Mode trigger),1,~$7.00,$7.00,https://www.amazon.ca/s?k=Raindrops+Detection+Sensor+Module+Arduino
+---,---,---,---,---,---
+GRAND TOTAL,,,,~$834.20,

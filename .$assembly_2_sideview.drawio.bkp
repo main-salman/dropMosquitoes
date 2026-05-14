@@ -1,0 +1,61 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Diagram 2: Side View — Weatherproofing &amp; Cable Glands" id="sideview">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="DIAGRAM 2: SIDE VIEW — WEATHERPROOFING &amp; CABLE GLAND ENTRY" style="text;html=1;fontSize=16;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="200" y="10" width="900" height="30" as="geometry"/></mxCell>
+
+        <!-- Enclosure side view (closed) -->
+        <mxCell id="enc_side" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D0D0D0;strokeColor=#666;strokeWidth=3;shadow=1;" vertex="1" parent="1"><mxGeometry x="200" y="100" width="900" height="350" as="geometry"/></mxCell>
+        <mxCell id="enc_lbl" value="IP67 ENCLOSURE (CLOSED — Side View)&#xa;Joinfworld 11.4&quot; × 7.5&quot; × 5.5&quot;" style="text;html=1;fontSize=12;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="400" y="110" width="500" height="40" as="geometry"/></mxCell>
+        <!-- Lid hinge -->
+        <mxCell id="hinge1" value="Hinge" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#999;strokeColor=#666;fontSize=8;" vertex="1" parent="1"><mxGeometry x="200" y="95" width="60" height="15" as="geometry"/></mxCell>
+        <mxCell id="hinge2" value="Hinge" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#999;strokeColor=#666;fontSize=8;" vertex="1" parent="1"><mxGeometry x="1040" y="95" width="60" height="15" as="geometry"/></mxCell>
+
+        <!-- Internal silhouettes -->
+        <mxCell id="brain_ghost" value="Yahboom&#xa;Orin Nano" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999;strokeWidth=1;dashed=1;fontSize=9;fontColor=#999;" vertex="1" parent="1"><mxGeometry x="250" y="160" width="300" height="180" as="geometry"/></mxCell>
+        <mxCell id="relay_ghost" value="Relay" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999;strokeWidth=1;dashed=1;fontSize=9;fontColor=#999;" vertex="1" parent="1"><mxGeometry x="620" y="180" width="120" height="80" as="geometry"/></mxCell>
+        <mxCell id="wago_ghost" value="Wagos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999;strokeWidth=1;dashed=1;fontSize=9;fontColor=#999;" vertex="1" parent="1"><mxGeometry x="800" y="180" width="100" height="80" as="geometry"/></mxCell>
+
+        <!-- Bottom plate with cable glands -->
+        <mxCell id="bottom" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#888;strokeColor=#666;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="200" y="450" width="900" height="30" as="geometry"/></mxCell>
+        <mxCell id="bottom_lbl" value="BOTTOM PLATE — Cable Gland Entry Points" style="text;html=1;fontSize=10;fontStyle=1;align=center;fillColor=none;strokeColor=none;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="350" y="485" width="400" height="20" as="geometry"/></mxCell>
+
+        <!-- Gland 1: DC Power -->
+        <mxCell id="gland1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FF9999;strokeColor=#CC0000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="280" y="445" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="g1_wire" style="strokeColor=#CC0000;strokeWidth=4;endArrow=none;exitX=0.5;exitY=1;" edge="1" source="gland1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="560" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="b1s" value="①" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=14;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="265" y="560" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="b1s_note" value="① DC Power Pigtail (WH-02)&#xa;enters via PG9 Cable Gland.&#xa;Connects to Wago 12V+ &amp; GND." style="text;html=1;fontSize=9;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" vertex="1" parent="1"><mxGeometry x="220" y="595" width="230" height="50" as="geometry"/></mxCell>
+        <mxCell id="brick" value="🔌 12V 10A Brick&#xa;(External)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF4444;strokeColor=#CC0000;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="240" y="660" width="140" height="50" as="geometry"/></mxCell>
+
+        <!-- Gland 2: Silicone Tubing -->
+        <mxCell id="gland2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#99CCFF;strokeColor=#0066CC;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="480" y="445" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="g2_wire" style="strokeColor=#0066CC;strokeWidth=4;endArrow=none;" edge="1" source="gland2" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="500" y="560" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="b2s" value="②" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=14;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="485" y="560" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="b2s_note" value="② 1/4&quot; Silicone Tubing&#xa;passes through PG11 Gland.&#xa;Routes to Pump in reservoir below." style="text;html=1;fontSize=9;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" vertex="1" parent="1"><mxGeometry x="440" y="595" width="230" height="50" as="geometry"/></mxCell>
+
+        <!-- Gland 3: Gimbal Power -->
+        <mxCell id="gland3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FF9999;strokeColor=#CC0000;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="680" y="445" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="g3_wire" style="strokeColor=#CC0000;strokeWidth=3;endArrow=none;" edge="1" source="gland3" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="560" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="b3s" value="③" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=14;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="685" y="560" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="b3s_note" value="③ 2-Conductor Red/Black Wire&#xa;exits via PG9 Gland.&#xa;Carries switched 12V to Gimbal." style="text;html=1;fontSize=9;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" vertex="1" parent="1"><mxGeometry x="640" y="595" width="230" height="50" as="geometry"/></mxCell>
+
+        <!-- Gland 4: Logic/Camera -->
+        <mxCell id="gland4" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#CCCCFF;strokeColor=#6666CC;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="880" y="445" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="g4_wire" style="strokeColor=#6666CC;strokeWidth=2;dashed=1;endArrow=none;" edge="1" source="gland4" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="900" y="560" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="b4s" value="④" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=14;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="885" y="560" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="b4s_note" value="④ GPIO Jumpers + 2x HDMI Cables&#xa;exit via PG13.5 Gland (largest).&#xa;Routes to Gimbal cameras." style="text;html=1;fontSize=9;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" vertex="1" parent="1"><mxGeometry x="840" y="595" width="250" height="50" as="geometry"/></mxCell>
+
+        <!-- WARNING -->
+        <mxCell id="warn" value="⚠️ CRITICAL: Seal ALL cable glands&#xa;with Dow Corning 786 Silicone Adhesive.&#xa;Morning dew WILL destroy electronics&#xa;(Pickering Humidity = 85%+ at dawn)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF0000;strokeColor=#CC0000;fontStyle=1;fontSize=10;fontColor=#FFFFFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="480" y="720" width="350" height="80" as="geometry"/></mxCell>
+
+        <!-- Gland labels on plate -->
+        <mxCell id="gl1" value="PG9" style="text;html=1;fontSize=8;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="280" y="430" width="40" height="15" as="geometry"/></mxCell>
+        <mxCell id="gl2" value="PG11" style="text;html=1;fontSize=8;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="478" y="430" width="44" height="15" as="geometry"/></mxCell>
+        <mxCell id="gl3" value="PG9" style="text;html=1;fontSize=8;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="680" y="430" width="40" height="15" as="geometry"/></mxCell>
+        <mxCell id="gl4" value="PG13.5" style="text;html=1;fontSize=8;fontStyle=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="873" y="430" width="54" height="15" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

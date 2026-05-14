@@ -1,0 +1,63 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Zone 2: Logic and Data" id="z2">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t" value="ZONE 2: LOGIC &amp; DATA — Camera Chains, GPIO, and UART" style="text;html=1;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="100" y="10" width="1200" height="30" as="geometry"/></mxCell>
+        <mxCell id="leg" value="- - Blue Dashed = CSI/MIPI Data   - - Purple Dashed = FPC Ribbon   - - Orange Dashed = GPIO/UART   ● = Fixed Mount   ◆ = Gimbal Mount" style="text;html=1;fontSize=9;fontStyle=2;fillColor=#FFFFCC;strokeColor=#CC0;rounded=1;" vertex="1" parent="1"><mxGeometry x="100" y="45" width="700" height="22" as="geometry"/></mxCell>
+
+        <mxCell id="note_scout" value="⚠️ CRITICAL: Scout camera is FIXED&#xa;to the enclosure lid or post — it does&#xa;NOT ride on the gimbal. It provides&#xa;wide-angle motion detection only." style="rounded=1;fillColor=#FFCC00;strokeColor=#CC9900;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="40" y="80" width="280" height="65" as="geometry"/></mxCell>
+
+        <!-- ===== SCOUT CHAIN (FIXED) ===== -->
+        <mxCell id="scout_box" value="" style="rounded=1;fillColor=#E8F5E9;strokeColor=#4CAF50;strokeWidth=2;dashed=1;" vertex="1" parent="1"><mxGeometry x="40" y="170" width="1500" height="170" as="geometry"/></mxCell>
+        <mxCell id="scout_lbl" value="SCOUT CAMERA CHAIN (● FIXED to Post/Enclosure Lid)" style="text;html=1;fontSize=11;fontStyle=1;fillColor=none;strokeColor=none;fontColor=#2E7D32;" vertex="1" parent="1"><mxGeometry x="50" y="175" width="500" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="scout_cam" value="📷 OV9281-110&#xa;1MP Mono&#xa;Global Shutter&#xa;120FPS" style="rounded=1;fillColor=#A5D6A7;strokeColor=#4CAF50;fontStyle=1;fontSize=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="70" y="210" width="150" height="100" as="geometry"/></mxCell>
+        <mxCell id="scout_rx" value="CSI→HDMI&#xa;RX Board 1&#xa;(on camera side)" style="rounded=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="290" y="225" width="150" height="65" as="geometry"/></mxCell>
+        <mxCell id="scout_hdmi" value="HDMI Cable&#xa;(up to 10m)" style="rounded=1;fillColor=#F5F5F5;strokeColor=#999;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="510" y="230" width="120" height="55" as="geometry"/></mxCell>
+        <mxCell id="scout_tx" value="CSI→HDMI&#xa;TX Board 1&#xa;(inside IP67)" style="rounded=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="700" y="225" width="150" height="65" as="geometry"/></mxCell>
+        <mxCell id="scout_adp" value="15→22 pin&#xa;FPC Adapter" style="rounded=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" vertex="1" parent="1"><mxGeometry x="920" y="230" width="110" height="50" as="geometry"/></mxCell>
+        <mxCell id="scout_port" value="Jetson&#xa;MIPI Port 0" style="rounded=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=10;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="1100" y="225" width="130" height="65" as="geometry"/></mxCell>
+        <!-- Scout data arrows -->
+        <mxCell id="sd1" value="15-pin FPC" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="scout_cam" target="scout_rx" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sd2" value="" style="strokeColor=#0066CC;strokeWidth=3;dashed=1;endArrow=block;" edge="1" source="scout_rx" target="scout_hdmi" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sd3" value="" style="strokeColor=#0066CC;strokeWidth=3;dashed=1;endArrow=block;" edge="1" source="scout_hdmi" target="scout_tx" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sd4" value="15-pin FPC" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="scout_tx" target="scout_adp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sd5" value="22-pin" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="scout_adp" target="scout_port" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== SNIPER CHAIN (GIMBAL) ===== -->
+        <mxCell id="sniper_box" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;strokeWidth=2;dashed=1;" vertex="1" parent="1"><mxGeometry x="40" y="370" width="1500" height="170" as="geometry"/></mxCell>
+        <mxCell id="sniper_lbl" value="SNIPER CAMERA CHAIN (◆ ON GIMBAL — Moves with Turret)" style="text;html=1;fontSize=11;fontStyle=1;fillColor=none;strokeColor=none;fontColor=#C2185B;" vertex="1" parent="1"><mxGeometry x="50" y="375" width="500" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="sniper_cam" value="📷 Arducam NoIR&#xa;IMX219 8MP&#xa;Motorized IR-Cut&#xa;(on gimbal)" style="rounded=1;fillColor=#F48FB1;strokeColor=#E91E63;fontStyle=1;fontSize=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="70" y="410" width="150" height="100" as="geometry"/></mxCell>
+        <mxCell id="sniper_rx" value="CSI→HDMI&#xa;RX Board 2&#xa;(on gimbal)" style="rounded=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="290" y="425" width="150" height="65" as="geometry"/></mxCell>
+        <mxCell id="sniper_hdmi" value="HDMI Cable&#xa;(flexible route)" style="rounded=1;fillColor=#F5F5F5;strokeColor=#999;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="510" y="430" width="120" height="55" as="geometry"/></mxCell>
+        <mxCell id="sniper_tx" value="CSI→HDMI&#xa;TX Board 2&#xa;(inside IP67)" style="rounded=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="700" y="425" width="150" height="65" as="geometry"/></mxCell>
+        <mxCell id="sniper_adp" value="15→22 pin&#xa;FPC Adapter" style="rounded=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" vertex="1" parent="1"><mxGeometry x="920" y="430" width="110" height="50" as="geometry"/></mxCell>
+        <mxCell id="sniper_port" value="Jetson&#xa;MIPI Port 1" style="rounded=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=10;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="1100" y="425" width="130" height="65" as="geometry"/></mxCell>
+        <mxCell id="nd1" value="15-pin FPC" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="sniper_cam" target="sniper_rx" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="nd2" style="strokeColor=#0066CC;strokeWidth=3;dashed=1;endArrow=block;" edge="1" source="sniper_rx" target="sniper_hdmi" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="nd3" style="strokeColor=#0066CC;strokeWidth=3;dashed=1;endArrow=block;" edge="1" source="sniper_hdmi" target="sniper_tx" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="nd4" value="15-pin FPC" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="sniper_tx" target="sniper_adp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="nd5" value="22-pin" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="sniper_adp" target="sniper_port" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ===== JETSON CENTRAL + GPIO/UART ===== -->
+        <mxCell id="jetson" value="🧠 Yahboom Jetson Orin Nano SUPER&#xa;8GB | JetPack 6 | 256GB SSD&#xa;40-Pin GPIO Header | UART TX/RX" style="rounded=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=12;fontColor=#FFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="550" y="600" width="400" height="120" as="geometry"/></mxCell>
+
+        <!-- GPIO to Relay -->
+        <mxCell id="relay" value="🛡️ Monk Makes Relay&#xa;CH1 Ctrl (GPIO Pin X)&#xa;CH2 Ctrl (GPIO Pin Y)" style="rounded=1;fillColor=#FF6666;strokeColor=#CC0000;fontStyle=1;fontSize=10;fontColor=#FFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="1100" y="610" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="gp1" value="3.3V GPIO&#xa;(40-pin jumper wire)" style="strokeColor=#FF8800;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="jetson" target="relay" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- UART to Storm32 -->
+        <mxCell id="storm32" value="⚙️ Storm32 BGC Board&#xa;RC_PITCH pin&#xa;RC_YAW pin" style="rounded=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontStyle=1;fontSize=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="100" y="620" width="200" height="90" as="geometry"/></mxCell>
+        <mxCell id="uart" value="UART TX/RX&#xa;(jumper wire)" style="strokeColor=#FF8800;strokeWidth=2;dashed=1;endArrow=block;" edge="1" source="jetson" target="storm32" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Boundary markers -->
+        <mxCell id="bnd1" value="← OUTSIDE IP67 (Fixed/Gimbal)" style="text;html=1;fontSize=9;fontStyle=2;fontColor=#999;" vertex="1" parent="1"><mxGeometry x="50" y="555" width="250" height="15" as="geometry"/></mxCell>
+        <mxCell id="bnd2" value="INSIDE IP67 →" style="text;html=1;fontSize=9;fontStyle=2;fontColor=#999;" vertex="1" parent="1"><mxGeometry x="700" y="555" width="150" height="15" as="geometry"/></mxCell>
+        <mxCell id="bnd_line" style="strokeColor=#999;strokeWidth=1;dashed=1;endArrow=none;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="660" y="170" as="sourcePoint"/><mxPoint x="660" y="550" as="targetPoint"/></mxGeometry></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

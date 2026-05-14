@@ -1,0 +1,66 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Zone 1: Power Star Topology" id="z1">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1100">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t" value="ZONE 1: POWER INFRASTRUCTURE — 12V Star Topology (Detailed Wago Port Map)" style="text;html=1;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="100" y="10" width="1200" height="30" as="geometry"/></mxCell>
+        <mxCell id="leg" value="━━ Thick Red = +12V   ━━ Thick Black = GND   All wire = 2-Conductor Red/Black 16ft spool" style="text;html=1;fontSize=10;fontStyle=2;fillColor=#FFFFCC;strokeColor=#CC0;rounded=1;" vertex="1" parent="1"><mxGeometry x="100" y="45" width="600" height="22" as="geometry"/></mxCell>
+
+        <!-- AC Mains -->
+        <mxCell id="ac" value="🔌 120V AC Wall&#xa;Outlet" style="rounded=1;fillColor=#666;strokeColor=#333;fontStyle=1;fontSize=10;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="120" height="60" as="geometry"/></mxCell>
+        <!-- Power Brick -->
+        <mxCell id="brick" value="12V 10A (120W)&#xa;DC Power Brick&#xa;2.5×5.5mm Barrel" style="rounded=1;fillColor=#FF4444;strokeColor=#CC0000;fontStyle=1;fontSize=11;fontColor=#FFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="220" y="280" width="200" height="100" as="geometry"/></mxCell>
+        <mxCell id="e1" style="strokeColor=#333;strokeWidth=2;endArrow=block;" edge="1" source="ac" target="brick" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- WH-02 Pigtail -->
+        <mxCell id="wh02" value="Lynxmotion WH-02&#xa;Pigtail Harness&#xa;(Barrel → Bare Wire)" style="rounded=1;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="500" y="290" width="180" height="80" as="geometry"/></mxCell>
+        <mxCell id="e2" style="strokeColor=#CC0000;strokeWidth=4;endArrow=block;" edge="1" source="brick" target="wh02" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ========== WAGO +12V DETAIL ========== -->
+        <mxCell id="wago_box" value="" style="rounded=1;fillColor=#FFF0F0;strokeColor=#CC0000;strokeWidth=2;dashed=1;" vertex="1" parent="1"><mxGeometry x="760" y="80" width="420" height="320" as="geometry"/></mxCell>
+        <mxCell id="wago_title" value="⚡ WAGO 221-415 — +12V POSITIVE (5-Port Detail)" style="text;html=1;fontSize=12;fontStyle=1;fillColor=none;strokeColor=none;fontColor=#CC0000;" vertex="1" parent="1"><mxGeometry x="770" y="85" width="400" height="20" as="geometry"/></mxCell>
+        <!-- 5 individual ports -->
+        <mxCell id="wp1" value="Port 1&#xa;INPUT" style="rounded=0;fillColor=#FF6666;strokeColor=#CC0000;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="120" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wp2" value="Port 2&#xa;→ Jetson" style="rounded=0;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="790" y="180" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wp3" value="Port 3&#xa;→ IR Light" style="rounded=0;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="790" y="240" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wp4" value="Port 4&#xa;→ Relay CH1" style="rounded=0;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="790" y="300" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wp5" value="Port 5&#xa;→ Relay CH2" style="rounded=0;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="790" y="355" width="80" height="45" as="geometry"/></mxCell>
+        <!-- Port descriptions -->
+        <mxCell id="pd1" value="← From WH-02 Pigtail RED wire" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="128" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="pd2" value="→ Yahboom Barrel Jack (built-in regulator)" style="text;html=1;fontSize=9;fontStyle=0;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="190" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="pd3" value="→ Univivi IR Illuminator +12V (direct, always on)" style="text;html=1;fontSize=9;fontStyle=0;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="248" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="pd4" value="→ Monk Makes Relay CH1 COM (→ Pump +12V)" style="text;html=1;fontSize=9;fontStyle=0;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="308" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="pd5" value="→ Monk Makes Relay CH2 COM (→ Gimbal +12V)" style="text;html=1;fontSize=9;fontStyle=0;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="363" width="280" height="20" as="geometry"/></mxCell>
+
+        <!-- Wire from WH-02 to Wago +12V -->
+        <mxCell id="e3" value="+12V RED" style="strokeColor=#CC0000;strokeWidth=4;endArrow=block;" edge="1" source="wh02" target="wp1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ========== WAGO GND DETAIL ========== -->
+        <mxCell id="wagog_box" value="" style="rounded=1;fillColor=#E8E8E8;strokeColor=#333;strokeWidth=2;dashed=1;" vertex="1" parent="1"><mxGeometry x="760" y="450" width="420" height="320" as="geometry"/></mxCell>
+        <mxCell id="wagog_title" value="⏚ WAGO 221-415 — GROUND (5-Port Detail)" style="text;html=1;fontSize=12;fontStyle=1;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="770" y="455" width="400" height="20" as="geometry"/></mxCell>
+        <mxCell id="wg1" value="Port 1&#xa;INPUT" style="rounded=0;fillColor=#555;strokeColor=#333;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="490" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wg2" value="Port 2&#xa;→ Jetson" style="rounded=0;fillColor=#888;strokeColor=#333;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="550" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wg3" value="Port 3&#xa;→ IR Light" style="rounded=0;fillColor=#888;strokeColor=#333;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="610" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wg4" value="Port 4&#xa;→ Pump" style="rounded=0;fillColor=#888;strokeColor=#333;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="670" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="wg5" value="Port 5&#xa;→ Gimbal" style="rounded=0;fillColor=#888;strokeColor=#333;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="790" y="725" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="gd1" value="← From WH-02 Pigtail BLACK wire" style="text;html=1;fontSize=9;fontStyle=2;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="498" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="gd2" value="→ Yahboom GND pin (barrel jack return)" style="text;html=1;fontSize=9;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="558" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="gd3" value="→ Univivi IR Illuminator GND" style="text;html=1;fontSize=9;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="618" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="gd4" value="→ Velleman Pump BLACK wire (return path)" style="text;html=1;fontSize=9;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="678" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="gd5" value="→ Storm32 Gimbal GND" style="text;html=1;fontSize=9;align=left;" vertex="1" parent="1"><mxGeometry x="880" y="733" width="280" height="20" as="geometry"/></mxCell>
+
+        <!-- Wire from WH-02 to Wago GND -->
+        <mxCell id="e4" value="GND BLACK" style="strokeColor=#333;strokeWidth=4;endArrow=block;" edge="1" source="wh02" target="wg1" parent="1"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="720" y="512"/></Array></mxGeometry></mxCell>
+
+        <!-- Downstream consumers (visual) -->
+        <mxCell id="jetson_d" value="🧠 Yahboom Jetson" style="rounded=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="40" y="500" width="140" height="40" as="geometry"/></mxCell>
+        <mxCell id="ir_d" value="💡 Univivi IR 850nm" style="rounded=1;fillColor=#FFE6CC;strokeColor=#d79b00;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="40" y="560" width="140" height="40" as="geometry"/></mxCell>
+        <mxCell id="pump_d" value="💧 Velleman Pump" style="rounded=1;fillColor=#B3D9FF;strokeColor=#0066CC;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="140" height="40" as="geometry"/></mxCell>
+        <mxCell id="gimbal_d" value="⚙️ Storm32 Gimbal" style="rounded=1;fillColor=#E1D5E7;strokeColor=#9673A6;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="40" y="680" width="140" height="40" as="geometry"/></mxCell>
+        <mxCell id="relay_d" value="🛡️ Monk Makes Relay&#xa;(between Wago &amp; motors)" style="rounded=1;fillColor=#FF6666;strokeColor=#CC0000;fontStyle=1;fontSize=9;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="240" y="560" width="180" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="note_relay" value="⚠️ NOTE: Pump and Gimbal do NOT&#xa;connect directly to Wago +12V.&#xa;Their +12V passes THROUGH the relay&#xa;NO (Normally Open) contacts first.&#xa;GND returns directly to Wago." style="rounded=1;fillColor=#FFCC00;strokeColor=#CC9900;fontStyle=1;fontSize=9;" vertex="1" parent="1"><mxGeometry x="220" y="680" width="300" height="80" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

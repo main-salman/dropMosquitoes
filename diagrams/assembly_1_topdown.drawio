@@ -1,0 +1,107 @@
+<mxfile host="Electron">
+  <diagram name="Diagram 1: Top-Down Enclosure Assembly" id="topdown">
+    <mxGraphModel dx="1204" dy="931" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;fontSize=16;fontStyle=1;align=center;fillColor=none;strokeColor=none;" value="DIAGRAM 1: TOP-DOWN ASSEMBLY — IP67 MASTER ENCLOSURE (Open Lid View)" vertex="1">
+          <mxGeometry height="30" width="900" x="200" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="text;html=1;fontSize=10;fontStyle=2;align=left;fillColor=#FFFFCC;strokeColor=#CCCC00;rounded=1;" value="LEGEND:  ── Solid Arrow = FASTEN to Grid Plate  │  - - Dashed = ROUTE / CABLE" vertex="1">
+          <mxGeometry height="25" width="500" x="200" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="enc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0F0F0;strokeColor=#666;strokeWidth=3;shadow=1;" value="" vertex="1">
+          <mxGeometry height="750" width="1100" x="100" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="enc_label" parent="1" style="text;html=1;fontSize=12;fontStyle=1;align=center;verticalAlign=top;fillColor=none;strokeColor=none;fontColor=#666;" value="Joinfworld IP67 Enclosure&#xa;Grey — 11.4&quot; × 7.5&quot; × 5.5&quot;&#xa;(Open Lid View — Looking Down)" vertex="1">
+          <mxGeometry height="50" width="500" x="350" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="grid" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E8E8E8;strokeColor=#999;strokeWidth=1;dashed=1;fontSize=9;fontColor=#999;verticalAlign=bottom;" value="DIN Rail / Grid Plate (base)" vertex="1">
+          <mxGeometry height="670" width="1060" x="120" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="brain" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=11;fontColor=#FFF;shadow=1;" value="🧠 Yahboom Orin Nano SUPER&#xa;(Metal Mini PC Kit)&#xa;w/ 256GB SSD &amp; Heatsink" vertex="1">
+          <mxGeometry height="280" width="480" x="140" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="b1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="①" vertex="1">
+          <mxGeometry height="35" width="35" x="130" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="b1_note" parent="1" style="text;html=1;fontSize=9;fontStyle=0;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="① FASTEN: Yahboom Metal Case&#xa;to Grid Plate via 4x M3 Standoffs&#xa;(15mm height for airflow)" vertex="1">
+          <mxGeometry height="50" width="240" x="140" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="standoff1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#CCC;strokeColor=#999;fontSize=7;" value="M3" vertex="1">
+          <mxGeometry height="20" width="20" x="160" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="standoff2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#CCC;strokeColor=#999;fontSize=7;" value="M3" vertex="1">
+          <mxGeometry height="20" width="20" x="580" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="standoff3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#CCC;strokeColor=#999;fontSize=7;" value="M3" vertex="1">
+          <mxGeometry height="20" width="20" x="160" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="standoff4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#CCC;strokeColor=#999;fontSize=7;" value="M3" vertex="1">
+          <mxGeometry height="20" width="20" x="580" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="fa1" edge="1" parent="1" source="standoff1" style="strokeColor=#333;strokeWidth=2;endArrow=block;entryX=0.5;entryY=0.5;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="170" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wago1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=9;shadow=1;" value="⚡ Wago 221-415&#xa;+12V Dist." vertex="1">
+          <mxGeometry height="60" width="160" x="700" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="wago2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#333;strokeColor=#000;fontStyle=1;fontSize=9;fontColor=#FFF;shadow=1;" value="⏚ Wago 221-415&#xa;GND Dist." vertex="1">
+          <mxGeometry height="60" width="160" x="700" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="②" vertex="1">
+          <mxGeometry height="35" width="35" x="690" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="b2_note" parent="1" style="text;html=1;fontSize=9;fontStyle=0;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="② FASTEN: Two Wago 5-Port&#xa;connectors to Grid Plate.&#xa;Use adhesive-backed DIN clip." vertex="1">
+          <mxGeometry height="50" width="230" x="700" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="relay" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF6666;strokeColor=#CC0000;fontStyle=1;fontSize=10;fontColor=#FFF;shadow=1;" value="🛡️ Monk Makes&#xa;Dual Relay Module&#xa;CH1: Pump | CH2: Gimbal" vertex="1">
+          <mxGeometry height="100" width="200" x="700" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="b3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="③" vertex="1">
+          <mxGeometry height="35" width="35" x="690" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="b3_note" parent="1" style="text;html=1;fontSize=9;fontStyle=0;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="③ FASTEN: Relay board to&#xa;Grid Plate via 2x M2.5 Standoffs.&#xa;Keep ≥2cm from Yahboom heatsink." vertex="1">
+          <mxGeometry height="50" width="250" x="700" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_tx1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;shadow=1;" value="CSI→HDMI TX Board 1&#xa;(Scout Chain)" vertex="1">
+          <mxGeometry height="55" width="180" x="960" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_tx2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;shadow=1;" value="CSI→HDMI TX Board 2&#xa;(Sniper Chain)" vertex="1">
+          <mxGeometry height="55" width="180" x="960" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="b4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="④" vertex="1">
+          <mxGeometry height="35" width="35" x="950" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="b4_note" parent="1" style="text;html=1;fontSize=9;fontStyle=0;align=left;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="④ FASTEN: Two CSI→HDMI TX boards&#xa;via adhesive standoffs on right wall.&#xa;HDMI ports face outward toward glands." vertex="1">
+          <mxGeometry height="50" width="260" x="940" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" edge="1" parent="1" source="brain" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=open;" target="relay" value="40-pin Jumper (GPIO)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" edge="1" parent="1" source="brain" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=open;" target="csi_tx1" value="15-pin FPC">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="230" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r3" edge="1" parent="1" source="brain" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=open;" target="csi_tx2" value="15-pin FPC">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="310" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="r4" edge="1" parent="1" source="wago1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;dashed=1;endArrow=open;" target="relay" value="Red/Black 16AWG">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="order" parent="1" style="text;html=1;fontSize=10;fontStyle=0;align=left;fillColor=#E6FFE6;strokeColor=#82B366;rounded=1;" value="ASSEMBLY ORDER:&#xa;1. Mount Standoffs to Grid Plate&#xa;2. Seat Yahboom case on standoffs (①)&#xa;3. Clip Wago connectors to plate (②)&#xa;4. Mount Relay on standoffs (③)&#xa;5. Adhesive-mount CSI TX boards (④)&#xa;6. Route all internal cables (dashed lines)" vertex="1">
+          <mxGeometry height="120" width="320" x="140" y="680" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

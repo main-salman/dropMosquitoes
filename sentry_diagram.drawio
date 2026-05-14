@@ -1,0 +1,194 @@
+<mxfile host="Electron" agent="Antigravity">
+  <diagram name="Mosquito Sentry Wiring" id="sentry">
+    <mxGraphModel dx="1500" dy="1513" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="z3_bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalAlign=top;fontStyle=1;fontSize=14;opacity=40;" value="ZONE 3: FLUID DYNAMICS &amp; ACTUATION" vertex="1">
+          <mxGeometry height="320" width="1880" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="z2_bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=14;opacity=40;" value="ZONE 2: LOGIC &amp; DATA" vertex="1">
+          <mxGeometry height="560" width="1880" x="20" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="z1_bg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;verticalAlign=top;fontStyle=1;fontSize=14;opacity=40;" value="ZONE 1: POWER INFRASTRUCTURE (Star Topology)" vertex="1">
+          <mxGeometry height="420" width="1880" x="20" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="enc_gimbal" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=3;dashed=1;verticalAlign=top;fontStyle=1;fontSize=12;" value="⚙️ STORM32 GIMBAL PAYLOAD" vertex="1">
+          <mxGeometry height="500" width="400" x="40" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="enc_ip67" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=3;dashed=1;verticalAlign=top;fontStyle=1;fontSize=12;" value="🔒 Grey 11.4x7.5x5.5 IP67 Enclosure (Joinfworld)" vertex="1">
+          <mxGeometry height="540" width="1400" x="480" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="reservoir" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b3d9ff;strokeColor=#0066CC;fontStyle=1;fontSize=11;" value="🪣 Water Reservoir&#xa;(Shallow Tote)" vertex="1">
+          <mxGeometry height="100" width="200" x="60" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pump_fluid" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#99ccff;strokeColor=#0066CC;fontStyle=1;fontSize=10;" value="💧 Velleman 12V Pump&#xa;(Submerged)" vertex="1">
+          <mxGeometry height="50" width="160" x="80" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="check_valve" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b3d9ff;strokeColor=#0066CC;fontStyle=1;fontSize=10;" value="🔒 Feelers 1/4&quot;&#xa;Check Valve" vertex="1">
+          <mxGeometry height="60" width="160" x="380" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="tubing_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#0066CC;fontStyle=2;fontSize=10;" value="1/4&quot; ID Silicone Tubing&#xa;(secured w/ 4-in zip ties)" vertex="1">
+          <mxGeometry height="40" width="140" x="250" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fl1" edge="1" parent="1" source="pump_fluid" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0066CC;strokeWidth=4;endArrow=block;" target="check_valve">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fl2" edge="1" parent="1" source="check_valve" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0066CC;strokeWidth=4;endArrow=block;" target="nozzle">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="140" />
+              <mxPoint x="620" y="300" />
+              <mxPoint x="240" y="300" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="storm32" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" value="⚡ Storm32 BGC Board&#xa;(RC_PITCH / RC_YAW)" vertex="1">
+          <mxGeometry height="50" width="360" x="60" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="scout_cam" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" value="📷 OV9281-110 (The Scout)&#xa;1MP Global Shutter 120FPS" vertex="1">
+          <mxGeometry height="50" width="360" x="60" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_rx1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="CSI→HDMI RX Board 1" vertex="1">
+          <mxGeometry height="35" width="360" x="60" y="565" as="geometry" />
+        </mxCell>
+        <mxCell id="sniper_cam" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=10;" value="📷 Arducam NOIR IMX219 (The Sniper)&#xa;8MP + Motorized IR-Cut" vertex="1">
+          <mxGeometry height="50" width="360" x="60" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_rx2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="CSI→HDMI RX Board 2" vertex="1">
+          <mxGeometry height="35" width="360" x="60" y="685" as="geometry" />
+        </mxCell>
+        <mxCell id="nozzle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b3d9ff;strokeColor=#0066CC;fontStyle=1;fontSize=10;" value="💦 Orbit Flex-Mist&#xa;Adjustable Nozzle" vertex="1">
+          <mxGeometry height="50" width="360" x="60" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_tx1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="CSI→HDMI TX Board 1" vertex="1">
+          <mxGeometry height="40" width="200" x="520" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="adapter1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="15→22 pin&#xa;Adapter" vertex="1">
+          <mxGeometry height="40" width="120" x="760" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="csi_tx2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="CSI→HDMI TX Board 2" vertex="1">
+          <mxGeometry height="40" width="200" x="520" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="adapter2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6E6E6;strokeColor=#999;fontSize=9;" value="15→22 pin&#xa;Adapter" vertex="1">
+          <mxGeometry height="40" width="120" x="760" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="jetson" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76B947;strokeColor=#36802d;fontStyle=1;fontSize=11;fontColor=#FFFFFF;" value="🧠 Yahboom Jetson Orin Nano SUPER&#xa;8GB | JetPack 6 | 256GB SSD&#xa;MIPI Port 0 | MIPI Port 1&#xa;GPIO | UART TX/RX" vertex="1">
+          <mxGeometry height="140" width="320" x="940" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="relay" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF6666;strokeColor=#CC0000;fontStyle=1;fontSize=10;fontColor=#FFFFFF;" value="🛡️ Monk Makes Dual Relay&#xa;CH1: Pump Trigger&#xa;CH2: Gimbal Boot Delay" vertex="1">
+          <mxGeometry height="100" width="260" x="1350" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="wago_12v" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=10;" value="⚡ Wago 221-415 (5-Port)&#xa;12V POSITIVE Distribution" vertex="1">
+          <mxGeometry height="50" width="280" x="700" y="780" as="geometry" />
+        </mxCell>
+        <mxCell id="wago_gnd" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#333333;strokeColor=#000000;fontStyle=1;fontSize=10;fontColor=#FFFFFF;" value="⏚ Wago 221-415 (5-Port)&#xa;GROUND Distribution" vertex="1">
+          <mxGeometry height="50" width="280" x="700" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="warning" parent="1" style="shape=callout;whiteSpace=wrap;html=1;perimeter=calloutPerimeter;size=10;position=0.5;base=15;fillColor=#FFCC00;strokeColor=#CC9900;fontStyle=1;fontSize=9;fontColor=#333;" value="⚠️ HARDWARE FIREWALL&#xa;Isolates Jetson 3.3V GPIO&#xa;from 12V Motor Noise" vertex="1">
+          <mxGeometry height="70" width="200" x="1380" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="power_brick" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF4444;strokeColor=#CC0000;fontStyle=1;fontSize=11;fontColor=#FFFFFF;" value="🔌 12V 10A (120W)&#xa;DC Power Brick" vertex="1">
+          <mxGeometry height="80" width="220" x="100" y="1060" as="geometry" />
+        </mxCell>
+        <mxCell id="wh02" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF9999;strokeColor=#CC0000;fontStyle=1;fontSize=10;" value="WH-02 Pigtail&#xa;(DC Entry)" vertex="1">
+          <mxGeometry height="60" width="180" x="420" y="1070" as="geometry" />
+        </mxCell>
+        <mxCell id="ir_light" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#d79b00;fontStyle=1;fontSize=10;" value="💡 Univivi IR Illuminator&#xa;850nm 8-LED (IP67)&#xa;(Mounted on Post)" vertex="1">
+          <mxGeometry height="70" width="220" x="1500" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="d1" edge="1" parent="1" source="scout_cam" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="csi_rx1" value="CSI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d2" edge="1" parent="1" source="csi_rx1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="csi_tx1" value="HDMI Cable">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d3" edge="1" parent="1" source="csi_tx1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="adapter1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d4" edge="1" parent="1" source="adapter1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="jetson" value="MIPI Port 0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d5" edge="1" parent="1" source="sniper_cam" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="csi_rx2" value="CSI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d6" edge="1" parent="1" source="csi_rx2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="csi_tx2" value="HDMI Cable">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d7" edge="1" parent="1" source="csi_tx2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="adapter2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d8" edge="1" parent="1" source="adapter2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="jetson" value="MIPI Port 1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d9" edge="1" parent="1" source="jetson" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="relay" value="3.3V GPIO&#xa;CH1 + CH2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d10" edge="1" parent="1" source="jetson" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0000CC;strokeWidth=2;dashed=1;endArrow=block;" target="storm32" value="UART TX/RX → RC_PITCH / RC_YAW">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="940" y="430" />
+              <mxPoint x="940" y="420" />
+              <mxPoint x="460" y="420" />
+              <mxPoint x="460" y="455" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p1" edge="1" parent="1" source="power_brick" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=4;endArrow=block;" target="wh02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p2" edge="1" parent="1" source="wh02" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=4;endArrow=block;" target="wago_12v" value="+12V">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p3" edge="1" parent="1" source="wh02" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#000000;strokeWidth=4;endArrow=block;" target="wago_gnd" value="GND">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p4" edge="1" parent="1" source="wago_12v" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;endArrow=block;" target="jetson" value="Branch 1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p5" edge="1" parent="1" source="wago_12v" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;endArrow=block;" target="ir_light" value="Branch 2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1610" y="805" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p6" edge="1" parent="1" source="wago_12v" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;endArrow=block;" target="relay" value="Branch 3: Common IN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="p7" edge="1" parent="1" source="relay" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;dashed=0;endArrow=block;" target="pump_fluid" value="CH1 NO → Pump +12V">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1700" y="520" />
+              <mxPoint x="1700" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p8" edge="1" parent="1" source="relay" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#CC0000;strokeWidth=3;dashed=0;endArrow=block;" target="storm32" value="CH2 NO → Gimbal +12V">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1750" y="540" />
+              <mxPoint x="1750" y="380" />
+              <mxPoint x="240" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p9" edge="1" parent="1" source="wago_gnd" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#000000;strokeWidth=3;endArrow=block;" target="pump_fluid" value="Branch 4: Pump GND">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p10" edge="1" parent="1" source="wago_gnd" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#000000;strokeWidth=3;endArrow=block;" target="storm32" value="Branch 5: Gimbal GND">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="875" />
+              <mxPoint x="680" y="455" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

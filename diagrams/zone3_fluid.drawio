@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Zone 3: Fluid Dynamics" id="z3">
+    <mxGraphModel dx="1422" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t" value="ZONE 3: FLUID DYNAMICS &amp; ACTUATION — Water Path Detail" style="text;html=1;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1"><mxGeometry x="100" y="10" width="1200" height="30" as="geometry"/></mxCell>
+        <mxCell id="leg" value="━━ Thick Cyan = Water Flow Direction   ▓ = Zip Tie Anchor   ⊗ = Barb Connection" style="text;html=1;fontSize=10;fontStyle=2;fillColor=#FFFFCC;strokeColor=#CC0;rounded=1;" vertex="1" parent="1"><mxGeometry x="100" y="45" width="600" height="22" as="geometry"/></mxCell>
+
+        <!-- Reservoir -->
+        <mxCell id="res" value="" style="rounded=1;fillColor=#B3D9FF;strokeColor=#0066CC;strokeWidth=3;opacity=60;" vertex="1" parent="1"><mxGeometry x="40" y="150" width="350" height="300" as="geometry"/></mxCell>
+        <mxCell id="res_lbl" value="🪣 SHALLOW TOTE RESERVOIR&#xa;(Water Level)" style="text;html=1;fontSize=12;fontStyle=1;align=center;fontColor=#004488;" vertex="1" parent="1"><mxGeometry x="60" y="155" width="310" height="30" as="geometry"/></mxCell>
+        <mxCell id="water" value="~~~~~  Water  ~~~~~" style="text;html=1;fontSize=14;fontStyle=2;align=center;fontColor=#0088CC;" vertex="1" parent="1"><mxGeometry x="80" y="200" width="270" height="20" as="geometry"/></mxCell>
+
+        <!-- Pump submerged -->
+        <mxCell id="pump" value="💧 Velleman 12V&#xa;Submersible Pump&#xa;(fully submerged)" style="rounded=1;fillColor=#0088CC;strokeColor=#005599;fontStyle=1;fontSize=11;fontColor=#FFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="90" y="260" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="pump_note" value="+12V from Relay CH1 NO&#xa;GND from Wago Port 4" style="text;html=1;fontSize=8;fontStyle=2;fontColor=#005599;" vertex="1" parent="1"><mxGeometry x="90" y="365" width="200" height="25" as="geometry"/></mxCell>
+
+        <!-- Pump outlet barb -->
+        <mxCell id="barb1" value="⊗ Barb" style="ellipse;fillColor=#0088CC;strokeColor=#005599;fontStyle=1;fontSize=8;fontColor=#FFF;" vertex="1" parent="1"><mxGeometry x="320" y="290" width="50" height="30" as="geometry"/></mxCell>
+        <mxCell id="f1" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="pump" target="barb1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Tubing segment 1 -->
+        <mxCell id="tube1" value="1/4&quot; ID × 3/8&quot; OD&#xa;Silicone Tubing&#xa;Segment 1 (~2ft)" style="rounded=1;fillColor=#CCE5FF;strokeColor=#0066CC;fontStyle=0;fontSize=9;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="420" y="270" width="160" height="60" as="geometry"/></mxCell>
+        <mxCell id="f2" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="barb1" target="tube1" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Zip tie 1 -->
+        <mxCell id="zip1" value="▓ ZIP TIE" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="445" y="340" width="60" height="16" as="geometry"/></mxCell>
+
+        <!-- Check Valve -->
+        <mxCell id="valve" value="🔒 Feelers 1/4&quot;&#xa;Spring Check Valve&#xa;(PVDF, Inline)&#xa;Arrow → Flow Direction" style="rounded=1;fillColor=#FFCC80;strokeColor=#E65100;fontStyle=1;fontSize=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="640" y="240" width="200" height="110" as="geometry"/></mxCell>
+        <mxCell id="f3" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="tube1" target="valve" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="valve_note" value="⚠️ CRITICAL: Arrow on valve body&#xa;MUST point AWAY from pump.&#xa;Prevents gravity siphon when&#xa;gimbal aims downward." style="rounded=1;fillColor=#FFF3E0;strokeColor=#E65100;fontStyle=1;fontSize=8;" vertex="1" parent="1"><mxGeometry x="620" y="360" width="240" height="60" as="geometry"/></mxCell>
+
+        <!-- Zip tie 2 on each side of valve -->
+        <mxCell id="zip2" value="▓ ZIP" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="620" y="310" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="zip3" value="▓ ZIP" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="830" y="310" width="40" height="16" as="geometry"/></mxCell>
+
+        <!-- Tubing segment 2 -->
+        <mxCell id="tube2" value="1/4&quot; Silicone Tubing&#xa;Segment 2 (~3ft)&#xa;Routes through IP67 Gland&#xa;and along gimbal axis" style="rounded=1;fillColor=#CCE5FF;strokeColor=#0066CC;fontStyle=0;fontSize=9;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="900" y="250" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="f4" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="valve" target="tube2" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Service loop -->
+        <mxCell id="loop" value="SERVICE LOOP&#xa;(3&quot; slack arc)&#xa;Allows gimbal rotation" style="rounded=1;fillColor=#E3F2FD;strokeColor=#0066CC;fontStyle=1;fontSize=9;strokeWidth=2;dashed=1;" vertex="1" parent="1"><mxGeometry x="1150" y="250" width="160" height="70" as="geometry"/></mxCell>
+        <mxCell id="f5" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="tube2" target="loop" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="zip4" value="▓ ZIP" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1180" y="330" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="zip5" value="▓ ZIP" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1270" y="330" width="40" height="16" as="geometry"/></mxCell>
+
+        <!-- Nozzle -->
+        <mxCell id="nozzle" value="💦 Orbit Flex-Mist&#xa;Adjustable Nozzle&#xa;(on Gimbal Payload)" style="rounded=1;fillColor=#2196F3;strokeColor=#0D47A1;fontStyle=1;fontSize=11;fontColor=#FFF;shadow=1;" vertex="1" parent="1"><mxGeometry x="1370" y="240" width="200" height="90" as="geometry"/></mxCell>
+        <mxCell id="f6" style="strokeColor=#0099DD;strokeWidth=5;endArrow=block;" edge="1" source="loop" target="nozzle" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Spray output -->
+        <mxCell id="spray" value="SPLASH&#xa;ZONE&#xa;(~4m)" style="ellipse;fillColor=#E3F2FD;strokeColor=#90CAF9;fontStyle=1;fontSize=10;fontColor=#1565C0;dashed=1;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="1400" y="100" width="140" height="100" as="geometry"/></mxCell>
+        <mxCell id="f7" style="strokeColor=#90CAF9;strokeWidth=3;dashed=1;endArrow=open;" edge="1" source="nozzle" target="spray" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Flow summary -->
+        <mxCell id="summary" value="FLOW PATH SUMMARY:&#xa;Reservoir → Pump (submerged) → Barb → Tubing Seg.1 → [ZIP] →&#xa;Check Valve → [ZIP] → Tubing Seg.2 → IP67 Gland → Service Loop →&#xa;[ZIP] → Orbit Nozzle (on gimbal) → 💥 SPLASH" style="rounded=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontStyle=0;fontSize=10;" vertex="1" parent="1"><mxGeometry x="40" y="500" width="500" height="70" as="geometry"/></mxCell>
+
+        <!-- Relay trigger note -->
+        <mxCell id="trigger" value="TRIGGER SEQUENCE:&#xa;1. SniperAgent confirms target&#xa;2. Jetson GPIO HIGH → Relay CH1&#xa;3. Relay CH1 NO closes → Pump gets +12V&#xa;4. Pump runs for exactly 300ms&#xa;5. GPIO LOW → Pump stops" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;fontStyle=0;fontSize=9;" vertex="1" parent="1"><mxGeometry x="600" y="500" width="300" height="90" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
