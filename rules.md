@@ -20,3 +20,4 @@
 9. **HISTORY IS MANDATORY:** Every significant action (code change, procurement decision, architecture decision, bug fix) MUST be appended to `docs/HISTORY.md` with a timestamp, `[CATEGORY]` tag, and one-line description.
 10. **TRACEABILITY:** All source code files MUST include a docstring header referencing the governing spec (e.g., `# Implements: SW-001 §2.1 — ScoutAgent`).
 11. **SPEC INTEGRITY:** If implementation reveals that a spec is wrong or incomplete, update the spec FIRST, then update the code. Never let code and specs diverge.
+12. **AUTO-PUSH TO GITHUB:** Every time changes are made to the project, they MUST be committed and pushed to the GitHub remote (`origin/main`). Additionally, a summary of the changes MUST be appended to `project_history.md` at the project root before the push. No changes should remain local-only.
