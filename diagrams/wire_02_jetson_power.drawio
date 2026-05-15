@@ -1,36 +1,44 @@
-<mxfile host="Electron">
-  <diagram name="Jetson Power" id="pwr2">
-    <mxGraphModel dx="1006" dy="693" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#FFFFFF" math="0" shadow="0">
+<mxfile>
+  <diagram name="Jetson Power" id="pwr2_v2">
+    <mxGraphModel dx="1400" dy="900" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#FFFFFF">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="t1" parent="1" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" value="&lt;b&gt;WIRE DIAGRAM 02: Jetson Power Connection&lt;/b&gt;&lt;br&gt;Wago → DC Pigtail → Yahboom Barrel Jack" vertex="1">
-          <mxGeometry height="50" width="600" x="40" y="20" as="geometry" />
-        </mxCell>
-        <mxCell id="w12" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" value="&lt;b&gt;Wago +12V&lt;/b&gt;&lt;br&gt;Port 2" vertex="1">
-          <mxGeometry height="60" width="140" x="40" y="150" as="geometry" />
-        </mxCell>
-        <mxCell id="wgn" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 2" vertex="1">
-          <mxGeometry height="60" width="140" x="40" y="260" as="geometry" />
-        </mxCell>
-        <mxCell id="pig" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;" value="&lt;b&gt;Male DC Pigtail&lt;/b&gt;&lt;br&gt;5.5mm × 2.5mm&lt;br&gt;Bare wire ← → Barrel plug&lt;br&gt;&lt;font color=&#39;#F44336&#39;&gt;RED stripe = +12V&lt;/font&gt;&lt;br&gt;&lt;font color=&#39;#666&#39;&gt;BLACK stripe = GND&lt;/font&gt;" vertex="1">
-          <mxGeometry height="110" width="220" x="320" y="150" as="geometry" />
-        </mxCell>
-        <mxCell id="jet" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=12;" value="&lt;b&gt;Yahboom Jetson Orin Nano&lt;/b&gt;&lt;br&gt;DC Barrel Jack Input&lt;br&gt;Accepts 9V–19V&lt;br&gt;(Using 12V from Wago)" vertex="1">
-          <mxGeometry height="110" width="250" x="680" y="150" as="geometry" />
-        </mxCell>
-        <mxCell id="e1" edge="1" parent="1" source="w12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" target="pig" value="&lt;font color=&#39;#F44336&#39;&gt;RED wire into Wago lever&lt;/font&gt;">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e2" edge="1" parent="1" source="wgn" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" target="pig" value="&lt;font color=&#39;#888&#39;&gt;BLACK wire into Wago lever&lt;/font&gt;">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e3" edge="1" parent="1" source="pig" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;strokeWidth=3;fontSize=10;" target="jet" value="&lt;font color=&#39;#FF9800&#39;&gt;Barrel plug snaps into jack&lt;/font&gt;">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="n1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" value="⚠ POLARITY: Center-positive. RED to center pin, BLACK to outer barrel. Reversing will damage the board!" vertex="1">
-          <mxGeometry height="40" width="600" x="40" y="380" as="geometry" />
-        </mxCell>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE 02: Jetson Power&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;Wago → Pigtail → Yahboom Barrel Jack&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="500" height="45" as="geometry"/></mxCell>
+        <mxCell id="w12b" value="" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="100" width="110" height="70" as="geometry"/></mxCell>
+        <mxCell id="w12l1" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="55" y="108" width="32" height="12" as="geometry"/></mxCell>
+        <mxCell id="w12l2" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="100" y="108" width="32" height="12" as="geometry"/></mxCell>
+        <mxCell id="w12t" value="&lt;b style='font-size:10px'&gt;Wago +12V&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Port 2&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="45" y="130" width="100" height="30" as="geometry"/></mxCell>
+        <mxCell id="wgnb" value="" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="240" width="110" height="70" as="geometry"/></mxCell>
+        <mxCell id="wgnl1" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="55" y="248" width="32" height="12" as="geometry"/></mxCell>
+        <mxCell id="wgnl2" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="100" y="248" width="32" height="12" as="geometry"/></mxCell>
+        <mxCell id="wgnt" value="&lt;b style='font-size:10px'&gt;Wago GND&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Port 2&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="45" y="270" width="100" height="30" as="geometry"/></mxCell>
+        <mxCell id="pigb" value="" style="rounded=1;fillColor=#2a2a2a;strokeColor=#444;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="280" y="120" width="180" height="160" as="geometry"/></mxCell>
+        <mxCell id="pigr" value="" style="rounded=1;fillColor=#D32F2F;strokeColor=#B71C1C;arcSize=50;" vertex="1" parent="1"><mxGeometry x="300" y="155" width="70" height="7" as="geometry"/></mxCell>
+        <mxCell id="pigk" value="" style="rounded=1;fillColor=#333;strokeColor=#111;arcSize=50;" vertex="1" parent="1"><mxGeometry x="300" y="178" width="70" height="7" as="geometry"/></mxCell>
+        <mxCell id="pigc1" value="" style="rounded=1;fillColor=#FF8F00;strokeColor=#E65100;arcSize=50;" vertex="1" parent="1"><mxGeometry x="290" y="153" width="12" height="11" as="geometry"/></mxCell>
+        <mxCell id="pigc2" value="" style="rounded=1;fillColor=#FF8F00;strokeColor=#E65100;arcSize=50;" vertex="1" parent="1"><mxGeometry x="290" y="176" width="12" height="11" as="geometry"/></mxCell>
+        <mxCell id="pigbarrel" value="" style="ellipse;fillColor=#444;strokeColor=#666;" vertex="1" parent="1"><mxGeometry x="400" y="150" width="35" height="35" as="geometry"/></mxCell>
+        <mxCell id="pigpin" value="" style="ellipse;fillColor=#CFB53B;strokeColor=#B8860B;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="411" y="161" width="13" height="13" as="geometry"/></mxCell>
+        <mxCell id="piglbl" value="&lt;span style='color:#aaa;font-size:10px'&gt;&lt;b&gt;DC Pigtail&lt;/b&gt; 5.5×2.5mm&lt;br&gt;&lt;span style='color:#D32F2F'&gt;■&lt;/span&gt; RED=+12V &lt;span style='color:#555'&gt;■&lt;/span&gt; BLK=GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="290" y="200" width="160" height="30" as="geometry"/></mxCell>
+        <mxCell id="jetc" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=5;" vertex="1" parent="1"><mxGeometry x="600" y="90" width="280" height="230" as="geometry"/></mxCell>
+        <mxCell id="jetpcb" value="" style="rounded=0;fillColor=#1B5E20;strokeColor=#2E7D32;" vertex="1" parent="1"><mxGeometry x="620" y="120" width="240" height="140" as="geometry"/></mxCell>
+        <mxCell id="jetnv" value="&lt;b style='color:#76FF03;font-size:13px'&gt;NVIDIA&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4CAF50;font-size:9px'&gt;Jetson Orin Nano SUPER&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="680" y="160" width="140" height="35" as="geometry"/></mxCell>
+        <mxCell id="jeths" value="" style="rounded=0;fillColor=#37474F;strokeColor=#546E7A;" vertex="1" parent="1"><mxGeometry x="630" y="130" width="50" height="50" as="geometry"/></mxCell>
+        <mxCell id="jetfan" value="&lt;span style='color:#78909C;font-size:7px'&gt;FAN&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="640" y="148" width="30" height="12" as="geometry"/></mxCell>
+        <mxCell id="jetjack" value="" style="ellipse;fillColor=#444;strokeColor=#666;" vertex="1" parent="1"><mxGeometry x="608" y="175" width="20" height="20" as="geometry"/></mxCell>
+        <mxCell id="jetjacklbl" value="&lt;span style='font-size:7px;color:#78909C'&gt;DC IN&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="602" y="196" width="32" height="12" as="geometry"/></mxCell>
+        <mxCell id="jetgpio" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" vertex="1" parent="1"><mxGeometry x="810" y="135" width="40" height="80" as="geometry"/></mxCell>
+        <mxCell id="jetgpiolbl" value="&lt;span style='font-size:7px;color:#CFB53B'&gt;GPIO&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="813" y="165" width="34" height="12" as="geometry"/></mxCell>
+        <mxCell id="jetyah" value="&lt;span style='color:#78909C;font-size:8px'&gt;Yahboom Carrier&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="670" y="210" width="100" height="12" as="geometry"/></mxCell>
+        <mxCell id="jetcap" value="&lt;b&gt;Yahboom Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#888;font-size:10px'&gt;in aluminum case — accepts 9-19V&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="620" y="325" width="260" height="30" as="geometry"/></mxCell>
+        <mxCell id="e1" value="" style="endArrow=block;endFill=1;strokeColor=#D32F2F;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="150" y="130" as="sourcePoint"/><mxPoint x="290" y="158" as="targetPoint"/><Array as="points"><mxPoint x="220" y="130"/><mxPoint x="220" y="158"/></Array></mxGeometry></mxCell>
+        <mxCell id="e1l" value="&lt;span style='color:#D32F2F;font-size:10px'&gt;&lt;b&gt;RED&lt;/b&gt;&lt;/span&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="195" y="112" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="e2" value="" style="endArrow=block;endFill=1;strokeColor=#555;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="150" y="270" as="sourcePoint"/><mxPoint x="290" y="182" as="targetPoint"/><Array as="points"><mxPoint x="230" y="270"/><mxPoint x="230" y="182"/></Array></mxGeometry></mxCell>
+        <mxCell id="e2l" value="&lt;span style='color:#555;font-size:10px'&gt;&lt;b&gt;BLACK&lt;/b&gt;&lt;/span&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="195" y="225" width="50" height="16" as="geometry"/></mxCell>
+        <mxCell id="e3" value="" style="endArrow=block;endFill=1;strokeColor=#FF9800;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="435" y="168" as="sourcePoint"/><mxPoint x="608" y="185" as="targetPoint"/><Array as="points"><mxPoint x="520" y="168"/><mxPoint x="520" y="185"/></Array></mxGeometry></mxCell>
+        <mxCell id="e3l" value="&lt;span style='color:#FF9800;font-size:10px'&gt;&lt;b&gt;Barrel → Jack&lt;/b&gt;&lt;/span&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="490" y="148" width="90" height="16" as="geometry"/></mxCell>
+        <mxCell id="warn" value="⚠ &lt;b&gt;POLARITY:&lt;/b&gt; Center-positive. RED=center, BLACK=outer. Reversing damages the board!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FF6D00;fontColor=#333;fontSize=11;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="40" y="380" width="550" height="35" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
