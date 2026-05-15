@@ -3,13 +3,17 @@ import cv2
 import numpy as np
 import tempfile
 import os
+import json
 import subprocess
 import threading
+import time
 from queue import Queue, Empty
 
 # ==============================================================================
 # Sentry Control Center
 # A Streamlit UI for tuning Scout OpenCV parameters and training Sniper YOLO models
+#
+# Implements: SW-001 — Windows-side tooling for the Sniper Messy Mortar
 # ==============================================================================
 
 st.set_page_config(page_title="Sentry Control Center", layout="wide", page_icon="🎯")
@@ -38,52 +42,90 @@ with tab1:
         
         history = st.number_input("History Frames", min_value=10, max_value=1000, value=500)
         detect_shadows = st.checkbox("Detect Shadows", value=False)
+
+        # --- Export scout_config.json ---
+        st.divider()
+        st.subheader("Export Configuration")
+        export_path = st.text_input(
+            "Export Path",
+            value=os.path.join(os.path.dirname(os.path.abspath(__file__)), "scout_config.json"),
+            help="Absolute path where scout_config.json will be saved. Copy this file to the Jetson."
+        )
+        if st.button("💾 Export scout_config.json", use_container_width=True, type="primary"):
+            config_data = {
+                "history": int(history),
+                "threshold": int(threshold),
+                "min_area": int(min_area),
+                "detect_shadows": detect_shadows
+            }
+            try:
+                with open(export_path, "w") as f:
+                    json.dump(config_data, f, indent=2)
+                st.success(f"✅ Saved to `{export_path}`")
+                st.code(json.dumps(config_data, indent=2), language="json")
+            except Exception as e:
+                st.error(f"Failed to save: {e}")
         
     with col2:
         if uploaded_file is not None:
             # Save uploaded video to a temp file
             tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
             tfile.write(uploaded_file.read())
+            tfile.flush()
             
             st.markdown("### Live Preview")
             frame_placeholder = st.empty()
+            status_placeholder = st.empty()
             
             # Init video capture
             cap = cv2.VideoCapture(tfile.name)
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             
             # Create subtractor
             backSub = cv2.createBackgroundSubtractorMOG2(history=history, varThreshold=threshold, detectShadows=detect_shadows)
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             
-            # Read and process frames
+            frame_num = 0
+            detections = 0
+            
+            # Read and process frames (single pass, no infinite loop)
             while cap.isOpened():
                 ret, frame = cap.read()
                 if not ret:
-                    # Loop the video
-                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                    continue
+                    break
+                
+                frame_num += 1
                 
                 # Apply background subtraction
                 fgMask = backSub.apply(frame)
                 
                 # Clean up mask
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
                 fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
                 
                 # Find contours
                 contours, _ = cv2.findContours(fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 
                 # Draw bounding boxes
+                frame_detections = 0
                 for contour in contours:
                     if cv2.contourArea(contour) >= min_area:
                         x, y, w, h = cv2.boundingRect(contour)
                         cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
                         cv2.putText(frame, "Motion", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        frame_detections += 1
+                
+                detections += frame_detections
                 
                 # Convert BGR to RGB for Streamlit
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 
                 # Display in Streamlit
-                frame_placeholder.image(frame_rgb, channels="RGB", use_column_width=True)
+                frame_placeholder.image(frame_rgb, channels="RGB", use_container_width=True)
+                status_placeholder.caption(f"Frame {frame_num}/{total_frames} · {frame_detections} detections this frame · {detections} total")
+            
+            cap.release()
+            os.unlink(tfile.name)
+            st.info(f"Video processing complete. {detections} total detections across {frame_num} frames.")
         else:
             st.info("Please upload a video to start tuning.")
 
@@ -124,15 +166,25 @@ with tab2:
         # Initialize session state for logs if not exists
         if "training_logs" not in st.session_state:
             st.session_state.training_logs = ""
+        if "training_active" not in st.session_state:
+            st.session_state.training_active = False
             
         log_placeholder = st.empty()
-        log_placeholder.code(st.session_state.training_logs, language="bash")
+        log_placeholder.code(st.session_state.training_logs or "Waiting for training to start...", language="bash")
+        
+        result_placeholder = st.empty()
         
         if start_button:
             if not dataset_yaml or not os.path.exists(dataset_yaml):
-                st.error("Please provide a valid path to data.yaml.")
+                st.error("❌ Please provide a valid path to data.yaml.")
             else:
-                st.session_state.training_logs = "Starting YOLO training subprocess...\n"
+                st.session_state.training_logs = f"[{time.strftime('%H:%M:%S')}] Starting YOLO training subprocess...\n"
+                st.session_state.training_logs += f"  Model:     {base_model}\n"
+                st.session_state.training_logs += f"  Dataset:   {dataset_yaml}\n"
+                st.session_state.training_logs += f"  Epochs:    {epochs}\n"
+                st.session_state.training_logs += f"  Batch:     {batch_size}\n"
+                st.session_state.training_logs += f"  ImgSize:   {img_size}\n"
+                st.session_state.training_logs += "─" * 60 + "\n"
                 log_placeholder.code(st.session_state.training_logs, language="bash")
                 
                 # Build YOLO command
@@ -143,7 +195,7 @@ with tab2:
                     f"epochs={epochs}",
                     f"batch={batch_size}",
                     f"imgsz={img_size}",
-                    "device=0" # Force GPU 0
+                    "device=0"  # Force GPU 0
                 ]
                 
                 # Spawn subprocess to prevent Streamlit UI from freezing
@@ -162,7 +214,8 @@ with tab2:
                     t.daemon = True
                     t.start()
                     
-                    st.info("Training started! Polling logs...")
+                    st.info("⏳ Training started! Live logs will stream below.")
+                    st.session_state.training_active = True
                     
                     # Loop to read from queue and update UI
                     while process.poll() is None or not q.empty():
@@ -177,7 +230,7 @@ with tab2:
                                 new_logs = "".join(lines)
                                 st.session_state.training_logs += new_logs
                                 
-                                # Keep logs manageable length (e.g. last 10000 chars)
+                                # Keep logs manageable length (last 20000 chars)
                                 if len(st.session_state.training_logs) > 20000:
                                     st.session_state.training_logs = "... [truncated] ...\n" + st.session_state.training_logs[-15000:]
                                     
@@ -185,9 +238,23 @@ with tab2:
                                 
                         except Empty:
                             pass
-                            
-                    # Final update
-                    st.success("Training process completed!")
                     
+                    st.session_state.training_active = False
+                    
+                    # Check exit code
+                    if process.returncode == 0:
+                        st.success("✅ Training completed successfully!")
+                        # Show where the model was saved
+                        best_pt_path = os.path.join(os.getcwd(), "runs", "detect", "train", "weights", "best.pt")
+                        result_placeholder.info(
+                            f"**Trained model saved to:**\n\n"
+                            f"`{best_pt_path}`\n\n"
+                            f"Copy this file to your Jetson Orin Nano deployment directory."
+                        )
+                    else:
+                        st.error(f"❌ Training process exited with code {process.returncode}. Check logs above.")
+                    
+                except FileNotFoundError:
+                    st.error("❌ `yolo` CLI not found. Make sure `ultralytics` is installed: `pip install ultralytics`")
                 except Exception as e:
-                    st.error(f"Error starting training: {e}")
+                    st.error(f"❌ Error starting training: {e}")
