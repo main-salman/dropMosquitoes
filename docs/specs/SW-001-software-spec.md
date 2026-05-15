@@ -46,6 +46,38 @@ All agents run as asynchronous processes communicating via `queue.Queue` (thread
 - **Processing:** Overhead parabolic drop correction (see §4)
 - **Output:** Corrected `(pitch, yaw)` tuple compensating for gravity drop
 
+### 2.7 Predictive Lead Engine — Ballistics Math (CRITICAL)
+
+The following three stages execute **in sequence** for every fire decision. Together they answer: *"Where will the mosquito be when the water arrives?"*
+
+#### 2.7.1 Velocity Vectoring (`vision.py`)
+- Track bounding box centroid across **N consecutive frames** (minimum 3, ideally 5–8 at 120 FPS).
+- Compute a 2D **Velocity Vector** `(vx, vy)` in pixels/second using a simple linear regression or exponential moving average of the centroid deltas.
+- Convert pixel velocity to **angular velocity** `(ω_pitch, ω_yaw)` using the camera's known FOV and resolution.
+- Output is passed alongside `(x, y)` in `scout_queue` — already partially implemented as `(x, y, vx, vy)` in §2.1.
+
+#### 2.7.2 Time-of-Flight Lead (`hardware.py`)
+- Using the LiDAR's Z-distance `d`, compute the water stream's **Time-of-Flight (ToF)**:
+  ```
+  ToF = d / (v₀ · cos(α))
+  ```
+  where `v₀` = water exit velocity (~7 m/s), `α` = current pitch angle.
+- Apply the target's Velocity Vector over the ToF window to predict where the target **will be** when the water arrives:
+  ```
+  lead_yaw  = ω_yaw  × ToF   (degrees)
+  lead_pitch = ω_pitch × ToF   (degrees)
+  ```
+- Add these lead offsets to the raw gimbal Pitch/Yaw commands **before** the parabolic drop correction.
+
+#### 2.7.3 Parabolic Drop (Final Stage)
+- After the velocity lead offsets are applied, apply the Z-distance ballistic drop offset (§2.6) to the **final Pitch angle**.
+- Execution order:
+  1. `pixel_to_angle()` → raw pitch/yaw
+  2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
+  3. `+ Δpitch (gravity drop)` → final corrected pitch
+- The corrected `(pitch, yaw)` is sent to the Storm32 gimbal.
+
+
 ## 3. Safety Interlocks (see SAFE-001)
 
 - Human/pet override: `person`, `dog`, `cat` confidence > 0.45 → instant `is_safe_to_fire = False`
