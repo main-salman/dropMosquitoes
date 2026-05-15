@@ -1,29 +1,38 @@
 <mxfile>
-  <diagram name="Enclosure Cable Glands" id="enc1">
-    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#FFFFFF">
+  <diagram name="Enclosure Cable Glands" id="glands_v2">
+    <mxGraphModel dx="1400" dy="900" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#FFFFFF">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="t1" value="&lt;b&gt;DIAGRAM 12: IP67 Enclosure Cable Gland Layout&lt;/b&gt;&lt;br&gt;Bottom panel — what goes through each gland" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="600" height="50" as="geometry"/></mxCell>
-        <!-- Enclosure box -->
-        <mxCell id="enc" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#78909C;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="200" y="100" width="600" height="400" as="geometry"/></mxCell>
-        <mxCell id="el" value="&lt;b&gt;IP67 Enclosure — Bottom Panel View&lt;/b&gt;&lt;br&gt;Joinfworld 6×6 ABS" style="text;html=1;fontSize=14;fontColor=#E0E0E0;align=center;" vertex="1" parent="1"><mxGeometry x="300" y="110" width="400" height="40" as="geometry"/></mxCell>
-        <!-- Gland 1: DC Power -->
-        <mxCell id="g1" value="&lt;b&gt;PG9 #1&lt;/b&gt;&lt;br&gt;DC POWER&lt;br&gt;&lt;font color='#F44336'&gt;RED&lt;/font&gt;+&lt;font color='#666'&gt;BLACK&lt;/font&gt; 16ga" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="230" y="170" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Gland 2: UART Serial -->
-        <mxCell id="g2" value="&lt;b&gt;PG9 #2&lt;/b&gt;&lt;br&gt;UART + I2C&lt;br&gt;6× jumper wires" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00BCD4;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="170" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Gland 3: Water tubing -->
-        <mxCell id="g3" value="&lt;b&gt;PG9 #3&lt;/b&gt;&lt;br&gt;WATER TUBING&lt;br&gt;1/4&quot; silicone" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="630" y="170" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Gland 4: HDMI Scout -->
-        <mxCell id="g4" value="&lt;b&gt;PG11 #1&lt;/b&gt;&lt;br&gt;HDMI CABLE&lt;br&gt;Scout CSI ext" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="230" y="290" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Gland 5: HDMI Sniper -->
-        <mxCell id="g5" value="&lt;b&gt;PG11 #2&lt;/b&gt;&lt;br&gt;HDMI CABLE&lt;br&gt;Sniper CSI ext" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="290" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Spare -->
-        <mxCell id="g6" value="&lt;b&gt;PG9 #4&lt;/b&gt;&lt;br&gt;SPARE&lt;br&gt;(GPIO expansion)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#555;fontColor=#999;fontSize=10;" vertex="1" parent="1"><mxGeometry x="630" y="290" width="130" height="70" as="geometry"/></mxCell>
-        <!-- Lens window -->
-        <mxCell id="lens" value="&lt;b&gt;50mm Acrylic Window&lt;/b&gt;&lt;br&gt;Scout camera looks&lt;br&gt;through this DOWNWARD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="350" y="400" width="170" height="70" as="geometry"/></mxCell>
-        <mxCell id="n1" value="⚠ Seal all glands with silicone (Dow 786) after threading cables through. Test with spray bottle." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="540" width="700" height="40" as="geometry"/></mxCell>
-        <mxCell id="n2" value="Drill template: 3× PG9 (16mm) + 2× PG11 (20mm) + 1× PG9 spare + 1× 50mm window" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="590" width="600" height="25" as="geometry"/></mxCell>
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE 12: Enclosure Cable Gland Layout&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;IP67 ABS Box — PG9/PG11 gland positions + what passes through each&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="600" height="45" as="geometry"/></mxCell>
+        <!-- Enclosure box (top-down view) -->
+        <mxCell id="box" value="" style="rounded=1;fillColor=#ECEFF1;strokeColor=#78909C;shadow=1;arcSize=4;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="200" y="80" width="500" height="350" as="geometry"/></mxCell>
+        <mxCell id="boxlbl" value="&lt;b style='color:#455A64;font-size:14px'&gt;Joinfworld IP67 ABS Enclosure&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:10px'&gt;11.4&amp;quot; × 7.5&amp;quot; × 5.5&amp;quot; — top-down view&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="300" y="90" width="300" height="30" as="geometry"/></mxCell>
+        <!-- Interior components (simplified) -->
+        <mxCell id="jetbox" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;arcSize=6;" vertex="1" parent="1"><mxGeometry x="280" y="140" width="150" height="100" as="geometry"/></mxCell>
+        <mxCell id="jetlbl" value="&lt;span style='color:#76FF03;font-size:9px'&gt;&lt;b&gt;Yahboom Jetson&lt;/b&gt;&lt;br&gt;(in case)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="305" y="170" width="100" height="22" as="geometry"/></mxCell>
+        <mxCell id="relbox" value="" style="rounded=1;fillColor=#4A148C;strokeColor=#7B1FA2;arcSize=8;" vertex="1" parent="1"><mxGeometry x="470" y="160" width="80" height="50" as="geometry"/></mxCell>
+        <mxCell id="rellbl" value="&lt;span style='color:#CE93D8;font-size:8px'&gt;&lt;b&gt;Relay&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="485" y="175" width="50" height="12" as="geometry"/></mxCell>
+        <mxCell id="wagobox" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FF6D00;arcSize=8;" vertex="1" parent="1"><mxGeometry x="470" y="270" width="80" height="40" as="geometry"/></mxCell>
+        <mxCell id="wagolbl" value="&lt;span style='color:#FF6D00;font-size:8px'&gt;&lt;b&gt;Wago ×2&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="485" y="280" width="50" height="12" as="geometry"/></mxCell>
+        <!-- Cable Glands on walls -->
+        <!-- LEFT WALL -->
+        <mxCell id="gl1" value="" style="ellipse;fillColor=#455A64;strokeColor=#37474F;shadow=1;" vertex="1" parent="1"><mxGeometry x="193" y="160" width="24" height="24" as="geometry"/></mxCell>
+        <mxCell id="gl1h" value="" style="ellipse;fillColor=#333;strokeColor=#444;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="199" y="166" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gl1t" value="&lt;span style='font-size:9px'&gt;&lt;b&gt;PG9&lt;/b&gt;&lt;br&gt;DC Power&lt;/span&gt;" style="text;html=1;align=right;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="100" y="155" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="gl2" value="" style="ellipse;fillColor=#455A64;strokeColor=#37474F;shadow=1;" vertex="1" parent="1"><mxGeometry x="193" y="220" width="24" height="24" as="geometry"/></mxCell>
+        <mxCell id="gl2h" value="" style="ellipse;fillColor=#333;strokeColor=#444;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="199" y="226" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gl2t" value="&lt;span style='font-size:9px'&gt;&lt;b&gt;PG9&lt;/b&gt;&lt;br&gt;Serial + I2C&lt;/span&gt;" style="text;html=1;align=right;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="100" y="215" width="90" height="28" as="geometry"/></mxCell>
+        <!-- BOTTOM WALL -->
+        <mxCell id="gb1" value="" style="ellipse;fillColor=#455A64;strokeColor=#37474F;shadow=1;" vertex="1" parent="1"><mxGeometry x="340" y="413" width="28" height="28" as="geometry"/></mxCell>
+        <mxCell id="gb1h" value="" style="ellipse;fillColor=#333;strokeColor=#444;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="347" y="420" width="14" height="14" as="geometry"/></mxCell>
+        <mxCell id="gb1t" value="&lt;span style='font-size:9px'&gt;&lt;b&gt;PG11&lt;/b&gt;&lt;br&gt;HDMI ×2 (CSI ext.)&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="290" y="445" width="120" height="28" as="geometry"/></mxCell>
+        <!-- RIGHT WALL -->
+        <mxCell id="gr1" value="" style="ellipse;fillColor=#455A64;strokeColor=#37474F;shadow=1;" vertex="1" parent="1"><mxGeometry x="688" y="200" width="24" height="24" as="geometry"/></mxCell>
+        <mxCell id="gr1h" value="" style="ellipse;fillColor=#333;strokeColor=#444;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="694" y="206" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gr1t" value="&lt;span style='font-size:9px'&gt;&lt;b&gt;PG9&lt;/b&gt;&lt;br&gt;Silicone tubing&lt;/span&gt;" style="text;html=1;align=left;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="720" y="195" width="90" height="28" as="geometry"/></mxCell>
+        <!-- Legend -->
+        <mxCell id="leg" value="&lt;b&gt;Gland Sizes:&lt;/b&gt;&lt;br&gt;PG9 = 4-8mm bore (wires, tubing)&lt;br&gt;PG11 = 5-10mm bore (HDMI cables)&lt;br&gt;All sealed with silicone adhesive" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#DDD;fontColor=#333;fontSize=10;align=left;spacingLeft=10;shadow=1;" vertex="1" parent="1"><mxGeometry x="40" y="500" width="250" height="70" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>

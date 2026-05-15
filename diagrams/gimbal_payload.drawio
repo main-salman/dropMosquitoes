@@ -1,113 +1,40 @@
-<mxfile host="Electron">
-  <diagram name="Gimbal Payload Detail" id="gp">
-    <mxGraphModel dx="1263" dy="1274" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+<mxfile>
+  <diagram name="Gimbal Payload" id="gp_v2">
+    <mxGraphModel dx="1200" dy="700" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="600" background="#FFFFFF">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="t" parent="1" style="text;html=1;fontSize=16;fontStyle=1;align=center;" value="GIMBAL PAYLOAD DETAIL — Storm32 Moving Assembly (Front Face View)" vertex="1">
-          <mxGeometry height="30" width="1100" x="100" y="10" as="geometry" />
-        </mxCell>
-        <mxCell id="leg" parent="1" style="text;html=1;fontSize=9;fontStyle=2;fillColor=#FFFFCC;strokeColor=#CC0;rounded=1;" value="── Solid = FASTEN   - - Blue Dashed = FLUID   - - Purple Dashed = FPC   ▓ = Zip Tie" vertex="1">
-          <mxGeometry height="22" width="550" x="100" y="45" as="geometry" />
-        </mxCell>
-        <mxCell id="note_fixed" parent="1" style="rounded=1;fillColor=#FFCC00;strokeColor=#CC9900;fontStyle=1;fontSize=9;" value="⚠️ The Scout camera (OV9281) is NOT here.&#xa;It is fixed to the post/enclosure for wide-angle detection." vertex="1">
-          <mxGeometry height="35" width="380" x="40" y="75" as="geometry" />
-        </mxCell>
-        <mxCell id="frame" parent="1" style="rounded=1;fillColor=#ECEFF1;strokeColor=#607D8B;strokeWidth=3;shadow=1;" value="" vertex="1">
-          <mxGeometry height="700" width="1300" x="40" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="frame_lbl" parent="1" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#455A64;" value="Storm32 CNC Metal Gimbal — Payload Plate" vertex="1">
-          <mxGeometry height="20" width="500" x="400" y="135" as="geometry" />
-        </mxCell>
-        <mxCell id="pitch" parent="1" style="ellipse;fillColor=#B0BEC5;strokeColor=#607D8B;fontStyle=1;fontSize=9;" value="PITCH&#xa;Motor&#xa;(±45°)" vertex="1">
-          <mxGeometry height="70" width="70" x="50" y="380" as="geometry" />
-        </mxCell>
-        <mxCell id="yaw" parent="1" style="rounded=0;fillColor=#B0BEC5;strokeColor=#607D8B;fontStyle=1;fontSize=9;" value="YAW Motor (±130°)" vertex="1">
-          <mxGeometry height="40" width="300" x="500" y="770" as="geometry" />
-        </mxCell>
-        <mxCell id="sniper" parent="1" style="rounded=1;fillColor=#F48FB1;strokeColor=#E91E63;fontStyle=1;fontSize=11;shadow=1;" value="📷 Arducam NoIR IMX219&#xa;8MP Motorized IR-Cut&#xa;(THE SNIPER)&#xa;&#xa;Lens faces FORWARD →" vertex="1">
-          <mxGeometry height="150" width="350" x="160" y="200" as="geometry" />
-        </mxCell>
-        <mxCell id="b1" parent="1" style="ellipse;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="①" vertex="1">
-          <mxGeometry height="35" width="35" x="150" y="190" as="geometry" />
-        </mxCell>
-        <mxCell id="b1n" parent="1" style="text;html=1;fontSize=9;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="① FASTEN: IMX219 camera to&#xa;payload plate via 4x M2 bolts.&#xa;Lens orientation: FORWARD." vertex="1">
-          <mxGeometry height="45" width="250" x="160" y="360" as="geometry" />
-        </mxCell>
-        <mxCell id="nozzle" parent="1" style="rounded=1;fillColor=#2196F3;strokeColor=#0D47A1;fontStyle=1;fontSize=11;fontColor=#FFF;shadow=1;" value="💦 Orbit Flex-Mist&#xa;Adjustable Nozzle&#xa;10-32 MT Thread&#xa;&#xa;Spray axis ↑ aligned&#xa;with camera FOV" vertex="1">
-          <mxGeometry height="150" width="300" x="580" y="200" as="geometry" />
-        </mxCell>
-        <mxCell id="b2" parent="1" style="ellipse;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="②" vertex="1">
-          <mxGeometry height="35" width="35" x="570" y="190" as="geometry" />
-        </mxCell>
-        <mxCell id="b2n" parent="1" style="text;html=1;fontSize=9;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="② FASTEN: Nozzle bolted adjacent&#xa;to camera. Spray axis parallel to&#xa;camera FOV. Use Loctite on thread." vertex="1">
-          <mxGeometry height="45" width="280" x="580" y="360" as="geometry" />
-        </mxCell>
-        <mxCell id="loop_line" edge="1" parent="1" style="curved=1;endArrow=none;strokeColor=#0099DD;strokeWidth=5;dashed=1;" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="730" y="160" />
-              <mxPoint x="900" y="140" />
-              <mxPoint x="1100" y="150" />
-            </Array>
-            <mxPoint x="730" y="200" as="sourcePoint" />
-            <mxPoint x="1200" y="180" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="loop_lbl" parent="1" style="text;html=1;fontSize=10;fontStyle=1;fontColor=#0066CC;" value="1/4&quot; ID Silicone Tubing&#xa;SERVICE LOOP — 3&quot; slack arc" vertex="1">
-          <mxGeometry height="30" width="240" x="830" y="110" as="geometry" />
-        </mxCell>
-        <mxCell id="b3" parent="1" style="ellipse;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="③" vertex="1">
-          <mxGeometry height="35" width="35" x="950" y="105" as="geometry" />
-        </mxCell>
-        <mxCell id="z1" parent="1" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" value="▓ ZIP" vertex="1">
-          <mxGeometry height="14" width="40" x="860" y="145" as="geometry" />
-        </mxCell>
-        <mxCell id="z2" parent="1" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" value="▓ ZIP" vertex="1">
-          <mxGeometry height="14" width="40" x="1080" y="145" as="geometry" />
-        </mxCell>
-        <mxCell id="b3n" parent="1" style="text;html=1;fontSize=9;fillColor=#FFF2CC;strokeColor=#D6B656;rounded=1;" value="③ ROUTE: Tubing with 3&quot; service loop.&#xa;Secure with 4-inch zip ties at 2 anchors.&#xa;Loop allows ±130° yaw without kinking." vertex="1">
-          <mxGeometry height="45" width="300" x="940" y="200" as="geometry" />
-        </mxCell>
-        <mxCell id="to_enc" parent="1" style="text;html=1;fontSize=9;fontStyle=2;fontColor=#0066CC;" value="→ Tubing routes to&#xa;IP67 Gland PG11 →&#xa;down to Reservoir" vertex="1">
-          <mxGeometry height="45" width="140" x="1200" y="160" as="geometry" />
-        </mxCell>
-        <mxCell id="rx_board" parent="1" style="rounded=1;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=9;shadow=1;" value="CSI→HDMI RX Board&#xa;(Sniper chain)" vertex="1">
-          <mxGeometry height="50" width="200" x="200" y="450" as="geometry" />
-        </mxCell>
-        <mxCell id="fpc_cam" edge="1" parent="1" source="sniper" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=block;" target="rx_board" value="15-pin FPC">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="strain" parent="1" style="rounded=0;fillColor=#FFE0B2;strokeColor=#E65100;fontStyle=1;fontSize=9;shadow=1;" value="FPC STRAIN RELIEF&#xa;ANCHOR BLOCK" vertex="1">
-          <mxGeometry height="40" width="200" x="200" y="540" as="geometry" />
-        </mxCell>
-        <mxCell id="b4" parent="1" style="ellipse;fillColor=#FF6600;strokeColor=#CC3300;fontStyle=1;fontSize=16;fontColor=#FFF;" value="④" vertex="1">
-          <mxGeometry height="35" width="35" x="190" y="530" as="geometry" />
-        </mxCell>
-        <mxCell id="z3" parent="1" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" value="▓ ZIP" vertex="1">
-          <mxGeometry height="14" width="40" x="230" y="585" as="geometry" />
-        </mxCell>
-        <mxCell id="z4" parent="1" style="rounded=0;fillColor=#333;strokeColor=#000;fontSize=7;fontColor=#FFF;fontStyle=1;" value="▓ ZIP" vertex="1">
-          <mxGeometry height="14" width="40" x="340" y="585" as="geometry" />
-        </mxCell>
-        <mxCell id="fpc_out" edge="1" parent="1" source="rx_board" style="strokeColor=#9933CC;strokeWidth=2;dashed=1;endArrow=open;" target="strain">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="b4n" parent="1" style="text;html=1;fontSize=9;fillColor=#FFE0B2;strokeColor=#E65100;rounded=1;fontStyle=1;" value="④ FPC FIREWALL — STRAIN RELIEF:&#xa;FPC ribbon from camera → RX board is&#xa;zip-tied to this anchor with foam pad.&#xa;HDMI cable exits from here → IP67 box.&#xa;Prevents snap during Death Spiral." vertex="1">
-          <mxGeometry height="70" width="310" x="160" y="610" as="geometry" />
-        </mxCell>
-        <mxCell id="hdmi_exit" parent="1" style="text;html=1;fontSize=9;fontStyle=2;fontColor=#6C8EBF;" value="→ HDMI Cable exits here&#xa;→ Routes to IP67 Gland PG13.5&#xa;→ Connects to TX Board inside" vertex="1">
-          <mxGeometry height="45" width="230" x="430" y="545" as="geometry" />
-        </mxCell>
-        <mxCell id="storm32" parent="1" style="rounded=1;fillColor=#CE93D8;strokeColor=#7B1FA2;fontStyle=1;fontSize=10;shadow=1;" value="⚡ Storm32 BGC Controller&#xa;(mounted on gimbal frame)" vertex="1">
-          <mxGeometry height="60" width="250" x="700" y="500" as="geometry" />
-        </mxCell>
-        <mxCell id="storm_note" parent="1" style="text;html=1;fontSize=8;fontStyle=2;fontColor=#7B1FA2;" value="UART TX/RX from Jetson&#xa;+12V from Relay CH2 NO&#xa;GND from Wago Port 5" vertex="1">
-          <mxGeometry height="40" width="200" x="720" y="570" as="geometry" />
-        </mxCell>
-        <mxCell id="warn" parent="1" style="rounded=1;fillColor=#FF0000;strokeColor=#CC0000;fontStyle=1;fontSize=10;fontColor=#FFF;shadow=1;" value="⚠️ DEATH SPIRAL CLEARANCE:&#xa;ALL cables and tubing exiting the&#xa;gimbal MUST have ≥3&quot; slack loop&#xa;to survive full ±130° yaw + ±45° pitch." vertex="1">
-          <mxGeometry height="70" width="350" x="700" y="650" as="geometry" />
-        </mxCell>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;Gimbal Payload Plate Detail&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;3 components on aluminum plate — boresighted for precision&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="500" height="45" as="geometry"/></mxCell>
+        <!-- Payload plate -->
+        <mxCell id="plate" value="" style="rounded=1;fillColor=#B0BEC5;strokeColor=#78909C;shadow=1;arcSize=4;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="100" y="80" width="500" height="350" as="geometry"/></mxCell>
+        <mxCell id="platel" value="&lt;b style='color:#37474F;font-size:14px'&gt;ALUMINUM PAYLOAD PLATE&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:10px'&gt;Custom L-bracket — M3 standoffs&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="200" y="90" width="300" height="30" as="geometry"/></mxCell>
+        <!-- Mounting holes -->
+        <mxCell id="mh1" value="" style="ellipse;fillColor=#78909C;strokeColor=#546E7A;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="115" y="95" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh2" value="" style="ellipse;fillColor=#78909C;strokeColor=#546E7A;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="575" y="95" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh3" value="" style="ellipse;fillColor=#78909C;strokeColor=#546E7A;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="115" y="405" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh4" value="" style="ellipse;fillColor=#78909C;strokeColor=#546E7A;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="575" y="405" width="10" height="10" as="geometry"/></mxCell>
+        <!-- Sniper Camera (large, primary) -->
+        <mxCell id="sniper" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#42A5F5;shadow=1;arcSize=8;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="140" y="140" width="200" height="120" as="geometry"/></mxCell>
+        <mxCell id="sniperlens" value="" style="ellipse;fillColor=#111;strokeColor=#42A5F5;" vertex="1" parent="1"><mxGeometry x="165" y="160" width="50" height="50" as="geometry"/></mxCell>
+        <mxCell id="sniperlensinner" value="" style="ellipse;fillColor=#0D47A1;strokeColor=#42A5F5;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="180" y="175" width="20" height="20" as="geometry"/></mxCell>
+        <mxCell id="sniperpcb" value="" style="rounded=0;fillColor=#1B5E20;strokeColor=#2E7D32;" vertex="1" parent="1"><mxGeometry x="240" y="165" width="80" height="50" as="geometry"/></mxCell>
+        <mxCell id="sniperl" value="&lt;b style='color:#90CAF9;font-size:12px'&gt;IMX219 NoIR&lt;/b&gt;&lt;br&gt;&lt;span style='color:#42A5F5;font-size:9px'&gt;Arducam 8MP Night Vision&lt;br&gt;1080p @ 60fps&lt;br&gt;CSI → HDMI ext. chain&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="160" y="220" width="160" height="35" as="geometry"/></mxCell>
+        <!-- LiDAR (mounted co-axial) -->
+        <mxCell id="lidar" value="" style="rounded=1;fillColor=#006064;strokeColor=#00838F;shadow=1;arcSize=8;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="380" y="140" width="180" height="120" as="geometry"/></mxCell>
+        <mxCell id="lidartx" value="" style="ellipse;fillColor=#111;strokeColor=#00BCD4;" vertex="1" parent="1"><mxGeometry x="405" y="160" width="35" height="35" as="geometry"/></mxCell>
+        <mxCell id="lidarir" value="" style="ellipse;fillColor=#880E4F;strokeColor=#AD1457;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="416" y="171" width="13" height="13" as="geometry"/></mxCell>
+        <mxCell id="lidarrx" value="" style="ellipse;fillColor=#111;strokeColor=#00BCD4;" vertex="1" parent="1"><mxGeometry x="460" y="160" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="lidarlbl" value="&lt;b style='color:#4DD0E1;font-size:12px'&gt;TF-Luna LiDAR&lt;/b&gt;&lt;br&gt;&lt;span style='color:#00BCD4;font-size:9px'&gt;Benewake ToF Sensor&lt;br&gt;0.2–8.0m range&lt;br&gt;I2C @ 0x10 (250Hz)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="395" y="200" width="150" height="45" as="geometry"/></mxCell>
+        <!-- Nozzle -->
+        <mxCell id="nozzle" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=8;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="200" y="290" width="300" height="80" as="geometry"/></mxCell>
+        <mxCell id="nozzlebody" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1"><mxGeometry x="230" y="310" width="120" height="15" as="geometry"/></mxCell>
+        <mxCell id="nozzletip" value="" style="triangle;fillColor=#4CAF50;strokeColor=#2E7D32;direction=south;" vertex="1" parent="1"><mxGeometry x="365" y="305" width="15" height="25" as="geometry"/></mxCell>
+        <mxCell id="nozzlebarb" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1"><mxGeometry x="220" y="315" width="10" height="8" as="geometry"/></mxCell>
+        <mxCell id="nozzlelbl" value="&lt;b style='color:#A5D6A7;font-size:12px'&gt;Orbit 66190 Nozzle&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4CAF50;font-size:9px'&gt;Flex-Mist adjustable stream&lt;br&gt;1/4&amp;quot; barb inlet from silicone tubing&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="230" y="330" width="230" height="30" as="geometry"/></mxCell>
+        <!-- Boresight annotation -->
+        <mxCell id="bore" value="" style="endArrow=none;strokeColor=#F44336;strokeWidth=2;dashed=1;dashPattern=8 4;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="350" y="130" as="sourcePoint"/><mxPoint x="350" y="420" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="borel" value="&lt;span style='color:#F44336;font-size:9px'&gt;← boresight axis →&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="500" y="280" width="90" height="14" as="geometry"/></mxCell>
+        <mxCell id="note" value="All 3 devices co-aligned on same axis: camera FOV = LiDAR beam = nozzle stream. Aim the camera → hit the target." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontColor=#333;fontSize=11;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="100" y="450" width="500" height="30" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
