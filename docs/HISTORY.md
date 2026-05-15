@@ -97,3 +97,9 @@
 - **[DIAGRAM]** Updated `zone2_logic.drawio` — terminal block as central routing hub
 - **[DIAGRAM]** Improved text contrast across all updated diagrams (bright text on dark backgrounds)
 - **[DIAGRAM]** Repositioned wire labels to avoid overlap with wire paths and objects
+- **[ECO]** CSI-to-HDMI "Umbilical" physical topology — Zone A/B/C separation for Sniper camera chain
+- **[SPEC]** HW-001 §2.1: Added Vision Subsystem Physical Topology (Zone A: gimbal payload, Zone B: FPV umbilical, Zone C: static enclosure)
+- **[SPEC]** HW-001 §2.2: Scout camera simplified chain documented
+- **[BOM]** HDMI cable constraint: Must be ultra-thin FPV-grade, ribbon-like. Standard monitor cables PROHIBITED (will stall Storm32 motors)
+- **[DIAGRAM]** Rebuilt `wire_07_camera_csi_chain.drawio` with Zone A/B/C color-coded separation and wavy FPV cable visualization
+- **[DIAGRAM]** Rebuilt `wire_11_terminal_block_hub.drawio` — fixed empty rendering issue

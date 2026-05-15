@@ -19,7 +19,32 @@
 | Scout | OV9281 1MP Global Shutter | 1280×800 | 120 | FIXED to enclosure | Port 0 | CSI→HDMI kit |
 | Sniper | Arducam NoIR IMX219 8MP | 1920×1080 | 60 | GIMBAL payload | Port 1 | CSI→HDMI kit |
 
-**Camera Extension Chain:** Camera → 15-pin FPC → RX Board → HDMI Cable → TX Board → 15-pin FPC → 15→22 Adapter → Jetson MIPI Port
+**Camera Extension Chain:** Camera → 15-pin FPC → TX Board → HDMI Cable → RX Board → 15-pin FPC → 15→22 Adapter → Jetson MIPI Port
+
+### 2.1 Vision Subsystem Physical Topology — Sniper Camera (IMX219)
+
+> ⚠ **CRITICAL:** The Sniper camera chain spans a **moving gimbal** and a **static enclosure**. Incorrect cable routing or a stiff HDMI cable will stall the Storm32 motors and destroy the FPC ribbon cables.
+
+**Zone A — Moving Payload (Gimbal Carriage):**
+- IMX219 Sniper Camera mounted to payload plate
+- 2-inch 15-pin FPC ribbon cable (short — stays on the plate)
+- CSI→HDMI **Transmitter (TX) Board** — bolted to payload plate
+- *Rule:* Camera + TX Board move **together** with the gimbal. No slack needed.
+
+**Zone B — The Umbilical (Bridges Movement Axes):**
+- **Ultra-Thin / Super-Flexible FPV HDMI Cable** — plugs into TX Board on gimbal
+- Routes down the pole with a service loop to absorb pan/tilt movement
+- *Rule:* This cable MUST be lightweight, ribbon-like, and offer **zero mechanical resistance** to the brushless gimbal motors. Standard monitor HDMI cables are PROHIBITED — they will stall the Storm32.
+
+**Zone C — Static Base (Inside IP67 Enclosure):**
+- FPV HDMI cable enters enclosure through **PG11 cable gland**
+- Plugs into HDMI→CSI **Receiver (RX) Board** — mounted near Jetson
+- 15-pin FPC → 15→22 pin adapter → Jetson MIPI **Port 1**
+- *Rule:* RX Board is static. Standard ribbon cables are fine here.
+
+### 2.2 Scout Camera (OV9281) — Simplified Chain
+
+The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses the same CSI→HDMI kit but with a standard HDMI cable between TX/RX boards. Both boards are inside the enclosure.
 
 ## 3. Gimbal
 
