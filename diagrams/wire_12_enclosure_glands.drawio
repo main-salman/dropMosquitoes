@@ -1,0 +1,30 @@
+<mxfile>
+  <diagram name="Enclosure Cable Glands" id="enc1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;DIAGRAM 12: IP67 Enclosure Cable Gland Layout&lt;/b&gt;&lt;br&gt;Bottom panel — what goes through each gland" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="600" height="50" as="geometry"/></mxCell>
+        <!-- Enclosure box -->
+        <mxCell id="enc" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#78909C;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="200" y="100" width="600" height="400" as="geometry"/></mxCell>
+        <mxCell id="el" value="&lt;b&gt;IP67 Enclosure — Bottom Panel View&lt;/b&gt;&lt;br&gt;Joinfworld 6×6 ABS" style="text;html=1;fontSize=14;fontColor=#E0E0E0;align=center;" vertex="1" parent="1"><mxGeometry x="300" y="110" width="400" height="40" as="geometry"/></mxCell>
+        <!-- Gland 1: DC Power -->
+        <mxCell id="g1" value="&lt;b&gt;PG9 #1&lt;/b&gt;&lt;br&gt;DC POWER&lt;br&gt;&lt;font color='#F44336'&gt;RED&lt;/font&gt;+&lt;font color='#666'&gt;BLACK&lt;/font&gt; 16ga" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="230" y="170" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Gland 2: UART Serial -->
+        <mxCell id="g2" value="&lt;b&gt;PG9 #2&lt;/b&gt;&lt;br&gt;UART + I2C&lt;br&gt;6× jumper wires" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00BCD4;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="170" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Gland 3: Water tubing -->
+        <mxCell id="g3" value="&lt;b&gt;PG9 #3&lt;/b&gt;&lt;br&gt;WATER TUBING&lt;br&gt;1/4&quot; silicone" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="630" y="170" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Gland 4: HDMI Scout -->
+        <mxCell id="g4" value="&lt;b&gt;PG11 #1&lt;/b&gt;&lt;br&gt;HDMI CABLE&lt;br&gt;Scout CSI ext" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="230" y="290" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Gland 5: HDMI Sniper -->
+        <mxCell id="g5" value="&lt;b&gt;PG11 #2&lt;/b&gt;&lt;br&gt;HDMI CABLE&lt;br&gt;Sniper CSI ext" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="430" y="290" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Spare -->
+        <mxCell id="g6" value="&lt;b&gt;PG9 #4&lt;/b&gt;&lt;br&gt;SPARE&lt;br&gt;(GPIO expansion)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#555;fontColor=#999;fontSize=10;" vertex="1" parent="1"><mxGeometry x="630" y="290" width="130" height="70" as="geometry"/></mxCell>
+        <!-- Lens window -->
+        <mxCell id="lens" value="&lt;b&gt;50mm Acrylic Window&lt;/b&gt;&lt;br&gt;Scout camera looks&lt;br&gt;through this DOWNWARD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="350" y="400" width="170" height="70" as="geometry"/></mxCell>
+        <mxCell id="n1" value="⚠ Seal all glands with silicone (Dow 786) after threading cables through. Test with spray bottle." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="540" width="700" height="40" as="geometry"/></mxCell>
+        <mxCell id="n2" value="Drill template: 3× PG9 (16mm) + 2× PG11 (20mm) + 1× PG9 spare + 1× 50mm window" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="590" width="600" height="25" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

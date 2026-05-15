@@ -1,0 +1,38 @@
+<mxfile>
+  <diagram name="Camera CSI Chain" id="cam1">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="800" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 07: Camera CSI Extension Chain&lt;/b&gt;&lt;br&gt;Both cameras use CSI-to-HDMI extension kits to reach the Jetson" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="700" height="50" as="geometry"/></mxCell>
+        <!-- Scout Chain -->
+        <mxCell id="s0" value="&lt;b&gt;Scout Camera&lt;/b&gt;&lt;br&gt;OV9281 1MP&lt;br&gt;15-pin FPC out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="140" height="70" as="geometry"/></mxCell>
+        <mxCell id="s1" value="&lt;b&gt;TX Board&lt;/b&gt;&lt;br&gt;15-pin FPC in&lt;br&gt;HDMI out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="240" y="120" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="s2" value="&lt;b&gt;HDMI Cable&lt;/b&gt;&lt;br&gt;Through PG11&lt;br&gt;cable gland" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="420" y="120" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="s3" value="&lt;b&gt;RX Board&lt;/b&gt;&lt;br&gt;HDMI in&lt;br&gt;15-pin FPC out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="600" y="120" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="s4" value="&lt;b&gt;15→22 pin&lt;/b&gt;&lt;br&gt;Adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#FF9800;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="780" y="120" width="100" height="70" as="geometry"/></mxCell>
+        <mxCell id="s5" value="&lt;b&gt;Jetson&lt;/b&gt;&lt;br&gt;MIPI Port 0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="940" y="120" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="se1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9C27B0;strokeWidth=2;" edge="1" parent="1" source="s0" target="s1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="se2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="se3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="se4" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9C27B0;strokeWidth=2;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="se5" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF9800;strokeWidth=2;" edge="1" parent="1" source="s4" target="s5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="sl" value="SCOUT (Fixed to enclosure lid, looking DOWN)" style="text;html=1;fontSize=11;fontColor=#4CAF50;align=left;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="95" width="400" height="20" as="geometry"/></mxCell>
+        <!-- Sniper Chain -->
+        <mxCell id="n0" value="&lt;b&gt;Sniper Camera&lt;/b&gt;&lt;br&gt;IMX219 NoIR&lt;br&gt;15-pin FPC out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="300" width="140" height="70" as="geometry"/></mxCell>
+        <mxCell id="n1" value="&lt;b&gt;TX Board&lt;/b&gt;&lt;br&gt;15-pin FPC in&lt;br&gt;HDMI out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="240" y="300" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="n2" value="&lt;b&gt;HDMI Cable&lt;/b&gt;&lt;br&gt;Service loop&lt;br&gt;for gimbal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="420" y="300" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="n3" value="&lt;b&gt;RX Board&lt;/b&gt;&lt;br&gt;HDMI in&lt;br&gt;15-pin FPC out" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#9C27B0;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="600" y="300" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="n4" value="&lt;b&gt;15→22 pin&lt;/b&gt;&lt;br&gt;Adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#FF9800;fontColor=#FFF;fontSize=10;" vertex="1" parent="1"><mxGeometry x="780" y="300" width="100" height="70" as="geometry"/></mxCell>
+        <mxCell id="n5" value="&lt;b&gt;Jetson&lt;/b&gt;&lt;br&gt;MIPI Port 1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="940" y="300" width="120" height="70" as="geometry"/></mxCell>
+        <mxCell id="ne1" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9C27B0;strokeWidth=2;" edge="1" parent="1" source="n0" target="n1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ne2" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ne3" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#0288D1;strokeWidth=3;" edge="1" parent="1" source="n2" target="n3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ne4" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9C27B0;strokeWidth=2;" edge="1" parent="1" source="n3" target="n4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ne5" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF9800;strokeWidth=2;" edge="1" parent="1" source="n4" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="nl" value="SNIPER (On gimbal payload plate, moves with turret)" style="text;html=1;fontSize=11;fontColor=#4CAF50;align=left;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="275" width="400" height="20" as="geometry"/></mxCell>
+        <mxCell id="nn" value="⚠ HDMI cable on Sniper chain needs 3&quot; service loop for gimbal rotation. Zip-tie anchors at 2 points." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="420" width="700" height="40" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

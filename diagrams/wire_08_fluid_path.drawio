@@ -1,0 +1,25 @@
+<mxfile>
+  <diagram name="Fluid Path" id="fluid1">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 08: Fluid Path (Water System)&lt;/b&gt;&lt;br&gt;Reservoir → Pump → Check Valve → Tubing → Nozzle" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="700" height="50" as="geometry"/></mxCell>
+        <mxCell id="res" value="&lt;b&gt;Reservoir&lt;/b&gt;&lt;br&gt;Shallow Plastic Tote&lt;br&gt;Placed at base of pole&lt;br&gt;(ground level)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="150" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="pump" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;SUBMERGED in reservoir&lt;br&gt;Outlet: 1/4&quot; barb" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="280" y="150" width="180" height="90" as="geometry"/></mxCell>
+        <mxCell id="chk" value="&lt;b&gt;Check Valve&lt;/b&gt;&lt;br&gt;Feelers 1/4&quot; PVDF&lt;br&gt;Arrow points UP&lt;br&gt;(prevents siphon)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="530" y="150" width="170" height="90" as="geometry"/></mxCell>
+        <mxCell id="tub" value="&lt;b&gt;Silicone Tubing&lt;/b&gt;&lt;br&gt;1/4&quot; ID × 3/8&quot; OD&lt;br&gt;Routes UP the pole&lt;br&gt;(8-10 ft / 2.4-3m)&lt;br&gt;Through PG9 gland" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#64B5F6;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="770" y="130" width="170" height="110" as="geometry"/></mxCell>
+        <mxCell id="noz" value="&lt;b&gt;Orbit 66190 Nozzle&lt;/b&gt;&lt;br&gt;On 3D-printed bracket&lt;br&gt;Mounted to gimbal&lt;br&gt;payload plate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="1010" y="150" width="170" height="90" as="geometry"/></mxCell>
+        <!-- Flow arrows (blue = water) -->
+        <mxCell id="f1" value="&lt;font color='#64B5F6'&gt;Water intake&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#64B5F6;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="res" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f2" value="&lt;font color='#64B5F6'&gt;1/4&quot; tubing + hose clamp&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#64B5F6;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="pump" target="chk"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f3" value="&lt;font color='#64B5F6'&gt;1/4&quot; tubing up pole&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#64B5F6;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="chk" target="tub"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="f4" value="&lt;font color='#64B5F6'&gt;Through gland → gimbal&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#64B5F6;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="tub" target="noz"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Hose clamp callouts -->
+        <mxCell id="hc" value="🔧 Hose clamp at each barb connection (4 total)" style="text;html=1;fontSize=11;fontColor=#FF9800;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="290" width="400" height="25" as="geometry"/></mxCell>
+        <mxCell id="sl" value="⚠ Service loop: 3&quot; slack arc where tubing enters gimbal area. Zip-tied at 2 anchor points." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="330" width="600" height="40" as="geometry"/></mxCell>
+        <mxCell id="oh" value="💧 System fires DOWNWARD from 8-10ft overhead. Gravity assists the stream." style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="390" width="600" height="25" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

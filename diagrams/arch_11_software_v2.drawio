@@ -1,0 +1,33 @@
+<mxfile>
+  <diagram name="Software Architecture" id="sw1">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;DIAGRAM 11: Updated Software Architecture (V2)&lt;/b&gt;&lt;br&gt;4 Agents + LiDAR + Ballistic Engine + Flask Dashboard" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="700" height="50" as="geometry"/></mxCell>
+        <!-- Scout Agent -->
+        <mxCell id="sc" value="&lt;b&gt;ScoutAgent&lt;/b&gt;&lt;br&gt;scout_vision.py&lt;br&gt;&lt;hr&gt;OV9281 @ 120 FPS&lt;br&gt;MOG2 Background Sub&lt;br&gt;Outputs: (x, y, vx, vy)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="200" height="130" as="geometry"/></mxCell>
+        <!-- Turret Agent -->
+        <mxCell id="ta" value="&lt;b&gt;TurretAgent&lt;/b&gt;&lt;br&gt;gimbal_control.py&lt;br&gt;&lt;hr&gt;Pixel → Degree mapping&lt;br&gt;Storm32 Serial UART&lt;br&gt;±130° Yaw endstops" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="340" y="120" width="200" height="130" as="geometry"/></mxCell>
+        <!-- Sniper Agent -->
+        <mxCell id="sn" value="&lt;b&gt;SniperAgent&lt;/b&gt;&lt;br&gt;sniper_logic.py&lt;br&gt;&lt;hr&gt;IMX219 @ 30 FPS&lt;br&gt;YOLOv8 TensorRT&lt;br&gt;Classification + Lead" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="640" y="120" width="200" height="130" as="geometry"/></mxCell>
+        <!-- Trigger Agent -->
+        <mxCell id="tr" value="&lt;b&gt;TriggerAgent&lt;/b&gt;&lt;br&gt;weapons_hot.py&lt;br&gt;&lt;hr&gt;target_locked AND&lt;br&gt;NOT human_in_frame&lt;br&gt;GPIO 18 → 300ms pulse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="940" y="120" width="200" height="130" as="geometry"/></mxCell>
+        <!-- NEW: LiDAR -->
+        <mxCell id="li" value="&lt;b&gt;LiDARController&lt;/b&gt;&lt;br&gt;hardware.py&lt;br&gt;&lt;hr&gt;TF-Luna I2C (Bus 1)&lt;br&gt;100Hz background poll&lt;br&gt;Distance (0.2–8m)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#006064;strokeColor=#00BCD4;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="340" y="320" width="200" height="130" as="geometry"/></mxCell>
+        <!-- NEW: Ballistic Engine -->
+        <mxCell id="be" value="&lt;b&gt;Ballistic Engine&lt;/b&gt;&lt;br&gt;hardware.py&lt;br&gt;&lt;hr&gt;Parabolic drop calc&lt;br&gt;Overhead mount (8-10ft)&lt;br&gt;Gravity-assisted aim" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#2196F3;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="640" y="320" width="200" height="130" as="geometry"/></mxCell>
+        <!-- Flask -->
+        <mxCell id="fl" value="&lt;b&gt;Flask Dashboard&lt;/b&gt;&lt;br&gt;app.py + index.html&lt;br&gt;&lt;hr&gt;MJPEG streams&lt;br&gt;REST API (20+ endpoints)&lt;br&gt;Calibration wizards&lt;br&gt;Test runner GUI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#64B5F6;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="940" y="320" width="220" height="140" as="geometry"/></mxCell>
+        <!-- Edges -->
+        <mxCell id="e1" value="target coords" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#4CAF50;strokeWidth=2;fontSize=9;fontColor=#888;" edge="1" parent="1" source="sc" target="ta"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="aim command" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF9800;strokeWidth=2;fontSize=9;fontColor=#888;" edge="1" parent="1" source="ta" target="sn"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="lock signal" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9C27B0;strokeWidth=2;fontSize=9;fontColor=#888;" edge="1" parent="1" source="sn" target="tr"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="distance_m" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#00BCD4;strokeWidth=2;fontSize=9;fontColor=#888;" edge="1" parent="1" source="li" target="be"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="offset correction" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2196F3;strokeWidth=2;fontSize=9;fontColor=#888;" edge="1" parent="1" source="be" target="ta"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="740" y="280"/><mxPoint x="440" y="280"/></Array></mxGeometry></mxCell>
+        <mxCell id="e6" value="telemetry" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#64B5F6;strokeWidth=2;fontSize=9;fontColor=#888;dashed=1;" edge="1" parent="1" source="be" target="fl"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="new" value="&lt;font color='#00BCD4'&gt;★ NEW in V2&lt;/font&gt;" style="text;html=1;fontSize=12;fontColor=#00BCD4;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="340" y="290" width="120" height="25" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

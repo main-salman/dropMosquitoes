@@ -1,0 +1,19 @@
+<mxfile>
+  <diagram name="IR Illuminator" id="ir1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="700" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 10: IR Illuminator Power&lt;/b&gt;&lt;br&gt;Wago → Univivi 850nm IR LED panel" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="600" height="50" as="geometry"/></mxCell>
+        <mxCell id="w12" value="&lt;b&gt;Wago +12V&lt;/b&gt;&lt;br&gt;Port 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="150" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="wgn" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="260" width="140" height="60" as="geometry"/></mxCell>
+        <mxCell id="ir" value="&lt;b&gt;Univivi 850nm IR Illuminator&lt;/b&gt;&lt;br&gt;8-LED, 90° wide angle&lt;br&gt;IP67 waterproof&lt;br&gt;12V DC barrel jack&lt;br&gt;(uses included power adapter OR&lt;br&gt;tap from Wago bus via pigtail)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#880E4F;strokeColor=#E91E63;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="340" y="130" width="260" height="130" as="geometry"/></mxCell>
+        <mxCell id="pig" value="&lt;b&gt;DC Pigtail&lt;/b&gt;&lt;br&gt;(if tapping Wago)&lt;br&gt;&lt;font color='#F44336'&gt;RED = +12V&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK = GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="340" y="300" width="200" height="80" as="geometry"/></mxCell>
+        <mxCell id="e1" value="&lt;font color='#F44336'&gt;RED → +12V&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="w12" target="pig"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="&lt;font color='#888'&gt;BLACK → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="wgn" target="pig"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="&lt;font color='#FF9800'&gt;Barrel plug&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;strokeWidth=3;fontSize=10;" edge="1" parent="1" source="pig" target="ir"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n1" value="Mount: Zip-tie to aluminum pole, angled to illuminate ground area below gimbal." style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="420" width="600" height="25" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

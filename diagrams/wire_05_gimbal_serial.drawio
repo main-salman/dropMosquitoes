@@ -1,0 +1,18 @@
+<mxfile>
+  <diagram name="Gimbal Serial" id="serial1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 05: Gimbal Serial UART&lt;/b&gt;&lt;br&gt;Jetson UART → Storm32 RC_PITCH / RC_YAW" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="600" height="50" as="geometry"/></mxCell>
+        <mxCell id="jet" value="&lt;b&gt;Jetson GPIO Header&lt;/b&gt;&lt;br&gt;&lt;hr&gt;Pin 8 = UART TX (TXD0)&lt;br&gt;&lt;font color='#00E5FF'&gt;BLUE jumper wire&lt;/font&gt;&lt;br&gt;&lt;br&gt;Pin 10 = UART RX (RXD0)&lt;br&gt;&lt;font color='#FF9800'&gt;ORANGE jumper wire&lt;/font&gt;&lt;br&gt;&lt;br&gt;Pin 6 = GND&lt;br&gt;&lt;font color='#666'&gt;BLACK jumper wire&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="220" height="200" as="geometry"/></mxCell>
+        <mxCell id="stm" value="&lt;b&gt;Storm32 BGC Board&lt;/b&gt;&lt;br&gt;&lt;hr&gt;RC_PITCH pin = Serial RX&lt;br&gt;(receives commands)&lt;br&gt;&lt;br&gt;RC_YAW pin = Serial TX&lt;br&gt;(sends telemetry back)&lt;br&gt;&lt;br&gt;GND pin" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="500" y="120" width="220" height="200" as="geometry"/></mxCell>
+        <mxCell id="e1" value="&lt;font color='#00E5FF'&gt;BLUE: Jetson TX → Storm32 RX&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#00E5FF;strokeWidth=3;fontSize=10;exitX=1;exitY=0.3;entryX=0;entryY=0.3;" edge="1" parent="1" source="jet" target="stm"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" value="&lt;font color='#FF9800'&gt;ORANGE: Storm32 TX → Jetson RX&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;strokeWidth=3;fontSize=10;exitX=0;exitY=0.55;entryX=1;entryY=0.55;" edge="1" parent="1" source="stm" target="jet"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="230"/><mxPoint x="420" y="230"/></Array></mxGeometry></mxCell>
+        <mxCell id="e3" value="&lt;font color='#888'&gt;BLACK: GND ↔ GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=3;fontSize=10;exitX=1;exitY=0.8;entryX=0;entryY=0.8;" edge="1" parent="1" source="jet" target="stm"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n1" value="Protocol: o323BGC @ 115200 baud, 8N1. Linux device: /dev/ttyTHS0" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="370" width="500" height="30" as="geometry"/></mxCell>
+        <mxCell id="n2" value="⚠ TX↔RX CROSS: Jetson TX goes to Storm32 RX (and vice versa). Do NOT connect TX-to-TX!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="410" width="600" height="40" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

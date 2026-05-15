@@ -1,0 +1,32 @@
+<mxfile>
+  <diagram name="Relay to Pump" id="relay1">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 03: Relay CH1 → Water Pump&lt;/b&gt;&lt;br&gt;GPIO 18 triggers relay, Wago +12V powers pump through NO contact" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="700" height="50" as="geometry"/></mxCell>
+        <!-- Jetson GPIO -->
+        <mxCell id="gpio" value="&lt;b&gt;Jetson GPIO Header&lt;/b&gt;&lt;br&gt;Pin 12 (BCM 18)&lt;br&gt;&lt;font color='#FFEB3B'&gt;YELLOW jumper wire&lt;/font&gt;&lt;br&gt;Pin 6 = GND&lt;br&gt;&lt;font color='#666'&gt;BLACK jumper wire&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="200" height="110" as="geometry"/></mxCell>
+        <!-- Relay Board CH1 -->
+        <mxCell id="rel" value="&lt;b&gt;Monk Makes Relay&lt;/b&gt;&lt;br&gt;CH1 (Pump)&lt;br&gt;&lt;hr&gt;SIG — Signal input&lt;br&gt;GND — Ground&lt;br&gt;COM — Common&lt;br&gt;NO — Normally Open" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="380" y="110" width="200" height="140" as="geometry"/></mxCell>
+        <!-- GPIO 18 → SIG -->
+        <mxCell id="e1" value="&lt;font color='#FFEB3B'&gt;YELLOW jumper → SIG&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FFEB3B;strokeWidth=3;fontSize=10;" edge="1" parent="1" source="gpio" target="rel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- GND → Relay GND -->
+        <mxCell id="e2" value="&lt;font color='#888'&gt;BLACK jumper → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=3;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="gpio" target="rel"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="140" y="300"/><mxPoint x="480" y="300"/></Array></mxGeometry></mxCell>
+        <!-- Wago +12V -->
+        <mxCell id="w12" value="&lt;b&gt;Wago +12V&lt;/b&gt;&lt;br&gt;Port 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="380" y="340" width="120" height="50" as="geometry"/></mxCell>
+        <!-- +12V → COM -->
+        <mxCell id="e3" value="&lt;font color='#F44336'&gt;RED wire → COM&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="w12" target="rel"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Pump -->
+        <mxCell id="pump" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;&lt;font color='#F44336'&gt;RED wire (+)&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK wire (-)&lt;/font&gt;&lt;br&gt;Submerged in reservoir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="720" y="130" width="200" height="100" as="geometry"/></mxCell>
+        <!-- NO → Pump RED -->
+        <mxCell id="e4" value="&lt;font color='#F44336'&gt;NO contact → Pump RED (+)&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="rel" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Wago GND -->
+        <mxCell id="wgn" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="720" y="340" width="120" height="50" as="geometry"/></mxCell>
+        <!-- Pump BLACK → GND -->
+        <mxCell id="e5" value="&lt;font color='#888'&gt;Pump BLACK (-) → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="pump" target="wgn"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="n1" value="Flow: GPIO HIGH → Relay closes → +12V flows COM→NO → Pump runs for 300ms → GPIO LOW → Relay opens" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="430" width="700" height="30" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
