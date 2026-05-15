@@ -147,3 +147,15 @@
 - **[DOCS]** Created `docs/DATASET_STRATEGY.md` — end-to-end guide for building the mosquito training dataset (Roboflow workflow, labeling, iterative improvement)
 - **[DOCS]** Created `README.md` — project overview, architecture diagram, directory structure, quick start guide
 - **[PROCESS]** Updated `.gitignore` — added `engagements.jsonl`, `calibration.json`, `runs/`, `*.pt`, chat history files
+
+## 2026-05-15 — OPERATIONS GUIDE & LIFECYCLE COMPLETION
+- **[SPEC]** Created `OPS-001-operations-guide.md` — 9-phase lifecycle guide covering procurement, Jetson setup (WiFi, static IP, SSH), assembly sequence, deployment, calibration, field testing, daily operation, scheduling, and maintenance
+- **[SPEC]** Updated `SYS-001-system-overview.md` to v2.0 — synced filenames, strategy, added supporting modules table
+- **[SPEC]** Updated `SAFE-001-safety-spec.md` to v1.1 — GPIO 18 → BCM 17
+- **[SPEC]** Updated `TEST-001-test-plan.md` — GPIO 18 → BCM 17 in kill switch test
+- **[DOCS]** Updated `rules.md` — GPIO 18 → BCM 17, aligned human override note with SAFE-001 §2
+- **[CODE]** Created `status_indicator.py` — piezo buzzer controller (BCM 4) with boot/engagement/shutdown chime patterns
+- **[CODE]** Integrated `IRController` and `StatusIndicator` into `main.py` orchestrator (auto-schedule IR, buzzer on boot/fire/shutdown)
+- **[DESIGN]** Documented water reservoir placement recommendation: above enclosure for gravity-assisted pump feed, minimal tubing length (< 3ft)
+- **[DESIGN]** Documented piezo buzzer hardware addition (~$2) for audible human notification
+- **[PROCESS]** Documented cron-based scheduling for time-of-day sentry activation
