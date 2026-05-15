@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
-**Status:** DRAFT  
-**Version:** 2.0  
-**Last Updated:** 2026-05-14  
+**Status:** APPROVED  
+**Version:** 3.0  
+**Last Updated:** 2026-05-15  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -10,79 +10,94 @@
 - **Platform:** NVIDIA Jetson Orin Nano SUPER (JetPack 6.0)
 - **Python:** 3.10+
 - **Inference:** YOLOv8n exported to TensorRT `.engine` (FP16)
-- **Camera Pipeline:** GStreamer (mandatory — no raw `cv2.VideoCapture`)
+- **Camera Pipeline:** GStreamer `nvarguscamerasrc` (mandatory — no raw `cv2.VideoCapture`)
+- **Orchestrator:** `main.py` — asyncio event loop managing all agents
 
 ## 2. Agent Architecture
 
-All agents run as asynchronous processes communicating via `queue.Queue` (thread-safe).
+All agents run as threaded modules coordinated by the asyncio orchestrator in `main.py`.
 
 ### 2.1 ScoutAgent (`scout_vision.py`)
-- **Input:** `/dev/video0` (OV9281 @ 120FPS via GStreamer)
+- **Input:** `/dev/video0` (OV9281 @ 120FPS via GStreamer `nvarguscamerasrc sensor-id=0`)
+- **Pipeline:** `appsink drop=true max-buffers=1` (mandatory for 8GB memory constraint)
 - **Processing:** OpenCV MOG2 Background Subtraction
-- **Output:** `(x, y, vx, vy)` of highest-confidence moving blob → `scout_queue`
+- **Config:** Reads tuning parameters from `scout_config.json` (exported by Sentry Control Center)
+- **Output:** `(x, y)` pixel coordinates of highest-confidence moving blob via `get_target()`
+- **Threading:** Dedicated background thread; main loop polls via thread-safe lock
 
-### 2.2 TurretAgent (`gimbal_control.py`)
-- **Input:** `scout_queue`
-- **Processing:** Pixel-to-degree conversion, yaw boundary enforcement (±130°)
-- **Output:** Serial commands to Storm32 via `/dev/ttyTHS0` @ 115200
+### 2.2 TurretAgent (`gimbal_controller.py`)
+- **Input:** `(x, y)` pixel coordinates from ScoutAgent
+- **Processing:** `pixel_to_angle()` conversion, pitch/yaw boundary enforcement (±20° pitch, ±80° yaw)
+- **Output:** Serial command string to Storm32 via `/dev/ttyTHS0` @ 115200 baud
 
-### 2.3 SniperAgent (`sniper_logic.py`)
-- **Input:** `/dev/video1` (IMX219 @ 60FPS via GStreamer)
-- **Processing:** YOLOv8 TensorRT classification + parabolic intercept + vector lead
-- **Output:** `target_locked` boolean + corrected angles → `fire_queue`
+### 2.3 SniperAgent (`sniper_vision.py`)
+- **Input:** `/dev/video1` (IMX219 @ 30FPS via GStreamer `nvarguscamerasrc sensor-id=1`)
+- **Pipeline:** `appsink drop=true max-buffers=1`
+- **Processing:** YOLOv8 TensorRT classification
+- **Output:** `True` if `class == 'Mosquito'` AND `confidence > 0.80`, else `False`
+- **Threading:** Dedicated capture thread; inference called via `verify_target()`
 
-### 2.4 TriggerAgent (`weapons_hot.py`)
-- **Input:** `fire_queue`
-- **Guard:** `target_locked == True` AND `human_in_frame == False`
-- **Output:** GPIO 18 HIGH for 300ms, then LOW
+### 2.4 TriggerAgent (`weapon_system.py`)
+- **Input:** Boolean from SniperAgent
+- **Guard:** `target_locked == True`
+- **Output:** GPIO BCM 17 (IDC40P Terminal 11) HIGH for 600ms (Gravity Airburst pulse), then LOW
+- **Safety:** Relay defaults to LOW at boot. `try/finally` ensures LOW on crash. Complies with SAFE-001 §2.
 
 ### 2.5 LiDAR Polling (`hardware.py — LiDARController`)
 - **Input:** I2C Bus 1, address `0x10` (Benewake TF-Luna)
 - **Processing:** Background thread reads distance at ~100Hz
 - **Output:** `distance_m` (float), `signal_strength` (int) available via `read_distance()`
 
-### 2.6 Ballistic Offset Engine (`hardware.py — compute_ballistic_offset()`)
-- **Input:** Raw pitch/yaw from pixel_to_angle() + Z-distance from LiDAR
-- **Processing:** Overhead parabolic drop correction (see §4)
-- **Output:** Corrected `(pitch, yaw)` tuple compensating for gravity drop
+### 2.6 Predictive Lead Engine (`hardware.py — compute_predictive_lead()`)
 
-### 2.7 Predictive Lead Engine — Ballistics Math (CRITICAL)
+The following stages execute **in sequence** for every fire decision:
 
-The following three stages execute **in sequence** for every fire decision. Together they answer: *"Where will the mosquito be when the water arrives?"*
-
-#### 2.7.1 Velocity Vectoring (`vision.py`)
+#### 2.6.1 Velocity Vectoring (`vision.py`)
 - Track bounding box centroid across **N consecutive frames** (minimum 3, ideally 5–8 at 120 FPS).
-- Compute a 2D **Velocity Vector** `(vx, vy)` in pixels/second using a simple linear regression or exponential moving average of the centroid deltas.
-- Convert pixel velocity to **angular velocity** `(ω_pitch, ω_yaw)` using the camera's known FOV and resolution.
-- Output is passed alongside `(x, y)` in `scout_queue` — already partially implemented as `(x, y, vx, vy)` in §2.1.
+- Compute angular velocity `(ω_pitch, ω_yaw)` using the camera's known FOV and resolution.
 
-#### 2.7.2 Time-of-Flight Lead (`hardware.py`)
-- Using the LiDAR's Z-distance `d`, compute the water stream's **Time-of-Flight (ToF)**:
+#### 2.6.2 Time-of-Flight Lead
+- Using the LiDAR's Z-distance `d`, compute water stream's **Time-of-Flight (ToF)**:
   ```
   ToF = d / (v₀ · cos(α))
   ```
   where `v₀` = water exit velocity (~7 m/s), `α` = current pitch angle.
-- Apply the target's Velocity Vector over the ToF window to predict where the target **will be** when the water arrives:
+- Apply target's velocity over the ToF window to predict future position:
   ```
-  lead_yaw  = ω_yaw  × ToF   (degrees)
+  lead_yaw   = ω_yaw  × ToF   (degrees)
   lead_pitch = ω_pitch × ToF   (degrees)
   ```
-- Add these lead offsets to the raw gimbal Pitch/Yaw commands **before** the parabolic drop correction.
 
-#### 2.7.3 Parabolic Drop (Final Stage)
-- After the velocity lead offsets are applied, apply the Z-distance ballistic drop offset (§2.6) to the **final Pitch angle**.
+#### 2.6.3 Gravity Airburst Offset (Final Stage)
+- After velocity lead offsets, apply `AIRBURST_PITCH_OFFSET` (default +12°) to the **final pitch angle**.
+- This intentionally over-aims so the water arc peaks above the target and falls as a wide AoE mist cloud.
 - Execution order:
   1. `pixel_to_angle()` → raw pitch/yaw
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
-  3. `+ Δpitch (gravity drop)` → final corrected pitch
-- The corrected `(pitch, yaw)` is sent to the Storm32 gimbal.
+  3. `+ airburst_offset_deg` → final corrected pitch
+- The offset is dynamically tunable via the Flask dashboard slider (0° to +30°).
 
+## 3. Orchestration Sequence (`main.py`)
 
-## 3. Safety Interlocks (see SAFE-001)
+```
+Scout Detect → Gimbal Aim → asyncio.sleep(0.2) → Sniper Verify → Fire Weapon
+```
+
+1. `scout_vision.get_target()` returns `(x, y)` or `(None, None)`
+2. `pixel_to_angle(x, y)` maps to physical degrees
+3. Airburst offset added to pitch
+4. `gimbal.aim(pitch, yaw)` sends serial command
+5. 200ms settle wait for physical gimbal movement
+6. `sniper_vision.verify_target()` runs YOLOv8 inference
+7. If TRUE → `weapon.fire(0.6)` pulses relay for 600ms
+8. 1.0s cooldown prevents rapid re-firing
+
+## 4. Safety Interlocks (see SAFE-001)
 
 - Biological heuristic: bounding box too large → ignore (moth/June bug filter)
-- GPIO fail-safe: `try/finally` ensuring pin LOW on crash
-- Death Spiral prevention: yaw hard-limited ±130°, rapid unwind if target crosses 180°
+- GPIO fail-safe: `try/finally` ensuring BCM 17 LOW on crash
+- Death Spiral prevention: yaw hard-limited ±80°, pitch ±20°
+- Airburst offset clamped: final pitch cannot exceed `PITCH_LIMIT` (±20°)
 
 > **Detection Strategy:** Mosquitoes are not in the COCO-80 class set. The primary
 > targeting method is **MOG2 motion detection** (ScoutAgent §2.1), which fires at
@@ -92,22 +107,34 @@ The following three stages execute **in sequence** for every fire decision. Toge
 > YOLOv8 TensorRT is used by the SniperAgent (§2.3) for secondary classification
 > and large-object rejection only (e.g., filtering out birds, leaves, moths).
 
-## 4. Physics Model
+## 5. Physics Model
 
 - **Mounting:** Overhead, 8–10 feet (2.4–3.0m) above ground level, firing DOWNWARD
 - **Effective Range:** 1.0 – 5.0 meters (LiDAR-measured slant distance to background)
 - **Water Exit Velocity:** ~7 m/s
-- **Pump Pulse Duration:** 300ms constant
-- **Trajectory:** Downward parabolic — gravity ASSISTS the shot
-- **Ballistic Offset:** Since the turret fires downward from overhead, gravity accelerates the water stream toward the target zone. The pitch correction is smaller than for a ground-level turret. The offset formula accounts for the downward slant angle.
-- **Formula:** `Δpitch = -arctan(g · d² / (2 · v₀² · cos²(α)))` where `d` = LiDAR distance, `α` = raw pitch angle, `g` = 9.81 m/s², `v₀` = 7 m/s. Negative because gravity pulls the stream INTO the target zone (downward assist).
-- **Wind Calibration:** "Phantom Ping" — test shot, track droplet drift, update offset
+- **Pump Pulse Duration:** 600ms (Gravity Airburst sustained pulse)
+- **Airburst Strategy:** Fire high-pressure mist cloud above target's projected flight path; mist loses kinetic energy at apex and falls as wide "rain cloud" AoE
+- **Airburst Offset:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard)
 
-## 5. Calibration Procedure
+## 6. Calibration Procedure
 
 1. Boot Jetson, wait for 15s relay boot delay
 2. Run `phantom_ping.py` to fire test shots at known distances
 3. Scout camera tracks water droplet trajectory
-4. System generates parabolic lookup table (distance → pitch angle)
+4. System generates lookup table (distance → optimal airburst offset)
 5. Store calibration in `calibration.json`
 
+## 7. Training & Tuning Pipeline
+
+Training and tuning are performed on a **separate Windows workstation** (RTX 3070 8GB), NOT on the Jetson.
+
+### 7.1 Scout Tuning (OpenCV — No AI)
+- Tool: `tools/sentry_control_center/app.py` Tab 1
+- Upload test video → adjust MOG2 sliders → export `scout_config.json`
+- Copy `scout_config.json` to Jetson project root
+
+### 7.2 Sniper Training (YOLOv8 — GPU-Intensive)
+- Tool: `tools/sentry_control_center/app.py` Tab 2
+- Provide labeled dataset (`data.yaml` from Roboflow)
+- Train model → collect `best.pt`
+- Copy `best.pt` to Jetson → convert to TensorRT `.engine` (see `gemini.md` §3)
