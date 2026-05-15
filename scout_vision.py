@@ -1,159 +1,118 @@
+# Implements: SW-001 §2.1 — ScoutAgent
 import cv2
+import threading
+import json
+import os
 import time
-import queue
 
-class ScoutAgent:
-    def __init__(self, output_queue, display=False):
-        """
-        Scout Vision Agent for Mosquito Sentry.
-        Runs at 120 FPS using an Arducam OV9281 (MIPI CSI-2 Port 0).
-        Uses Background Subtraction (MOG2) to find fast moving targets.
+class ScoutVision:
+    """
+    Pipeline 1: The Scout
+    High-speed motion tracker using OpenCV MOG2.
+    Runs in a dedicated background thread to prevent blocking.
+    """
+    def __init__(self, config_path="scout_config.json"):
+        self.config_path = config_path
+        self.history = 500
+        self.threshold = 16
+        self.min_area = 500
         
-        Args:
-            output_queue (queue.Queue or multiprocessing.Queue): Thread-safe queue for tracking coordinates.
-            display (bool): If True, shows cv2.imshow windows for debugging.
-        """
-        self.output_queue = output_queue
-        self.display = display
-        self.running = False
+        self.load_config()
         
-        # MOG2 Background Subtractor:
-        # history: 500 frames (adapts over time)
-        # varThreshold: 16 (lower = more sensitive to movement)
-        # detectShadows: False (mosquitoes move too fast to cast useful shadows, saves compute)
-        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=16, detectShadows=False)
+        self.target_x = None
+        self.target_y = None
         
-        self.prev_x = None
-        self.prev_y = None
-        self.prev_time = None
+        self._lock = threading.Lock()
+        self._running = False
+        self._thread = None
+        self._cap = None
+        
+        self.backSub = cv2.createBackgroundSubtractorMOG2(
+            history=self.history, 
+            varThreshold=self.threshold, 
+            detectShadows=False
+        )
 
-    def get_gstreamer_pipeline(self):
-        """
-        Returns a highly optimized GStreamer string for the Jetson ISP.
-        Targets /dev/video0 (sensor-id=0) at 1280x800 @ 120 FPS.
-        """
-        return (
+    def load_config(self):
+        if os.path.exists(self.config_path):
+            try:
+                with open(self.config_path, 'r') as f:
+                    config = json.load(f)
+                    self.history = config.get("history", 500)
+                    self.threshold = config.get("threshold", 16)
+                    self.min_area = config.get("min_area", 500)
+                print(f"[ScoutVision] Loaded config: H={self.history}, T={self.threshold}, A={self.min_area}")
+            except Exception as e:
+                print(f"[ScoutVision] Failed to load config: {e}")
+        else:
+            print("[ScoutVision] Config not found, using defaults.")
+
+    def start(self):
+        if self._running:
+            return
+            
+        # GStreamer pipeline with drop=true max-buffers=1 for strict memory constraint
+        pipeline = (
             "nvarguscamerasrc sensor-id=0 ! "
             "video/x-raw(memory:NVMM), width=1280, height=800, format=NV12, framerate=120/1 ! "
             "nvvidconv ! video/x-raw, format=BGRx ! "
             "videoconvert ! video/x-raw, format=BGR ! "
-            "appsink drop=1"
+            "appsink drop=true max-buffers=1"
         )
-
-    def run(self):
-        """
-        Main tracking loop. Reads from the GStreamer pipeline, applies background
-        subtraction, finds the largest moving contour, and computes velocity.
-        """
-        pipeline = self.get_gstreamer_pipeline()
-        print(f"[ScoutAgent] Initializing GStreamer Pipeline:\n{pipeline}")
         
-        cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-        
-        if not cap.isOpened():
-            print("[ScoutAgent] ERROR: Failed to open camera. Check GStreamer pipeline and MIPI connection.")
+        self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+        if not self._cap.isOpened():
+            print("[ScoutVision] Warning: GStreamer failed. Trying /dev/video0...")
+            self._cap = cv2.VideoCapture(0)
+            
+        if not self._cap.isOpened():
+            print("[ScoutVision] Error: Cannot open Scout camera.")
             return
 
-        self.running = True
-        print("[ScoutAgent] Camera initialized. Starting 120FPS tracking loop...")
+        self._running = True
+        self._thread = threading.Thread(target=self._process_loop, daemon=True)
+        self._thread.start()
+        print("[ScoutVision] Started.")
 
-        try:
-            while self.running:
-                ret, frame = cap.read()
-                if not ret:
-                    print("[ScoutAgent] WARNING: Dropped frame.")
-                    continue
-
-                current_time = time.time()
+    def _process_loop(self):
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        
+        while self._running:
+            ret, frame = self._cap.read()
+            if not ret:
+                time.sleep(0.01)
+                continue
                 
-                # Pre-process: Slight blur to reduce sensor noise
-                blurred = cv2.GaussianBlur(frame, (5, 5), 0)
-                
-                # Apply Background Subtraction
-                fg_mask = self.bg_subtractor.apply(blurred)
-                
-                # Morphological operations to clean up noisy pixels
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-                fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_OPEN, kernel)
-                
-                # Find contours
-                contours, _ = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                
-                best_contour = None
-                max_area = 0
-                
-                for contour in contours:
-                    area = cv2.contourArea(contour)
-                    # Filter out tiny noise (area < 5) and massive changes (area > 5000)
-                    if 5 < area < 5000:
-                        if area > max_area:
-                            max_area = area
-                            best_contour = contour
-                            
-                if best_contour is not None:
-                    # Calculate centroid
-                    M = cv2.moments(best_contour)
+            fgMask = self.backSub.apply(frame)
+            fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
+            
+            contours, _ = cv2.findContours(fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            largest_area = 0
+            best_cx, best_cy = None, None
+            
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                if area >= self.min_area and area > largest_area:
+                    largest_area = area
+                    M = cv2.moments(contour)
                     if M["m00"] > 0:
-                        cx = int(M["m10"] / M["m00"])
-                        cy = int(M["m01"] / M["m00"])
-                        
-                        vx, vy = 0.0, 0.0
-                        
-                        # Calculate velocity if we have a previous state
-                        if self.prev_x is not None and self.prev_time is not None:
-                            dt = current_time - self.prev_time
-                            if dt > 0:
-                                vx = (cx - self.prev_x) / dt
-                                vy = (cy - self.prev_y) / dt
-                        
-                        # Update state
-                        self.prev_x = cx
-                        self.prev_y = cy
-                        self.prev_time = current_time
-                        
-                        # Push to Turret Queue (Non-blocking)
-                        try:
-                            # Push format: (x, y, velocity_x, velocity_y)
-                            self.output_queue.put_nowait((cx, cy, vx, vy))
-                        except queue.Full:
-                            pass # If queue is full, drop the coordinate (turret is behind)
-                            
-                        if self.display:
-                            cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)
-                            cv2.putText(frame, f"V: ({vx:.1f}, {vy:.1f})", (cx + 10, cy), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                        best_cx = int(M["m10"] / M["m00"])
+                        best_cy = int(M["m01"] / M["m00"])
+            
+            with self._lock:
+                self.target_x = best_cx
+                self.target_y = best_cy
 
-                else:
-                    # No target found, reset tracking history to prevent erratic velocity on next pickup
-                    self.prev_x = None
-                    self.prev_y = None
-                    self.prev_time = None
-                    # Send None so the Turret knows target is lost
-                    try:
-                        self.output_queue.put_nowait(None)
-                    except queue.Full:
-                        pass
-                
-                if self.display:
-                    cv2.imshow("Scout Vision - Tracking", frame)
-                    cv2.imshow("Scout Vision - Foreground Mask", fg_mask)
-                    if cv2.waitKey(1) & 0xFF == ord('q'):
-                        self.running = False
+    def get_target(self):
+        """Returns (X, Y) of the largest moving contour, or (None, None)."""
+        with self._lock:
+            return self.target_x, self.target_y
 
-        finally:
-            print("[ScoutAgent] Shutting down.")
-            cap.release()
-            if self.display:
-                cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    # Standalone Testing Block
-    print("Starting ScoutAgent in Standalone Testing Mode...")
-    # Using a standard Queue for testing
-    test_queue = queue.Queue(maxsize=10)
-    scout = ScoutAgent(output_queue=test_queue, display=True)
-    
-    # We can run the agent directly in the main thread for simple testing
-    try:
-        scout.run()
-    except KeyboardInterrupt:
-        scout.running = False
+    def stop(self):
+        self._running = False
+        if self._thread:
+            self._thread.join()
+        if self._cap:
+            self._cap.release()
+        print("[ScoutVision] Stopped.")
