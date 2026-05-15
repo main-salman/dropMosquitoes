@@ -64,3 +64,28 @@
 - **vision.py:** Added `get_resolution()` helper to CameraStream
 - **HW-001:** Added §6 (TF-Luna LiDAR spec), bumped to v3.0
 - **SW-001:** Added §2.5 (LiDAR polling), §2.6 (ballistic engine), updated §4 (overhead physics model), bumped to v2.0
+
+## 2026-05-15
+
+### `c0245b3` — Calibration tab + calibration API endpoints
+- **templates/index.html:** New Calibration tab with 4 interactive wizards (LiDAR, gimbal, ballistic, log)
+- **app.py:** 8 new `/api/calibration/*` endpoints for calibration workflow
+
+### `0083616` — Detailed wiring diagrams + 11 new reference images
+- **diagrams/:** 12 new draw.io wiring diagrams (wire_01 through wire_12)
+- **diagrams/images/:** 11 new technical reference images (overhead mount, LiDAR wiring, UART, etc.)
+
+### `155d6e0` — SW-001 §2.7: Predictive Lead Engine spec
+- **SW-001:** Added §2.7 (velocity vectoring, ToF lead, parabolic drop sequence)
+
+### Predictive Lead Engine — code implementation
+- **vision.py:** Added `VelocityTracker` class (SW-001 §2.7.1) — EMA-based centroid tracking, pixel-to-angular velocity conversion
+- **hardware.py:** Added `compute_predictive_lead()` (SW-001 §2.7.2-2.7.3) — 3-stage pipeline: raw angles → velocity lead → gravity drop
+- **app.py:** Updated `/api/gimbal/click` to use full 3-stage predictive lead pipeline; added `/api/velocity`, `/api/velocity/update`, `/api/velocity/reset` endpoints; instantiated `VelocityTracker`
+
+### ECO-2026-001: 1N4007 Flyback Diode (Critical Safety Patch)
+- **HW-001:** Added §5.1 — Critical Electrical Safety section with flyback diode wiring instructions, bumped to v3.1
+- **parts.csv:** Updated flyback diode BOM entry with detailed notes
+- **diagrams/wire_03_relay_pump.drawio:** Rebuilt with 1N4007 diode in reverse-bias, CRITICAL callout
+- **diagrams/images/flyback_diode_wiring.png:** New wiring reference image with clamped-vs-unclamped spike comparison
+- **Cursor extension:** Installed `hediet.vscode-drawio` for native draw.io viewing

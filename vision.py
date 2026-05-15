@@ -1,4 +1,4 @@
-# Implements: SW-001 §1, §2.1, §2.3 — Camera pipelines and TensorRT inference
+# Implements: SW-001 §1, §2.1, §2.3, §2.7.1 — Camera pipelines, TensorRT inference, velocity tracking
 """
 vision.py — Sniper Messy Mortar Vision System
 
@@ -25,6 +25,155 @@ try:
 except ImportError:
     YOLO_AVAILABLE = False
     print("[vision] WARNING: ultralytics not installed. AI detection disabled.")
+
+from collections import deque
+
+
+# ============================================================================
+# VELOCITY TRACKER — SW-001 §2.7.1
+#
+# Tracks bounding box centroids across consecutive frames to compute a
+# 2D velocity vector (vx, vy) in pixels/second. Converts to angular
+# velocity (ω_pitch, ω_yaw) using the camera's known FOV and resolution.
+# ============================================================================
+
+class VelocityTracker:
+    """
+    Tracks target centroid across frames and computes velocity vectors.
+
+    SW-001 §2.7.1: Maintains a sliding window of centroid positions (minimum 3,
+    ideally 5-8 at 120 FPS) and computes:
+      - Pixel velocity (vx, vy) in px/s via exponential moving average
+      - Angular velocity (ω_pitch, ω_yaw) in deg/s using camera FOV
+
+    Thread-safe for concurrent reads from the ballistic pipeline.
+    """
+
+    def __init__(self, history_size: int = 8, fps: float = 120.0,
+                 fov_h: float = 110.0, fov_v: float = 75.0,
+                 frame_w: int = 1280, frame_h: int = 800,
+                 ema_alpha: float = 0.4):
+        """
+        Args:
+            history_size: Number of centroid samples to keep (5-8 ideal).
+            fps: Camera framerate (for time delta calculation).
+            fov_h: Horizontal field of view in degrees.
+            fov_v: Vertical field of view in degrees.
+            frame_w: Frame width in pixels.
+            frame_h: Frame height in pixels.
+            ema_alpha: Exponential moving average smoothing factor (0-1).
+                       Higher = more responsive, lower = smoother.
+        """
+        self.history_size = history_size
+        self.fps = fps
+        self.fov_h = fov_h
+        self.fov_v = fov_v
+        self.frame_w = frame_w
+        self.frame_h = frame_h
+        self.ema_alpha = ema_alpha
+
+        # Sliding window of (x, y, timestamp) tuples
+        self._history = deque(maxlen=history_size)
+        self._lock = threading.Lock()
+
+        # Current velocity state
+        self._vx_px = 0.0   # pixels/second
+        self._vy_px = 0.0   # pixels/second
+        self._omega_yaw = 0.0    # degrees/second
+        self._omega_pitch = 0.0  # degrees/second
+        self._speed_px = 0.0     # magnitude in px/s
+
+    def update(self, cx: int, cy: int):
+        """
+        Feed a new centroid position. Call once per frame.
+
+        Args:
+            cx, cy: Bounding box centroid in pixels.
+        """
+        now = time.time()
+        with self._lock:
+            self._history.append((cx, cy, now))
+
+            if len(self._history) >= 3:
+                self._compute_velocity()
+
+    def _compute_velocity(self):
+        """
+        Compute velocity using exponential moving average of centroid deltas.
+        Must be called with self._lock held.
+        """
+        vx_sum = 0.0
+        vy_sum = 0.0
+        weight_sum = 0.0
+
+        for i in range(1, len(self._history)):
+            x0, y0, t0 = self._history[i - 1]
+            x1, y1, t1 = self._history[i]
+            dt = t1 - t0
+            if dt < 1e-6:
+                continue
+
+            # Raw per-frame velocity in px/s
+            dvx = (x1 - x0) / dt
+            dvy = (y1 - y0) / dt
+
+            # Weight recent samples more heavily (EMA-like)
+            weight = self.ema_alpha ** (len(self._history) - 1 - i)
+            vx_sum += dvx * weight
+            vy_sum += dvy * weight
+            weight_sum += weight
+
+        if weight_sum > 0:
+            self._vx_px = vx_sum / weight_sum
+            self._vy_px = vy_sum / weight_sum
+        else:
+            self._vx_px = 0.0
+            self._vy_px = 0.0
+
+        self._speed_px = (self._vx_px ** 2 + self._vy_px ** 2) ** 0.5
+
+        # Convert pixel velocity to angular velocity (degrees/second)
+        # deg/px = FOV / resolution
+        deg_per_px_h = self.fov_h / self.frame_w
+        deg_per_px_v = self.fov_v / self.frame_h
+
+        self._omega_yaw = self._vx_px * deg_per_px_h
+        self._omega_pitch = -self._vy_px * deg_per_px_v  # Invert Y for pitch
+
+    def get_velocity(self) -> dict:
+        """
+        Return current velocity state as a dict.
+
+        Returns:
+            dict with keys: vx_px, vy_px, speed_px, omega_yaw, omega_pitch,
+            samples (number of history entries).
+        """
+        with self._lock:
+            return {
+                "vx_px": round(self._vx_px, 1),
+                "vy_px": round(self._vy_px, 1),
+                "speed_px": round(self._speed_px, 1),
+                "omega_yaw": round(self._omega_yaw, 3),
+                "omega_pitch": round(self._omega_pitch, 3),
+                "samples": len(self._history)
+            }
+
+    def get_angular_velocity(self) -> tuple:
+        """
+        Return (ω_pitch, ω_yaw) in degrees/second for the ballistic pipeline.
+        """
+        with self._lock:
+            return self._omega_pitch, self._omega_yaw
+
+    def reset(self):
+        """Clear tracking history (e.g., when target is lost)."""
+        with self._lock:
+            self._history.clear()
+            self._vx_px = 0.0
+            self._vy_px = 0.0
+            self._omega_yaw = 0.0
+            self._omega_pitch = 0.0
+            self._speed_px = 0.0
 
 
 class CameraStream:

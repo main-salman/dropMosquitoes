@@ -1,10 +1,10 @@
 <mxfile>
-  <diagram name="Relay to Pump" id="relay1">
-    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#1a1a2e">
+  <diagram name="Relay to Pump + Flyback Diode" id="relay1_eco">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#1a1a2e">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 03: Relay CH1 → Water Pump&lt;/b&gt;&lt;br&gt;GPIO 18 triggers relay, Wago +12V powers pump through NO contact" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="700" height="50" as="geometry"/></mxCell>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 03: Relay CH1 → Water Pump + Flyback Diode (ECO)&lt;/b&gt;&lt;br&gt;GPIO 18 triggers relay, 1N4007 diode protects relay from inductive kickback" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="800" height="50" as="geometry"/></mxCell>
         <!-- Jetson GPIO -->
         <mxCell id="gpio" value="&lt;b&gt;Jetson GPIO Header&lt;/b&gt;&lt;br&gt;Pin 12 (BCM 18)&lt;br&gt;&lt;font color='#FFEB3B'&gt;YELLOW jumper wire&lt;/font&gt;&lt;br&gt;Pin 6 = GND&lt;br&gt;&lt;font color='#666'&gt;BLACK jumper wire&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="200" height="110" as="geometry"/></mxCell>
         <!-- Relay Board CH1 -->
@@ -18,14 +18,25 @@
         <!-- +12V → COM -->
         <mxCell id="e3" value="&lt;font color='#F44336'&gt;RED wire → COM&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="w12" target="rel"><mxGeometry relative="1" as="geometry"/></mxCell>
         <!-- Pump -->
-        <mxCell id="pump" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;&lt;font color='#F44336'&gt;RED wire (+)&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK wire (-)&lt;/font&gt;&lt;br&gt;Submerged in reservoir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="720" y="130" width="200" height="100" as="geometry"/></mxCell>
+        <mxCell id="pump" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;⚡ INDUCTIVE LOAD&lt;br&gt;&lt;font color='#F44336'&gt;RED wire (+)&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK wire (-)&lt;/font&gt;&lt;br&gt;Submerged in reservoir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="720" y="110" width="200" height="120" as="geometry"/></mxCell>
         <!-- NO → Pump RED -->
         <mxCell id="e4" value="&lt;font color='#F44336'&gt;NO contact → Pump RED (+)&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="rel" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
         <!-- Wago GND -->
         <mxCell id="wgn" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="720" y="340" width="120" height="50" as="geometry"/></mxCell>
         <!-- Pump BLACK → GND -->
         <mxCell id="e5" value="&lt;font color='#888'&gt;Pump BLACK (-) → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="pump" target="wgn"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="n1" value="Flow: GPIO HIGH → Relay closes → +12V flows COM→NO → Pump runs for 300ms → GPIO LOW → Relay opens" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="430" width="700" height="30" as="geometry"/></mxCell>
+
+        <!-- ======== ECO: FLYBACK DIODE ======== -->
+        <mxCell id="diode" value="&lt;b&gt;1N4007 Diode&lt;/b&gt;&lt;br&gt;REVERSE-BIASED&lt;br&gt;&lt;hr&gt;Striped end (K) → +12V&lt;br&gt;Black end (A) → GND&lt;br&gt;&lt;hr&gt;&lt;font color='#FF9800'&gt;Absorbs flyback spike&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#880E4F;strokeColor=#FF4081;fontColor=#FFF;fontSize=11;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="1020" y="140" width="200" height="140" as="geometry"/></mxCell>
+        <!-- Diode connections to pump terminals -->
+        <mxCell id="d1" value="&lt;font color='#FF4081'&gt;Cathode (K̅) → Pump +&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF4081;strokeWidth=3;dashed=1;dashPattern=8 4;fontSize=10;exitX=0;exitY=0.25;entryX=1;entryY=0.25;" edge="1" parent="1" source="diode" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="d2" value="&lt;font color='#FF4081'&gt;Anode (A) → Pump -&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF4081;strokeWidth=3;dashed=1;dashPattern=8 4;fontSize=10;exitX=0;exitY=0.75;entryX=1;entryY=0.75;" edge="1" parent="1" source="diode" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- CRITICAL callout -->
+        <mxCell id="callout" value="⚠ CRITICAL: 1N4007 Flyback Diode (Reverse-Biased)&lt;br&gt;&lt;br&gt;The 12V pump is an &lt;b&gt;inductive load&lt;/b&gt;. When the relay opens,&lt;br&gt;the collapsing magnetic field generates a high-voltage spike&lt;br&gt;that WILL destroy the relay's internal MOSFETs.&lt;br&gt;&lt;br&gt;The diode shorts this spike safely across the pump coil.&lt;br&gt;&lt;font color='#FFEB3B'&gt;Without this diode, the relay will fail within days.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#FF4081;fontColor=#FF8A80;fontSize=11;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="40" y="440" width="580" height="150" as="geometry"/></mxCell>
+        <!-- Wiring options -->
+        <mxCell id="opts" value="&lt;b&gt;Installation Options:&lt;/b&gt;&lt;br&gt;① Solder diode directly across pump motor terminals&lt;br&gt;② Insert diode legs into Wago connectors sharing pump power leads" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#FF9800;fontColor=#DDD;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="680" y="460" width="500" height="70" as="geometry"/></mxCell>
+        <!-- Flow note -->
+        <mxCell id="n1" value="Flow: GPIO HIGH → Relay closes → +12V flows COM→NO → Pump runs for 300ms → GPIO LOW → Relay opens → Diode absorbs spike" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="900" height="30" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>

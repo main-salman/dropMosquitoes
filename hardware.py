@@ -1,6 +1,6 @@
-# Implements: HW-001 §3-§6, SW-001 §2.2, §2.4-§2.6, SAFE-001 §1-§2
+# Implements: HW-001 §3-§6, SW-001 §2.2, §2.4-§2.7, SAFE-001 §1-§2
 # Hardware abstraction layer for GPIO relays, Storm32 gimbal, TF-Luna LiDAR,
-# and overhead ballistic offset math.
+# overhead ballistic offset math, and predictive lead engine.
 """
 hardware.py — Sniper Messy Mortar Hardware Control
 
@@ -521,3 +521,102 @@ def pixel_to_angle(px: int, py: int,
     pitch_deg = -norm_y * fov_v      # Negative = down (invert for gimbal)
 
     return pitch_deg, yaw_deg
+
+
+# ============================================================================
+# PREDICTIVE LEAD ENGINE — SW-001 §2.7
+#
+# Three-stage pipeline executed for every fire decision:
+#   1. pixel_to_angle()        → raw pitch/yaw
+#   2. + velocity lead offsets → corrected for target movement during ToF
+#   3. + gravity drop          → final corrected pitch
+#
+# This function combines stages 2 and 3 (§2.7.2 + §2.7.3).
+# Stage 1 (pixel_to_angle) and velocity tracking (§2.7.1 VelocityTracker)
+# are handled upstream.
+# ============================================================================
+
+def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
+                            distance_m: float,
+                            omega_pitch: float = 0.0,
+                            omega_yaw: float = 0.0) -> tuple:
+    """
+    Apply velocity lead + parabolic drop to raw gimbal angles.
+
+    SW-001 §2.7.2: Calculates Time-of-Flight, then applies the target's
+    angular velocity over that window to predict where the target WILL BE
+    when the water arrives.
+
+    SW-001 §2.7.3: After lead offsets, applies the gravity drop correction
+    to the FINAL pitch angle.
+
+    Execution order:
+      1. raw angles (input)
+      2. + lead_pitch / lead_yaw  (velocity-corrected aim point)
+      3. + Δpitch (gravity drop)  (final corrected pitch)
+
+    Args:
+        raw_pitch: Raw pitch from pixel_to_angle (degrees).
+        raw_yaw: Raw yaw from pixel_to_angle (degrees).
+        distance_m: LiDAR-measured slant distance (meters).
+        omega_pitch: Target angular velocity in pitch (deg/s) from VelocityTracker.
+        omega_yaw: Target angular velocity in yaw (deg/s) from VelocityTracker.
+
+    Returns:
+        (final_pitch, final_yaw, lead_info) where lead_info is a dict with
+        all intermediate values for GUI/calibration display.
+    """
+    if distance_m < 0.3 or distance_m > 8.0:
+        # Out of effective range — pass through raw angles, no correction
+        return raw_pitch, raw_yaw, {
+            "in_range": False,
+            "distance_m": distance_m,
+            "tof_ms": 0.0,
+            "lead_pitch_deg": 0.0,
+            "lead_yaw_deg": 0.0,
+            "drop_offset_deg": 0.0,
+            "gravity_drop_cm": 0.0,
+            "total_pitch_correction": 0.0,
+            "total_yaw_correction": 0.0
+        }
+
+    v0 = WATER_EXIT_VELOCITY
+    alpha_rad = math.radians(raw_pitch)
+
+    # --- Stage 2: Time-of-Flight Lead (§2.7.2) ---
+    cos_alpha = math.cos(alpha_rad)
+    if abs(cos_alpha) < 0.01:
+        cos_alpha = 0.01  # Prevent division by zero
+    tof = distance_m / (v0 * cos_alpha)  # seconds
+
+    # Predict where target will be after ToF
+    lead_pitch = omega_pitch * tof  # degrees
+    lead_yaw = omega_yaw * tof      # degrees
+
+    # Apply lead to raw angles
+    led_pitch = raw_pitch + lead_pitch
+    led_yaw = raw_yaw + lead_yaw
+
+    # --- Stage 3: Parabolic Drop (§2.7.3) ---
+    # Gravity drop during flight (meters)
+    gravity_drop_m = 0.5 * GRAVITY * tof * tof
+
+    # Angular correction (negative = gravity assists downward shot)
+    drop_offset_deg = -math.degrees(math.atan2(gravity_drop_m, distance_m))
+
+    # Final corrected pitch = led_pitch + gravity drop
+    final_pitch = led_pitch + drop_offset_deg
+    final_yaw = led_yaw
+
+    return final_pitch, final_yaw, {
+        "in_range": True,
+        "distance_m": round(distance_m, 2),
+        "tof_ms": round(tof * 1000, 1),
+        "lead_pitch_deg": round(lead_pitch, 3),
+        "lead_yaw_deg": round(lead_yaw, 3),
+        "drop_offset_deg": round(drop_offset_deg, 2),
+        "gravity_drop_cm": round(gravity_drop_m * 100, 1),
+        "total_pitch_correction": round(lead_pitch + drop_offset_deg, 3),
+        "total_yaw_correction": round(lead_yaw, 3)
+    }
+

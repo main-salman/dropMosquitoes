@@ -1,4 +1,4 @@
-# Implements: SW-001 §2 — Flask server, MJPEG streams, REST API
+# Implements: SW-001 §2, §2.7 — Flask server, MJPEG streams, REST API, predictive lead
 """
 app.py — Sniper Messy Mortar Flask Server
 
@@ -23,10 +23,10 @@ from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
     RelayController, GimbalController, LiDARController,
-    pixel_to_angle, compute_ballistic_offset,
+    pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
     YAW_LIMIT, PITCH_LIMIT
 )
-from vision import CameraStream, YOLODetector
+from vision import CameraStream, YOLODetector, VelocityTracker
 
 # ============================================================================
 # FLASK APP INITIALIZATION
@@ -38,6 +38,9 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 relay = RelayController()
 gimbal = GimbalController()
 lidar = LiDARController()
+
+# Velocity tracker for predictive lead — SW-001 §2.7.1
+velocity_tracker = VelocityTracker()
 
 # Camera streams — dimensions must match HW-001 §2
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -151,11 +154,12 @@ def api_gimbal_center():
 @app.route('/api/gimbal/click', methods=['POST'])
 def api_gimbal_click():
     """
-    Click-to-aim with ballistic correction.
+    Click-to-aim with predictive lead + ballistic correction.
 
-    Receives pixel coordinates from a video feed click, converts to angles,
-    grabs LiDAR distance, applies parabolic drop correction for the
-    overhead mount, and moves the gimbal.
+    SW-001 §2.7 — Three-stage pipeline:
+      1. pixel_to_angle()          → raw pitch/yaw
+      2. + velocity lead offsets   → corrected for target movement during ToF
+      3. + gravity drop            → final corrected pitch
 
     Body: {"px": int, "py": int, "frame_w": int, "frame_h": int}
     """
@@ -165,25 +169,29 @@ def api_gimbal_click():
     fw = int(data.get('frame_w', 1280))
     fh = int(data.get('frame_h', 800))
 
-    # Step 1: Pixel → raw angles
+    # Stage 1: Pixel → raw angles (§2.7 step 1)
     raw_pitch, raw_yaw = pixel_to_angle(px, py, fw, fh)
 
-    # Step 2: Grab LiDAR distance
+    # Get LiDAR distance for ToF calculation
     distance_m = lidar.read_distance()
 
-    # Step 3: Apply ballistic offset (overhead mount correction)
-    corrected_pitch, corrected_yaw, offset_info = compute_ballistic_offset(
-        raw_pitch, raw_yaw, distance_m
+    # Get target velocity from VelocityTracker (§2.7.1)
+    omega_pitch, omega_yaw = velocity_tracker.get_angular_velocity()
+
+    # Stages 2+3: Velocity lead + parabolic drop (§2.7.2 + §2.7.3)
+    final_pitch, final_yaw, lead_info = compute_predictive_lead(
+        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw
     )
 
-    # Step 4: Move gimbal to corrected position
-    gimbal.set_angles(corrected_pitch, corrected_yaw)
+    # Move gimbal to fully corrected position
+    gimbal.set_angles(final_pitch, final_yaw)
 
     return jsonify({
         "target_px": [px, py],
         "raw_pitch": round(raw_pitch, 2),
         "raw_yaw": round(raw_yaw, 2),
-        "ballistic": offset_info,
+        "predictive_lead": lead_info,
+        "velocity": velocity_tracker.get_velocity(),
         **gimbal.get_status()
     })
 
@@ -196,6 +204,37 @@ def api_gimbal_click():
 def api_lidar():
     """Return current LiDAR distance and signal strength."""
     return jsonify(lidar.get_status())
+
+
+# ============================================================================
+# VELOCITY TRACKER API — SW-001 §2.7.1
+# ============================================================================
+
+@app.route('/api/velocity')
+def api_velocity():
+    """Return current target velocity and angular rates."""
+    return jsonify(velocity_tracker.get_velocity())
+
+
+@app.route('/api/velocity/update', methods=['POST'])
+def api_velocity_update():
+    """
+    Feed a centroid position into the velocity tracker.
+    Body: {"cx": int, "cy": int}
+    Used by the scout agent or for manual testing.
+    """
+    data = request.get_json(force=True)
+    cx = int(data.get('cx', 0))
+    cy = int(data.get('cy', 0))
+    velocity_tracker.update(cx, cy)
+    return jsonify(velocity_tracker.get_velocity())
+
+
+@app.route('/api/velocity/reset', methods=['POST'])
+def api_velocity_reset():
+    """Reset velocity tracker (target lost or scene change)."""
+    velocity_tracker.reset()
+    return jsonify({"reset": True})
 
 
 # ============================================================================

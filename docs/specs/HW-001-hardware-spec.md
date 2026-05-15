@@ -1,8 +1,8 @@
 # HW-001: Hardware Specification
 
 **Status:** APPROVED  
-**Version:** 3.0  
-**Last Updated:** 2026-05-14  
+**Version:** 3.1  
+**Last Updated:** 2026-05-15  
 **Owner:** Salman
 
 ## 1. Compute Platform
@@ -63,6 +63,29 @@
   - CH1: Pump trigger (GPIO → 3.3V control → NO closes → Pump gets +12V)
   - CH2: Gimbal boot delay (holds gimbal off until Jetson boots)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
+
+### 5.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)
+
+> **⚠ MANDATORY HARDWARE PATCH — DO NOT SKIP**
+
+The 12V Velleman water pump is an **inductive load**. When the relay's solid-state MOSFET turns the pump OFF, the collapsing magnetic field in the pump's motor coil generates a high-voltage **flyback spike** that vastly exceeds the relay's 16V maximum tolerance. **Without protection, this spike WILL destroy the relay's internal MOSFETs within days of operation.**
+
+#### Component
+- **Part:** 1N4007 General Purpose Rectifier Diode (1000V / 1A)
+- **Cost:** ~$0.10 (sold in 100-packs)
+- **Purpose:** Inductive load isolation / freewheeling diode
+
+#### Wiring Configuration
+The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (blocks normal current flow, only conducts the reverse-polarity flyback spike):
+
+| Diode Lead | Marking | Connects To |
+|:-----------|:--------|:------------|
+| **Cathode** (K) | Striped / banded end | Pump **Positive** (+12V) wire |
+| **Anode** (A) | Plain / unmarked end | Pump **Negative** (GND) wire |
+
+#### Placement Options (choose one)
+1. **Direct solder:** Solder the diode legs directly across the pump motor's input terminals (most reliable, shortest path).
+2. **Wago insertion:** Insert the diode legs into the same Wago lever-nut ports that carry the pump's +12V and GND leads.
 
 ## 6. Distance Sensor (LiDAR)
 
