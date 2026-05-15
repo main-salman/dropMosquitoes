@@ -134,3 +134,16 @@
 - **[FEATURE]** Added post-training `best.pt` path display to Sniper Trainer tab
 - **[DOCS]** Rewrote `tools/sentry_control_center/instructions.md` with full export workflow and TensorRT conversion guide
 - **[CODE]** Committed previously untracked `3d_prints/viewer.html` (OpenSCAD nozzle bracket viewer)
+
+## 2026-05-15 — GAP ANALYSIS & REMEDIATION
+- **[PROCESS]** Conducted full end-to-end project audit — identified 8 gaps across critical, significant, and minor categories
+- **[SPEC]** Rewrote `SW-001-software-spec.md` to v3.0: synced all filenames, updated physics to Gravity Airburst, added orchestration sequence (§3), added training pipeline section (§7)
+- **[CODE]** Shipped default `scout_config.json` with sensible MOG2 defaults so first Jetson boot doesn't fail
+- **[BUG FIX]** Fixed `sentry.service` — changed `ExecStart` from `app.py` to `main.py` to match Two-Brain architecture
+- **[CODE]** Created `deploy.sh` — rsync-based deployment script for dev→Jetson code transfer with dependency installation
+- **[CODE]** Added persistent engagement logging to `main.py` — structured JSONL log (`engagements.jsonl`) recording every fire/reject event with coordinates, offsets, and session statistics
+- **[CODE]** Created `phantom_ping.py` — interactive and CLI calibration tool for tuning airburst offset, saves results to `calibration.json`
+- **[CODE]** Created `ir_controller.py` — GPIO-controlled IR illuminator with dusk/dawn auto-scheduling (checks system time every 60s)
+- **[DOCS]** Created `docs/DATASET_STRATEGY.md` — end-to-end guide for building the mosquito training dataset (Roboflow workflow, labeling, iterative improvement)
+- **[DOCS]** Created `README.md` — project overview, architecture diagram, directory structure, quick start guide
+- **[PROCESS]** Updated `.gitignore` — added `engagements.jsonl`, `calibration.json`, `runs/`, `*.pt`, chat history files

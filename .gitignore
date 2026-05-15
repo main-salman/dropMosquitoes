@@ -24,12 +24,25 @@ Thumbs.db
 
 # Project runtime
 sentry.log
+engagements.jsonl
+calibration.json
 .sentry.pid
 *.engine
 *.onnx
+*.pt
+!requirements*.txt
 
 # Test output
 tests/output/
 
 # Gemini local
 .gemini/
+
+# YOLO training output
+runs/
+
+# Chat history (not project code)
+chathistory.txt
+firstprompt.txt
+prompt.md
+rename.md
