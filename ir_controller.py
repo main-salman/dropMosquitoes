@@ -1,12 +1,20 @@
 # Implements: HW-001 — IR Illuminator Control
 """
-ir_controller.py — IR Illuminator GPIO Control
+ir_controller.py — IR Illuminator Control
 
-Controls the IR LED illuminators for night-time operation.
-The IR LEDs are connected via a MOSFET switch to a GPIO pin.
+NOTE ON CURRENT HARDWARE:
+  The IR illuminators are currently hard-wired always-on via Wago +12V Port 3
+  (see HW-001 §4). This module is pre-built for a future upgrade where IR LEDs
+  are routed through a MOSFET or a spare relay channel for software control.
+
+  Until then, this module runs in "always-on stub" mode — it tracks the schedule
+  state internally but the physical LEDs stay on regardless.
+
+  To enable GPIO control: wire the IR illuminator's +12V through a MOSFET
+  gate connected to the pin below, and update HW-001 accordingly.
 
 Supports:
-  - Manual ON/OFF toggle
+  - Manual ON/OFF toggle (when wired through MOSFET)
   - Scheduled dusk/dawn automation (via system time)
 """
 
