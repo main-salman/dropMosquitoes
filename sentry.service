@@ -1,5 +1,5 @@
 # Sniper Messy Mortar — Systemd Auto-Start Service
-# Gap #2: Ensures the turret starts automatically on boot.
+# Runs the Two-Brain autonomous pipeline on boot.
 #
 # INSTALL:
 #   sudo cp sentry.service /etc/systemd/system/
@@ -23,7 +23,7 @@ Type=simple
 User=root
 WorkingDirectory=/home/jetson/dropMosquitoes
 ExecStartPre=/usr/bin/sleep 5
-ExecStart=/usr/bin/python3 app.py
+ExecStart=/usr/bin/python3 main.py
 Restart=always
 RestartSec=10
 WatchdogSec=60
