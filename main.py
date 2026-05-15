@@ -1,13 +1,49 @@
-# Implements: SW-001 §1 — Orchestrator
+# Implements: SW-001 §3 — Orchestrator
 import asyncio
+import logging
+import json
 import time
 import sys
+import os
+from datetime import datetime
 from scout_vision import ScoutVision
 from sniper_vision import SniperVision
 from gimbal_controller import GimbalController
 from weapon_system import WeaponSystem
 
-# Coordinate mapping constants (example)
+# ==============================================================================
+# Logging — Persistent engagement log + console output
+# ==============================================================================
+LOG_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(LOG_DIR, "sentry.log")
+ENGAGEMENT_LOG = os.path.join(LOG_DIR, "engagements.jsonl")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
+)
+log = logging.getLogger("sentry")
+
+def log_engagement(event_type: str, data: dict):
+    """Append a structured JSON line to the engagement log."""
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "event": event_type,
+        **data
+    }
+    try:
+        with open(ENGAGEMENT_LOG, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        log.warning(f"Failed to write engagement log: {e}")
+
+# ==============================================================================
+# Coordinate Mapping
+# ==============================================================================
 FRAME_W = 1280
 FRAME_H = 800
 FOV_H = 110.0
@@ -21,8 +57,11 @@ def pixel_to_angle(px: int, py: int) -> tuple:
     pitch_deg = -norm_y * FOV_V
     return pitch_deg, yaw_deg
 
+# ==============================================================================
+# Main Orchestration Loop
+# ==============================================================================
 async def orchestrator_loop():
-    print("[Main] Initializing subsystems...")
+    log.info("Initializing subsystems...")
     
     scout = ScoutVision("scout_config.json")
     sniper = SniperVision("best.pt")
@@ -35,7 +74,11 @@ async def orchestrator_loop():
     # Wait for cameras to warm up
     await asyncio.sleep(2.0)
     
-    print("[Main] Sentry is ACTIVE. Monitoring sector...")
+    log.info("Sentry is ACTIVE. Monitoring sector...")
+    log_engagement("system_start", {"airburst_offset": weapon.get_airburst_offset()})
+    
+    # Session statistics
+    stats = {"detections": 0, "verifications": 0, "engagements": 0, "rejections": 0}
     
     try:
         while True:
@@ -43,13 +86,13 @@ async def orchestrator_loop():
             tx, ty = scout.get_target()
             
             if tx is not None and ty is not None:
-                print(f"[Main] Target acquired at ({tx}, {ty}). Initiating handoff...")
+                stats["detections"] += 1
+                log.info(f"Target acquired at ({tx}, {ty}). Initiating handoff...")
                 
                 # 2. Map coordinates & Aim
                 raw_pitch, raw_yaw = pixel_to_angle(tx, ty)
-                
-                # Apply Airburst Offset dynamically
-                airburst_pitch = raw_pitch + weapon.get_airburst_offset()
+                airburst_offset = weapon.get_airburst_offset()
+                airburst_pitch = raw_pitch + airburst_offset
                 
                 gimbal.aim(airburst_pitch, raw_yaw)
                 
@@ -58,31 +101,48 @@ async def orchestrator_loop():
                 
                 # 4. Pipeline 2: Sniper Verify
                 is_verified = await sniper.verify_target()
+                stats["verifications"] += 1
                 
                 if is_verified:
-                    print("[Main] Target VERIFIED. Engaging.")
-                    # 5. The Trigger
-                    # Execute synchronous block in executor if we want strict async, 
-                    # but weapon.fire() blocks for duration_sec (0.6).
-                    # For simplicity, we just call it directly.
+                    stats["engagements"] += 1
+                    log.info(f"Target VERIFIED. Engaging. (Engagement #{stats['engagements']})")
+                    
+                    log_engagement("fire", {
+                        "target_px": [tx, ty],
+                        "raw_pitch": round(raw_pitch, 2),
+                        "raw_yaw": round(raw_yaw, 2),
+                        "airburst_offset": airburst_offset,
+                        "final_pitch": round(airburst_pitch, 2),
+                        "pulse_sec": 0.6,
+                        "session_stats": stats.copy()
+                    })
+                    
                     weapon.fire(0.6)
                     
                     # Prevent rapid re-firing on the same target
                     await asyncio.sleep(1.0)
                 else:
-                    print("[Main] Target REJECTED by Sniper. Resuming scan.")
+                    stats["rejections"] += 1
+                    log.info("Target REJECTED by Sniper. Resuming scan.")
+                    log_engagement("reject", {
+                        "target_px": [tx, ty],
+                        "raw_pitch": round(raw_pitch, 2),
+                        "raw_yaw": round(raw_yaw, 2)
+                    })
                     
             # Yield event loop
             await asyncio.sleep(0.05)
             
     except KeyboardInterrupt:
-        print("\n[Main] Shutdown signal received.")
+        log.info("Shutdown signal received.")
     finally:
+        log_engagement("system_stop", {"session_stats": stats})
+        log.info(f"Session stats: {stats}")
         scout.stop()
         sniper.stop()
         gimbal.cleanup()
         weapon.cleanup()
-        print("[Main] Shutdown complete.")
+        log.info("Shutdown complete.")
 
 if __name__ == "__main__":
     if sys.platform == 'win32':
