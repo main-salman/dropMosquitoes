@@ -116,31 +116,45 @@ sudo systemctl enable sentry.service
 ## Phase 3: Hardware Assembly
 
 > **Assembly order matters.** Test each subsystem before closing the enclosure.
+> Open the relevant wiring diagram for each step before you start.
+
+### 3.0 Reference Diagrams
+
+Keep these open during assembly (all in `diagrams/` directory):
+
+| Diagram | Use During Steps |
+|---------|------------------|
+| [assembly_1_topdown.drawio](../../diagrams/assembly_1_topdown.drawio) | Overall layout — top-down view of enclosure |
+| [assembly_2_sideview.drawio](../../diagrams/assembly_2_sideview.drawio) | Side profile — mounting heights and clearances |
+| [assembly_3_gimbal.drawio](../../diagrams/assembly_3_gimbal.drawio) | Gimbal mount detail |
+| [gimbal_payload.drawio](../../diagrams/gimbal_payload.drawio) | Camera + nozzle placement on gimbal plate |
+| [wire_11_terminal_block_hub.drawio](../../diagrams/wire_11_terminal_block_hub.drawio) | IDC40P breakout — master wiring reference |
+| [arch_11_software_v2.drawio](../../diagrams/arch_11_software_v2.drawio) | Software architecture (for understanding data flow) |
 
 ### 3.1 Assembly Sequence
 
-| Step | Task | Test Before Proceeding |
-|------|------|----------------------|
-| 1 | Mount Wago 221-415 blocks inside IP67 enclosure | Visual — levers click shut |
-| 2 | Wire 12V DC pigtail → Wago +12V port 1, GND port 1 | Multimeter: 12V across Wago ports |
-| 3 | Wire Yahboom barrel jack to Wago +12V/GND ports 2 | Jetson boots |
-| 4 | Connect 40-pin ribbon cable to Jetson GPIO header | `gpio readall` or `cat /sys/class/gpio/` |
-| 5 | Route ribbon cable out of Yahboom case, seal Yahboom lid | Ribbon cable exits cleanly |
-| 6 | Mount IDC40P terminal breakout in IP67 enclosure | Ribbon cable connects, terminals accessible |
-| 7 | Wire Monk Makes relay to IDC40P (§5.3 in HW-001) | `python3 -c "import Jetson.GPIO as GPIO; ..."` relay clicks |
-| 8 | Solder 1N4007 flyback diode across pump terminals | Visual — cathode stripe toward +12V |
-| 9 | Wire pump to relay CH1 NO contact + Wago GND | Relay trigger → pump runs |
-| 10 | Mount Scout camera (OV9281) to enclosure lid | `v4l2-ctl --list-devices` shows /dev/video0 |
-| 11 | Connect Scout CSI chain → Jetson Port 0 | `gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! fakesink` |
-| 12 | Mount Storm32 gimbal to pole/bracket | Manual — arms swing freely |
-| 13 | Wire gimbal to relay CH2 + Wago + UART (IDC40P terminals) | Power on → gimbal calibrates |
-| 14 | Mount Sniper camera (IMX219) to gimbal payload | Firmly seated on payload plate |
-| 15 | Mount Orbit nozzle on gimbal payload | Angle matches camera boresight |
-| 16 | Run Sniper CSI chain (Camera → TX → FPV HDMI → RX → Jetson Port 1) | `gst-launch-1.0 nvarguscamerasrc sensor-id=1 ! fakesink` |
-| 17 | Connect tubing: pump → check valve → tubing → nozzle | Manual pump test, check for leaks |
-| 18 | Wire TF-Luna LiDAR to IDC40P (I2C) | `i2cdetect -y 1` shows address 0x10 |
-| 19 | Mount IR illuminators to fixed post (NOT gimbal) | Power on, check with phone camera (IR visible on phone) |
-| 20 | Seal all cable glands with silicone | IP67 integrity |
+| Step | Task | Test Before Proceeding | Diagram |
+|------|------|----------------------|---------|
+| 1 | Mount Wago 221-415 blocks inside IP67 enclosure | Visual — levers click shut | [zone1_power](../../diagrams/zone1_power.drawio) |
+| 2 | Wire 12V DC pigtail → Wago +12V port 1, GND port 1 | Multimeter: 12V across Wago ports | [wire_01_power_entry](../../diagrams/wire_01_power_entry.drawio) |
+| 3 | Wire Yahboom barrel jack to Wago +12V/GND ports 2 | Jetson boots | [wire_02_jetson_power](../../diagrams/wire_02_jetson_power.drawio) |
+| 4 | Connect 40-pin ribbon cable to Jetson GPIO header | `gpio readall` or `cat /sys/class/gpio/` | [wire_09_gpio_pinout](../../diagrams/wire_09_gpio_pinout.drawio) |
+| 5 | Route ribbon cable out of Yahboom case, seal Yahboom lid | Ribbon cable exits cleanly | [wire_11_terminal_block_hub](../../diagrams/wire_11_terminal_block_hub.drawio) |
+| 6 | Mount IDC40P terminal breakout in IP67 enclosure | Ribbon cable connects, terminals accessible | [wire_11_terminal_block_hub](../../diagrams/wire_11_terminal_block_hub.drawio) |
+| 7 | Wire Monk Makes relay to IDC40P (§5.3 in HW-001) | `python3 -c "import Jetson.GPIO as GPIO; ..."` relay clicks | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
+| 8 | Solder 1N4007 flyback diode across pump terminals | Visual — cathode stripe toward +12V | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
+| 9 | Wire pump to relay CH1 NO contact + Wago GND | Relay trigger → pump runs | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
+| 10 | Mount Scout camera (OV9281) to enclosure lid | `v4l2-ctl --list-devices` shows /dev/video0 | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
+| 11 | Connect Scout CSI chain → Jetson Port 0 | `gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! fakesink` | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
+| 12 | Mount Storm32 gimbal to pole/bracket | Manual — arms swing freely | [assembly_3_gimbal](../../diagrams/assembly_3_gimbal.drawio) |
+| 13 | Wire gimbal to relay CH2 + Wago + UART (IDC40P terminals) | Power on → gimbal calibrates | [wire_04_relay_gimbal](../../diagrams/wire_04_relay_gimbal.drawio), [wire_05_gimbal_serial](../../diagrams/wire_05_gimbal_serial.drawio) |
+| 14 | Mount Sniper camera (IMX219) to gimbal payload | Firmly seated on payload plate | [gimbal_payload](../../diagrams/gimbal_payload.drawio) |
+| 15 | Mount Orbit nozzle on gimbal payload | Angle matches camera boresight | [gimbal_payload](../../diagrams/gimbal_payload.drawio) |
+| 16 | Run Sniper CSI chain (Camera → TX → FPV HDMI → RX → Jetson Port 1) | `gst-launch-1.0 nvarguscamerasrc sensor-id=1 ! fakesink` | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
+| 17 | Connect tubing: pump → check valve → tubing → nozzle | Manual pump test, check for leaks | [wire_08_fluid_path](../../diagrams/wire_08_fluid_path.drawio), [zone3_fluid](../../diagrams/zone3_fluid.drawio) |
+| 18 | Wire TF-Luna LiDAR to IDC40P (I2C) | `i2cdetect -y 1` shows address 0x10 | [wire_06_lidar_i2c](../../diagrams/wire_06_lidar_i2c.drawio) |
+| 19 | Mount IR illuminators to fixed post (NOT gimbal) | Power on, check with phone camera (IR visible on phone) | [wire_10_ir_illuminator](../../diagrams/wire_10_ir_illuminator.drawio) |
+| 20 | Seal all cable glands with silicone | IP67 integrity | [wire_12_enclosure_glands](../../diagrams/wire_12_enclosure_glands.drawio) |
 
 ### 3.2 Water Reservoir Placement
 
