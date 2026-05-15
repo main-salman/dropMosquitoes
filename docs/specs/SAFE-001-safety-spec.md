@@ -1,8 +1,8 @@
 # SAFE-001: Safety Specification
 
 **Status:** APPROVED  
-**Version:** 1.0  
-**Last Updated:** 2026-05-14  
+**Version:** 1.1  
+**Last Updated:** 2026-05-15  
 **Owner:** Salman
 
 ## 1. Hardware Safety
@@ -20,7 +20,7 @@
 | Hazard | Mitigation | Spec Reference |
 |:-------|:-----------|:---------------|
 | Firing at large insects (moths) | Bounding box area threshold filter | SW-001 §3 |
-| GPIO stuck HIGH on crash | `try/finally` block on every GPIO 18 access | SW-001 §3 |
+| GPIO stuck HIGH on crash | `try/finally` block on every BCM 17 access | SW-001 §4 |
 | Continuous 360° rotation | Yaw hard-limited to ±130°; rapid unwind at 180° boundary | SW-001 §3 |
 
 > **Note:** Human/pet detection interlock has been **intentionally removed**. The system fires water only — being sprayed is preferable to mosquito bites. YOLO classification is used solely for target identification, not as a fire inhibitor.

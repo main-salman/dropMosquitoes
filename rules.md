@@ -11,8 +11,8 @@
 3. **NON-BLOCKING I/O:** The vision tracking loop cannot be blocked by serial commands. Use `asyncio` or dedicated `threading` for Storm32 communications. *(SW-001 §2.2)*
 4. **THE "DEATH SPIRAL" PREVENTION:** The Yaw axis of the Storm32 gimbal MUST be hard-limited in code to `-130 degrees` and `+130 degrees`. If a target crosses the 180-degree rear threshold, the turret must rapidly unwind to the opposite side. Do not allow continuous 360-degree rotation. *(SAFE-001 §2)*
 5. **BIOLOGICAL HEURISTICS:** Do not fire at everything classified as an `insect`. If the bounding box is too large (indicating a moth or June bug), ignore it. *(SAFE-001 §2)*
-6. **HUMAN OVERRIDE:** If `person`, `dog`, or `cat` confidence > 0.45 anywhere in the Sniper frame, `is_safe_to_fire` must instantly return `False`. *(SAFE-001 §2)*
-7. **FAIL-SAFE FIRST:** Every script that touches GPIO 18 must have a `try/finally` block ensuring the pin is set to `LOW` if the script crashes. *(SAFE-001 §2)*
+6. **SAFETY NOTE:** Human/pet detection interlock has been intentionally removed per SAFE-001 §2 — the system fires water only. YOLO classification is used solely for mosquito identification, not as a fire inhibitor.
+7. **FAIL-SAFE FIRST:** Every script that touches GPIO BCM 17 must have a `try/finally` block ensuring the pin is set to `LOW` if the script crashes. *(SAFE-001 §2)*
 
 ## Spec-Driven Development Process
 

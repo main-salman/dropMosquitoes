@@ -65,7 +65,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 
 | ID | Test | Procedure | Pass Criteria |
 |:---|:-----|:----------|:--------------|
-| T3.1 | Kill switch | Kill Python process mid-fire | GPIO 18 goes LOW within 10ms (measured with oscilloscope or LED) |
+| T3.1 | Kill switch | Kill Python process mid-fire | BCM 17 goes LOW within 10ms (measured with oscilloscope or LED) |
 | T3.2 | Power loss recovery | Yank DC power during gimbal motion | Gimbal settles safely, no stuck relay |
 | T3.3 | Human detection override | Place person in sniper FOV during auto-tracking | `is_safe_to_fire` returns False, pump does NOT fire |
 | T3.4 | Software endstop enforcement | Command yaw=180° via API | Gimbal clamps to ±80°, no wire strain |
