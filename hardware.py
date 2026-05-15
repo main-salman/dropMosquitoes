@@ -1,16 +1,20 @@
-# Implements: HW-001 §3-§5, SW-001 §2.2, §2.4, SAFE-001 §1-§2
-# Hardware abstraction layer for GPIO relays and Storm32 gimbal serial control.
+# Implements: HW-001 §3-§6, SW-001 §2.2, §2.4-§2.6, SAFE-001 §1-§2
+# Hardware abstraction layer for GPIO relays, Storm32 gimbal, TF-Luna LiDAR,
+# and overhead ballistic offset math.
 """
 hardware.py — Sniper Messy Mortar Hardware Control
 
 Provides:
   - RelayController: GPIO-based relay switching for pump and gimbal power
   - GimbalController: Serial UART interface to the Storm32 BGC board
-  - coordinate_to_angle(): Pixel-to-degree math for click-to-aim
+  - LiDARController: I2C interface to Benewake TF-Luna distance sensor
+  - pixel_to_angle(): Pixel-to-degree math for click-to-aim
+  - compute_ballistic_offset(): Overhead parabolic drop correction
 
 SAFETY: All GPIO access wrapped in try/finally to guarantee LOW on crash.
 """
 
+import math
 import time
 import struct
 import threading
@@ -34,13 +38,20 @@ except ImportError:
     SERIAL_AVAILABLE = False
     print("[hardware] WARNING: pyserial not found. Gimbal commands will be no-ops.")
 
+try:
+    import smbus2
+    I2C_AVAILABLE = True
+except ImportError:
+    I2C_AVAILABLE = False
+    print("[hardware] WARNING: smbus2 not found. LiDAR will be stubbed.")
+
 
 # ============================================================================
 # GPIO PIN ASSIGNMENTS
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # CUSTOMIZE THESE: Set to the BCM pin numbers you actually wired.
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 18       # Relay CH1: Water pump trigger
 RELAY_GIMBAL_PIN = 24     # Relay CH2: Gimbal power boot-delay switch
 # ============================================================================
@@ -164,11 +175,11 @@ class GimbalController:
     SAFE-001 §2: Yaw hard-limited to ±80°, Pitch to ±20° (software endstops).
     """
 
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # CUSTOMIZE: Set to your actual serial port.
     # Jetson Orin Nano UART: /dev/ttyTHS0 or /dev/ttyTHS1
     # USB-to-Serial adapter: /dev/ttyUSB0
-    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     SERIAL_PORT = "/dev/ttyTHS0"
     BAUD_RATE = 115200
 
@@ -290,6 +301,194 @@ class GimbalController:
                 self._serial.close()
         except Exception as e:
             print(f"[GimbalController] Cleanup error: {e}")
+
+
+# ============================================================================
+# TF-LUNA LiDAR (I2C) — HW-001 §6, SW-001 §2.5
+# Benewake TF-Luna: I2C Bus 1, default address 0x10
+# Reads distance in cm, converts to meters.
+# Mounted co-axial with Sniper camera on gimbal payload plate.
+# ============================================================================
+
+LIDAR_I2C_BUS = 1
+LIDAR_I2C_ADDR = 0x10
+LIDAR_REG_DIST_LO = 0x00   # Distance low byte
+LIDAR_REG_DIST_HI = 0x01   # Distance high byte
+LIDAR_REG_AMP_LO = 0x02    # Signal amplitude (strength) low
+LIDAR_REG_AMP_HI = 0x03    # Signal amplitude (strength) high
+
+
+class LiDARController:
+    """
+    I2C driver for the Benewake TF-Luna LiDAR.
+
+    HW-001 §6: I2C Bus 1, address 0x10, Jetson Pins 3 (SDA) & 5 (SCL).
+    SW-001 §2.5: Background polling at ~100Hz, exposes read_distance().
+
+    The TF-Luna returns distance in centimeters. We convert to meters.
+    Signal strength (amplitude) is also captured for quality filtering.
+    """
+
+    def __init__(self):
+        self._distance_cm = 0       # Raw distance in cm
+        self._distance_m = 0.0      # Converted to meters
+        self._signal_strength = 0   # Amplitude (higher = better signal)
+        self._lock = threading.Lock()
+        self._running = False
+        self._thread = None
+        self._bus = None
+
+        if I2C_AVAILABLE:
+            try:
+                self._bus = smbus2.SMBus(LIDAR_I2C_BUS)
+                # Test read to verify device is present
+                self._bus.read_byte_data(LIDAR_I2C_ADDR, LIDAR_REG_DIST_LO)
+                print(f"[LiDARController] TF-Luna found on I2C bus {LIDAR_I2C_BUS}, addr 0x{LIDAR_I2C_ADDR:02X}")
+            except Exception as e:
+                print(f"[LiDARController] I2C FAILED: {e}. Running in STUB mode.")
+                self._bus = None
+        else:
+            print("[LiDARController] STUB MODE — smbus2 not available.")
+
+        # Start background polling
+        self._running = True
+        self._thread = threading.Thread(target=self._poll_loop, daemon=True)
+        self._thread.start()
+
+    def _poll_loop(self):
+        """Background thread: continuously reads LiDAR distance."""
+        while self._running:
+            if self._bus is not None:
+                try:
+                    # Read 4 bytes: dist_lo, dist_hi, amp_lo, amp_hi
+                    data = self._bus.read_i2c_block_data(
+                        LIDAR_I2C_ADDR, LIDAR_REG_DIST_LO, 4
+                    )
+                    dist_cm = data[0] | (data[1] << 8)
+                    amplitude = data[2] | (data[3] << 8)
+
+                    with self._lock:
+                        self._distance_cm = dist_cm
+                        self._distance_m = dist_cm / 100.0
+                        self._signal_strength = amplitude
+                except Exception:
+                    pass  # Transient I2C errors are normal, skip
+            else:
+                # STUB: simulate a distance for dev testing
+                import random
+                with self._lock:
+                    self._distance_cm = random.randint(150, 350)  # 1.5m - 3.5m
+                    self._distance_m = self._distance_cm / 100.0
+                    self._signal_strength = random.randint(500, 2000)
+
+            time.sleep(0.01)  # ~100Hz polling
+
+    def read_distance(self) -> float:
+        """Return the latest LiDAR distance reading in meters."""
+        with self._lock:
+            return self._distance_m
+
+    def get_status(self) -> dict:
+        """Return full LiDAR telemetry as a dict."""
+        with self._lock:
+            return {
+                "distance_m": round(self._distance_m, 2),
+                "distance_cm": self._distance_cm,
+                "signal_strength": self._signal_strength,
+                "connected": self._bus is not None
+            }
+
+    def cleanup(self):
+        """Stop polling and close I2C bus."""
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1.0)
+        if self._bus:
+            try:
+                self._bus.close()
+            except Exception:
+                pass
+        print("[LiDARController] Stopped.")
+
+
+# ============================================================================
+# BALLISTIC OFFSET ENGINE — SW-001 §2.6, §4
+#
+# The turret is mounted OVERHEAD (8-10 feet / 2.4-3.0m above ground).
+# It fires DOWNWARD. Gravity ASSISTS the shot — the water stream falls
+# toward the target zone, so the pitch correction is small and negative.
+#
+# The LiDAR measures the "slant distance" to the background surface
+# behind the target. We use this to compute how much the water stream
+# will drop over that distance and adjust pitch accordingly.
+# ============================================================================
+
+# Calibration constants — tune these after field testing
+WATER_EXIT_VELOCITY = 7.0   # m/s — measured at nozzle exit
+GRAVITY = 9.81               # m/s²
+MOUNT_HEIGHT_M = 2.7         # m — default overhead mount height (~9 feet)
+
+
+def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
+                              distance_m: float) -> tuple:
+    """
+    Apply parabolic drop correction for an OVERHEAD-mounted turret.
+
+    The turret fires downward from ~2.7m height. Gravity accelerates the
+    water stream toward the ground (assists the shot). The correction is
+    smaller than for a ground-level turret.
+
+    Physics:
+      - Time of flight: t = d / (v0 * cos(α))
+      - Gravity drop during flight: Δy = ½ * g * t²
+      - Angular correction: Δpitch = arctan(Δy / d)
+      - Since gravity HELPS (firing downward), we SUBTRACT the correction
+        (stream lands slightly PAST the aimpoint due to gravity assist).
+
+    Args:
+        pitch_deg: Raw pitch angle from pixel_to_angle (degrees).
+        yaw_deg: Raw yaw angle from pixel_to_angle (degrees, unchanged).
+        distance_m: LiDAR-measured slant distance to background (meters).
+
+    Returns:
+        (corrected_pitch, yaw, offset_info) tuple where offset_info is a dict
+        containing the raw offset values for GUI display.
+    """
+    if distance_m < 0.3 or distance_m > 8.0:
+        # Out of effective range — no correction
+        return pitch_deg, yaw_deg, {
+            "drop_offset_deg": 0.0,
+            "time_of_flight_ms": 0.0,
+            "gravity_drop_cm": 0.0,
+            "distance_m": distance_m,
+            "in_range": False
+        }
+
+    alpha_rad = math.radians(pitch_deg)
+    v0 = WATER_EXIT_VELOCITY
+
+    # Time of flight (seconds)
+    cos_alpha = math.cos(alpha_rad)
+    if abs(cos_alpha) < 0.01:
+        cos_alpha = 0.01  # Prevent division by zero at extreme angles
+    tof = distance_m / (v0 * cos_alpha)
+
+    # Gravity drop during flight (meters)
+    gravity_drop_m = 0.5 * GRAVITY * tof * tof
+
+    # Angular correction (degrees)
+    # Negative because gravity pulls stream INTO target zone (downward assist)
+    drop_offset_deg = -math.degrees(math.atan2(gravity_drop_m, distance_m))
+
+    corrected_pitch = pitch_deg + drop_offset_deg
+
+    return corrected_pitch, yaw_deg, {
+        "drop_offset_deg": round(drop_offset_deg, 2),
+        "time_of_flight_ms": round(tof * 1000, 1),
+        "gravity_drop_cm": round(gravity_drop_m * 100, 1),
+        "distance_m": round(distance_m, 2),
+        "in_range": True
+    }
 
 
 # ============================================================================

@@ -4,11 +4,11 @@ app.py — Sniper Messy Mortar Flask Server
 
 The central orchestrator. Provides:
   - MJPEG video streams for Scout and Sniper cameras
-  - REST API for gimbal control, relay switching, and AI tuning
+  - REST API for gimbal control, relay switching, LiDAR, ballistic math, and AI tuning
   - Serves the web dashboard (templates/index.html)
 
 Usage:
-  python app.py              # Starts on http://0.0.0.0:5000
+  python app.py              # Starts on http://0.0.0.0:8000
   python app.py --no-ai      # Disable YOLO (for hardware-only testing)
 """
 
@@ -22,7 +22,8 @@ import time
 from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
-    RelayController, GimbalController, pixel_to_angle,
+    RelayController, GimbalController, LiDARController,
+    pixel_to_angle, compute_ballistic_offset,
     YAW_LIMIT, PITCH_LIMIT
 )
 from vision import CameraStream, YOLODetector
@@ -36,11 +37,12 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
 gimbal = GimbalController()
+lidar = LiDARController()
 
 # Camera streams — dimensions must match HW-001 §2
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # CUSTOMIZE: Adjust resolution/fps to match your actual camera capabilities.
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 scout_cam = CameraStream(sensor_id=0, width=1280, height=800, fps=120, name="Scout")
 sniper_cam = CameraStream(sensor_id=1, width=1920, height=1080, fps=30, name="Sniper")
 
@@ -55,6 +57,7 @@ def cleanup():
     print("\n[app] Shutting down...")
     scout_cam.stop()
     sniper_cam.stop()
+    lidar.cleanup()
     gimbal.cleanup()
     relay.cleanup()
     print("[app] Shutdown complete.")
@@ -148,8 +151,12 @@ def api_gimbal_center():
 @app.route('/api/gimbal/click', methods=['POST'])
 def api_gimbal_click():
     """
-    Click-to-aim: receive pixel coordinates from a video feed click,
-    convert to angles, and move the gimbal.
+    Click-to-aim with ballistic correction.
+
+    Receives pixel coordinates from a video feed click, converts to angles,
+    grabs LiDAR distance, applies parabolic drop correction for the
+    overhead mount, and moves the gimbal.
+
     Body: {"px": int, "py": int, "frame_w": int, "frame_h": int}
     """
     data = request.get_json(force=True)
@@ -158,9 +165,37 @@ def api_gimbal_click():
     fw = int(data.get('frame_w', 1280))
     fh = int(data.get('frame_h', 800))
 
-    pitch, yaw = pixel_to_angle(px, py, fw, fh)
-    gimbal.set_angles(pitch, yaw)
-    return jsonify({"target_px": [px, py], **gimbal.get_status()})
+    # Step 1: Pixel → raw angles
+    raw_pitch, raw_yaw = pixel_to_angle(px, py, fw, fh)
+
+    # Step 2: Grab LiDAR distance
+    distance_m = lidar.read_distance()
+
+    # Step 3: Apply ballistic offset (overhead mount correction)
+    corrected_pitch, corrected_yaw, offset_info = compute_ballistic_offset(
+        raw_pitch, raw_yaw, distance_m
+    )
+
+    # Step 4: Move gimbal to corrected position
+    gimbal.set_angles(corrected_pitch, corrected_yaw)
+
+    return jsonify({
+        "target_px": [px, py],
+        "raw_pitch": round(raw_pitch, 2),
+        "raw_yaw": round(raw_yaw, 2),
+        "ballistic": offset_info,
+        **gimbal.get_status()
+    })
+
+
+# ============================================================================
+# LiDAR API — SW-001 §2.5
+# ============================================================================
+
+@app.route('/api/lidar')
+def api_lidar():
+    """Return current LiDAR distance and signal strength."""
+    return jsonify(lidar.get_status())
 
 
 # ============================================================================
@@ -227,10 +262,11 @@ def api_ai_min_box():
 
 @app.route('/api/status')
 def api_status():
-    """Return full system status as JSON."""
+    """Return full system status as JSON — gimbal, relay, LiDAR, AI."""
     return jsonify({
         "gimbal": gimbal.get_status(),
         "relay": relay.get_status(),
+        "lidar": lidar.get_status(),
         "ai": {
             "enabled": detector is not None,
             "confidence": detector.confidence if detector else 0,
@@ -289,7 +325,7 @@ TEST_SUITES = {
     },
     "accuracy": {
         "name": "Accuracy Tests (Layer 4)",
-        "description": "Click-to-aim math, gimbal repeatability, full sweep",
+        "description": "Click-to-aim math, gimbal repeatability, ballistic offset",
         "script": "tests/test_accuracy.py",
         "args": [],
         "layer": 4,

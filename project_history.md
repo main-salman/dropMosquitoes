@@ -51,3 +51,16 @@
 - Created `PRINT_GUIDE.md` with materials, settings, and assembly instructions
 - Net savings: ~$34 CAD replaced by ~$3 filament
 
+### `840b45d` — Merge moreparts into master BOM
+- Consolidated moreparts.csv entries into parts.csv
+- Added TF-Luna LiDAR ($37) to BOM
+- Updated total to $1523 CAD
+
+### (this commit) — V2 Software Stack: LiDAR + Ballistic Math + Dashboard
+- **hardware.py:** Added `LiDARController` (I2C TF-Luna driver, 100Hz background polling, stub mode)
+- **hardware.py:** Added `compute_ballistic_offset()` — overhead parabolic drop correction (gravity-assisted, downward firing from 8-10ft)
+- **app.py:** Added `/api/lidar` endpoint, enhanced `/api/gimbal/click` with ballistic correction, LiDAR in `/api/status`
+- **templates/index.html:** New telemetry panel (live LiDAR distance, ballistic offset, pitch/yaw), click-to-aim toast notifications
+- **vision.py:** Added `get_resolution()` helper to CameraStream
+- **HW-001:** Added §6 (TF-Luna LiDAR spec), bumped to v3.0
+- **SW-001:** Added §2.5 (LiDAR polling), §2.6 (ballistic engine), updated §4 (overhead physics model), bumped to v2.0

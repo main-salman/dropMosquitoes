@@ -1,7 +1,7 @@
 # HW-001: Hardware Specification
 
 **Status:** APPROVED  
-**Version:** 2.0  
+**Version:** 3.0  
 **Last Updated:** 2026-05-14  
 **Owner:** Salman
 
@@ -64,7 +64,18 @@
   - CH2: Gimbal boot delay (holds gimbal off until Jetson boots)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
-## 6. Fluid System
+## 6. Distance Sensor (LiDAR)
+
+- **Model:** Benewake TF-Luna (Single-Point ToF LiDAR)
+- **Interface:** I2C (Bus 1)
+- **Address:** `0x10` (default)
+- **Pins:** SDA → Jetson Pin 3 (GPIO 2), SCL → Jetson Pin 5 (GPIO 3)
+- **Range:** 0.2m – 8.0m (±2cm accuracy)
+- **Update Rate:** 250 Hz (I2C mode)
+- **Purpose:** "Background Proxy" — pings the surface behind a detected target to get Z-axis distance for parabolic ballistic offset calculation
+- **Mounting:** Co-axial with Sniper camera on gimbal payload plate
+
+## 7. Fluid System
 
 | Component | Spec |
 |:----------|:-----|
@@ -75,13 +86,13 @@
 | Reservoir | Shallow Plastic Storage Tote |
 | Service Loop | 3" slack arc at gimbal entry (zip-tied at 2 anchors) |
 
-## 7. Enclosure & Weatherproofing
+## 8. Enclosure & Weatherproofing
 
 - **Shell:** Joinfworld IP67 ABS Box (11.4" × 7.5" × 5.5")
 - **Cable Glands:** PG9 (×2), PG11 (×1), PG13.5 (×1)
 - **Sealant:** Silicone adhesive on all gland threads
 - **Internal Mounting:** M3 standoffs (15mm) on grid plate
 
-## 8. Bill of Materials
+## 9. Bill of Materials
 
 See [parts.csv](../../parts.csv) for the complete, URL-verified procurement list.

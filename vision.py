@@ -162,6 +162,10 @@ class CameraStream:
         with self._lock:
             return self._jpeg
 
+    def get_resolution(self) -> tuple:
+        """Return (width, height) for this camera stream."""
+        return self.width, self.height
+
     def stop(self):
         """Stop the capture thread."""
         self._running = False
