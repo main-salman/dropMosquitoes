@@ -124,3 +124,13 @@
 - **[CODE]** Created `main.py` orchestrator using asyncio (`asyncio.sleep(0.2)`) to manage the deterministic sequence: Detect → Aim → Settle → Verify → Fire
 - **[PERFORMANCE]** Enforced `appsink drop=true max-buffers=1` on all GStreamer pipelines to prevent buffer build-up and avoid CUDA OOM crashes on the 8GB Orin Nano
 - **[COMPLIANCE]** Added spec traceability docstring headers (`# Implements: SW-001...`) to all newly created Python modules to enforce spec-driven development rules
+
+## 2026-05-15 — POST-COMMIT REVIEW & FIXES
+- **[BUG FIX]** `weapon_system.py`: Corrected relay pin from 18 (pre-ECO) to BCM 17 (IDC40P Terminal 11) per ECO-2026-002
+- **[DOCS]** `agents.md`: Synced agent filenames with actual codebase (`gimbal_control.py` → `gimbal_controller.py`, `sniper_logic.py` → `sniper_vision.py`, `weapons_hot.py` → `weapon_system.py`)
+- **[DOCS]** `agents.md`: Updated TriggerAgent specification from 300ms/GPIO 18 to 600ms/BCM 17 (Gravity Airburst)
+- **[FEATURE]** Added `💾 Export scout_config.json` button to Sentry Control Center Scout Tuner tab — writes tuned MOG2 parameters for direct Jetson deployment
+- **[BUG FIX]** Fixed infinite video loop in Scout Tuner — now processes once and displays frame/detection statistics
+- **[FEATURE]** Added post-training `best.pt` path display to Sniper Trainer tab
+- **[DOCS]** Rewrote `tools/sentry_control_center/instructions.md` with full export workflow and TensorRT conversion guide
+- **[CODE]** Committed previously untracked `3d_prints/viewer.html` (OpenSCAD nozzle bracket viewer)
