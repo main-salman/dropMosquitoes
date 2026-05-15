@@ -41,9 +41,9 @@ v4l2-ctl --list-devices
 ```python
 import Jetson.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(18, GPIO.OUT)
-GPIO.output(18, GPIO.HIGH)  # Relay closes → Pump fires
+GPIO.setup(17, GPIO.OUT)     # BCM 17 = Pin 11 = IDC40P Terminal 11
+GPIO.output(17, GPIO.HIGH)   # Relay CH1 closes → Pump fires
 import time; time.sleep(0.3)
-GPIO.output(18, GPIO.LOW)   # Relay opens → Pump stops
+GPIO.output(17, GPIO.LOW)    # Relay CH1 opens → Pump stops
 GPIO.cleanup()
 ```

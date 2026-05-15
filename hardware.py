@@ -47,13 +47,15 @@ except ImportError:
 
 
 # ============================================================================
-# GPIO PIN ASSIGNMENTS
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# CUSTOMIZE THESE: Set to the BCM pin numbers you actually wired.
+# GPIO PIN ASSIGNMENTS — ECO-2026-002
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# ROUTING: Jetson GPIO Header → 40-pin F/F Ribbon Cable → IDC40P Terminal Block
+# All wiring connects to screw terminals on the IDC40P breakout, NOT the Jetson.
+# Terminal numbers match physical pin numbers 1:1.
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-RELAY_PUMP_PIN = 18       # Relay CH1: Water pump trigger
-RELAY_GIMBAL_PIN = 24     # Relay CH2: Gimbal power boot-delay switch
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (Pump)
+RELAY_GIMBAL_PIN = 27     # BCM 27 = Pin 13 → IDC40P Terminal 13 → Relay CH2 (Gimbal)
 # ============================================================================
 
 

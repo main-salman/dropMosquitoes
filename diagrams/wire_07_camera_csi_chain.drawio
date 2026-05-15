@@ -1,53 +1,124 @@
-<mxfile>
-  <diagram name="Camera CSI Chain" id="csi_v2">
-    <mxGraphModel dx="1800" dy="800" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="700" background="#FFFFFF">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE 07: Camera CSI Extension Chain&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;Camera → FPC → TX Board → HDMI Cable → RX Board → FPC → Adapter → Jetson MIPI&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="800" height="45" as="geometry"/></mxCell>
-        <!-- Step 1: Camera -->
-        <mxCell id="cam" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="100" height="100" as="geometry"/></mxCell>
-        <mxCell id="camlens" value="" style="ellipse;fillColor=#111;strokeColor=#333;" vertex="1" parent="1"><mxGeometry x="60" y="130" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="camir" value="" style="ellipse;fillColor=#CFB53B;strokeColor=#B8860B;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="70" y="140" width="10" height="10" as="geometry"/></mxCell>
-        <mxCell id="camfpc" value="" style="rounded=0;fillColor=#FF8F00;strokeColor=#E65100;" vertex="1" parent="1"><mxGeometry x="55" y="185" width="50" height="8" as="geometry"/></mxCell>
-        <mxCell id="camlbl" value="&lt;b&gt;1. Camera&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;OV9281 / IMX219&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="30" y="225" width="120" height="28" as="geometry"/></mxCell>
-        <!-- FPC ribbon -->
-        <mxCell id="fpc1" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=6;rounded=0;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="140" y="190" as="sourcePoint"/><mxPoint x="220" y="190" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="fpc1l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;15-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="145" y="172" width="60" height="14" as="geometry"/></mxCell>
-        <!-- Step 2: TX Board -->
-        <mxCell id="tx" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#1976D2;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="220" y="130" width="120" height="80" as="geometry"/></mxCell>
-        <mxCell id="txchip" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" vertex="1" parent="1"><mxGeometry x="255" y="145" width="20" height="15" as="geometry"/></mxCell>
-        <mxCell id="txhdmi" value="" style="rounded=0;fillColor=#333;strokeColor=#555;" vertex="1" parent="1"><mxGeometry x="305" y="155" width="25" height="12" as="geometry"/></mxCell>
-        <mxCell id="txlbl" value="&lt;span style='color:#90CAF9;font-size:9px'&gt;&lt;b&gt;CSI→HDMI&lt;/b&gt;&lt;br&gt;TX Board&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="235" y="170" width="80" height="25" as="geometry"/></mxCell>
-        <mxCell id="txcap" value="&lt;b&gt;2. TX Board&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;CSI signal → HDMI&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="220" y="225" width="120" height="28" as="geometry"/></mxCell>
-        <!-- HDMI cable -->
-        <mxCell id="hdmi" value="" style="endArrow=none;strokeColor=#333;strokeWidth=8;rounded=0;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="340" y="161" as="sourcePoint"/><mxPoint x="510" y="161" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="hdmil" value="&lt;span style='font-size:9px;color:#333'&gt;&lt;b&gt;HDMI Cable&lt;/b&gt;&lt;br&gt;(spans distance through gland)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="365" y="130" width="140" height="25" as="geometry"/></mxCell>
-        <!-- Step 3: RX Board -->
-        <mxCell id="rx" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#1976D2;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="510" y="130" width="120" height="80" as="geometry"/></mxCell>
-        <mxCell id="rxhdmi" value="" style="rounded=0;fillColor=#333;strokeColor=#555;" vertex="1" parent="1"><mxGeometry x="515" y="155" width="25" height="12" as="geometry"/></mxCell>
-        <mxCell id="rxchip" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" vertex="1" parent="1"><mxGeometry x="575" y="145" width="20" height="15" as="geometry"/></mxCell>
-        <mxCell id="rxlbl" value="&lt;span style='color:#90CAF9;font-size:9px'&gt;&lt;b&gt;HDMI→CSI&lt;/b&gt;&lt;br&gt;RX Board&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="535" y="170" width="80" height="25" as="geometry"/></mxCell>
-        <mxCell id="rxcap" value="&lt;b&gt;3. RX Board&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;HDMI → CSI signal&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="510" y="225" width="120" height="28" as="geometry"/></mxCell>
-        <!-- FPC ribbon 2 -->
-        <mxCell id="fpc2" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=6;rounded=0;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="630" y="190" as="sourcePoint"/><mxPoint x="710" y="190" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="fpc2l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;15-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="638" y="172" width="60" height="14" as="geometry"/></mxCell>
-        <!-- Step 4: Adapter -->
-        <mxCell id="adp" value="" style="rounded=1;fillColor=#4A148C;strokeColor=#7B1FA2;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="710" y="145" width="90" height="55" as="geometry"/></mxCell>
-        <mxCell id="adplbl" value="&lt;span style='color:#CE93D8;font-size:8px'&gt;&lt;b&gt;15→22 pin&lt;/b&gt;&lt;br&gt;FPC Adapter&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="715" y="153" width="80" height="25" as="geometry"/></mxCell>
-        <mxCell id="adpcap" value="&lt;b&gt;4. Adapter&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;15-pin → 22-pin&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="705" y="225" width="100" height="28" as="geometry"/></mxCell>
-        <!-- FPC ribbon 3 -->
-        <mxCell id="fpc3" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=8;rounded=0;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="800" y="175" as="sourcePoint"/><mxPoint x="880" y="175" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="fpc3l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;22-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="810" y="158" width="60" height="14" as="geometry"/></mxCell>
-        <!-- Step 5: Jetson MIPI -->
-        <mxCell id="jetmipi" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="880" y="110" width="160" height="140" as="geometry"/></mxCell>
-        <mxCell id="jetpcb2" value="" style="rounded=0;fillColor=#1B5E20;strokeColor=#2E7D32;" vertex="1" parent="1"><mxGeometry x="895" y="125" width="130" height="80" as="geometry"/></mxCell>
-        <mxCell id="jetnv2" value="&lt;b style='color:#76FF03;font-size:10px'&gt;NVIDIA&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4CAF50;font-size:8px'&gt;Orin Nano&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="920" y="135" width="80" height="22" as="geometry"/></mxCell>
-        <mxCell id="mipiport" value="" style="rounded=0;fillColor=#FF8F00;strokeColor=#E65100;" vertex="1" parent="1"><mxGeometry x="900" y="170" width="30" height="12" as="geometry"/></mxCell>
-        <mxCell id="mipilbl" value="&lt;span style='font-size:7px;color:#FF8F00'&gt;MIPI Port&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="892" y="184" width="48" height="10" as="geometry"/></mxCell>
-        <mxCell id="jetcap2" value="&lt;b&gt;5. Jetson MIPI&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Port 0 or Port 1&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="880" y="255" width="160" height="28" as="geometry"/></mxCell>
-        <mxCell id="note" value="&lt;b&gt;Repeat this chain ×2:&lt;/b&gt; One for Scout (OV9281 → Port 0), one for Sniper (IMX219 → Port 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#2196F3;fontColor=#333;fontSize=11;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="40" y="310" width="600" height="30" as="geometry"/></mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="Camera CSI Chain" id="csi_v2">
+        <mxGraphModel dx="982" dy="637" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="700" background="#FFFFFF" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE 07: Camera CSI Extension Chain&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;Camera → FPC → TX Board → HDMI Cable → RX Board → FPC → Adapter → Jetson MIPI&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="15" width="800" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="cam" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="120" width="100" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="camlens" value="" style="ellipse;fillColor=#111;strokeColor=#333;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="130" width="30" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="camir" value="" style="ellipse;fillColor=#CFB53B;strokeColor=#B8860B;aspect=fixed;" parent="1" vertex="1">
+                    <mxGeometry x="70" y="140" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="camfpc" value="" style="rounded=0;fillColor=#FF8F00;strokeColor=#E65100;" parent="1" vertex="1">
+                    <mxGeometry x="55" y="185" width="50" height="8" as="geometry"/>
+                </mxCell>
+                <mxCell id="camlbl" value="&lt;b&gt;1. Camera&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;OV9281 / IMX219&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="30" y="225" width="120" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="fpc1" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=6;rounded=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="140" y="190" as="sourcePoint"/>
+                        <mxPoint x="220" y="190" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="fpc1l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;15-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="145" y="172" width="60" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="tx" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#1976D2;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="130" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="txchip" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" parent="1" vertex="1">
+                    <mxGeometry x="255" y="145" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="txhdmi" value="" style="rounded=0;fillColor=#333;strokeColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="305" y="155" width="25" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="txlbl" value="&lt;span style='color:#90CAF9;font-size:9px'&gt;&lt;b&gt;CSI→HDMI&lt;/b&gt;&lt;br&gt;TX Board&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="235" y="170" width="80" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="txcap" value="&lt;b&gt;2. TX Board&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;CSI signal → HDMI&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="225" width="120" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="hdmi" value="" style="endArrow=none;strokeColor=#333;strokeWidth=8;rounded=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="340" y="161" as="sourcePoint"/>
+                        <mxPoint x="510" y="161" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="hdmil" value="&lt;span style='font-size:9px;color:#333'&gt;&lt;b&gt;HDMI Cable&lt;/b&gt;&lt;br&gt;(spans distance through gland)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="365" y="130" width="140" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="rx" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#1976D2;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="130" width="120" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="rxhdmi" value="" style="rounded=0;fillColor=#333;strokeColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="515" y="155" width="25" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="rxchip" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" parent="1" vertex="1">
+                    <mxGeometry x="575" y="145" width="20" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="rxlbl" value="&lt;span style='color:#90CAF9;font-size:9px'&gt;&lt;b&gt;HDMI→CSI&lt;/b&gt;&lt;br&gt;RX Board&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="535" y="170" width="80" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="rxcap" value="&lt;b&gt;3. RX Board&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;HDMI → CSI signal&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="225" width="120" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="fpc2" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=6;rounded=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="630" y="190" as="sourcePoint"/>
+                        <mxPoint x="710" y="190" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="fpc2l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;15-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="638" y="172" width="60" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="adp" value="" style="rounded=1;fillColor=#4A148C;strokeColor=#7B1FA2;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="710" y="145" width="90" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="adplbl" value="&lt;span style='color:#CE93D8;font-size:8px'&gt;&lt;b&gt;15→22 pin&lt;/b&gt;&lt;br&gt;FPC Adapter&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="715" y="153" width="80" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="adpcap" value="&lt;b&gt;4. Adapter&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;15-pin → 22-pin&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="705" y="225" width="100" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="fpc3" value="" style="endArrow=none;strokeColor=#FF8F00;strokeWidth=8;rounded=0;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="800" y="175" as="sourcePoint"/>
+                        <mxPoint x="880" y="175" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="fpc3l" value="&lt;span style='font-size:8px;color:#FF8F00'&gt;22-pin FPC&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="158" width="60" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="jetmipi" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="110" width="160" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="jetpcb2" value="" style="rounded=0;fillColor=#1B5E20;strokeColor=#2E7D32;" parent="1" vertex="1">
+                    <mxGeometry x="895" y="125" width="130" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="jetnv2" value="&lt;b style='color:#76FF03;font-size:10px'&gt;NVIDIA&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4CAF50;font-size:8px'&gt;Orin Nano&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="920" y="135" width="80" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="mipiport" value="" style="rounded=0;fillColor=#FF8F00;strokeColor=#E65100;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="170" width="30" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="mipilbl" value="&lt;span style='font-size:7px;color:#FF8F00'&gt;MIPI Port&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="892" y="184" width="48" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="jetcap2" value="&lt;b&gt;5. Jetson MIPI&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Port 0 or Port 1&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="255" width="160" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="note" value="&lt;b&gt;Repeat this chain ×2:&lt;/b&gt; One for Scout (OV9281 → Port 0), one for Sniper (IMX219 → Port 1)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#2196F3;fontColor=#333;fontSize=11;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="310" width="600" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>
