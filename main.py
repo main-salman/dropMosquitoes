@@ -10,6 +10,8 @@ from scout_vision import ScoutVision
 from sniper_vision import SniperVision
 from gimbal_controller import GimbalController
 from weapon_system import WeaponSystem
+from ir_controller import IRController
+from status_indicator import StatusIndicator
 
 # ==============================================================================
 # Logging — Persistent engagement log + console output
@@ -67,6 +69,8 @@ async def orchestrator_loop():
     sniper = SniperVision("best.pt")
     gimbal = GimbalController()
     weapon = WeaponSystem()
+    ir = IRController(auto_schedule=True)
+    buzzer = StatusIndicator()
     
     scout.start()
     sniper.start()
@@ -74,6 +78,7 @@ async def orchestrator_loop():
     # Wait for cameras to warm up
     await asyncio.sleep(2.0)
     
+    buzzer.boot()
     log.info("Sentry is ACTIVE. Monitoring sector...")
     log_engagement("system_start", {"airburst_offset": weapon.get_airburst_offset()})
     
@@ -106,6 +111,7 @@ async def orchestrator_loop():
                 if is_verified:
                     stats["engagements"] += 1
                     log.info(f"Target VERIFIED. Engaging. (Engagement #{stats['engagements']})")
+                    buzzer.engagement()
                     
                     log_engagement("fire", {
                         "target_px": [tx, ty],
@@ -136,12 +142,15 @@ async def orchestrator_loop():
     except KeyboardInterrupt:
         log.info("Shutdown signal received.")
     finally:
+        buzzer.shutdown()
         log_engagement("system_stop", {"session_stats": stats})
         log.info(f"Session stats: {stats}")
         scout.stop()
         sniper.stop()
         gimbal.cleanup()
         weapon.cleanup()
+        ir.cleanup()
+        buzzer.cleanup()
         log.info("Shutdown complete.")
 
 if __name__ == "__main__":
