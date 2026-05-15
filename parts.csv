@@ -44,6 +44,7 @@ waterproofing	conformal coating	1	9	https://www.amazon.ca/Waterproof-Electronics
 water filter	filter for pump	1	10																							
 cabling	ribbon cable for 40 pin connector	1	13	https://www.amazon.ca/uxcell-Ribbon-Connector-40Pins-0-3Meters/dp/B0FPFKCP6W/ref=sr_1_4_sspa?crid=194LMPMB6KFVP&dib=eyJ2IjoiMSJ9.cC_y43WUC4zKu6YXRuvlFeaB18ohx5OARZ4zMuh_r8Za3uZDAVgOATEkSuqYeKDi.1V69Z8sWaAvyHoCJsstNiRZvDtCVong_UVHte6pPhHU&dib_tag=se&keywords=Idc40P%2Band%2Bribbon%2Bcable&qid=1778819584&sprefix=idc40p%2Band%2Bribbon%2Bcable%2Caps%2C85&sr=8-4-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&th=1																						
 cabling	adapter for 40 pin connector	1	28	https://www.amazon.ca/Connector-Breakout-Terminal-Interface-Bracket/dp/B0C4YS184B/ref=sr_1_6?crid=194LMPMB6KFVP&dib=eyJ2IjoiMSJ9.cC_y43WUC4zKu6YXRuvlFeaB18ohx5OARZ4zMuh_r8Za3uZDAVgOATEkSuqYeKDi.1V69Z8sWaAvyHoCJsstNiRZvDtCVong_UVHte6pPhHU&dib_tag=se&keywords=Idc40P+and+ribbon+cable&qid=1778819584&sprefix=idc40p+and+ribbon+cable%2Caps%2C85&sr=8-6																						
+status indicator	Active Piezo Buzzer Module (3.3V-5V, 3-pin)	1	2	https://www.amazon.ca/s?k=active+buzzer+module+3.3v+arduino	Audible chime for system status. Connect Signal to IDC40P Terminal 7 (BCM 4), VCC to 3.3V, GND to GND.																					
 																										
 																										
-GRAND TOTAL			1591																							
+GRAND TOTAL			1591

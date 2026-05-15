@@ -117,6 +117,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART TX** | Pin 8 | BCM 14 | Terminal 8 | GREEN | Storm32 RC_PITCH |
 | **UART RX** | Pin 10 | BCM 15 | Terminal 10 | BLUE | Storm32 RC_YAW |
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Storm32 signal ground |
+| **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
 ## 6. Isolation & Safety Hardware
 
