@@ -1,42 +1,115 @@
 <mxfile>
-  <diagram name="Relay to Pump + Flyback Diode" id="relay1_eco">
-    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF">
+  <diagram name="Relay to Pump + Flyback Diode" id="relay1_v2">
+    <mxGraphModel dx="1600" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1100" background="#FFFFFF">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 03: Relay CH1 → Water Pump + Flyback Diode (ECO)&lt;/b&gt;&lt;br&gt;GPIO 18 triggers relay, 1N4007 diode protects relay from inductive kickback" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="800" height="50" as="geometry"/></mxCell>
-        <!-- Jetson GPIO -->
-        <mxCell id="gpio" value="&lt;b&gt;Jetson GPIO Header&lt;/b&gt;&lt;br&gt;Pin 12 (BCM 18)&lt;br&gt;&lt;font color='#FFEB3B'&gt;YELLOW jumper wire&lt;/font&gt;&lt;br&gt;Pin 6 = GND&lt;br&gt;&lt;font color='#666'&gt;BLACK jumper wire&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="200" height="110" as="geometry"/></mxCell>
-        <!-- Relay Board CH1 -->
-        <mxCell id="rel" value="&lt;b&gt;Monk Makes Relay&lt;/b&gt;&lt;br&gt;CH1 (Pump)&lt;br&gt;&lt;hr&gt;SIG — Signal input&lt;br&gt;GND — Ground&lt;br&gt;COM — Common&lt;br&gt;NO — Normally Open" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#9C27B0;fontColor=#FFF;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="380" y="110" width="200" height="140" as="geometry"/></mxCell>
-        <!-- GPIO 18 → SIG -->
-        <mxCell id="e1" value="&lt;font color='#FFEB3B'&gt;YELLOW jumper → SIG&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FFEB3B;strokeWidth=3;fontSize=10;" edge="1" parent="1" source="gpio" target="rel"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- GND → Relay GND -->
-        <mxCell id="e2" value="&lt;font color='#888'&gt;BLACK jumper → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=3;fontSize=10;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" parent="1" source="gpio" target="rel"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="140" y="300"/><mxPoint x="480" y="300"/></Array></mxGeometry></mxCell>
-        <!-- Wago +12V -->
-        <mxCell id="w12" value="&lt;b&gt;Wago +12V&lt;/b&gt;&lt;br&gt;Port 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="380" y="340" width="120" height="50" as="geometry"/></mxCell>
-        <!-- +12V → COM -->
-        <mxCell id="e3" value="&lt;font color='#F44336'&gt;RED wire → COM&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="w12" target="rel"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- Pump -->
-        <mxCell id="pump" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;⚡ INDUCTIVE LOAD&lt;br&gt;&lt;font color='#F44336'&gt;RED wire (+)&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK wire (-)&lt;/font&gt;&lt;br&gt;Submerged in reservoir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#01579B;strokeColor=#0288D1;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="720" y="110" width="200" height="120" as="geometry"/></mxCell>
-        <!-- NO → Pump RED -->
-        <mxCell id="e4" value="&lt;font color='#F44336'&gt;NO contact → Pump RED (+)&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="rel" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- Wago GND -->
-        <mxCell id="wgn" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="720" y="340" width="120" height="50" as="geometry"/></mxCell>
-        <!-- Pump BLACK → GND -->
-        <mxCell id="e5" value="&lt;font color='#888'&gt;Pump BLACK (-) → GND&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="pump" target="wgn"><mxGeometry relative="1" as="geometry"/></mxCell>
 
-        <!-- ======== ECO: FLYBACK DIODE ======== -->
-        <mxCell id="diode" value="&lt;b&gt;1N4007 Diode&lt;/b&gt;&lt;br&gt;REVERSE-BIASED&lt;br&gt;&lt;hr&gt;Striped end (K) → +12V&lt;br&gt;Black end (A) → GND&lt;br&gt;&lt;hr&gt;&lt;font color='#FF9800'&gt;Absorbs flyback spike&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#880E4F;strokeColor=#FF4081;fontColor=#FFF;fontSize=11;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="1020" y="140" width="200" height="140" as="geometry"/></mxCell>
-        <!-- Diode connections to pump terminals -->
-        <mxCell id="d1" value="&lt;font color='#FF4081'&gt;Cathode (K̅) → Pump +&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF4081;strokeWidth=3;dashed=1;dashPattern=8 4;fontSize=10;exitX=0;exitY=0.25;entryX=1;entryY=0.25;" edge="1" parent="1" source="diode" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="d2" value="&lt;font color='#FF4081'&gt;Anode (A) → Pump -&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF4081;strokeWidth=3;dashed=1;dashPattern=8 4;fontSize=10;exitX=0;exitY=0.75;entryX=1;entryY=0.75;" edge="1" parent="1" source="diode" target="pump"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Title -->
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE DIAGRAM 03: Relay → Pump + Flyback Diode&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;GPIO 18 triggers relay CH1 → 12V pump fires → 1N4007 absorbs flyback spike&lt;/span&gt;" style="text;html=1;fontSize=14;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="800" height="50" as="geometry"/></mxCell>
+
+        <!-- ═══════════ JETSON GPIO HEADER ═══════════ -->
+        <!-- Realistic 2x20 pin header block -->
+        <mxCell id="gpio_body" value="" style="rounded=0;fillColor=#1B1B1B;strokeColor=#333;shadow=1;" vertex="1" parent="1"><mxGeometry x="40" y="100" width="180" height="200" as="geometry"/></mxCell>
+        <!-- Pin rows (gold rectangles representing pins) -->
+        <mxCell id="pin_row1" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="60" y="120" width="6" height="6" as="geometry"/></mxCell>
+        <mxCell id="pin_row2" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="74" y="120" width="6" height="6" as="geometry"/></mxCell>
+        <mxCell id="pin_row3" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="60" y="134" width="6" height="6" as="geometry"/></mxCell>
+        <mxCell id="pin_row4" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="74" y="134" width="6" height="6" as="geometry"/></mxCell>
+        <mxCell id="pin_row5" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="60" y="148" width="6" height="6" as="geometry"/></mxCell>
+        <mxCell id="pin_row6" value="" style="rounded=0;fillColor=#CFB53B;strokeColor=#B8860B;" vertex="1" parent="1"><mxGeometry x="74" y="148" width="6" height="6" as="geometry"/></mxCell>
+        <!-- GPIO Labels -->
+        <mxCell id="gpio_title" value="&lt;b style='color:#4CAF50;font-size:12px'&gt;Jetson GPIO Header&lt;/b&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="50" y="105" width="160" height="15" as="geometry"/></mxCell>
+        <mxCell id="gpio_pin12" value="&lt;span style='font-size:10px'&gt;&lt;b style='color:#CFB53B'&gt;Pin 12&lt;/b&gt; (BCM 18)&lt;br&gt;→ Relay SIG&lt;/span&gt;" style="text;html=1;align=left;fontColor=#DDD;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="55" y="165" width="150" height="30" as="geometry"/></mxCell>
+        <mxCell id="gpio_pin6" value="&lt;span style='font-size:10px'&gt;&lt;b style='color:#CFB53B'&gt;Pin 6&lt;/b&gt; (GND)&lt;br&gt;→ Relay GND&lt;/span&gt;" style="text;html=1;align=left;fontColor=#DDD;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="55" y="200" width="150" height="30" as="geometry"/></mxCell>
+        <mxCell id="gpio_nv" value="&lt;span style='font-size:8px;color:#4CAF50'&gt;NVIDIA Orin Nano&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="60" y="245" width="110" height="12" as="geometry"/></mxCell>
+        <mxCell id="gpio_cap" value="&lt;b&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#888;font-size:10px'&gt;40-pin GPIO header&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="40" y="305" width="180" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ MONK MAKES RELAY ═══════════ -->
+        <!-- Purple PCB body -->
+        <mxCell id="relay_pcb" value="" style="rounded=1;fillColor=#4A148C;strokeColor=#7B1FA2;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="220" height="200" as="geometry"/></mxCell>
+        <!-- Mounting holes -->
+        <mxCell id="mh1" value="" style="ellipse;fillColor=#333;strokeColor=#555;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="358" y="108" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh2" value="" style="ellipse;fillColor=#333;strokeColor=#555;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="552" y="108" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh3" value="" style="ellipse;fillColor=#333;strokeColor=#555;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="358" y="282" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="mh4" value="" style="ellipse;fillColor=#333;strokeColor=#555;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="552" y="282" width="10" height="10" as="geometry"/></mxCell>
+        <!-- Relay IC (black square with dot) -->
+        <mxCell id="relay_ic" value="" style="rounded=0;fillColor=#111;strokeColor=#333;" vertex="1" parent="1"><mxGeometry x="410" y="140" width="50" height="50" as="geometry"/></mxCell>
+        <mxCell id="relay_dot" value="" style="ellipse;fillColor=#CFB53B;strokeColor=none;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="415" y="145" width="5" height="5" as="geometry"/></mxCell>
+        <!-- Terminal blocks (green) -->
+        <mxCell id="term_sig" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1"><mxGeometry x="370" y="205" width="80" height="20" as="geometry"/></mxCell>
+        <mxCell id="term_out" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1"><mxGeometry x="470" y="205" width="80" height="20" as="geometry"/></mxCell>
+        <!-- Terminal labels -->
+        <mxCell id="tl_sig" value="&lt;span style='font-size:8px;color:#FFF'&gt;SIG&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="375" y="207" width="25" height="15" as="geometry"/></mxCell>
+        <mxCell id="tl_gnd" value="&lt;span style='font-size:8px;color:#FFF'&gt;GND&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="415" y="207" width="30" height="15" as="geometry"/></mxCell>
+        <mxCell id="tl_com" value="&lt;span style='font-size:8px;color:#FFF'&gt;COM&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="475" y="207" width="30" height="15" as="geometry"/></mxCell>
+        <mxCell id="tl_no" value="&lt;span style='font-size:8px;color:#FFF'&gt;NO&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="520" y="207" width="25" height="15" as="geometry"/></mxCell>
+        <!-- Board label -->
+        <mxCell id="relay_brand" value="&lt;span style='color:#CE93D8;font-size:11px'&gt;&lt;b&gt;monk makes&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style='color:#9C27B0;font-size:9px'&gt;Relay Board&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="410" y="248" width="100" height="30" as="geometry"/></mxCell>
+        <!-- Status LED -->
+        <mxCell id="led" value="" style="ellipse;fillColor=#F44336;strokeColor=#D32F2F;aspect=fixed;shadow=1;" vertex="1" parent="1"><mxGeometry x="475" y="140" width="8" height="8" as="geometry"/></mxCell>
+        <mxCell id="relay_cap" value="&lt;b&gt;Monk Makes Relay (CH1)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#888;font-size:10px'&gt;Solid-state, opto-isolated, 16V max&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="350" y="305" width="220" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ VELLEMAN 12V PUMP ═══════════ -->
+        <!-- Pump body (cylindrical motor shape) -->
+        <mxCell id="pump_body" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=20;" vertex="1" parent="1"><mxGeometry x="700" y="100" width="160" height="120" as="geometry"/></mxCell>
+        <!-- Motor housing detail -->
+        <mxCell id="pump_motor" value="" style="ellipse;fillColor=#1565C0;strokeColor=#1976D2;" vertex="1" parent="1"><mxGeometry x="715" y="115" width="60" height="60" as="geometry"/></mxCell>
+        <mxCell id="pump_shaft" value="" style="ellipse;fillColor=#CFB53B;strokeColor=#B8860B;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="738" y="138" width="14" height="14" as="geometry"/></mxCell>
+        <!-- Outlet barb -->
+        <mxCell id="pump_outlet" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#1976D2;arcSize=50;" vertex="1" parent="1"><mxGeometry x="790" y="130" width="60" height="16" as="geometry"/></mxCell>
+        <!-- Wire terminals -->
+        <mxCell id="pump_term_r" value="" style="rounded=0;fillColor=#D32F2F;strokeColor=#B71C1C;" vertex="1" parent="1"><mxGeometry x="720" y="190" width="30" height="10" as="geometry"/></mxCell>
+        <mxCell id="pump_term_b" value="" style="rounded=0;fillColor=#333;strokeColor=#111;" vertex="1" parent="1"><mxGeometry x="760" y="190" width="30" height="10" as="geometry"/></mxCell>
+        <mxCell id="pump_tl_r" value="&lt;span style='color:#D32F2F;font-size:8px'&gt;&lt;b&gt;+&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="720" y="178" width="30" height="12" as="geometry"/></mxCell>
+        <mxCell id="pump_tl_b" value="&lt;span style='color:#333;font-size:8px'&gt;&lt;b&gt;−&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="760" y="178" width="30" height="12" as="geometry"/></mxCell>
+        <!-- Label -->
+        <mxCell id="pump_label" value="&lt;span style='color:#90CAF9;font-size:10px'&gt;&lt;b&gt;VELLEMAN&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style='color:#64B5F6;font-size:8px'&gt;12V Submersible&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="710" y="130" width="80" height="45" as="geometry"/></mxCell>
+        <mxCell id="pump_outlet_lbl" value="&lt;span style='font-size:8px;color:#1565C0'&gt;1/4&amp;quot; barb&lt;br&gt;outlet&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="112" width="40" height="25" as="geometry"/></mxCell>
+        <mxCell id="pump_cap" value="&lt;b&gt;Velleman 12V Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#F44336;font-size:10px'&gt;⚡ INDUCTIVE LOAD&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="700" y="225" width="160" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ 1N4007 FLYBACK DIODE ═══════════ -->
+        <!-- Diode body (realistic axial component) -->
+        <mxCell id="diode_lead_l" value="" style="endArrow=none;strokeColor=#999;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="310" as="sourcePoint"/><mxPoint x="730" y="310" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="diode_body" value="" style="rounded=1;fillColor=#1a1a1a;strokeColor=#333;arcSize=30;" vertex="1" parent="1"><mxGeometry x="730" y="300" width="60" height="20" as="geometry"/></mxCell>
+        <!-- Cathode band (silver stripe) -->
+        <mxCell id="diode_band" value="" style="rounded=0;fillColor=#BDBDBD;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="779" y="300" width="8" height="20" as="geometry"/></mxCell>
+        <mxCell id="diode_lead_r" value="" style="endArrow=none;strokeColor=#999;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="310" as="sourcePoint"/><mxPoint x="830" y="310" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- Diode labels -->
+        <mxCell id="diode_k" value="&lt;span style='font-size:8px;color:#666'&gt;&lt;b&gt;K&lt;/b&gt; (Cathode)&lt;br&gt;→ +12V&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="795" y="275" width="55" height="25" as="geometry"/></mxCell>
+        <mxCell id="diode_a" value="&lt;span style='font-size:8px;color:#666'&gt;&lt;b&gt;A&lt;/b&gt; (Anode)&lt;br&gt;→ GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="680" y="275" width="50" height="25" as="geometry"/></mxCell>
+        <mxCell id="diode_cap" value="&lt;b&gt;1N4007 Flyback Diode&lt;/b&gt;&lt;br&gt;&lt;span style='color:#F44336;font-size:10px'&gt;⚠ REVERSE-BIASED across pump&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="680" y="325" width="180" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ CONNECTIONS ═══════════ -->
+        <!-- YELLOW: GPIO 18 → Relay SIG -->
+        <mxCell id="c1" value="" style="endArrow=block;endFill=1;strokeColor=#FBC02D;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="220" y="180" as="sourcePoint"/><mxPoint x="390" y="215" as="targetPoint"/><Array as="points"><mxPoint x="290" y="180"/><mxPoint x="290" y="215"/></Array></mxGeometry></mxCell>
+        <mxCell id="c1l" value="&lt;span style='color:#F9A825;font-size:10px'&gt;&lt;b&gt;YELLOW&lt;/b&gt; Pin 12 → SIG&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="240" y="162" width="130" height="16" as="geometry"/></mxCell>
+
+        <!-- BLACK: GND → Relay GND -->
+        <mxCell id="c2" value="" style="endArrow=block;endFill=1;strokeColor=#555;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="220" y="215" as="sourcePoint"/><mxPoint x="425" y="215" as="targetPoint"/><Array as="points"><mxPoint x="310" y="215"/></Array></mxGeometry></mxCell>
+        <mxCell id="c2l" value="&lt;span style='color:#555;font-size:10px'&gt;&lt;b&gt;BLACK&lt;/b&gt; Pin 6 → GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="240" y="218" width="130" height="16" as="geometry"/></mxCell>
+
+        <!-- RED: Wago +12V → Relay COM -->
+        <mxCell id="c3" value="" style="endArrow=block;endFill=1;strokeColor=#D32F2F;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="460" y="380" as="sourcePoint"/><mxPoint x="495" y="225" as="targetPoint"/><Array as="points"><mxPoint x="460" y="340"/><mxPoint x="495" y="340"/></Array></mxGeometry></mxCell>
+        <mxCell id="c3l" value="&lt;span style='color:#D32F2F;font-size:10px'&gt;&lt;b&gt;RED&lt;/b&gt; Wago +12V → COM&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="400" y="355" width="140" height="16" as="geometry"/></mxCell>
+        <mxCell id="wago_ref" value="&lt;span style='font-size:9px;color:#FF6D00'&gt;From Wago +12V Port 4&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="400" y="380" width="120" height="16" as="geometry"/></mxCell>
+
+        <!-- RED: Relay NO → Pump + terminal -->
+        <mxCell id="c4" value="" style="endArrow=block;endFill=1;strokeColor=#D32F2F;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="535" y="215" as="sourcePoint"/><mxPoint x="735" y="200" as="targetPoint"/><Array as="points"><mxPoint x="640" y="215"/><mxPoint x="640" y="200"/></Array></mxGeometry></mxCell>
+        <mxCell id="c4l" value="&lt;span style='color:#D32F2F;font-size:10px'&gt;&lt;b&gt;RED&lt;/b&gt; NO → Pump +&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="590" y="198" width="120" height="16" as="geometry"/></mxCell>
+
+        <!-- BLACK: Pump - → Wago GND -->
+        <mxCell id="c5" value="" style="endArrow=block;endFill=1;strokeColor=#555;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="775" y="200" as="sourcePoint"/><mxPoint x="880" y="400" as="targetPoint"/><Array as="points"><mxPoint x="880" y="200"/></Array></mxGeometry></mxCell>
+        <mxCell id="c5l" value="&lt;span style='color:#555;font-size:10px'&gt;&lt;b&gt;BLACK&lt;/b&gt; Pump − → Wago GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="840" y="285" width="140" height="16" as="geometry"/></mxCell>
+        <mxCell id="wago_gnd_ref" value="&lt;span style='font-size:9px;color:#FF6D00'&gt;To Wago GND Port 4&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="830" y="400" width="120" height="16" as="geometry"/></mxCell>
+
+        <!-- Diode connections (dashed - parallel with pump) -->
+        <mxCell id="d1" value="" style="endArrow=none;strokeColor=#F44336;strokeWidth=2;dashed=1;dashPattern=6 3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="310" as="sourcePoint"/><mxPoint x="880" y="310" as="targetPoint"/><Array as="points"><mxPoint x="880" y="310"/></Array></mxGeometry></mxCell>
+        <mxCell id="d2" value="" style="endArrow=none;strokeColor=#F44336;strokeWidth=2;dashed=1;dashPattern=6 3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="700" y="310" as="sourcePoint"/><mxPoint x="640" y="310" as="targetPoint"/><Array as="points"><mxPoint x="640" y="310"/></Array></mxGeometry></mxCell>
+
         <!-- CRITICAL callout -->
-        <mxCell id="callout" value="⚠ CRITICAL: 1N4007 Flyback Diode (Reverse-Biased)&lt;br&gt;&lt;br&gt;The 12V pump is an &lt;b&gt;inductive load&lt;/b&gt;. When the relay opens,&lt;br&gt;the collapsing magnetic field generates a high-voltage spike&lt;br&gt;that WILL destroy the relay's internal MOSFETs.&lt;br&gt;&lt;br&gt;The diode shorts this spike safely across the pump coil.&lt;br&gt;&lt;font color='#FFEB3B'&gt;Without this diode, the relay will fail within days.&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#FF4081;fontColor=#FF8A80;fontSize=11;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="40" y="440" width="580" height="150" as="geometry"/></mxCell>
-        <!-- Wiring options -->
-        <mxCell id="opts" value="&lt;b&gt;Installation Options:&lt;/b&gt;&lt;br&gt;① Solder diode directly across pump motor terminals&lt;br&gt;② Insert diode legs into Wago connectors sharing pump power leads" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#FF9800;fontColor=#DDD;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="680" y="460" width="500" height="70" as="geometry"/></mxCell>
-        <!-- Flow note -->
-        <mxCell id="n1" value="Flow: GPIO HIGH → Relay closes → +12V flows COM→NO → Pump runs for 300ms → GPIO LOW → Relay opens → Diode absorbs spike" style="text;html=1;fontSize=11;fontColor=#4DD0E1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="900" height="30" as="geometry"/></mxCell>
+        <mxCell id="warn" value="⚠ &lt;b&gt;CRITICAL — ECO-2026-001&lt;/b&gt;&lt;br&gt;&lt;br&gt;The 12V pump is an &lt;b&gt;inductive load&lt;/b&gt;. When the relay MOSFET opens, the collapsing magnetic field generates a &lt;b&gt;destructive flyback spike&lt;/b&gt; exceeding the relay's 16V tolerance.&lt;br&gt;&lt;br&gt;The 1N4007 diode (wired &lt;b&gt;reverse-biased&lt;/b&gt; across the pump) shorts this spike safely through the diode instead of through the relay.&lt;br&gt;&lt;br&gt;&lt;b&gt;Installation:&lt;/b&gt; Solder directly to pump terminals OR insert into shared Wago ports." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FF6D00;fontColor=#333;fontSize=11;align=left;spacingLeft=10;spacingRight=10;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="40" y="400" width="600" height="160" as="geometry"/></mxCell>
+
       </root>
     </mxGraphModel>
   </diagram>

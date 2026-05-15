@@ -1,35 +1,107 @@
 <mxfile>
-  <diagram name="Power Entry" id="pwr1">
-    <mxGraphModel dx="1200" dy="800" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF">
+  <diagram name="Power Entry" id="pwr1_v2">
+    <mxGraphModel dx="1600" dy="1000" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1000" background="#FFFFFF">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
+
         <!-- Title -->
-        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 01: Power Entry&lt;/b&gt;&lt;br&gt;AC Mains → 12V Brick → Wago Distribution" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="500" height="50" as="geometry"/></mxCell>
-        <!-- AC Wall Outlet -->
-        <mxCell id="ac1" value="&lt;b&gt;AC Wall Outlet&lt;/b&gt;&lt;br&gt;120V / 15A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#555;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="150" width="160" height="70" as="geometry"/></mxCell>
-        <!-- 12V Power Brick -->
-        <mxCell id="ps1" value="&lt;b&gt;12V 10A Power Brick&lt;/b&gt;&lt;br&gt;DC 2.5×5.5mm barrel&lt;br&gt;120W output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="320" y="130" width="200" height="90" as="geometry"/></mxCell>
-        <!-- AC Cable -->
-        <mxCell id="e1" value="&lt;font color='#888'&gt;IEC C13 cable (included)&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#888;strokeWidth=3;fontColor=#888;fontSize=10;" edge="1" parent="1" source="ac1" target="ps1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- WH-02 Pigtail -->
-        <mxCell id="wh1" value="&lt;b&gt;WH-02 Pigtail Harness&lt;/b&gt;&lt;br&gt;Barrel Jack → Bare Wire&lt;br&gt;&lt;font color='#F44336'&gt;RED = +12V&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK = GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="640" y="130" width="200" height="90" as="geometry"/></mxCell>
-        <!-- Brick to WH-02 -->
-        <mxCell id="e2" value="&lt;font color='#FF9800'&gt;Barrel plug snaps in&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;strokeWidth=3;fontSize=10;" edge="1" parent="1" source="ps1" target="wh1"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- Wago +12V -->
-        <mxCell id="w12" value="&lt;b&gt;Wago 221-415&lt;/b&gt;&lt;br&gt;&lt;font color='#F44336'&gt;+12V BUS&lt;/font&gt;&lt;br&gt;5-Port Lever Nut" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="960" y="100" width="190" height="70" as="geometry"/></mxCell>
-        <!-- Wago GND -->
-        <mxCell id="wgn" value="&lt;b&gt;Wago 221-415&lt;/b&gt;&lt;br&gt;&lt;font color='#666'&gt;GND BUS&lt;/font&gt;&lt;br&gt;5-Port Lever Nut" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="960" y="200" width="190" height="70" as="geometry"/></mxCell>
-        <!-- WH-02 RED wire to Wago +12V -->
-        <mxCell id="e3" value="&lt;font color='#F44336'&gt;RED wire → Port 1&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="wh1" target="w12"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- WH-02 BLACK wire to Wago GND -->
-        <mxCell id="e4" value="&lt;font color='#888'&gt;BLACK wire → Port 1&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="wh1" target="wgn"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <!-- Port labels for +12V Wago -->
-        <mxCell id="p12" value="&lt;b&gt;+12V Wago Port Map&lt;/b&gt;&lt;br&gt;Port 1: INPUT (WH-02 RED)&lt;br&gt;Port 2: → Jetson (barrel pigtail)&lt;br&gt;Port 3: → IR Illuminator (+)&lt;br&gt;Port 4: → Relay CH1 COM (pump)&lt;br&gt;Port 5: → Relay CH2 COM (gimbal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#F44336;fontColor=#DDD;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="1220" y="60" width="310" height="120" as="geometry"/></mxCell>
-        <!-- Port labels for GND Wago -->
-        <mxCell id="pgn" value="&lt;b&gt;GND Wago Port Map&lt;/b&gt;&lt;br&gt;Port 1: INPUT (WH-02 BLACK)&lt;br&gt;Port 2: → Jetson GND&lt;br&gt;Port 3: → IR Illuminator (-)&lt;br&gt;Port 4: → Pump GND (direct)&lt;br&gt;Port 5: → Gimbal GND (direct)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2D2D44;strokeColor=#78909C;fontColor=#DDD;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="1220" y="200" width="310" height="120" as="geometry"/></mxCell>
-        <!-- Note -->
-        <mxCell id="n1" value="⚠ Mount height: 8-10 ft overhead. Route power cable down the mounting pole." style="text;html=1;fontSize=11;fontColor=#FF9800;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="340" width="500" height="30" as="geometry"/></mxCell>
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE DIAGRAM 01: 12V Power Entry&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;AC Mains → Power Brick → WH-02 Pigtail → Wago 221-415 Distribution&lt;/span&gt;" style="text;html=1;fontSize=14;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="700" height="50" as="geometry"/></mxCell>
+
+        <!-- ═══════════ 12V POWER BRICK ═══════════ -->
+        <!-- Main body - black rectangular brick shape -->
+        <mxCell id="brick_body" value="" style="rounded=1;whiteSpace=wrap;fillColor=#1a1a1a;strokeColor=#333;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="180" height="90" as="geometry"/></mxCell>
+        <!-- Ventilation slots on top -->
+        <mxCell id="brick_slots" value="" style="shape=line;strokeColor=#333;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="70" y="140" width="60" height="1" as="geometry"/></mxCell>
+        <mxCell id="brick_slots2" value="" style="shape=line;strokeColor=#333;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="70" y="148" width="60" height="1" as="geometry"/></mxCell>
+        <mxCell id="brick_slots3" value="" style="shape=line;strokeColor=#333;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="70" y="156" width="60" height="1" as="geometry"/></mxCell>
+        <!-- Label on brick -->
+        <mxCell id="brick_label" value="&lt;b style='color:#4CAF50;font-size:10px'&gt;●&lt;/b&gt;&lt;br&gt;&lt;span style='color:#ccc;font-size:9px'&gt;12V DC&lt;br&gt;10A / 120W&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="130" y="130" width="80" height="60" as="geometry"/></mxCell>
+        <!-- AC cord coming out left -->
+        <mxCell id="ac_cord" value="" style="endArrow=none;strokeColor=#333;strokeWidth=5;rounded=1;exitX=0;exitY=0.5;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="40" y="165" as="sourcePoint"/><mxPoint x="10" y="165" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="ac_label" value="&lt;span style='color:#666;font-size:9px'&gt;AC Mains&lt;br&gt;120V&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="-20" y="175" width="60" height="30" as="geometry"/></mxCell>
+        <!-- DC barrel out right -->
+        <mxCell id="dc_barrel" value="" style="ellipse;fillColor=#333;strokeColor=#555;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="220" y="153" width="24" height="24" as="geometry"/></mxCell>
+        <mxCell id="dc_barrel_inner" value="" style="ellipse;fillColor=#111;strokeColor=#444;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="227" y="160" width="10" height="10" as="geometry"/></mxCell>
+        <mxCell id="brick_caption" value="&lt;b&gt;12V 10A DC Power Brick&lt;/b&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="40" y="215" width="180" height="20" as="geometry"/></mxCell>
+
+        <!-- ═══════════ WH-02 PIGTAIL HARNESS ═══════════ -->
+        <!-- Wire pair from barrel to Wago -->
+        <mxCell id="pigtail_body" value="" style="rounded=1;fillColor=#2a2a2a;strokeColor=#444;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="300" y="110" width="140" height="110" as="geometry"/></mxCell>
+        <!-- Red wire -->
+        <mxCell id="red_wire_vis" value="" style="rounded=1;fillColor=#D32F2F;strokeColor=#B71C1C;arcSize=50;" vertex="1" parent="1"><mxGeometry x="320" y="130" width="100" height="8" as="geometry"/></mxCell>
+        <!-- Black wire -->
+        <mxCell id="blk_wire_vis" value="" style="rounded=1;fillColor=#333;strokeColor=#111;arcSize=50;" vertex="1" parent="1"><mxGeometry x="320" y="155" width="100" height="8" as="geometry"/></mxCell>
+        <!-- Bare wire ends (stripped copper) -->
+        <mxCell id="copper1" value="" style="rounded=1;fillColor=#FF8F00;strokeColor=#E65100;arcSize=50;" vertex="1" parent="1"><mxGeometry x="420" y="129" width="18" height="10" as="geometry"/></mxCell>
+        <mxCell id="copper2" value="" style="rounded=1;fillColor=#FF8F00;strokeColor=#E65100;arcSize=50;" vertex="1" parent="1"><mxGeometry x="420" y="154" width="18" height="10" as="geometry"/></mxCell>
+        <!-- Barrel connector end -->
+        <mxCell id="barrel_conn" value="" style="ellipse;fillColor=#444;strokeColor=#666;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="305" y="133" width="18" height="18" as="geometry"/></mxCell>
+        <mxCell id="pigtail_label" value="&lt;span style='color:#aaa;font-size:9px'&gt;Lynxmotion WH-02&lt;br&gt;DC Pigtail Harness&lt;/span&gt;" style="text;html=1;align=center;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="310" y="170" width="120" height="30" as="geometry"/></mxCell>
+        <mxCell id="wire_labels" value="&lt;span style='color:#D32F2F;font-size:10px'&gt;■ RED = +12V&lt;/span&gt;&lt;br&gt;&lt;span style='color:#333;font-size:10px'&gt;■ BLACK = GND&lt;/span&gt;" style="text;html=1;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1"><mxGeometry x="310" y="195" width="120" height="30" as="geometry"/></mxCell>
+        <mxCell id="pigtail_caption" value="&lt;b&gt;WH-02 Pigtail Harness&lt;/b&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="300" y="215" width="140" height="20" as="geometry"/></mxCell>
+
+        <!-- Barrel plug → Brick connection -->
+        <mxCell id="e_barrel" value="" style="endArrow=block;endFill=1;strokeColor=#666;strokeWidth=2;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="244" y="165" as="sourcePoint"/><mxPoint x="300" y="145" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="e_barrel_lbl" value="&lt;span style='font-size:9px;color:#888'&gt;barrel plug&lt;br&gt;snaps in&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="248" y="125" width="52" height="25" as="geometry"/></mxCell>
+
+        <!-- ═══════════ WAGO 221-415 (+12V) ═══════════ -->
+        <!-- Orange body with lever mechanisms -->
+        <mxCell id="wago_pos_body" value="" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;shadow=1;arcSize=4;" vertex="1" parent="1"><mxGeometry x="520" y="90" width="280" height="130" as="geometry"/></mxCell>
+        <!-- Orange levers (5 ports) -->
+        <mxCell id="lev1" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;shadow=0;" vertex="1" parent="1"><mxGeometry x="535" y="100" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="lev2" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="585" y="100" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="lev3" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="635" y="100" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="lev4" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="685" y="100" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="lev5" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="735" y="100" width="40" height="16" as="geometry"/></mxCell>
+        <!-- Wire holes (dark circles under levers) -->
+        <mxCell id="h1" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="549" y="120" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="h2" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="599" y="120" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="h3" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="649" y="120" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="h4" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="699" y="120" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="h5" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="749" y="120" width="12" height="12" as="geometry"/></mxCell>
+        <!-- Port labels -->
+        <mxCell id="p1" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 1&lt;/b&gt;&lt;br&gt;INPUT&lt;br&gt;WH-02&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="530" y="136" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="p2" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 2&lt;/b&gt;&lt;br&gt;Jetson&lt;br&gt;barrel&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="580" y="136" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="p3" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 3&lt;/b&gt;&lt;br&gt;IR&lt;br&gt;Light&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="630" y="136" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="p4" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 4&lt;/b&gt;&lt;br&gt;Relay→&lt;br&gt;Pump&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="680" y="136" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="p5" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 5&lt;/b&gt;&lt;br&gt;Relay→&lt;br&gt;Gimbal&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="730" y="136" width="50" height="35" as="geometry"/></mxCell>
+        <!-- Transparent window -->
+        <mxCell id="window" value="" style="rounded=0;fillColor=none;strokeColor=#FF6D00;strokeWidth=1;dashed=1;dashPattern=4 2;" vertex="1" parent="1"><mxGeometry x="530" y="175" width="260" height="12" as="geometry"/></mxCell>
+        <mxCell id="wago_txt" value="&lt;span style='font-size:9px;color:#FF6D00'&gt;transparent test window&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="590" y="187" width="130" height="15" as="geometry"/></mxCell>
+        <mxCell id="wago_pos_cap" value="&lt;b&gt;Wago 221-415 — +12V Bus&lt;/b&gt;&lt;br&gt;&lt;span style='color:#888;font-size:10px'&gt;5-port lever connector&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="560" y="205" width="200" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ WAGO 221-415 (GND) — same style ═══════════ -->
+        <mxCell id="wago_gnd_body" value="" style="rounded=1;fillColor=#F5F5F5;strokeColor=#BDBDBD;shadow=1;arcSize=4;" vertex="1" parent="1"><mxGeometry x="520" y="310" width="280" height="130" as="geometry"/></mxCell>
+        <mxCell id="glev1" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="535" y="320" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="glev2" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="585" y="320" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="glev3" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="635" y="320" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="glev4" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="685" y="320" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="glev5" value="" style="rounded=1;fillColor=#FF6D00;strokeColor=#E65100;arcSize=6;" vertex="1" parent="1"><mxGeometry x="735" y="320" width="40" height="16" as="geometry"/></mxCell>
+        <mxCell id="gh1" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="549" y="340" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gh2" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="599" y="340" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gh3" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="649" y="340" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gh4" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="699" y="340" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gh5" value="" style="ellipse;fillColor=#555;strokeColor=#333;aspect=fixed;" vertex="1" parent="1"><mxGeometry x="749" y="340" width="12" height="12" as="geometry"/></mxCell>
+        <mxCell id="gp1" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 1&lt;/b&gt;&lt;br&gt;INPUT&lt;br&gt;WH-02&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="530" y="356" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="gp2" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 2&lt;/b&gt;&lt;br&gt;Jetson&lt;br&gt;GND&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="580" y="356" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="gp3" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 3&lt;/b&gt;&lt;br&gt;IR&lt;br&gt;GND&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="630" y="356" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="gp4" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 4&lt;/b&gt;&lt;br&gt;Pump&lt;br&gt;GND&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="680" y="356" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="gp5" value="&lt;span style='font-size:8px'&gt;&lt;b&gt;Port 5&lt;/b&gt;&lt;br&gt;Gimbal&lt;br&gt;GND&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="730" y="356" width="50" height="35" as="geometry"/></mxCell>
+        <mxCell id="gwindow" value="" style="rounded=0;fillColor=none;strokeColor=#FF6D00;strokeWidth=1;dashed=1;dashPattern=4 2;" vertex="1" parent="1"><mxGeometry x="530" y="395" width="260" height="12" as="geometry"/></mxCell>
+        <mxCell id="wago_gnd_cap" value="&lt;b&gt;Wago 221-415 — GND Bus&lt;/b&gt;&lt;br&gt;&lt;span style='color:#888;font-size:10px'&gt;5-port lever connector&lt;/span&gt;" style="text;html=1;fontSize=11;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="560" y="415" width="200" height="30" as="geometry"/></mxCell>
+
+        <!-- ═══════════ WIRES ═══════════ -->
+        <!-- RED wire: Pigtail → Wago +12V Port 1 -->
+        <mxCell id="wr1" value="" style="endArrow=block;endFill=1;strokeColor=#D32F2F;strokeWidth=4;rounded=1;exitX=1;exitY=0.3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="438" y="134" as="sourcePoint"/><mxPoint x="555" y="126" as="targetPoint"/><Array as="points"><mxPoint x="480" y="134"/><mxPoint x="480" y="126"/></Array></mxGeometry></mxCell>
+        <mxCell id="wr1_lbl" value="&lt;span style='color:#D32F2F;font-size:10px'&gt;&lt;b&gt;RED +12V&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="450" y="110" width="70" height="20" as="geometry"/></mxCell>
+
+        <!-- BLACK wire: Pigtail → Wago GND Port 1 -->
+        <mxCell id="wb1" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="438" y="159" as="sourcePoint"/><mxPoint x="555" y="346" as="targetPoint"/><Array as="points"><mxPoint x="490" y="159"/><mxPoint x="490" y="346"/></Array></mxGeometry></mxCell>
+        <mxCell id="wb1_lbl" value="&lt;span style='color:#333;font-size:10px'&gt;&lt;b&gt;BLACK GND&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="450" y="240" width="80" height="20" as="geometry"/></mxCell>
+
+        <!-- Flow annotation -->
+        <mxCell id="flow" value="&lt;span style='font-size:11px;color:#555'&gt;⚡ Power flows: AC Mains → Brick (AC→DC) → WH-02 (splits +12V / GND) → Wago (distributes to 5 devices each)&lt;/span&gt;" style="text;html=1;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="470" width="760" height="25" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
