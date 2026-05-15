@@ -11,9 +11,11 @@ except ImportError:
 class WeaponSystem:
     """
     Trigger control and ballistics.
-    Controls the MonkMakes relay via Jetson.GPIO Pin 18.
+    Controls the MonkMakes relay via Jetson.GPIO BCM 17 (IDC40P Terminal 11).
+
+    SAFE-001 §2: Relay defaults to LOW at boot. Fire requires explicit call.
     """
-    def __init__(self, relay_pin=18, airburst_offset_deg=12.0):
+    def __init__(self, relay_pin=17, airburst_offset_deg=12.0):
         self.relay_pin = relay_pin
         self.airburst_offset_deg = airburst_offset_deg
         
