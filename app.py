@@ -257,6 +257,205 @@ def api_ai_min_box():
 
 
 # ============================================================================
+# CALIBRATION API — Interactive GUI-based calibration tools
+# ============================================================================
+
+# In-memory calibration data (persisted to calibration.json on save)
+_calibration_log = []
+_ballistic_table = {}
+
+import json
+CALIBRATION_FILE = os.path.join(APP_DIR, "calibration.json")
+
+# Load existing calibration if present
+if os.path.exists(CALIBRATION_FILE):
+    try:
+        with open(CALIBRATION_FILE, 'r') as f:
+            _cal_data = json.load(f)
+            _ballistic_table = _cal_data.get("ballistic_table", {})
+            print(f"[Calibration] Loaded {len(_ballistic_table)} entries from calibration.json")
+    except Exception:
+        pass
+
+
+@app.route('/api/calibration/lidar_check', methods=['POST'])
+def api_cal_lidar_check():
+    """
+    LiDAR verification: user places target at known distance, we compare.
+    Body: {"known_distance_m": float, "label": str}
+    """
+    data = request.get_json(force=True)
+    known = float(data.get('known_distance_m', 0))
+    label = data.get('label', '')
+    measured = lidar.read_distance()
+    error = round(measured - known, 3)
+    entry = {
+        "type": "lidar_check",
+        "known_m": known,
+        "measured_m": round(measured, 3),
+        "error_m": error,
+        "error_cm": round(error * 100, 1),
+        "label": label,
+        "timestamp": time.strftime("%H:%M:%S")
+    }
+    _calibration_log.append(entry)
+    return jsonify(entry)
+
+
+@app.route('/api/calibration/gimbal_test', methods=['POST'])
+def api_cal_gimbal_test():
+    """
+    Gimbal accuracy test: move to a specific angle and report.
+    Body: {"pitch": float, "yaw": float}
+    """
+    data = request.get_json(force=True)
+    pitch = float(data.get('pitch', 0))
+    yaw = float(data.get('yaw', 0))
+    gimbal.set_angles(pitch, yaw)
+    time.sleep(0.3)  # Let gimbal settle
+    status = gimbal.get_status()
+    entry = {
+        "type": "gimbal_test",
+        "requested_pitch": pitch,
+        "requested_yaw": yaw,
+        "actual_pitch": status["pitch"],
+        "actual_yaw": status["yaw"],
+        "timestamp": time.strftime("%H:%M:%S")
+    }
+    _calibration_log.append(entry)
+    return jsonify(entry)
+
+
+@app.route('/api/calibration/fire_test', methods=['POST'])
+def api_cal_fire_test():
+    """
+    Ballistic calibration shot: aim at specific angles, fire, record distance.
+    Body: {"pitch": float, "yaw": float, "duration": float, "note": str}
+    """
+    data = request.get_json(force=True)
+    pitch = float(data.get('pitch', 0))
+    yaw = float(data.get('yaw', 0))
+    duration = float(data.get('duration', 0.3))
+    note = data.get('note', '')
+
+    # Aim
+    gimbal.set_angles(pitch, yaw)
+    time.sleep(0.5)
+
+    # Read distance
+    distance = lidar.read_distance()
+
+    # Compute what ballistic offset WOULD be
+    _, _, offset_info = compute_ballistic_offset(pitch, yaw, distance)
+
+    # Fire
+    relay.fire_pump(duration)
+
+    entry = {
+        "type": "fire_test",
+        "pitch": pitch,
+        "yaw": yaw,
+        "duration": duration,
+        "distance_m": round(distance, 2),
+        "predicted_offset": offset_info,
+        "note": note,
+        "timestamp": time.strftime("%H:%M:%S")
+    }
+    _calibration_log.append(entry)
+    return jsonify(entry)
+
+
+@app.route('/api/calibration/record_hit', methods=['POST'])
+def api_cal_record_hit():
+    """
+    Record a hit/miss result for the last fire test.
+    Body: {"hit": bool, "offset_error_cm": float, "note": str}
+    """
+    data = request.get_json(force=True)
+    hit = bool(data.get('hit', False))
+    offset_err = float(data.get('offset_error_cm', 0))
+    note = data.get('note', '')
+
+    distance = lidar.read_distance()
+    dist_key = str(round(distance * 2) / 2)  # Round to nearest 0.5m
+
+    entry = {
+        "type": "hit_record",
+        "hit": hit,
+        "distance_m": round(distance, 2),
+        "offset_error_cm": offset_err,
+        "note": note,
+        "timestamp": time.strftime("%H:%M:%S")
+    }
+    _calibration_log.append(entry)
+
+    # Update ballistic table with actual offset needed
+    if not hit and offset_err != 0:
+        _ballistic_table[dist_key] = {
+            "correction_deg": offset_err / 10.0,  # Rough cm-to-deg
+            "distance_m": round(distance, 2),
+            "samples": _ballistic_table.get(dist_key, {}).get("samples", 0) + 1
+        }
+
+    return jsonify(entry)
+
+
+@app.route('/api/calibration/sweep', methods=['POST'])
+def api_cal_sweep():
+    """
+    Automated gimbal sweep: cycle through angle grid, reading LiDAR at each.
+    Body: {"pitch_steps": int, "yaw_steps": int}
+    Returns distance map.
+    """
+    data = request.get_json(force=True)
+    p_steps = min(int(data.get('pitch_steps', 5)), 10)
+    y_steps = min(int(data.get('yaw_steps', 9)), 18)
+
+    results = []
+    for pi in range(p_steps):
+        p = -PITCH_LIMIT + (2 * PITCH_LIMIT / max(p_steps - 1, 1)) * pi
+        for yi in range(y_steps):
+            y = -YAW_LIMIT + (2 * YAW_LIMIT / max(y_steps - 1, 1)) * yi
+            gimbal.set_angles(p, y)
+            time.sleep(0.2)
+            d = lidar.read_distance()
+            results.append({
+                "pitch": round(p, 1),
+                "yaw": round(y, 1),
+                "distance_m": round(d, 2)
+            })
+
+    gimbal.center()
+    return jsonify({"sweep": results, "total_points": len(results)})
+
+
+@app.route('/api/calibration/save', methods=['POST'])
+def api_cal_save():
+    """Save calibration data to calibration.json."""
+    cal_data = {
+        "ballistic_table": _ballistic_table,
+        "log": _calibration_log[-50:],  # Keep last 50 entries
+        "saved_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    with open(CALIBRATION_FILE, 'w') as f:
+        json.dump(cal_data, f, indent=2)
+    return jsonify({"saved": True, "entries": len(_calibration_log)})
+
+
+@app.route('/api/calibration/log')
+def api_cal_log():
+    """Return calibration log."""
+    return jsonify({"log": _calibration_log, "ballistic_table": _ballistic_table})
+
+
+@app.route('/api/calibration/clear', methods=['POST'])
+def api_cal_clear():
+    """Clear calibration log (keeps ballistic table)."""
+    _calibration_log.clear()
+    return jsonify({"cleared": True})
+
+
+# ============================================================================
 # STATUS API
 # ============================================================================
 

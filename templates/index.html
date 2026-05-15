@@ -101,6 +101,19 @@
     .sp { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     .note { font-size: 11px; color: var(--orange); margin-top: 10px; }
     .endstop-note { font-size: 11px; color: var(--dim2); margin-top: 8px; text-align: center; }
+    /* ---- Calibration ---- */
+    .cal-section { padding: 14px; }
+    .cal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px) { .cal-grid { grid-template-columns: 1fr; } }
+    .cal-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; flex-wrap: wrap; }
+    .cal-row label { font-size: 12px; color: var(--dim); min-width: 80px; }
+    .cal-row input[type=number] { width: 80px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: var(--text); font-size: 13px; font-family: inherit; }
+    .cal-row input[type=text] { flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: var(--text); font-size: 13px; font-family: inherit; }
+    .cal-result { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 12px; font-family: 'SF Mono','Menlo',monospace; line-height: 1.8; max-height: 200px; overflow-y: auto; white-space: pre-wrap; color: var(--dim); }
+    .cal-result .ok { color: var(--green); } .cal-result .err { color: var(--red); } .cal-result .info { color: var(--teal); }
+    .cal-log { background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-family: 'SF Mono','Menlo',monospace; font-size: 11px; line-height: 1.7; max-height: 400px; overflow-y: auto; white-space: pre-wrap; color: var(--dim); }
+    .cal-actions { display: flex; gap: 8px; padding: 14px; flex-wrap: wrap; align-items: center; }
+    .cal-stat { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; background: rgba(10,132,255,0.12); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -114,6 +127,7 @@
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="tab('ctrl')">🕹️ Control</button>
+  <button class="tab-btn" onclick="tab('cal')">🔧 Calibration</button>
   <button class="tab-btn" onclick="tab('tests')">🧪 Tests</button>
 </div>
 
@@ -220,6 +234,66 @@
   </div>
 </div>
 
+<!-- ===================== CALIBRATION TAB ===================== -->
+<div class="tab-pane" id="p-cal">
+  <div class="cal-actions">
+    <span style="font-size:15px;font-weight:600">🔧 Interactive Calibration</span>
+    <span style="flex:1"></span>
+    <button class="btn btn-sm btn-green" onclick="calSave()">💾 Save to JSON</button>
+    <button class="btn btn-sm" onclick="calClear()">🗑 Clear Log</button>
+    <span class="cal-stat" id="cal-count">0 entries</span>
+  </div>
+  <div class="cal-section"><div class="cal-grid">
+    <!-- LiDAR Distance Check -->
+    <div class="card">
+      <div class="card-title">📏 LiDAR Distance Verification</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Place a target at a known distance. Compare LiDAR reading vs actual.</p>
+        <div class="cal-row"><label>Known (m)</label><input type="number" id="cal-ld" value="2.0" step="0.1" min="0.2" max="8"><label>Label</label><input type="text" id="cal-ll" placeholder="e.g. Wall mark 2m"></div>
+        <div class="cal-row"><button class="btn btn-blue btn-sm" onclick="calLidar()">📡 Measure</button><span style="font-size:12px;color:var(--dim)" id="cal-lr"></span></div>
+        <div class="cal-result" id="cal-lidar-log">Ready. Place target and click Measure.
+</div>
+      </div>
+    </div>
+    <!-- Gimbal Accuracy -->
+    <div class="card">
+      <div class="card-title">🕹️ Gimbal Position Test</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Command specific angles. Verify gimbal reaches target position.</p>
+        <div class="cal-row"><label>Pitch (°)</label><input type="number" id="cal-gp" value="0" step="1" min="-20" max="20"><label>Yaw (°)</label><input type="number" id="cal-gy" value="0" step="1" min="-80" max="80"></div>
+        <div class="cal-row"><button class="btn btn-blue btn-sm" onclick="calGimbal()">🎯 Move & Check</button><button class="btn btn-sm" onclick="calGimbalSweep()">🔄 Auto Sweep (5×9)</button></div>
+        <div class="cal-result" id="cal-gimbal-log">Ready. Set angles and click Move.
+</div>
+      </div>
+    </div>
+    <!-- Ballistic Fire Test -->
+    <div class="card">
+      <div class="card-title">🔥 Ballistic Fire Test</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Aim → measure distance → fire → record hit/miss. Builds your ballistic lookup table.</p>
+        <div class="cal-row"><label>Pitch (°)</label><input type="number" id="cal-fp" value="0" step="1" min="-20" max="20"><label>Yaw (°)</label><input type="number" id="cal-fy" value="0" step="1" min="-80" max="80"></div>
+        <div class="cal-row"><label>Pulse (s)</label><input type="number" id="cal-fd" value="0.3" step="0.05" min="0.05" max="2.0"><label>Note</label><input type="text" id="cal-fn" placeholder="e.g. Target at 2.5m"></div>
+        <div class="cal-row">
+          <button class="btn btn-red btn-sm" onclick="calFire()">🔥 Aim & Fire</button>
+          <button class="btn btn-green btn-sm" onclick="calHit(true)">✅ HIT</button>
+          <button class="btn btn-sm" style="background:var(--red);color:#fff" onclick="calHit(false)">❌ MISS</button>
+          <label>Off by cm:</label><input type="number" id="cal-fo" value="0" step="1" style="width:60px">
+        </div>
+        <div class="cal-result" id="cal-fire-log">Ready. Set angles, fire, then mark HIT or MISS.
+</div>
+      </div>
+    </div>
+    <!-- Full Calibration Log -->
+    <div class="card">
+      <div class="card-title">📋 Calibration Log</div>
+      <div class="card-body">
+        <div class="cal-log" id="cal-full-log">No entries yet. Run calibration tests above.
+</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
 <!-- ===================== TESTS TAB ===================== -->
 <div class="tab-pane" id="p-tests">
   <div style="padding:14px 14px 0;display:flex;align-items:center;gap:12px">
@@ -272,7 +346,7 @@ function fire(){api('/api/relay/fire',{duration:+$('fd').value})}
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===(t==='ctrl'?0:1)));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===(t==='ctrl'?0:1)));if(t==='tests'&&!tl)loadTests()}
+function tab(t){const ti={ctrl:0,cal:1,tests:2};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh()}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -295,6 +369,51 @@ try{const r=await fetch('/api/tests/run',{method:'POST',headers:{'Content-Type':
 async function runAll(){$('bra').disabled=true;$('ras').innerHTML='<span class="sp"></span> Running…';for(const id of SUITES){if(id==='smoke'){$('b-'+id).className='tc-badge pass';$('b-'+id).textContent='⏭ SKIP';$('s-'+id).textContent='Self-test';continue}await runT(id)}$('bra').disabled=false;$('ras').textContent='✅ Complete'}
 
 function updTotal(){let p=0,f=0;SUITES.forEach(id=>{if(ST[id]){p+=ST[id].p||0;f+=ST[id].f||0}});if(p+f)$('ts').innerHTML=`<b style="color:var(--green)">${p} passed</b> · <b style="color:${f?'var(--red)':'var(--green)'}">${f} failed</b>`}
+
+// ---- Calibration ----
+async function calLidar(){
+  const d=await fetch('/api/calibration/lidar_check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({known_distance_m:+$('cal-ld').value,label:$('cal-ll').value})}).then(r=>r.json());
+  const ok=Math.abs(d.error_cm)<5;
+  $('cal-lr').textContent=`Measured: ${d.measured_m}m (err: ${d.error_cm}cm)`;
+  $('cal-lidar-log').innerHTML+=`<span class="${ok?'ok':'err'}">[${d.timestamp}] Known=${d.known_m}m Measured=${d.measured_m}m Error=${d.error_cm}cm ${ok?'✅':'⚠️'} ${d.label}</span>\n`;
+  calRefresh();
+}
+async function calGimbal(){
+  const d=await fetch('/api/calibration/gimbal_test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch:+$('cal-gp').value,yaw:+$('cal-gy').value})}).then(r=>r.json());
+  $('cal-gimbal-log').innerHTML+=`<span class="info">[${d.timestamp}] Req P=${d.requested_pitch}° Y=${d.requested_yaw}° → Got P=${d.actual_pitch}° Y=${d.actual_yaw}°</span>\n`;
+  calRefresh();
+}
+async function calGimbalSweep(){
+  $('cal-gimbal-log').innerHTML+='<span class="info">Running 5×9 sweep… (takes ~10s)</span>\n';
+  const d=await fetch('/api/calibration/sweep',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch_steps:5,yaw_steps:9})}).then(r=>r.json());
+  d.sweep.forEach(p=>{$('cal-gimbal-log').innerHTML+=`  P=${p.pitch}° Y=${p.yaw}° → ${p.distance_m}m\n`});
+  $('cal-gimbal-log').innerHTML+=`<span class="ok">Sweep complete: ${d.total_points} points mapped</span>\n`;
+  $('cal-gimbal-log').scrollTop=$('cal-gimbal-log').scrollHeight;
+  calRefresh();
+}
+async function calFire(){
+  const d=await fetch('/api/calibration/fire_test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch:+$('cal-fp').value,yaw:+$('cal-fy').value,duration:+$('cal-fd').value,note:$('cal-fn').value})}).then(r=>r.json());
+  $('cal-fire-log').innerHTML+=`<span class="info">[${d.timestamp}] FIRE P=${d.pitch}° Y=${d.yaw}° D=${d.distance_m}m pulse=${d.duration}s offset=${d.predicted_offset.drop_offset_deg}° ${d.note}</span>\n`;
+  calRefresh();
+}
+async function calHit(hit){
+  const off=+$('cal-fo').value;
+  const d=await fetch('/api/calibration/record_hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({hit,offset_error_cm:off,note:$('cal-fn').value})}).then(r=>r.json());
+  $('cal-fire-log').innerHTML+=`<span class="${hit?'ok':'err'}">[${d.timestamp}] ${hit?'✅ HIT':'❌ MISS'} @ ${d.distance_m}m err=${d.offset_error_cm}cm ${d.note}</span>\n`;
+  calRefresh();
+}
+async function calSave(){const d=await fetch('/api/calibration/save',{method:'POST'}).then(r=>r.json());showToast('💾 Saved','Calibration saved: '+d.entries+' entries')}
+async function calClear(){await fetch('/api/calibration/clear',{method:'POST'});$('cal-full-log').innerHTML='Log cleared.\n';calRefresh()}
+async function calRefresh(){
+  const d=await fetch('/api/calibration/log').then(r=>r.json());
+  $('cal-count').textContent=d.log.length+' entries';
+  const fl=$('cal-full-log');fl.innerHTML='';
+  d.log.slice(-30).forEach(e=>{
+    const c=e.type==='hit_record'?(e.hit?'ok':'err'):(e.type==='lidar_check'?(Math.abs(e.error_cm||0)<5?'ok':'err'):'info');
+    fl.innerHTML+=`<span class="${c}">[${e.timestamp}] ${e.type}: ${JSON.stringify(e).slice(0,120)}…</span>\n`;
+  });
+  fl.scrollTop=fl.scrollHeight;
+}
 </script>
 </body>
 </html>
