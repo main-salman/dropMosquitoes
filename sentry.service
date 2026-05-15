@@ -1,0 +1,33 @@
+# Sniper Messy Mortar — Systemd Auto-Start Service
+# Gap #2: Ensures the turret starts automatically on boot.
+#
+# INSTALL:
+#   sudo cp sentry.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable sentry.service
+#   sudo systemctl start sentry.service
+#
+# LOGS:
+#   journalctl -u sentry -f
+#
+# STOP:
+#   sudo systemctl stop sentry.service
+
+[Unit]
+Description=Sniper Messy Mortar — AI Mosquito Sentry
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/jetson/dropMosquitoes
+ExecStartPre=/usr/bin/sleep 5
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+RestartSec=10
+WatchdogSec=60
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

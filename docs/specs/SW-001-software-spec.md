@@ -80,10 +80,17 @@ The following three stages execute **in sequence** for every fire decision. Toge
 
 ## 3. Safety Interlocks (see SAFE-001)
 
-- Human/pet override: `person`, `dog`, `cat` confidence > 0.45 → instant `is_safe_to_fire = False`
 - Biological heuristic: bounding box too large → ignore (moth/June bug filter)
 - GPIO fail-safe: `try/finally` ensuring pin LOW on crash
 - Death Spiral prevention: yaw hard-limited ±130°, rapid unwind if target crosses 180°
+
+> **Detection Strategy:** Mosquitoes are not in the COCO-80 class set. The primary
+> targeting method is **MOG2 motion detection** (ScoutAgent §2.1), which fires at
+> any small, fast-moving object in the field of view. The system intentionally
+> targets **any flying insect in the 1×–3× mosquito body size range** (roughly
+> 3–20mm, mapped to bounding box area thresholds at the given LiDAR distance).
+> YOLOv8 TensorRT is used by the SniperAgent (§2.3) for secondary classification
+> and large-object rejection only (e.g., filtering out birds, leaves, moths).
 
 ## 4. Physics Model
 

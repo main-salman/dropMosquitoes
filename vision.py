@@ -343,10 +343,10 @@ class YOLODetector:
     MODEL_PATH = "models/yolov8n.engine"
     FALLBACK_PATH = "models/yolov8n.pt"
 
-    # Target classes we care about (COCO class IDs)
-    # Mosquito detection requires a custom-trained model; these are placeholders
-    # for the safety interlock system (human/pet detection).
-    SAFETY_CLASSES = {0: "person", 15: "cat", 16: "dog"}
+    # Target classes for large-object rejection (not fire inhibitors).
+    # Used to filter out birds, leaves, and other non-target objects.
+    # Human/pet interlock intentionally removed — water is harmless.
+    LARGE_OBJECT_CLASSES = {0: "person", 14: "bird"}
 
     def __init__(self):
         self.model = None
@@ -374,10 +374,10 @@ class YOLODetector:
 
         Returns a list of detection dicts:
           [{"class": str, "class_id": int, "confidence": float,
-            "bbox": (x1, y1, x2, y2), "area": int, "is_safe": bool}]
+            "bbox": (x1, y1, x2, y2), "area": int}]
 
-        SAFE-001 §2: Sets is_safe=False if any SAFETY_CLASS is detected
-                      with confidence > 0.45.
+        SW-001 §3: Filters by bounding box area to reject moths/large objects.
+        Note: No human/pet fire inhibitor — system fires water only.
         """
         if self.model is None or frame is None:
             return []
@@ -386,7 +386,6 @@ class YOLODetector:
             results = self.model(frame, conf=self.confidence, verbose=False)
 
         detections = []
-        has_safety_threat = False
 
         for r in results:
             if r.boxes is None:
@@ -398,10 +397,6 @@ class YOLODetector:
                 area = (x2 - x1) * (y2 - y1)
                 cls_name = r.names.get(cls_id, f"class_{cls_id}")
 
-                # Check safety interlock
-                if cls_id in self.SAFETY_CLASSES and conf > 0.45:
-                    has_safety_threat = True
-
                 # Apply biological heuristic filters (SW-001 §3)
                 if area < self.min_box_area or area > self.max_box_area:
                     continue
@@ -411,8 +406,7 @@ class YOLODetector:
                     "class_id": cls_id,
                     "confidence": round(conf, 3),
                     "bbox": (x1, y1, x2, y2),
-                    "area": area,
-                    "is_safe": not has_safety_threat
+                    "area": area
                 })
 
         return detections

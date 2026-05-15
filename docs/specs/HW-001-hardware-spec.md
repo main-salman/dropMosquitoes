@@ -92,7 +92,21 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 - **Model:** Benewake TF-Luna (Single-Point ToF LiDAR)
 - **Interface:** I2C (Bus 1)
 - **Address:** `0x10` (default)
-- **Pins:** SDA → Jetson Pin 3 (GPIO 2), SCL → Jetson Pin 5 (GPIO 3)
+- **Power:** 5V (connect to Jetson 5V pin — do NOT use 3.3V)
+- **I2C Logic Level:** 3.3V LVTTL — **directly compatible** with Jetson GPIO. No level shifter needed.
+- **Pins:**
+
+| TF-Luna Pin | Function | Jetson Connection |
+|:------------|:---------|:------------------|
+| 1 (VCC) | Power | Pin 2 or 4 (5V) |
+| 2 (SDA) | I2C Data | Pin 3 (GPIO 2 / SDA) |
+| 3 (SCL) | I2C Clock | Pin 5 (GPIO 3 / SCL) |
+| 4 (GND) | Ground | Pin 6 (GND) |
+| **5 (CFG)** | **Mode Select** | **Pin 9 (GND) — CRITICAL** |
+
+> ⚠ **Pin 5 (CFG) MUST be connected to GND** before power-on to enable I2C mode.
+> If left floating, the sensor defaults to UART mode and will not respond on the I2C bus.
+
 - **Range:** 0.2m – 8.0m (±2cm accuracy)
 - **Update Rate:** 250 Hz (I2C mode)
 - **Purpose:** "Background Proxy" — pings the surface behind a detected target to get Z-axis distance for parabolic ballistic offset calculation
@@ -116,6 +130,25 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 - **Sealant:** Silicone adhesive on all gland threads
 - **Internal Mounting:** M3 standoffs (15mm) on grid plate
 
-## 9. Bill of Materials
+## 9. Network Access
+
+The Jetson is sealed inside an IP67 enclosure 8-10ft overhead. Remote access is **mandatory**.
+
+- **WiFi:** Yahboom carrier board has onboard WiFi. Connect to local 2.4GHz network.
+- **Static IP:** Assign a static IP via `nmcli` or `/etc/netplan/` so the dashboard URL is predictable.
+- **Dashboard URL:** `http://<jetson-ip>:8000` (Flask server)
+- **SSH:** `ssh jetson@<jetson-ip>` — enable via `sudo systemctl enable ssh`
+- **Fallback:** If WiFi fails, connect Ethernet cable to the Jetson's RJ45 port (requires cable routed through a PG13.5 cable gland).
+
+## 10. Auto-Start on Boot
+
+The turret must start automatically on power-up without manual SSH intervention.
+
+- **Service File:** `sentry.service` (systemd unit, included in repo)
+- **Install:** `sudo cp sentry.service /etc/systemd/system/ && sudo systemctl enable sentry`
+- **Watchdog:** systemd watchdog set to 60s — restarts automatically on crash
+- **Logs:** `journalctl -u sentry -f`
+
+## 11. Bill of Materials
 
 See [parts.csv](../../parts.csv) for the complete, URL-verified procurement list.

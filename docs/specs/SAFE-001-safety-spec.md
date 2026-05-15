@@ -19,15 +19,17 @@
 
 | Hazard | Mitigation | Spec Reference |
 |:-------|:-----------|:---------------|
-| Firing at humans/pets | `person`, `dog`, `cat` confidence > 0.45 → `is_safe_to_fire = False` | SW-001 §3 |
 | Firing at large insects (moths) | Bounding box area threshold filter | SW-001 §3 |
 | GPIO stuck HIGH on crash | `try/finally` block on every GPIO 18 access | SW-001 §3 |
 | Continuous 360° rotation | Yaw hard-limited to ±130°; rapid unwind at 180° boundary | SW-001 §3 |
-| Rain damage to optics | Raindrop sensor triggers "Park Mode" (aims lenses down) | HW-001 §7 |
+
+> **Note:** Human/pet detection interlock has been **intentionally removed**. The system fires water only — being sprayed is preferable to mosquito bites. YOLO classification is used solely for target identification, not as a fire inhibitor.
 
 ## 3. Operational Safety
 
 - System must be powered via 12V DC brick only — no mains AC wiring inside enclosure
 - All cable glands must be sealed with silicone adhesive before outdoor deployment
-- Conformal coating (MG Chemicals 422B) on all exposed PCBs — NOT on lenses or Jetson fan
+- Conformal coating (MG Chemicals 422B) on all exposed PCBs — NOT on lenses or Jetson fan *(add to BOM if not already purchased)*
 - IR illuminators mounted to fixed post — NOT on gimbal (prevents weight/vibration issues)
+- Reservoir must have a debris screen / mesh lid to prevent pump clogging
+

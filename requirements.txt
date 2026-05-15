@@ -1,0 +1,14 @@
+# Sniper Messy Mortar — Python Dependencies
+# Install: pip install -r requirements.txt
+#
+# NOTE: On Jetson, install TensorRT via JetPack SDK, not pip.
+# NOTE: opencv-python is pre-installed on JetPack OS.
+
+flask>=2.3.0
+pyserial>=3.5
+smbus2>=0.4.0
+numpy>=1.24.0
+ultralytics>=8.0.0
+
+# Dev/testing only (not needed on Jetson):
+# opencv-python>=4.8.0

@@ -1,0 +1,27 @@
+<mxfile>
+  <diagram name="Jetson Power" id="pwr2">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800" background="#1a1a2e">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t1" value="&lt;b&gt;WIRE DIAGRAM 02: Jetson Power Connection&lt;/b&gt;&lt;br&gt;Wago → DC Pigtail → Yahboom Barrel Jack" style="text;html=1;fontSize=16;fontColor=#E0E0E0;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="600" height="50" as="geometry"/></mxCell>
+        <!-- Wago +12V -->
+        <mxCell id="w12" value="&lt;b&gt;Wago +12V&lt;/b&gt;&lt;br&gt;Port 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#F44336;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="150" width="140" height="60" as="geometry"/></mxCell>
+        <!-- Wago GND -->
+        <mxCell id="wgn" value="&lt;b&gt;Wago GND&lt;/b&gt;&lt;br&gt;Port 2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#78909C;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="260" width="140" height="60" as="geometry"/></mxCell>
+        <!-- DC Pigtail -->
+        <mxCell id="pig" value="&lt;b&gt;Male DC Pigtail&lt;/b&gt;&lt;br&gt;5.5mm × 2.5mm&lt;br&gt;Bare wire ← → Barrel plug&lt;br&gt;&lt;font color='#F44336'&gt;RED stripe = +12V&lt;/font&gt;&lt;br&gt;&lt;font color='#666'&gt;BLACK stripe = GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#33334D;strokeColor=#FF9800;fontColor=#FFF;fontSize=11;" vertex="1" parent="1"><mxGeometry x="320" y="150" width="220" height="110" as="geometry"/></mxCell>
+        <!-- Yahboom Jetson -->
+        <mxCell id="jet" value="&lt;b&gt;Yahboom Jetson Orin Nano&lt;/b&gt;&lt;br&gt;DC Barrel Jack Input&lt;br&gt;Accepts 9V–19V&lt;br&gt;(Using 12V from Wago)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#4CAF50;fontColor=#FFF;fontSize=12;" vertex="1" parent="1"><mxGeometry x="680" y="150" width="250" height="110" as="geometry"/></mxCell>
+        <!-- RED wire -->
+        <mxCell id="e1" value="&lt;font color='#F44336'&gt;RED wire into Wago lever&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F44336;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="w12" target="pig"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- BLACK wire -->
+        <mxCell id="e2" value="&lt;font color='#888'&gt;BLACK wire into Wago lever&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#555;strokeWidth=4;fontSize=10;" edge="1" parent="1" source="wgn" target="pig"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Barrel plug -->
+        <mxCell id="e3" value="&lt;font color='#FF9800'&gt;Barrel plug snaps into jack&lt;/font&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF9800;strokeWidth=3;fontSize=10;" edge="1" parent="1" source="pig" target="jet"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <!-- Warning -->
+        <mxCell id="n1" value="⚠ POLARITY: Center-positive. RED to center pin, BLACK to outer barrel. Reversing will damage the board!" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A1C1C;strokeColor=#F44336;fontColor=#FF8A80;fontSize=11;" vertex="1" parent="1"><mxGeometry x="40" y="380" width="600" height="40" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
