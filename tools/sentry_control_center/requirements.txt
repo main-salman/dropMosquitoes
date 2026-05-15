@@ -1,0 +1,13 @@
+# Sentry Control Center - Requirements
+
+# 1. Install CUDA-enabled PyTorch FIRST (Crucial for RTX 3070 8GB on Windows)
+# Run the following command in your terminal before installing this requirements file:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# (or use cu121 if you have CUDA 12.1 installed)
+
+# 2. Install the rest of the dependencies:
+# pip install -r requirements.txt
+
+streamlit>=1.32.0
+ultralytics>=8.1.0
+opencv-python-headless>=4.9.0.80
