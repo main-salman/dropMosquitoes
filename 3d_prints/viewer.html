@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCAD Viewer — Gimbal Nozzle Bracket</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #0a0a0f;
+    color: #e0e0e0;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  #viewer-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
+
+  canvas { display: block; }
+
+  /* Top bar */
+  .top-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 10;
+    gap: 14px;
+  }
+
+  .top-bar .icon {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .top-bar .title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  .top-bar .subtitle {
+    font-size: 12px;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-bar .spacer { flex: 1; }
+
+  .top-bar .badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    white-space: nowrap;
+  }
+
+  /* Parameter panel */
+  .param-panel {
+    position: absolute;
+    top: 66px; right: 14px;
+    width: 260px;
+    background: rgba(15, 15, 22, 0.92);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.07);
+    z-index: 10;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+
+  .param-panel .panel-header {
+    padding: 12px 16px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #6366f1;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+
+  .param-group {
+    padding: 8px 16px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .param-group:last-child { border-bottom: none; }
+
+  .param-group-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #666;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .param-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+  }
+
+  .param-label {
+    font-size: 12px;
+    color: #aaa;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .param-value {
+    font-size: 12px;
+    color: #e0e0e0;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .param-value.highlight {
+    color: #a78bfa;
+  }
+
+  /* Controls hint */
+  .controls-hint {
+    position: absolute;
+    bottom: 14px; left: 14px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+  }
+
+  .hint-pill {
+    font-size: 11px;
+    color: #777;
+    background: rgba(15, 15, 22, 0.8);
+    backdrop-filter: blur(12px);
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .hint-pill kbd {
+    display: inline-block;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #aaa;
+    margin: 0 2px;
+  }
+
+  /* Dims overlay */
+  .dims-overlay {
+    position: absolute;
+    bottom: 14px; right: 14px;
+    z-index: 10;
+    display: flex;
+    gap: 6px;
+  }
+
+  .dim-chip {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(15, 15, 22, 0.85);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dim-chip.x { color: #ef4444; }
+  .dim-chip.y { color: #22c55e; }
+  .dim-chip.z { color: #3b82f6; }
+
+  /* Wireframe toggle */
+  .toggle-group {
+    position: absolute;
+    top: 66px; left: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .toggle-btn {
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(15, 15, 22, 0.85);
+    backdrop-filter: blur(12px);
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .toggle-btn:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #ccc;
+  }
+
+  .toggle-btn.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #a78bfa;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewer-container">
+  <div class="top-bar">
+    <div class="icon">🔩</div>
+    <span class="title">Gimbal Nozzle Bracket</span>
+    <span class="subtitle">01_nozzle_bracket.scad</span>
+    <span class="spacer"></span>
+    <span class="badge">PETG / ABS</span>
+    <span class="badge">100% Infill</span>
+  </div>
+
+  <div class="toggle-group">
+    <button id="btn-wireframe" class="toggle-btn" onclick="toggleWireframe()">Wireframe</button>
+    <button id="btn-xray" class="toggle-btn" onclick="toggleXray()">X-Ray</button>
+    <button id="btn-explode" class="toggle-btn" onclick="toggleExplode()">Explode</button>
+    <button id="btn-reset" class="toggle-btn" onclick="resetView()">Reset View</button>
+  </div>
+
+  <div class="param-panel">
+    <div class="panel-header">Parameters</div>
+    <div class="param-group">
+      <div class="param-group-title">Base Plate</div>
+      <div class="param-row"><span class="param-label">width</span><span class="param-value">40 mm</span></div>
+      <div class="param-row"><span class="param-label">depth</span><span class="param-value">55 mm</span></div>
+      <div class="param-row"><span class="param-label">thickness</span><span class="param-value">3 mm</span></div>
+    </div>
+    <div class="param-group">
+      <div class="param-group-title">Nozzle Holder</div>
+      <div class="param-row"><span class="param-label">bore</span><span class="param-value highlight">11 mm (Ø)</span></div>
+      <div class="param-row"><span class="param-label">height</span><span class="param-value">15 mm</span></div>
+      <div class="param-row"><span class="param-label">outer_dia</span><span class="param-value">16 mm (Ø)</span></div>
+      <div class="param-row"><span class="param-label">offset_x</span><span class="param-value">14 mm</span></div>
+    </div>
+    <div class="param-group">
+      <div class="param-group-title">Mounting</div>
+      <div class="param-row"><span class="param-label">hole_dia</span><span class="param-value">2.8 mm (M2.5)</span></div>
+      <div class="param-row"><span class="param-label">spacing</span><span class="param-value">30×30 mm</span></div>
+      <div class="param-row"><span class="param-label">cam_cutout</span><span class="param-value highlight">20 mm (Ø)</span></div>
+    </div>
+  </div>
+
+  <div class="controls-hint">
+    <span class="hint-pill"><kbd>Drag</kbd> Orbit</span>
+    <span class="hint-pill"><kbd>Scroll</kbd> Zoom</span>
+    <span class="hint-pill"><kbd>Right-drag</kbd> Pan</span>
+  </div>
+
+  <div class="dims-overlay">
+    <span class="dim-chip x">X: 40mm</span>
+    <span class="dim-chip y">Y: 55mm</span>
+    <span class="dim-chip z">Z: 15mm</span>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// --- Scene setup ---
+const container = document.getElementById('viewer-container');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0f);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(50, 60, 70);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+container.insertBefore(renderer.domElement, container.firstChild);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 20;
+controls.maxDistance = 200;
+controls.target.set(0, 5, 0);
+
+// --- Lights ---
+const ambientLight = new THREE.AmbientLight(0x404060, 0.6);
+scene.add(ambientLight);
+
+const mainLight = new THREE.DirectionalLight(0xffffff, 1.8);
+mainLight.position.set(40, 60, 30);
+mainLight.castShadow = true;
+mainLight.shadow.mapSize.width = 2048;
+mainLight.shadow.mapSize.height = 2048;
+mainLight.shadow.camera.near = 1;
+mainLight.shadow.camera.far = 200;
+mainLight.shadow.camera.left = -50;
+mainLight.shadow.camera.right = 50;
+mainLight.shadow.camera.top = 50;
+mainLight.shadow.camera.bottom = -50;
+scene.add(mainLight);
+
+const fillLight = new THREE.DirectionalLight(0x8888ff, 0.4);
+fillLight.position.set(-30, 20, -20);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffa040, 0.3);
+rimLight.position.set(0, -10, -40);
+scene.add(rimLight);
+
+// --- Grid ---
+const gridHelper = new THREE.GridHelper(100, 20, 0x1a1a2e, 0x111120);
+scene.add(gridHelper);
+
+// Subtle axis lines
+const axesMat = {
+  x: new THREE.LineBasicMaterial({ color: 0xef4444, transparent: true, opacity: 0.4 }),
+  y: new THREE.LineBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.4 }),
+  z: new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.4 })
+};
+function makeAxis(dir, mat) {
+  const pts = [new THREE.Vector3(0,0,0), dir.clone().multiplyScalar(30)];
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.Line(g, mat);
+}
+scene.add(makeAxis(new THREE.Vector3(1,0,0), axesMat.x));
+scene.add(makeAxis(new THREE.Vector3(0,1,0), axesMat.y));
+scene.add(makeAxis(new THREE.Vector3(0,0,1), axesMat.z));
+
+// --- Materials ---
+const bodyMat = new THREE.MeshPhysicalMaterial({
+  color: 0x6366f1,
+  metalness: 0.1,
+  roughness: 0.35,
+  clearcoat: 0.3,
+  clearcoatRoughness: 0.2,
+});
+
+const holeMat = new THREE.MeshPhysicalMaterial({
+  color: 0x1a1a2e,
+  metalness: 0.8,
+  roughness: 0.2,
+});
+
+const wireMat = new THREE.LineBasicMaterial({
+  color: 0x818cf8,
+  transparent: true,
+  opacity: 0.6,
+});
+
+// --- Parameters (from SCAD) ---
+const P = {
+  pw: 40, pd: 55, pt: 3,
+  nb: 11, nh: 15, nod: 16, nox: 14,
+  mhd: 2.8, msx: 30, msy: 30,
+  ccd: 20,
+};
+
+// --- Build geometry using Three.js CSG approach ---
+// Since browser CSG is complex, we'll use constructive visual representation:
+// Render the solid parts and the holes separately for visual accuracy.
+
+const group = new THREE.Group();
+const explodeGroup = new THREE.Group();
+
+// 1. Base plate
+const plateGeo = new THREE.BoxGeometry(P.pw, P.pt, P.pd);
+const plate = new THREE.Mesh(plateGeo, bodyMat);
+plate.position.set(0, P.pt / 2, 0);
+plate.castShadow = true;
+plate.receiveShadow = true;
+group.add(plate);
+
+// 2. Nozzle holder tube (outer cylinder - subtract inner)
+const tubeOuterGeo = new THREE.CylinderGeometry(P.nod/2, P.nod/2, P.nh, 48);
+const tubeInnerGeo = new THREE.CylinderGeometry(P.nb/2, P.nb/2, P.nh + 2, 48);
+const tubeOuter = new THREE.Mesh(tubeOuterGeo, bodyMat);
+tubeOuter.position.set(P.nox, P.nh / 2, 12);
+tubeOuter.castShadow = true;
+group.add(tubeOuter);
+
+const tubeInner = new THREE.Mesh(tubeInnerGeo, holeMat);
+tubeInner.position.set(P.nox, P.nh / 2, 12);
+group.add(tubeInner);
+
+// 3. Camera cutout visualization
+const camHoleGeo = new THREE.CylinderGeometry(P.ccd/2, P.ccd/2, P.pt + 2, 48);
+const camHole = new THREE.Mesh(camHoleGeo, holeMat);
+camHole.position.set(-P.nox + 4, P.pt / 2, 0);
+group.add(camHole);
+
+// 4. Mounting holes
+const holePositions = [
+  [-P.msx/2, -P.msy/2],
+  [P.msx/2, -P.msy/2],
+  [-P.msx/2, P.msy/2],
+  [P.msx/2, P.msy/2],
+];
+holePositions.forEach(([x, z]) => {
+  const hg = new THREE.CylinderGeometry(P.mhd/2, P.mhd/2, P.pt + 2, 24);
+  const hm = new THREE.Mesh(hg, holeMat);
+  hm.position.set(x, P.pt / 2, z);
+  group.add(hm);
+});
+
+// 5. Edge wireframe for the plate
+const plateEdges = new THREE.EdgesGeometry(plateGeo);
+const plateWire = new THREE.LineSegments(plateEdges, wireMat);
+plateWire.position.copy(plate.position);
+plateWire.visible = false;
+group.add(plateWire);
+
+const tubeEdges = new THREE.EdgesGeometry(tubeOuterGeo);
+const tubeWire = new THREE.LineSegments(tubeEdges, wireMat);
+tubeWire.position.copy(tubeOuter.position);
+tubeWire.visible = false;
+group.add(tubeWire);
+
+scene.add(group);
+
+// --- Annotation markers ---
+function createAnnotation(position, label) {
+  const sprite = makeTextSprite(label);
+  sprite.position.copy(position);
+  sprite.position.y += 2;
+  scene.add(sprite);
+  return sprite;
+}
+
+function makeTextSprite(text) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '600 22px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(10,10,15,0.7)';
+  ctx.roundRect(0, 0, 256, 64, 8);
+  ctx.fill();
+  ctx.fillStyle = '#a78bfa';
+  ctx.fillText(text, 12, 40);
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(18, 4.5, 1);
+  return sprite;
+}
+
+const ann1 = createAnnotation(new THREE.Vector3(P.nox, P.nh + 3, 12), 'Nozzle Bore Ø11');
+const ann2 = createAnnotation(new THREE.Vector3(-P.nox + 4, 6, 0), 'Camera Cutout Ø20');
+const ann3 = createAnnotation(new THREE.Vector3(-P.msx/2, 6, -P.msy/2), 'M2.5 Mount');
+
+// --- State ---
+let wireframeOn = false;
+let xrayOn = false;
+let explodeOn = false;
+
+window.toggleWireframe = function() {
+  wireframeOn = !wireframeOn;
+  document.getElementById('btn-wireframe').classList.toggle('active', wireframeOn);
+  bodyMat.wireframe = wireframeOn;
+};
+
+window.toggleXray = function() {
+  xrayOn = !xrayOn;
+  document.getElementById('btn-xray').classList.toggle('active', xrayOn);
+  bodyMat.transparent = xrayOn;
+  bodyMat.opacity = xrayOn ? 0.3 : 1.0;
+  bodyMat.needsUpdate = true;
+};
+
+window.toggleExplode = function() {
+  explodeOn = !explodeOn;
+  document.getElementById('btn-explode').classList.toggle('active', explodeOn);
+  const offset = explodeOn ? 8 : 0;
+  plate.position.y = P.pt / 2 - offset;
+  tubeOuter.position.y = P.nh / 2 + offset;
+  tubeInner.position.y = P.nh / 2 + offset;
+};
+
+window.resetView = function() {
+  camera.position.set(50, 60, 70);
+  controls.target.set(0, 5, 0);
+  controls.update();
+};
+
+// --- Animation ---
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Gentle auto-rotation when idle
+  // group.rotation.y += 0.001;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// --- Resize ---
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>
