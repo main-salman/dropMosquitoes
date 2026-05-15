@@ -162,7 +162,7 @@
           </div>
           <div class="telem-item">
             <div class="telem-val offset" id="tv-offset">0.0°</div>
-            <div class="telem-label">Ballistic Offset</div>
+            <div class="telem-label">Airburst Offset</div>
           </div>
           <div class="telem-item">
             <div class="telem-val pitch" id="tv-pitch">0.0°</div>
@@ -196,8 +196,13 @@
       <div class="card-body">
         <div class="sl">
           <label>Pulse</label>
-          <input type="range" id="fd" min="0.05" max="2.0" step="0.05" value="0.3" oninput="$('fdv').textContent=this.value+'s'">
-          <div class="v" id="fdv">0.3s</div>
+          <input type="range" id="fd" min="0.05" max="2.0" step="0.05" value="0.6" oninput="$('fdv').textContent=this.value+'s'">
+          <div class="v" id="fdv">0.6s</div>
+        </div>
+        <div class="sl">
+          <label>Airburst Pitch</label>
+          <input type="range" id="ao" min="0" max="30" step="1" value="12" oninput="$('aov').textContent='+'+this.value+'°';api('/api/airburst/set',{offset:this.value})">
+          <div class="v" id="aov">+12°</div>
         </div>
         <button class="btn btn-red" style="width:100%;padding:14px;font-size:15px;margin-top:8px" onclick="fire()">🔥 TEST FIRE</button>
       </div>
@@ -328,12 +333,12 @@ async function aim(e,c,fw,fh){
   const px=Math.round((e.clientX-r.left)*fw/r.width);
   const py=Math.round((e.clientY-r.top)*fh/r.height);
   const d=await api('/api/gimbal/click',{px,py,frame_w:fw,frame_h:fh});
-  if(d&&d.ballistic){
-    lastOffset=d.ballistic.drop_offset_deg;
-    $('tv-offset').textContent=d.ballistic.drop_offset_deg.toFixed(2)+'°';
+  if(d&&d.predictive_lead){
+    lastOffset=d.predictive_lead.airburst_offset_deg;
+    $('tv-offset').textContent='+'+d.predictive_lead.airburst_offset_deg.toFixed(2)+'°';
     showToast('🎯 Click-to-Aim',
-      `Distance: ${d.ballistic.distance_m}m · Drop: ${d.ballistic.gravity_drop_cm}cm\n`+
-      `Offset: ${d.ballistic.drop_offset_deg}° · ToF: ${d.ballistic.time_of_flight_ms}ms\n`+
+      `Distance: ${d.predictive_lead.distance_m}m · ToF: ${d.predictive_lead.tof_ms}ms\n`+
+      `Airburst: +${d.predictive_lead.airburst_offset_deg}° · Lead: P:${d.predictive_lead.lead_pitch_deg}° Y:${d.predictive_lead.lead_yaw_deg}°\n`+
       `Gimbal → P:${d.pitch}° Y:${d.yaw}°`);
   }
 }

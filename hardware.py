@@ -87,10 +87,10 @@ class RelayController:
 
     # -- Pump (CH1) ----------------------------------------------------------
 
-    def fire_pump(self, duration_sec: float = 0.3):
+    def fire_pump(self, duration_sec: float = 0.6):
         """
         Fire the water pump for a specified duration.
-        Default: 300ms as per SW-001 §2.4.
+        Default: 600ms (Sustained pulse for Gravity Airburst).
 
         Args:
             duration_sec: Pulse length in seconds (0.05 to 2.0).
@@ -541,21 +541,22 @@ def pixel_to_angle(px: int, py: int,
 def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
                             distance_m: float,
                             omega_pitch: float = 0.0,
-                            omega_yaw: float = 0.0) -> tuple:
+                            omega_yaw: float = 0.0,
+                            airburst_offset_deg: float = 12.0) -> tuple:
     """
-    Apply velocity lead + parabolic drop to raw gimbal angles.
+    Apply velocity lead + Airburst Pitch Offset to raw gimbal angles.
 
     SW-001 §2.7.2: Calculates Time-of-Flight, then applies the target's
     angular velocity over that window to predict where the target WILL BE
     when the water arrives.
 
-    SW-001 §2.7.3: After lead offsets, applies the gravity drop correction
-    to the FINAL pitch angle.
+    Airburst Strategy: We intentionally over-aim by `airburst_offset_deg` so 
+    the water arc peaks above the target's path and falls down as an AoE cloud.
 
     Execution order:
       1. raw angles (input)
       2. + lead_pitch / lead_yaw  (velocity-corrected aim point)
-      3. + Δpitch (gravity drop)  (final corrected pitch)
+      3. + airburst_offset_deg    (final corrected pitch)
 
     Args:
         raw_pitch: Raw pitch from pixel_to_angle (degrees).
@@ -563,6 +564,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         distance_m: LiDAR-measured slant distance (meters).
         omega_pitch: Target angular velocity in pitch (deg/s) from VelocityTracker.
         omega_yaw: Target angular velocity in yaw (deg/s) from VelocityTracker.
+        airburst_offset_deg: Positive degrees to over-aim for the Gravity Airburst.
 
     Returns:
         (final_pitch, final_yaw, lead_info) where lead_info is a dict with
@@ -576,8 +578,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
             "tof_ms": 0.0,
             "lead_pitch_deg": 0.0,
             "lead_yaw_deg": 0.0,
-            "drop_offset_deg": 0.0,
-            "gravity_drop_cm": 0.0,
+            "airburst_offset_deg": 0.0,
             "total_pitch_correction": 0.0,
             "total_yaw_correction": 0.0
         }
@@ -599,15 +600,12 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
     led_pitch = raw_pitch + lead_pitch
     led_yaw = raw_yaw + lead_yaw
 
-    # --- Stage 3: Parabolic Drop (§2.7.3) ---
-    # Gravity drop during flight (meters)
-    gravity_drop_m = 0.5 * GRAVITY * tof * tof
-
-    # Angular correction (negative = gravity assists downward shot)
-    drop_offset_deg = -math.degrees(math.atan2(gravity_drop_m, distance_m))
-
-    # Final corrected pitch = led_pitch + gravity drop
-    final_pitch = led_pitch + drop_offset_deg
+    # --- Stage 3: Gravity Airburst Offset ---
+    # Intentionally fire higher than the calculated path to create an AoE rain cloud.
+    # We add the offset (since positive pitch is typically "up" relative to the target).
+    
+    # Final corrected pitch = led_pitch + airburst offset
+    final_pitch = led_pitch + airburst_offset_deg
     final_yaw = led_yaw
 
     return final_pitch, final_yaw, {
@@ -616,9 +614,8 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         "tof_ms": round(tof * 1000, 1),
         "lead_pitch_deg": round(lead_pitch, 3),
         "lead_yaw_deg": round(lead_yaw, 3),
-        "drop_offset_deg": round(drop_offset_deg, 2),
-        "gravity_drop_cm": round(gravity_drop_m * 100, 1),
-        "total_pitch_correction": round(lead_pitch + drop_offset_deg, 3),
+        "airburst_offset_deg": round(airburst_offset_deg, 2),
+        "total_pitch_correction": round(lead_pitch + airburst_offset_deg, 3),
         "total_yaw_correction": round(lead_yaw, 3)
     }
 

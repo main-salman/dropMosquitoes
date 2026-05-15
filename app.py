@@ -52,6 +52,9 @@ sniper_cam = CameraStream(sensor_id=1, width=1920, height=1080, fps=30, name="Sn
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
 
+# Gravity Airburst Tuning (Dynamic)
+AIRBURST_OFFSET = 12.0
+
 
 # ============================================================================
 # CLEANUP — SAFE-001 §2: Guarantee all hardware is safe on exit
@@ -178,9 +181,10 @@ def api_gimbal_click():
     # Get target velocity from VelocityTracker (§2.7.1)
     omega_pitch, omega_yaw = velocity_tracker.get_angular_velocity()
 
-    # Stages 2+3: Velocity lead + parabolic drop (§2.7.2 + §2.7.3)
+    # Stages 2+3: Velocity lead + Airburst Pitch Offset
+    global AIRBURST_OFFSET
     final_pitch, final_yaw, lead_info = compute_predictive_lead(
-        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw
+        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw, AIRBURST_OFFSET
     )
 
     # Move gimbal to fully corrected position
@@ -298,6 +302,15 @@ def api_ai_min_box():
 # ============================================================================
 # CALIBRATION API — Interactive GUI-based calibration tools
 # ============================================================================
+
+@app.route('/api/airburst/set', methods=['POST'])
+def api_airburst_set():
+    """Set the Gravity Airburst pitch offset. Body: {"offset": float}"""
+    global AIRBURST_OFFSET
+    data = request.get_json(force=True)
+    AIRBURST_OFFSET = float(data.get('offset', 12.0))
+    print(f"[app] Airburst Pitch Offset updated to {AIRBURST_OFFSET}°")
+    return jsonify({"airburst_offset_deg": AIRBURST_OFFSET})
 
 # In-memory calibration data (persisted to calibration.json on save)
 _calibration_log = []
