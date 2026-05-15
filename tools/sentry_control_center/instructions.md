@@ -1,6 +1,9 @@
 # Sentry Control Center — User Guide
 
-The **Sentry Control Center** is a standalone Streamlit application designed for Windows 10/11 environments with an NVIDIA RTX 3070. It provides a dual-architecture interface for tuning the Scout (OpenCV) motion tracker and training the Sniper (YOLOv8) model.
+The **Sentry Control Center** is a standalone Streamlit application designed for Windows 10/11 environments with an NVIDIA RTX 3070. It does two things:
+
+1. **Tuning** (Tab 1 — Scout): Adjust motion-detection sensitivity sliders and export a config file. No AI involved — just finding the right settings so the camera reliably spots movement without false alarms.
+2. **Training** (Tab 2 — Sniper): Train a YOLOv8 neural network on your custom mosquito dataset. This is hours of GPU compute that teaches the AI to tell the difference between a mosquito and a false positive. The trained model (`best.pt`) is then deployed to the Jetson.
 
 ## Directory Structure
 
