@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# deploy.sh — Push code from dev machine to Jetson Orin Nano
+#
+# Usage:
+#   ./deploy.sh                  # Uses default JETSON_HOST
+#   ./deploy.sh 192.168.0.50     # Override with custom IP
+#
+# Prerequisites:
+#   - SSH key copied to Jetson: ssh-copy-id jetson@<IP>
+#   - rsync installed on both machines
+# ==============================================================================
+
+set -euo pipefail
+
+JETSON_USER="${JETSON_USER:-jetson}"
+JETSON_HOST="${1:-${JETSON_HOST:-jetson.local}}"
+JETSON_PATH="/home/${JETSON_USER}/dropMosquitoes"
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+echo "══════════════════════════════════════════════"
+echo "  Deploying to ${JETSON_USER}@${JETSON_HOST}:${JETSON_PATH}"
+echo "══════════════════════════════════════════════"
+
+# Sync project files (excluding dev-only stuff)
+rsync -avz --progress \
+  --exclude='.git/' \
+  --exclude='__pycache__/' \
+  --exclude='venv/' \
+  --exclude='.venv/' \
+  --exclude='tools/' \
+  --exclude='diagrams/' \
+  --exclude='3d_prints/' \
+  --exclude='*.drawio' \
+  --exclude='*.drawio.bkp' \
+  --exclude='.DS_Store' \
+  --exclude='chathistory.txt' \
+  --exclude='firstprompt.txt' \
+  --exclude='prompt.md' \
+  --exclude='rename.md' \
+  --exclude='runs/' \
+  --exclude='sentry.log' \
+  --exclude='*.engine' \
+  "${PROJECT_DIR}/" "${JETSON_USER}@${JETSON_HOST}:${JETSON_PATH}/"
+
+echo ""
+echo "✅ Files synced."
+echo ""
+
+# Install/update Python deps on Jetson
+echo "📦 Installing Python dependencies on Jetson..."
+ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && pip install -r requirements.txt 2>&1 | tail -5"
+
+echo ""
+echo "══════════════════════════════════════════════"
+echo "  Deployment complete!"
+echo ""
+echo "  To install the systemd service (first time only):"
+echo "    ssh ${JETSON_USER}@${JETSON_HOST}"
+echo "    sudo cp ${JETSON_PATH}/sentry.service /etc/systemd/system/"
+echo "    sudo systemctl daemon-reload"
+echo "    sudo systemctl enable sentry.service"
+echo ""
+echo "  To restart the service after deploy:"
+echo "    ssh ${JETSON_USER}@${JETSON_HOST} 'sudo systemctl restart sentry'"
+echo "══════════════════════════════════════════════"
