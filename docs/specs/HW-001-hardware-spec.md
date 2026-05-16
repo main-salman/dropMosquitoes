@@ -180,18 +180,36 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 
 | Component | Spec |
 |:----------|:-----|
-| Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming (surface-mounted inside enclosure — NOT submerged) |
+| Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming. Surface-mounted **adjacent to** enclosure (NOT inside the Jetson box — moisture/thermal isolation) |
 | Tubing | Feelers 1/4" ID × 3/8" OD Silicone (26.25ft spool) |
-| Check Valve | Feelers 1/4" PVDF Inline (prevents gravity siphon) |
-| Nozzle | Orbit 66190 Flex-Mist Adjustable (narrow stream pattern) |
-| Reservoir | Shallow Plastic Storage Tote (placed ABOVE pump level when possible for gravity-assisted feed) |
+| Check Valve | Built into diaphragm pump (internal one-way valves prevent backflow). External PVDF valve retained as redundant safety on gimbal-mounted vertical runs |
+| Nozzle | Orbit 66190 Flex-Mist Adjustable (narrow stream pattern). Future: 3D-printed tapered nozzle for higher velocity |
+| Reservoir | Shallow Plastic Storage Tote (placed ABOVE enclosure for gravity-assisted feed) |
 | Service Loop | 3" slack arc at gimbal entry (zip-tied at 2 anchors) |
 
-### 8.1 Pump Mounting
+### 8.1 Physical Stacking (Top to Bottom)
 
-The diaphragm pump mounts on the enclosure exterior or on a bracket adjacent to it. Route:
-1. **Inlet** — silicone tubing from reservoir into pump inlet barb
-2. **Outlet** — pump outlet → check valve → tubing → nozzle on gimbal
+The gimbal and related components mount **above** the Jetson enclosure:
+
+```
+┌─────────────────────────┐
+│   Gimbal + Sniper Cam   │ ← Highest point (pan/tilt)
+│   + Nozzle + LiDAR      │
+├─────────────────────────┤
+│   Diaphragm Pump        │ ← Mounted on bracket, adjacent to enclosure
+├─────────────────────────┤
+│   IP67 Enclosure        │ ← Jetson, relays, IDC40P, CSI RX boards
+│   (Yahboom inside)      │
+├─────────────────────────┤
+│   Water Reservoir       │ ← Ground level or elevated shelf
+│   (intake tube drops in)│
+└─────────────────────────┘
+```
+
+### 8.2 Fluid Routing
+
+1. **Inlet** — silicone tubing drops into reservoir → runs up to pump inlet barb
+2. **Outlet** — pump outlet → high-pressure tubing up the gimbal arm (alongside FPV HDMI cable) → nozzle
 3. **Power** — Relay CH1 NO contact supplies +12V to pump; pump GND returns to Wago GND port 4
 
 ## 9. Enclosure & Weatherproofing
