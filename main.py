@@ -101,7 +101,7 @@ async def orchestrator_loop():
     buzzer.boot()
     log.info("Sentry is ACTIVE. Monitoring sector...")
     log_engagement("system_start", {
-        "airburst_offset": weapon.get_airburst_offset(),
+        "arc_compensation_deg": weapon.get_arc_compensation(),
         "sweep_duration": SWEEP_DURATION_SEC,
         "prediction_lookahead": PREDICTION_LOOKAHEAD_SEC
     })
@@ -131,9 +131,9 @@ async def orchestrator_loop():
                 raw_pitch, raw_yaw = pixel_to_angle(tx, ty)
                 pred_pitch, pred_yaw = pixel_to_angle(pred_x, pred_y)
 
-                # Apply airburst offset (lob above target)
-                airburst_offset = weapon.get_airburst_offset()
-                aim_pitch = pred_pitch + airburst_offset
+                # Apply arc compensation (pitch offset for stream trajectory over distance)
+                arc_comp = weapon.get_arc_compensation()
+                aim_pitch = pred_pitch + arc_comp
 
                 log.info(
                     f"Target at ({tx},{ty}) vel=({vx:.0f},{vy:.0f}) px/s → "
@@ -185,15 +185,16 @@ async def orchestrator_loop():
                     )
 
                     log_engagement("fire", {
-                        "mode": "stream_and_sweep",
+                        "mode": "DIRECT_STREAM_SWEEP",
                         "target_px": [tx, ty],
                         "velocity_px_s": [round(vx, 1), round(vy, 1)],
                         "predicted_px": [round(pred_x), round(pred_y)],
                         "aim_pitch": round(aim_pitch, 2),
                         "aim_yaw": round(pred_yaw, 2),
+                        "arc_compensation_deg": round(arc_comp, 2),
                         "sweep_end_pitch": round(sweep_end_pitch, 2),
                         "sweep_end_yaw": round(sweep_end_yaw, 2),
-                        "sweep_duration_sec": SWEEP_DURATION_SEC,
+                        "stream_duration_ms": int(SWEEP_DURATION_SEC * 1000),
                         "session_stats": stats.copy()
                     })
 

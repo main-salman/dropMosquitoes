@@ -22,7 +22,7 @@ The system uses a **"Two-Brain" dual-pipeline architecture**:
 ├── weapon_system.py         # GPIO relay control (water pump)
 ├── ir_controller.py         # IR illuminator dusk/dawn automation
 ├── hardware.py              # LiDAR, ballistics, velocity tracking
-├── phantom_ping.py          # Airburst calibration tool
+├── phantom_ping.py          # Stream arc calibration tool
 ├── app.py                   # Flask web dashboard (manual control)
 ├── deploy.sh                # Dev machine → Jetson deployment
 ├── sentry.service           # Systemd auto-start on boot

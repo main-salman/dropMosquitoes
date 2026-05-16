@@ -190,7 +190,7 @@ The Flask app (`app.py`) runs on the Jetson and serves a web dashboard.
 
 - **URL:** `http://192.168.0.100:8000` (or whatever static IP you set)
 - **Access:** Open this URL in any browser on your phone, tablet, or laptop — as long as you're on the same WiFi network
-- **Features available over WiFi:** Live camera feeds, click-to-aim, WASD gimbal control, relay toggles, AI confidence sliders, airburst offset tuning, test suite runner
+- **Features available over WiFi:** Live camera feeds, click-to-aim, WASD gimbal control, relay toggles, AI confidence sliders, arc compensation tuning, test suite runner
 
 ### 4.2 Updating Software
 When you make code changes on your dev machine:
@@ -231,7 +231,7 @@ ssh jetson@192.168.0.100 'sudo systemctl restart sentry'
 3. Verify yaw range: ±80° without cable strain
 4. If cables are too tight, add more slack to the FPV HDMI service loop
 
-### 5.3 Nozzle/Airburst Calibration
+### 5.3 Stream Arc Calibration
 1. SSH in and run the calibration tool:
    ```bash
    python3 phantom_ping.py
@@ -269,7 +269,7 @@ Before targeting live insects, validate the detection pipeline with printed targ
 ### 6.2 Live Water Test
 1. Fill the reservoir
 2. Run `phantom_ping.py --offset 12 --count 5` to fire 5 test shots (400ms sweep each)
-3. Observe spray pattern — adjust nozzle angle and airburst offset
+3. Observe stream impact — adjust nozzle angle and arc compensation offset
 4. Run `main.py` and wave a mock target — verify full pipeline: detect → aim → verify → fire
 
 ---

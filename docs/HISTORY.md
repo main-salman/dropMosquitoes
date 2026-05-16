@@ -184,3 +184,14 @@
 - **[CODE]** `ir_controller.py` + `status_indicator.py` added GPIO.setwarnings(False) to prevent multi-module warnings
 - **[CODE]** `hardware.py` endstop comment clarified (mechanical vs software limits)
 - **[TOOLS]** `sentry_control_center/app.py` post-training UI now includes TensorRT export instructions
+
+## 2026-05-16 — DIRECT STREAM FIRE: PHYSICS MODEL PIVOT
+- **[ARCH]** Officially discarded "Gravity Airburst / mist cloud / AoE rain" paradigm. System now uses DIRECT RECTILINEAR STREAM FIRE — 60 PSI diaphragm pump shoots a pressurized stream directly at or sweeping across the target.
+- **[CODE]** Renamed `airburst_offset_deg` → `arc_compensation_deg` across `weapon_system.py`, `main.py`, `hardware.py`, `app.py`, `phantom_ping.py`
+- **[CODE]** `main.py` engagement log: mode → `DIRECT_STREAM_SWEEP`, field `sweep_duration_sec` → `stream_duration_ms`, added `arc_compensation_deg` to log
+- **[CODE]** `weapon_system.py` getter renamed: `get_airburst_offset()` → `get_arc_compensation()`
+- **[CODE]** `phantom_ping.py` reframed: "Airburst Calibration Tool" → "Stream Arc Calibration Tool"
+- **[SPEC]** `SW-001` §2.6.3: "Gravity Airburst Offset" → "Arc Compensation" with updated physics rationale
+- **[SPEC]** `OPS-001`, `SYS-001`, `spec.md`, `README.md`: all airburst references → arc compensation / direct stream
+- **[NOTE]** `HISTORY.md` entries from earlier sessions intentionally preserved as historical record (they reflect the state at the time)
+- **[NOTE]** `/api/airburst/set` route name kept for backward compatibility with existing dashboard HTML

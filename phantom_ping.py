@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # Implements: SW-001 §6 — Calibration Procedure
 """
-phantom_ping.py — Airburst Calibration Tool
+phantom_ping.py — Stream Arc Calibration Tool
 
-Fires test shots at multiple airburst offset angles to help you visually
-determine the optimal offset for your installation height and water pressure.
+Fires test shots at multiple pitch offset angles to help you visually
+determine the optimal arc compensation for your installation height
+and pump pressure. The 60 PSI diaphragm pump shoots a direct stream
+that arcs slightly due to gravity over distance — this tool tunes that.
 
 Usage:
     python3 phantom_ping.py                    # Interactive mode
@@ -75,20 +77,20 @@ def interactive_mode():
     cal = load_calibration()
     
     print("\n" + "="*60)
-    print("  PHANTOM PING — Airburst Calibration Tool")
+    print("  PHANTOM PING — Stream Arc Calibration Tool")
     print("="*60)
-    print("\nThis tool fires test shots at different airburst offsets.")
-    print("Watch where the water lands and note which offset gives")
-    print("the best coverage over the target zone.\n")
-    print("The gimbal will aim straight down (Pitch=0, Yaw=0) and")
-    print("apply the airburst offset you specify.\n")
+    print("\nThis tool fires test shots at different pitch offsets.")
+    print("Watch where the stream lands and note which offset gives")
+    print("the best accuracy over the target zone.\n")
+    print("The gimbal will aim straight ahead (Pitch=0, Yaw=0) and")
+    print("apply the arc compensation offset you specify.\n")
     
     pulse = 0.4  # Standard Stream-and-Sweep pulse
     yaw = 0.0     # Straight ahead
     
     try:
         while True:
-            offset = input("\nEnter airburst offset (degrees, or 'q' to quit): ").strip()
+            offset = input("\nEnter arc offset (degrees, or 'q' to quit): ").strip()
             if offset.lower() == 'q':
                 break
             
@@ -148,8 +150,8 @@ def single_shot_mode(offset, count, pulse):
     weapon.cleanup()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Phantom Ping — Airburst Calibration")
-    parser.add_argument("--offset", type=float, help="Airburst offset in degrees")
+    parser = argparse.ArgumentParser(description="Phantom Ping — Stream Arc Calibration")
+    parser.add_argument("--offset", type=float, help="Arc compensation offset in degrees")
     parser.add_argument("--count", type=int, default=1, help="Number of shots to fire")
     parser.add_argument("--pulse", type=float, default=0.4, help="Pulse duration in seconds")
     args = parser.parse_args()

@@ -25,5 +25,5 @@
 - **Water Exit Velocity:** ~7 m/s (Diaphragm pump at 60 PSI through Orbit nozzle)
 - **Sweep Duration:** 400ms (100ms spin-up + 300ms active spray)
 - **Trajectory:** Parabolic. The turret must pitch upward to account for gravity drop over distance.
-- **Airburst Offset:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard).
+- **Arc Compensation:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard). Compensates for stream gravity drop over distance.
 - **Wind Calibration:** "Phantom Ping" method. System fires a test shot, tracks the visual droplet drift in the Scout camera, and updates an offset variable.

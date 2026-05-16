@@ -25,9 +25,9 @@ class WeaponSystem:
     # Pump spin-up time — diaphragm motor needs ~100ms before water exits nozzle
     PUMP_SPINUP_MS = 100
 
-    def __init__(self, relay_pin=17, airburst_offset_deg=12.0):
+    def __init__(self, relay_pin=17, arc_compensation_deg=12.0):
         self.relay_pin = relay_pin
-        self.airburst_offset_deg = airburst_offset_deg
+        self.arc_compensation_deg = arc_compensation_deg
         self._firing = False
         self._fire_thread = None
         self._fire_lock = threading.Lock()
@@ -97,7 +97,7 @@ class WeaponSystem:
             if GPIO_AVAILABLE:
                 GPIO.output(self.relay_pin, GPIO.LOW)
             self._firing = False
-            print("[WeaponSystem] Sweep complete. Cease fire.")
+            print(f"[WeaponSystem] Sweep complete. Stream duration: {duration_sec*1000:.0f}ms.")
 
     def cease_fire(self):
         """Emergency stop — immediately set relay LOW regardless of timer."""
@@ -106,8 +106,9 @@ class WeaponSystem:
         self._firing = False
         print("[WeaponSystem] ⛔ EMERGENCY CEASE FIRE.")
 
-    def get_airburst_offset(self) -> float:
-        return self.airburst_offset_deg
+    def get_arc_compensation(self) -> float:
+        """Return the pitch offset (degrees) that compensates for stream arc over distance."""
+        return self.arc_compensation_deg
 
     def cleanup(self):
         self.cease_fire()

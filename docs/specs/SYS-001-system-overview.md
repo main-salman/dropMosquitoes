@@ -24,7 +24,7 @@ Supporting modules:
 | Module | File | Role |
 |:-------|:-----|:-----|
 | IR Controller | `ir_controller.py` | Dusk/dawn automated IR illuminator control |
-| Calibration | `phantom_ping.py` | Interactive airburst offset calibration tool |
+| Calibration | `phantom_ping.py` | Interactive stream arc compensation calibration tool |
 | Telemetry | `main.py` | Structured JSONL engagement logging (`engagements.jsonl`) |
 
 ## 3. Physical Topology

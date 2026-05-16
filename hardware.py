@@ -542,21 +542,22 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
                             distance_m: float,
                             omega_pitch: float = 0.0,
                             omega_yaw: float = 0.0,
-                            airburst_offset_deg: float = 12.0) -> tuple:
+                            arc_compensation_deg: float = 12.0) -> tuple:
     """
-    Apply velocity lead + Airburst Pitch Offset to raw gimbal angles.
+    Apply velocity lead + Arc Compensation to raw gimbal angles.
 
     SW-001 §2.7.2: Calculates Time-of-Flight, then applies the target's
     angular velocity over that window to predict where the target WILL BE
-    when the water arrives.
+    when the water stream arrives.
 
-    Airburst Strategy: We intentionally over-aim by `airburst_offset_deg` so 
-    the water arc peaks above the target's path and falls down as an AoE cloud.
+    Arc Compensation: The 60 PSI diaphragm pump fires a direct pressurized
+    stream. Over distance, gravity causes the stream to arc downward. We
+    apply a positive pitch offset to compensate for this trajectory drop.
 
     Execution order:
       1. raw angles (input)
       2. + lead_pitch / lead_yaw  (velocity-corrected aim point)
-      3. + airburst_offset_deg    (final corrected pitch)
+      3. + arc_compensation_deg   (compensate for stream gravity drop)
 
     Args:
         raw_pitch: Raw pitch from pixel_to_angle (degrees).
@@ -564,7 +565,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         distance_m: LiDAR-measured slant distance (meters).
         omega_pitch: Target angular velocity in pitch (deg/s) from VelocityTracker.
         omega_yaw: Target angular velocity in yaw (deg/s) from VelocityTracker.
-        airburst_offset_deg: Positive degrees to over-aim for the Gravity Airburst.
+        arc_compensation_deg: Positive degrees to compensate for stream arc over distance.
 
     Returns:
         (final_pitch, final_yaw, lead_info) where lead_info is a dict with
@@ -578,7 +579,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
             "tof_ms": 0.0,
             "lead_pitch_deg": 0.0,
             "lead_yaw_deg": 0.0,
-            "airburst_offset_deg": 0.0,
+            "arc_compensation_deg": 0.0,
             "total_pitch_correction": 0.0,
             "total_yaw_correction": 0.0
         }
@@ -600,12 +601,12 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
     led_pitch = raw_pitch + lead_pitch
     led_yaw = raw_yaw + lead_yaw
 
-    # --- Stage 3: Gravity Airburst Offset ---
-    # Intentionally fire higher than the calculated path to create an AoE rain cloud.
-    # We add the offset (since positive pitch is typically "up" relative to the target).
-    
-    # Final corrected pitch = led_pitch + airburst offset
-    final_pitch = led_pitch + airburst_offset_deg
+    # --- Stage 3: Arc Compensation ---
+    # The pressurized stream travels in a ballistic arc. Over distance,
+    # gravity pulls the stream below the aim point. Adding positive pitch
+    # compensates for this drop, ensuring the stream arrives on target.
+
+    final_pitch = led_pitch + arc_compensation_deg
     final_yaw = led_yaw
 
     return final_pitch, final_yaw, {
@@ -614,8 +615,9 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         "tof_ms": round(tof * 1000, 1),
         "lead_pitch_deg": round(lead_pitch, 3),
         "lead_yaw_deg": round(lead_yaw, 3),
-        "airburst_offset_deg": round(airburst_offset_deg, 2),
-        "total_pitch_correction": round(lead_pitch + airburst_offset_deg, 3),
+        "arc_compensation_deg": round(arc_compensation_deg, 2),
+        "total_pitch_correction": round(lead_pitch + arc_compensation_deg, 3),
         "total_yaw_correction": round(lead_yaw, 3)
     }
+
 

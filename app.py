@@ -52,8 +52,8 @@ sniper_cam = CameraStream(sensor_id=1, width=1920, height=1080, fps=30, name="Sn
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
 
-# Airburst Offset Tuning (pitch compensation for trajectory arc)
-AIRBURST_OFFSET = 12.0
+# Arc Compensation — pitch offset to compensate for stream trajectory drop over distance
+ARC_COMPENSATION_DEG = 12.0
 
 
 # ============================================================================
@@ -181,10 +181,10 @@ def api_gimbal_click():
     # Get target velocity from VelocityTracker (§2.7.1)
     omega_pitch, omega_yaw = velocity_tracker.get_angular_velocity()
 
-    # Stages 2+3: Velocity lead + Airburst Pitch Offset
-    global AIRBURST_OFFSET
+    # Stages 2+3: Velocity lead + Arc Compensation (stream trajectory over distance)
+    global ARC_COMPENSATION_DEG
     final_pitch, final_yaw, lead_info = compute_predictive_lead(
-        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw, AIRBURST_OFFSET
+        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw, ARC_COMPENSATION_DEG
     )
 
     # Move gimbal to fully corrected position
@@ -305,12 +305,12 @@ def api_ai_min_box():
 
 @app.route('/api/airburst/set', methods=['POST'])
 def api_airburst_set():
-    """Set the Gravity Airburst pitch offset. Body: {"offset": float}"""
-    global AIRBURST_OFFSET
+    """Set the arc compensation pitch offset (degrees). Body: {"offset": float}"""
+    global ARC_COMPENSATION_DEG
     data = request.get_json(force=True)
-    AIRBURST_OFFSET = float(data.get('offset', 12.0))
-    print(f"[app] Airburst Pitch Offset updated to {AIRBURST_OFFSET}°")
-    return jsonify({"airburst_offset_deg": AIRBURST_OFFSET})
+    ARC_COMPENSATION_DEG = float(data.get('offset', 12.0))
+    print(f"[app] Arc Compensation updated to {ARC_COMPENSATION_DEG}°")
+    return jsonify({"arc_compensation_deg": ARC_COMPENSATION_DEG})
 
 # In-memory calibration data (persisted to calibration.json on save)
 _calibration_log = []

@@ -76,13 +76,13 @@ The following stages execute **in sequence** for every fire decision:
   lead_pitch = ω_pitch × ToF   (degrees)
   ```
 
-#### 2.6.3 Gravity Airburst Offset (Final Stage)
-- After velocity lead offsets, apply `AIRBURST_PITCH_OFFSET` (default +12°) to the **final pitch angle**.
-- This intentionally over-aims so the pressurized stream arcs slightly above the target, compensating for gravity drop over distance.
+#### 2.6.3 Arc Compensation (Final Stage)
+- After velocity lead offsets, apply `ARC_COMPENSATION_DEG` (default +12°) to the **final pitch angle**.
+- The 60 PSI diaphragm pump fires a direct pressurized stream that arcs downward due to gravity over distance. This offset compensates for that trajectory drop.
 - Execution order:
   1. `pixel_to_angle()` → raw pitch/yaw
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
-  3. `+ airburst_offset_deg` → final corrected pitch
+  3. `+ arc_compensation_deg` → final corrected pitch
 - The offset is dynamically tunable via the Flask dashboard slider (0° to +30°).
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
@@ -94,7 +94,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 1. `scout_vision.get_target_with_velocity()` returns `(x, y, vx, vy)` or `(None, None, 0, 0)`
 2. **Predict:** `pred_x = x + vx × LOOKAHEAD`, `pred_y = y + vy × LOOKAHEAD` (default 150ms lookahead)
 3. `pixel_to_angle(pred_x, pred_y)` maps predicted position to degrees
-4. Airburst offset added to predicted pitch
+4. Arc compensation added to predicted pitch
 5. `gimbal.aim_async(pitch, yaw)` — non-blocking serial write
 6. 50ms settle wait (reduced from 200ms — diaphragm pump spin-up covers remaining settle)
 7. `sniper_vision.verify_target()` runs YOLOv8 inference
@@ -109,7 +109,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 - Biological heuristic: bounding box too large → ignore (moth/June bug filter)
 - GPIO fail-safe: `try/finally` ensuring BCM 17 LOW on crash
 - Death Spiral prevention: yaw hard-limited ±80°, pitch ±20°
-- Airburst offset clamped: final pitch cannot exceed `PITCH_LIMIT` (±20°)
+- Arc compensation clamped: final pitch cannot exceed `PITCH_LIMIT` (±20°)
 
 > **Detection Strategy:** Mosquitoes are not in the COCO-80 class set. The primary
 > targeting method is **MOG2 motion detection** (ScoutAgent §2.1), which fires at
@@ -128,15 +128,15 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 - **Pump Spin-Up:** ~100ms mechanical delay (diaphragm motor to full pressure)
 - **Sweep Duration:** 400ms total (100ms spin-up + 300ms active spray)
 - **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water
-- **Airburst Strategy:** Pitch offset lobs the 60 PSI pressurized stream slightly above the target's projected flight path, compensating for gravity drop at range. Combined with the sweep, this creates a curtain of water across the flight path.
-- **Airburst Offset:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard)
+- **Arc Compensation:** Pitch offset compensates for gravity-induced stream arc over distance. At longer ranges, the stream drops further, requiring more offset. Combined with the sweep, this creates a curtain of water across the flight path.
+- **Arc Compensation Default:** +12° above calculated target pitch (tunable 0°–30° via dashboard)
 
 ## 6. Calibration Procedure
 
 1. Boot Jetson, wait for 15s relay boot delay
 2. Run `phantom_ping.py` to fire test shots at known distances
-3. Scout camera tracks water droplet trajectory
-4. System generates lookup table (distance → optimal airburst offset)
+3. Scout camera tracks water stream impact point
+4. System generates lookup table (distance → optimal arc compensation)
 5. Store calibration in `calibration.json`
 
 ## 7. Training & Tuning Pipeline
