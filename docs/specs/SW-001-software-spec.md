@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 3.0  
+**Version:** 4.0  
 **Last Updated:** 2026-05-15  
 **Owner:** Salman
 
@@ -22,13 +22,16 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 - **Pipeline:** `appsink drop=true max-buffers=1` (mandatory for 8GB memory constraint)
 - **Processing:** OpenCV MOG2 Background Subtraction
 - **Config:** Reads tuning parameters from `scout_config.json` (exported by Sentry Control Center)
-- **Output:** `(x, y)` pixel coordinates of highest-confidence moving blob via `get_target()`
+- **Output:** `(x, y)` pixel coordinates + `(vx, vy)` velocity vector (px/sec) via `get_target_with_velocity()`
+- **Trajectory:** Ring buffer of last 5 positions calculates smoothed velocity for predictive targeting
 - **Threading:** Dedicated background thread; main loop polls via thread-safe lock
 
 ### 2.2 TurretAgent (`gimbal_controller.py`)
 - **Input:** `(x, y)` pixel coordinates from ScoutAgent
 - **Processing:** `pixel_to_angle()` conversion, pitch/yaw boundary enforcement (±20° pitch, ±80° yaw)
 - **Output:** Serial command string to Storm32 via `/dev/ttyTHS0` @ 115200 baud
+- **Async:** `aim_async()` and `sweep_async()` dispatch serial writes via `run_in_executor` — never blocks asyncio loop
+- **Sweep:** `sweep()` performs multi-step linear gimbal motion from point A to B, used during Stream-and-Sweep firing
 
 ### 2.3 SniperAgent (`sniper_vision.py`)
 - **Input:** `/dev/video1` (IMX219 @ 30FPS via GStreamer `nvarguscamerasrc sensor-id=1`)
@@ -40,7 +43,12 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 ### 2.4 TriggerAgent (`weapon_system.py`)
 - **Input:** Boolean from SniperAgent
 - **Guard:** `target_locked == True`
-- **Output:** GPIO BCM 17 (IDC40P Terminal 11) HIGH for 600ms (Gravity Airburst pulse), then LOW
+- **Output:** GPIO BCM 17 (IDC40P Terminal 11) HIGH for 400ms (Stream-and-Sweep), then LOW
+- **Pump:** 12V DC Diaphragm Pump (ECO-2026-003) — ~100ms mechanical spin-up delay
+- **Modes:**
+  - `fire(duration)` — Blocking pulse (legacy)
+  - `fire_sweep(duration)` — Non-blocking: starts pump in background thread, returns immediately so gimbal can sweep concurrently
+  - `cease_fire()` — Emergency stop, immediately sets relay LOW
 - **Safety:** Relay defaults to LOW at boot. `try/finally` ensures LOW on crash. Complies with SAFE-001 §2.
 
 ### 2.5 LiDAR Polling (`hardware.py — LiDARController`)
@@ -77,20 +85,24 @@ The following stages execute **in sequence** for every fire decision:
   3. `+ airburst_offset_deg` → final corrected pitch
 - The offset is dynamically tunable via the Flask dashboard slider (0° to +30°).
 
-## 3. Orchestration Sequence (`main.py`)
+## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
 ```
-Scout Detect → Gimbal Aim → asyncio.sleep(0.2) → Sniper Verify → Fire Weapon
+Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pump + Sweep Gimbal ] (parallel)
 ```
 
-1. `scout_vision.get_target()` returns `(x, y)` or `(None, None)`
-2. `pixel_to_angle(x, y)` maps to physical degrees
-3. Airburst offset added to pitch
-4. `gimbal.aim(pitch, yaw)` sends serial command
-5. 200ms settle wait for physical gimbal movement
-6. `sniper_vision.verify_target()` runs YOLOv8 inference
-7. If TRUE → `weapon.fire(0.6)` pulses relay for 600ms
-8. 1.0s cooldown prevents rapid re-firing
+1. `scout_vision.get_target_with_velocity()` returns `(x, y, vx, vy)` or `(None, None, 0, 0)`
+2. **Predict:** `pred_x = x + vx × LOOKAHEAD`, `pred_y = y + vy × LOOKAHEAD` (default 150ms lookahead)
+3. `pixel_to_angle(pred_x, pred_y)` maps predicted position to degrees
+4. Airburst offset added to predicted pitch
+5. `gimbal.aim_async(pitch, yaw)` — non-blocking serial write
+6. 50ms settle wait (reduced from 200ms — diaphragm pump spin-up covers remaining settle)
+7. `sniper_vision.verify_target()` runs YOLOv8 inference
+8. If TRUE → **two actions fire in parallel:**
+   - `weapon.fire_sweep(0.4)` — starts pump in background thread (non-blocking)
+   - `gimbal.sweep_async(aim → aim+overshoot)` — sweeps along velocity vector
+   - Pump spin-up (~100ms) occurs while gimbal begins sweep → water exits mid-sweep
+9. 1.0s cooldown prevents rapid re-firing
 
 ## 4. Safety Interlocks (see SAFE-001)
 
@@ -112,7 +124,10 @@ Scout Detect → Gimbal Aim → asyncio.sleep(0.2) → Sniper Verify → Fire We
 - **Mounting:** Overhead, 8–10 feet (2.4–3.0m) above ground level, firing DOWNWARD
 - **Effective Range:** 1.0 – 5.0 meters (LiDAR-measured slant distance to background)
 - **Water Exit Velocity:** ~7 m/s
-- **Pump Pulse Duration:** 600ms (Gravity Airburst sustained pulse)
+- **Pump Type:** 12V DC Diaphragm Pump (ECO-2026-003), 60 PSI, self-priming
+- **Pump Spin-Up:** ~100ms mechanical delay (diaphragm motor to full pressure)
+- **Sweep Duration:** 400ms total (100ms spin-up + 300ms active spray)
+- **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water
 - **Airburst Strategy:** Fire high-pressure mist cloud above target's projected flight path; mist loses kinetic energy at apex and falls as wide "rain cloud" AoE
 - **Airburst Offset:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard)
 

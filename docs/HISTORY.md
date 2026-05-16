@@ -166,3 +166,11 @@
 - **[HW-001]** Updated §8 Fluid System with ECO-2026-003 notice, new pump specs, and mounting instructions
 - **[BOM]** Updated `parts.csv` — replaced submersible pump with 12V DC diaphragm pump (~$25 CAD)
 - **[IMPACT]** Zero software changes required — relay circuit and GPIO pulse timing are unchanged
+
+## 2026-05-15 — STREAM AND SWEEP FIRING LOGIC
+- **[CODE]** `scout_vision.py` — Added trajectory velocity vector (vx, vy px/sec) via ring buffer + `get_target_with_velocity()`
+- **[CODE]** `weapon_system.py` — Added non-blocking `fire_sweep()` (background thread), `cease_fire()` emergency stop, `is_firing` property
+- **[CODE]** `gimbal_controller.py` — Added `aim_async()`, `sweep()`, `sweep_async()` via `run_in_executor` for non-blocking UART
+- **[CODE]** `main.py` — Rewrote orchestrator: predictive targeting + parallel fire/sweep. Pump starts WHILE gimbal sweeps → "wall of water"
+- **[SPEC]** `SW-001` updated to v4.0 — documents Stream-and-Sweep sequence, 400ms sweep duration, 100ms pump spin-up compensation
+- **[DIAGRAM]** Added `stream_sweep_timing.png` — timing diagram showing parallel pump/gimbal/scout/sniper swim lanes
