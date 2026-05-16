@@ -87,10 +87,10 @@ class RelayController:
 
     # -- Pump (CH1) ----------------------------------------------------------
 
-    def fire_pump(self, duration_sec: float = 0.6):
+    def fire_pump(self, duration_sec: float = 0.4):
         """
         Fire the water pump for a specified duration.
-        Default: 600ms (Sustained pulse for Gravity Airburst).
+        Default: 400ms (Stream-and-Sweep with 12V diaphragm pump).
 
         Args:
             duration_sec: Pulse length in seconds (0.05 to 2.0).

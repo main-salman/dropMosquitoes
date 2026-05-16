@@ -9,12 +9,12 @@ The system is divided into four asynchronous agents communicating via thread-saf
    - Reads `/dev/video0` via GStreamer `nvarguscamerasrc sensor-id=0`.
    - Uses OpenCV Background Subtraction (MOG2).
    - Loads tuning parameters from `scout_config.json`.
-   - Outputs `(x, y)` pixel coordinates of the highest-confidence moving blob.
+   - Outputs `(x, y)` pixel coordinates + `(vx, vy)` velocity vector of the highest-confidence moving blob.
    - **Mount: FIXED to IP67 enclosure (does NOT ride on gimbal).**
    
 2. **TurretAgent (`gimbal_controller.py`):**
    - Translates Cartesian pixel coordinates into Pitch/Yaw degree commands.
-   - Enforces the -130/+130 Yaw boundary.
+   - Enforces the -80/+80 Yaw boundary.
    - Sends serial strings to the Storm32 via `/dev/ttyTHS0`.
    
 3. **SniperAgent (`sniper_vision.py`):**
@@ -25,7 +25,8 @@ The system is divided into four asynchronous agents communicating via thread-saf
    
 4. **TriggerAgent (`weapon_system.py`):**
    - If `target_locked == True` AND `human_in_frame == False`.
-   - Actuates GPIO BCM 17 (IDC40P Terminal 11) `HIGH` for 600ms (Gravity Airburst pulse), then `LOW`.
+   - Actuates GPIO BCM 17 (IDC40P Terminal 11) `HIGH` for 400ms (Stream-and-Sweep), then `LOW`.
+   - Supports non-blocking `fire_sweep()` for parallel pump+gimbal operation.
    - **Safety: MUST comply with [SAFE-001](docs/specs/SAFE-001-safety-spec.md).**
 
 ---
