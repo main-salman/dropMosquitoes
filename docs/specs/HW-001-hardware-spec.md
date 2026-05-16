@@ -176,14 +176,23 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 
 ## 8. Fluid System
 
+> ⚠ **ECO-2026-003:** Replaced submersible centrifugal pump with 12V DC diaphragm pump. Submersible pumps suffer destructive short cycling (3-8× inrush current per start) when used for 600ms burst firing. Diaphragm pumps are positive displacement and designed for rapid on/off duty cycles.
+
 | Component | Spec |
 |:----------|:-----|
-| Pump | Velleman 12V Submersible (submerged in reservoir) |
+| Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming (surface-mounted inside enclosure — NOT submerged) |
 | Tubing | Feelers 1/4" ID × 3/8" OD Silicone (26.25ft spool) |
 | Check Valve | Feelers 1/4" PVDF Inline (prevents gravity siphon) |
 | Nozzle | Orbit 66190 Flex-Mist Adjustable (narrow stream pattern) |
-| Reservoir | Shallow Plastic Storage Tote |
+| Reservoir | Shallow Plastic Storage Tote (placed ABOVE pump level when possible for gravity-assisted feed) |
 | Service Loop | 3" slack arc at gimbal entry (zip-tied at 2 anchors) |
+
+### 8.1 Pump Mounting
+
+The diaphragm pump mounts on the enclosure exterior or on a bracket adjacent to it. Route:
+1. **Inlet** — silicone tubing from reservoir into pump inlet barb
+2. **Outlet** — pump outlet → check valve → tubing → nozzle on gimbal
+3. **Power** — Relay CH1 NO contact supplies +12V to pump; pump GND returns to Wago GND port 4
 
 ## 9. Enclosure & Weatherproofing
 

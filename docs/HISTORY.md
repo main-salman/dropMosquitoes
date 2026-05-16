@@ -159,3 +159,10 @@
 - **[DESIGN]** Documented water reservoir placement recommendation: above enclosure for gravity-assisted pump feed, minimal tubing length (< 3ft)
 - **[DESIGN]** Documented piezo buzzer hardware addition (~$2) for audible human notification
 - **[PROCESS]** Documented cron-based scheduling for time-of-day sentry activation
+
+## 2026-05-15 — ECO-2026-003: PUMP TYPE CHANGE
+- **[ECO]** Replaced Velleman 12V submersible centrifugal pump with 12V DC diaphragm pump (60 PSI, self-priming)
+- **[RATIONALE]** Submersible pumps suffer destructive short cycling (3-8× inrush current per 600ms burst). Diaphragm pumps are positive displacement and designed for rapid on/off duty cycles. Inspired by water flosser reciprocating piston pump teardown analysis.
+- **[HW-001]** Updated §8 Fluid System with ECO-2026-003 notice, new pump specs, and mounting instructions
+- **[BOM]** Updated `parts.csv` — replaced submersible pump with 12V DC diaphragm pump (~$25 CAD)
+- **[IMPACT]** Zero software changes required — relay circuit and GPIO pulse timing are unchanged
