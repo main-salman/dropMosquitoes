@@ -57,6 +57,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | T2.4 | Full boot sequence | Power on → Relay 2 OFF → Serial init → Relay 2 ON | Gimbal doesn't jerk on boot |
 | T2.5 | YOLO + camera | Run inference on live sniper feed | >10 FPS inference, correct bounding boxes |
 | T2.6 | Click-to-aim live | Click on Scout feed → gimbal moves to target | Gimbal arrives within ±3° of target |
+| T2.7 | Stream-and-Sweep parallel | Trigger fire_sweep() + sweep_async() simultaneously | Pump runs 400ms, gimbal completes sweep, no thread deadlock |
 
 ---
 
@@ -71,7 +72,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | T3.4 | Software endstop enforcement | Command yaw=180° via API | Gimbal clamps to ±80°, no wire strain |
 | T3.5 | Death Spiral prevention | Sweep target past 160° boundary | Gimbal unwinds opposite direction, no full rotation |
 | T3.6 | Check valve test | Tilt nozzle 45° downward, wait 5 min | No water drip from nozzle (siphon blocked) |
-| T3.7 | Back-EMF isolation | Fire pump 100× rapidly | No serial corruption, no Jetson GPIO damage |
+| T3.7 | Back-EMF isolation | Fire pump 100× rapidly (fire_sweep 400ms, 600ms cooldown) | No serial corruption, no Jetson GPIO damage |
 | T3.8 | Continuous run stress | Run full system for 4 hours | No memory leak, no thread deadlock, no overheating |
 
 ---
@@ -100,7 +101,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | T5.2 | Direct sun heat soak | Deploy in full sun for 4 hours | Jetson thermal < 85°C, no throttling |
 | T5.3 | Night vision test | Run at dusk/night with IR illuminator only | Scout detects motion, Sniper classifies in IR |
 | T5.4 | Wind interference | Test with fan at 10-15 km/h crosswind | Phantom Ping compensates, hit rate >50% at 3m |
-| T5.5 | Reservoir depletion | Run until reservoir is empty | Pump does not burn out dry, system detects low water |
+| T5.5 | Reservoir depletion | Run until reservoir is empty | Diaphragm pump runs dry safely (no burnout), system detects absent spray via Scout |
 | T5.6 | Multi-night endurance | Run dusk-to-dawn (10 hours) for 3 consecutive nights | No crashes, no memory leaks, reservoir lasts |
 | T5.7 | Insect discrimination | Deploy with moths, June bugs, and mosquitoes present | Only fires at mosquito-sized targets, ignores moths |
 

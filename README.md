@@ -10,7 +10,7 @@ The system uses a **"Two-Brain" dual-pipeline architecture**:
 
 2. **The Sniper** (YOLOv8) — A precision RGB-IR camera (IMX219 @ 30FPS) mounted on the gimbal verifies the target using a custom-trained neural network. If it confirms "mosquito" with >80% confidence, it authorizes the shot.
 
-3. **The Airburst** — Instead of trying to hit the mosquito directly, the system fires a high-pressure mist cloud *above* the target's flight path. The mist loses energy at its apex and falls as a wide "rain cloud," covering a massive area of effect.
+3. **Stream and Sweep** — Instead of a static shot, the system fires the 12V diaphragm pump while simultaneously sweeping the gimbal along the target's predicted flight path. This creates a moving "wall of water" that intercepts the insect mid-flight. The mist is lobbed *above* the target's trajectory and falls as a wide area-of-effect cloud.
 
 ## Project Structure
 

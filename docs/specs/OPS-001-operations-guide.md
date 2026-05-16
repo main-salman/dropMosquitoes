@@ -164,18 +164,22 @@ Keep these open during assembly (all in `diagrams/` directory):
 | 19 | Mount IR illuminators to fixed post (NOT gimbal) | Power on, check with phone camera (IR visible on phone) | [wire_10_ir_illuminator](../../diagrams/wire_10_ir_illuminator.drawio) |
 | 20 | Seal all cable glands with silicone | IP67 integrity | [wire_12_enclosure_glands](../../diagrams/wire_12_enclosure_glands.drawio) |
 
-### 3.2 Water Reservoir Placement
+### 3.2 Water Reservoir & Pump Placement
 
-> **Recommendation:** Mount the water reservoir **above** the enclosure/nozzle level if possible. This gives the pump gravity assist — it only needs to maintain pressure, not fight elevation. If above isn't possible, minimize the vertical distance between the pump and nozzle.
+> **ECO-2026-003:** The pump is a 12V DC **diaphragm pump** — it is self-priming, dry-run safe, and mounts **outside** any water. It must NOT be submerged.
 
-**Optimal layout (top to bottom):**
-1. Reservoir (highest point — gravity feeds toward pump)
-2. Pump (submerged in reservoir)
-3. Tubing runs down to...
-4. Check valve (prevents backflow)
-5. Nozzle on gimbal (lowest point on the fluid path)
+**Physical stacking (top to bottom):**
+1. **Gimbal + Sniper + Nozzle** (highest — on post above enclosure)
+2. **Diaphragm Pump** (on bracket, adjacent to enclosure — NOT inside the Jetson box)
+3. **IP67 Enclosure** (Jetson, relays, IDC40P)
+4. **Water Reservoir** (ground level or elevated shelf — gravity-assisted feed is ideal)
 
-**Minimize tubing length** between pump and nozzle. Every foot of tubing adds friction loss and pressure drop. Aim for < 3 feet total.
+**Fluid routing:**
+1. Silicone intake tube drops into reservoir → runs up to pump inlet barb
+2. Pump outlet → high-pressure tubing up the gimbal arm (alongside FPV HDMI cable) → nozzle
+3. Pump powered via Relay CH1 NO contact (+12V); pump GND returns to Wago GND port 4
+
+**Minimize tubing length** between pump and nozzle. Every foot adds friction loss. Aim for < 3 feet total.
 
 ---
 
@@ -264,7 +268,7 @@ Before targeting live insects, validate the detection pipeline with printed targ
 
 ### 6.2 Live Water Test
 1. Fill the reservoir
-2. Run `phantom_ping.py --offset 12 --count 5` to fire 5 test shots
+2. Run `phantom_ping.py --offset 12 --count 5` to fire 5 test shots (400ms sweep each)
 3. Observe spray pattern — adjust nozzle angle and airburst offset
 4. Run `main.py` and wave a mock target — verify full pipeline: detect → aim → verify → fire
 
@@ -335,7 +339,7 @@ Add these lines:
 - Engagement fired (3 rapid beeps)
 
 ### 8.3 Water Level Monitoring (Future)
-Consider adding a float switch sensor to the reservoir to alert when water is low. This prevents the pump from running dry (which burns out the motor).
+Consider adding a float switch sensor to the reservoir to alert when water is low. The diaphragm pump is dry-run safe (won't burn out), but running dry wastes power and produces no spray.
 
 ---
 

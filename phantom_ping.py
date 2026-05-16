@@ -83,7 +83,7 @@ def interactive_mode():
     print("The gimbal will aim straight down (Pitch=0, Yaw=0) and")
     print("apply the airburst offset you specify.\n")
     
-    pulse = 0.6  # Standard Airburst pulse
+    pulse = 0.4  # Standard Stream-and-Sweep pulse
     yaw = 0.0     # Straight ahead
     
     try:
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Phantom Ping — Airburst Calibration")
     parser.add_argument("--offset", type=float, help="Airburst offset in degrees")
     parser.add_argument("--count", type=int, default=1, help="Number of shots to fire")
-    parser.add_argument("--pulse", type=float, default=0.6, help="Pulse duration in seconds")
+    parser.add_argument("--pulse", type=float, default=0.4, help="Pulse duration in seconds")
     args = parser.parse_args()
     
     if args.offset is not None:
