@@ -48,6 +48,7 @@ class IRController:
         self._scheduler_thread = None
         
         if GPIO_AVAILABLE:
+            GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
             print(f"[IRController] Initialized on BCM Pin {self.pin}")

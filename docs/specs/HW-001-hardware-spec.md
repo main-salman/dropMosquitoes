@@ -17,7 +17,7 @@
 | Role | Sensor | Resolution | FPS | Mount | MIPI Port | Extension |
 |:-----|:-------|:-----------|:----|:------|:----------|:----------|
 | Scout | OV9281 1MP Global Shutter | 1280×800 | 120 | FIXED to enclosure | Port 0 | CSI→HDMI kit |
-| Sniper | Arducam NoIR IMX219 8MP | 1920×1080 | 60 | GIMBAL payload | Port 1 | CSI→HDMI kit |
+| Sniper | Arducam NoIR IMX219 8MP | 1920×1080 | 30 | GIMBAL payload | Port 1 | CSI→HDMI kit |
 
 **Camera Extension Chain:** Camera → 15-pin FPC → TX Board → HDMI Cable → RX Board → 15-pin FPC → 15→22 Adapter → Jetson MIPI Port
 
@@ -49,8 +49,8 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 ## 3. Gimbal
 
 - **Model:** Storm32 2-Axis Pre-Assembled (CNC Metal)
-- **Yaw Range:** ±130° (hard-limited in software)
-- **Pitch Range:** ±45°
+- **Yaw Range:** ±130° mechanical (software endstop: ±80° — see SW-001 §4)
+- **Pitch Range:** ±45° mechanical (software endstop: ±20°)
 - **Comms:** Jetson UART TX/RX → Storm32 RC_PITCH / RC_YAW pins
 - **Serial:** `/dev/ttyTHS0` @ 115200 baud
 
@@ -79,7 +79,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | 1 | INPUT from WH-02 BLACK wire |
 | 2 | Yahboom Jetson GND |
 | 3 | Univivi IR Illuminator GND |
-| 4 | Velleman Pump GND (direct return) |
+| 4 | Diaphragm Pump GND (direct return) |
 | 5 | Storm32 Gimbal GND (direct return) |
 
 ## 5. GPIO Routing — ECO-2026-002: External Terminal Block Hub
@@ -130,7 +130,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 
 > **⚠ MANDATORY HARDWARE PATCH — DO NOT SKIP**
 
-The 12V Velleman water pump is an **inductive load**. When the relay's solid-state MOSFET turns the pump OFF, the collapsing magnetic field in the pump's motor coil generates a high-voltage **flyback spike** that vastly exceeds the relay's 16V maximum tolerance. **Without protection, this spike WILL destroy the relay's internal MOSFETs within days of operation.**
+The 12V diaphragm pump is an **inductive load**. When the relay's solid-state MOSFET turns the pump OFF, the collapsing magnetic field in the pump's motor coil generates a high-voltage **flyback spike** that vastly exceeds the relay's 16V maximum tolerance. **Without protection, this spike WILL destroy the relay's internal MOSFETs within days of operation.**
 
 #### Component
 - **Part:** 1N4007 General Purpose Rectifier Diode (1000V / 1A)

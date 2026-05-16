@@ -174,3 +174,13 @@
 - **[CODE]** `main.py` — Rewrote orchestrator: predictive targeting + parallel fire/sweep. Pump starts WHILE gimbal sweeps → "wall of water"
 - **[SPEC]** `SW-001` updated to v4.0 — documents Stream-and-Sweep sequence, 400ms sweep duration, 100ms pump spin-up compensation
 - **[DIAGRAM]** Added `stream_sweep_timing.png` — timing diagram showing parallel pump/gimbal/scout/sniper swim lanes
+
+## 2026-05-16 — COMPREHENSIVE AUDIT #2
+- **[SPEC]** `HW-001` Sniper FPS 60→30 (matches code), yaw range annotated with software endstop ±80°, Velleman→Diaphragm pump in Wago GND + flyback §6.1
+- **[SPEC]** `SW-001` physics model: "mist cloud/rain AoE" → "direct pressurized stream/sweep curtain" (diaphragm pump shoots, not drops)
+- **[SPEC]** `OPS-001` procurement references `moreparts.csv` (16 required items)
+- **[CODE]** `app.py` fire endpoint default 0.3s→0.4s; "Gravity Airburst" comment → "Airburst Offset"
+- **[CODE]** `sniper_vision.py` auto-detects `.engine` before `.pt` fallback (TensorRT acceleration)
+- **[CODE]** `ir_controller.py` + `status_indicator.py` added GPIO.setwarnings(False) to prevent multi-module warnings
+- **[CODE]** `hardware.py` endstop comment clarified (mechanical vs software limits)
+- **[TOOLS]** `sentry_control_center/app.py` post-training UI now includes TensorRT export instructions

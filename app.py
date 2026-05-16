@@ -52,7 +52,7 @@ sniper_cam = CameraStream(sensor_id=1, width=1920, height=1080, fps=30, name="Sn
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
 
-# Gravity Airburst Tuning (Dynamic)
+# Airburst Offset Tuning (pitch compensation for trajectory arc)
 AIRBURST_OFFSET = 12.0
 
 
@@ -252,7 +252,7 @@ def api_relay_fire():
     Body: {"duration": float}  (seconds, 0.05–2.0)
     """
     data = request.get_json(force=True)
-    duration = float(data.get('duration', 0.3))
+    duration = float(data.get('duration', 0.4))
     relay.fire_pump(duration)
     return jsonify({"fired": True, "duration": duration})
 
@@ -387,7 +387,7 @@ def api_cal_fire_test():
     data = request.get_json(force=True)
     pitch = float(data.get('pitch', 0))
     yaw = float(data.get('yaw', 0))
-    duration = float(data.get('duration', 0.3))
+    duration = float(data.get('duration', 0.4))
     note = data.get('note', '')
 
     # Aim

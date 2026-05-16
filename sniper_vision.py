@@ -1,5 +1,6 @@
 # Implements: SW-001 §2.3 — SniperAgent
 import cv2
+import os
 import threading
 import time
 
@@ -14,9 +15,20 @@ class SniperVision:
     """
     Pipeline 2: The Sniper
     Precision classifier using YOLOv8.
+    Auto-detects TensorRT .engine for maximum FPS, falls back to .pt.
     """
     def __init__(self, model_path="best.pt"):
-        self.model_path = model_path
+        # Try TensorRT engine first for maximum FPS on Jetson
+        engine_path = model_path.replace('.pt', '.engine')
+        if os.path.exists(engine_path):
+            self.model_path = engine_path
+            print(f"[SniperVision] Found TensorRT engine: {engine_path}")
+        else:
+            self.model_path = model_path
+            if YOLO_AVAILABLE:
+                print(f"[SniperVision] No .engine found, using PyTorch: {model_path}")
+                print(f"[SniperVision] TIP: Convert with: model.export(format='engine', half=True)")
+        
         self.model = None
         self.confidence_threshold = 0.80
         

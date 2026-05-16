@@ -36,6 +36,7 @@ class StatusIndicator:
         self.pin = pin
         
         if GPIO_AVAILABLE:
+            GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self.pin, GPIO.OUT, initial=GPIO.LOW)
             print(f"[StatusIndicator] Initialized on BCM Pin {self.pin}")

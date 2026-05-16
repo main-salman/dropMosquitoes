@@ -78,7 +78,7 @@ The following stages execute **in sequence** for every fire decision:
 
 #### 2.6.3 Gravity Airburst Offset (Final Stage)
 - After velocity lead offsets, apply `AIRBURST_PITCH_OFFSET` (default +12°) to the **final pitch angle**.
-- This intentionally over-aims so the water arc peaks above the target and falls as a wide AoE mist cloud.
+- This intentionally over-aims so the pressurized stream arcs slightly above the target, compensating for gravity drop over distance.
 - Execution order:
   1. `pixel_to_angle()` → raw pitch/yaw
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
@@ -128,7 +128,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 - **Pump Spin-Up:** ~100ms mechanical delay (diaphragm motor to full pressure)
 - **Sweep Duration:** 400ms total (100ms spin-up + 300ms active spray)
 - **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water
-- **Airburst Strategy:** Fire high-pressure mist cloud above target's projected flight path; mist loses kinetic energy at apex and falls as wide "rain cloud" AoE
+- **Airburst Strategy:** Pitch offset lobs the 60 PSI pressurized stream slightly above the target's projected flight path, compensating for gravity drop at range. Combined with the sweep, this creates a curtain of water across the flight path.
 - **Airburst Offset:** Default +12° above calculated target pitch (tunable 0°–30° via dashboard)
 
 ## 6. Calibration Procedure

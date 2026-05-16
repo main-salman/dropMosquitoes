@@ -249,7 +249,15 @@ with tab2:
                         result_placeholder.info(
                             f"**Trained model saved to:**\n\n"
                             f"`{best_pt_path}`\n\n"
-                            f"Copy this file to your Jetson Orin Nano deployment directory."
+                            f"**Next steps:**\n"
+                            f"1. Copy `best.pt` to your Jetson: `scp {best_pt_path} jetson@<IP>:/home/jetson/dropMosquitoes/`\n"
+                            f"2. SSH into Jetson and convert to TensorRT for max FPS:\n"
+                            f"   ```python\n"
+                            f"   from ultralytics import YOLO\n"
+                            f"   model = YOLO('best.pt')\n"
+                            f"   model.export(format='engine', half=True, workspace=4)\n"
+                            f"   ```\n"
+                            f"3. The system auto-detects `best.engine` — no code changes needed."
                         )
                     else:
                         st.error(f"❌ Training process exited with code {process.returncode}. Check logs above.")

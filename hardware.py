@@ -159,8 +159,8 @@ class RelayController:
 
 # ============================================================================
 # SOFTWARE ENDSTOPS (SAFE-001 §2, User Spec §4)
-# These are MORE CONSERVATIVE than the hardware limits (±130° yaw, ±45° pitch)
-# to protect wiring through the cable glands and service loops.
+# Hardware mechanical limits are wider (±130° yaw, ±45° pitch), but software
+# clamps to the values below to protect wiring through cable glands/service loops.
 # ============================================================================
 YAW_LIMIT = 80.0     # Max ±80° yaw (160° total sweep)
 PITCH_LIMIT = 20.0   # Max ±20° pitch (40° total sweep)

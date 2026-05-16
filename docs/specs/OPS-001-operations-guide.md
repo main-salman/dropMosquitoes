@@ -12,7 +12,7 @@
 ## Phase 1: Procurement & Inspection
 
 ### 1.1 Order Parts
-Purchase everything in [parts.csv](../../parts.csv). Cross-reference with [HW-001](HW-001-hardware-spec.md) §12.
+Purchase everything in [parts.csv](../../parts.csv) AND [moreparts.csv](../../moreparts.csv). The latter contains mounting hardware, cable glands, tools, and fluid fittings not in the primary BOM. Cross-reference with [HW-001](HW-001-hardware-spec.md) §12.
 
 ### 1.2 Incoming Inspection
 When parts arrive, verify:
