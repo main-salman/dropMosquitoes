@@ -131,6 +131,14 @@ Keep these open during assembly (all in `diagrams/` directory):
 | [wire_11_terminal_block_hub.drawio](../../diagrams/wire_11_terminal_block_hub.drawio) | IDC40P breakout — master wiring reference |
 | [arch_11_software_v2.drawio](../../diagrams/arch_11_software_v2.drawio) | Software architecture (for understanding data flow) |
 
+**ECO-2026-003 Updated Images:**
+
+![Physical stacking layout — gimbal above enclosure, diaphragm pump on bracket](../../diagrams/images/physical_stacking_sideview.png)
+
+![Fluid system with diaphragm pump routing](../../diagrams/images/fluid_system_diaphragm.png)
+
+![Diaphragm pump cutaway — suction/pressure stroke cycle](../../diagrams/images/diaphragm_pump_detail.png)
+
 ### 3.1 Assembly Sequence
 
 | Step | Task | Test Before Proceeding | Diagram |
