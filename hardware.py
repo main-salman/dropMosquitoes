@@ -428,7 +428,7 @@ class LiDARController:
 # Calibration constants — tune these after field testing
 WATER_EXIT_VELOCITY = 7.0   # m/s — measured at nozzle exit
 GRAVITY = 9.81               # m/s²
-MOUNT_def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
+def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
                                distance_m: float) -> tuple:
     """
     Apply linear drop correction for the OVERHEAD-mounted inverted turret.
