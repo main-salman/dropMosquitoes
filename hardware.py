@@ -428,66 +428,31 @@ class LiDARController:
 # Calibration constants — tune these after field testing
 WATER_EXIT_VELOCITY = 7.0   # m/s — measured at nozzle exit
 GRAVITY = 9.81               # m/s²
-MOUNT_HEIGHT_M = 2.7         # m — default overhead mount height (~9 feet)
-
-
-def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
-                              distance_m: float) -> tuple:
+MOUNT_def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
+                               distance_m: float) -> tuple:
     """
-    Apply parabolic drop correction for an OVERHEAD-mounted turret.
-
-    The turret fires downward from ~2.7m height. Gravity accelerates the
-    water stream toward the ground (assists the shot). The correction is
-    smaller than for a ground-level turret.
-
-    Physics:
-      - Time of flight: t = d / (v0 * cos(α))
-      - Gravity drop during flight: Δy = ½ * g * t²
-      - Angular correction: Δpitch = arctan(Δy / d)
-      - Since gravity HELPS (firing downward), we SUBTRACT the correction
-        (stream lands slightly PAST the aimpoint due to gravity assist).
-
-    Args:
-        pitch_deg: Raw pitch angle from pixel_to_angle (degrees).
-        yaw_deg: Raw yaw angle from pixel_to_angle (degrees, unchanged).
-        distance_m: LiDAR-measured slant distance to background (meters).
-
-    Returns:
-        (corrected_pitch, yaw, offset_info) tuple where offset_info is a dict
-        containing the raw offset values for GUI display.
+    Apply linear drop correction for the OVERHEAD-mounted inverted turret.
+    Since it fires downward, gravity accelerates the water. For distances > 3m,
+    we apply a slight negative pitch offset (aiming closer to the horizon)
+    to compensate for the drop.
     """
     if distance_m < 0.3 or distance_m > 8.0:
-        # Out of effective range — no correction
         return pitch_deg, yaw_deg, {
             "drop_offset_deg": 0.0,
-            "time_of_flight_ms": 0.0,
-            "gravity_drop_cm": 0.0,
             "distance_m": distance_m,
             "in_range": False
         }
 
-    alpha_rad = math.radians(pitch_deg)
-    v0 = WATER_EXIT_VELOCITY
-
-    # Time of flight (seconds)
-    cos_alpha = math.cos(alpha_rad)
-    if abs(cos_alpha) < 0.01:
-        cos_alpha = 0.01  # Prevent division by zero at extreme angles
-    tof = distance_m / (v0 * cos_alpha)
-
-    # Gravity drop during flight (meters)
-    gravity_drop_m = 0.5 * GRAVITY * tof * tof
-
-    # Angular correction (degrees)
-    # Negative because gravity pulls stream INTO target zone (downward assist)
-    drop_offset_deg = -math.degrees(math.atan2(gravity_drop_m, distance_m))
+    # Linear drop: dead-straight under 3m, then -0.5 deg per meter
+    if distance_m <= 3.0:
+        drop_offset_deg = 0.0
+    else:
+        drop_offset_deg = -0.5 * (distance_m - 3.0)
 
     corrected_pitch = pitch_deg + drop_offset_deg
 
     return corrected_pitch, yaw_deg, {
         "drop_offset_deg": round(drop_offset_deg, 2),
-        "time_of_flight_ms": round(tof * 1000, 1),
-        "gravity_drop_cm": round(gravity_drop_m * 100, 1),
         "distance_m": round(distance_m, 2),
         "in_range": True
     }
@@ -520,7 +485,7 @@ def pixel_to_angle(px: int, py: int,
     norm_y = (py / frame_h) - 0.5   # -0.5=top, +0.5=bottom
 
     yaw_deg = norm_x * fov_h         # Positive = right
-    pitch_deg = -norm_y * fov_v      # Negative = down (invert for gimbal)
+    pitch_deg = norm_y * fov_v       # Positive = down (inverted gimbal geometry)
 
     return pitch_deg, yaw_deg
 
@@ -531,55 +496,39 @@ def pixel_to_angle(px: int, py: int,
 # Three-stage pipeline executed for every fire decision:
 #   1. pixel_to_angle()        → raw pitch/yaw
 #   2. + velocity lead offsets → corrected for target movement during ToF
-#   3. + gravity drop          → final corrected pitch
+#   3. + linear drop           → final corrected pitch
 #
 # This function combines stages 2 and 3 (§2.7.2 + §2.7.3).
-# Stage 1 (pixel_to_angle) and velocity tracking (§2.7.1 VelocityTracker)
-# are handled upstream.
 # ============================================================================
 
 def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
                             distance_m: float,
                             omega_pitch: float = 0.0,
-                            omega_yaw: float = 0.0,
-                            arc_compensation_deg: float = 12.0) -> tuple:
+                            omega_yaw: float = 0.0) -> tuple:
     """
-    Apply velocity lead + Arc Compensation to raw gimbal angles.
+    Apply velocity lead + Linear Drop Compensation to raw gimbal angles.
 
     SW-001 §2.7.2: Calculates Time-of-Flight, then applies the target's
     angular velocity over that window to predict where the target WILL BE
     when the water stream arrives.
 
-    Arc Compensation: The 60 PSI diaphragm pump fires a direct pressurized
-    stream. Over distance, gravity causes the stream to arc downward. We
-    apply a positive pitch offset to compensate for this trajectory drop.
+    Linear Drop Compensation: Firing downward from the inverted dome.
+    Under 3m, the stream is dead-straight. Over 3m, apply a slight
+    negative pitch offset (aiming closer to horizon) to compensate for drop.
 
     Execution order:
       1. raw angles (input)
       2. + lead_pitch / lead_yaw  (velocity-corrected aim point)
-      3. + arc_compensation_deg   (compensate for stream gravity drop)
-
-    Args:
-        raw_pitch: Raw pitch from pixel_to_angle (degrees).
-        raw_yaw: Raw yaw from pixel_to_angle (degrees).
-        distance_m: LiDAR-measured slant distance (meters).
-        omega_pitch: Target angular velocity in pitch (deg/s) from VelocityTracker.
-        omega_yaw: Target angular velocity in yaw (deg/s) from VelocityTracker.
-        arc_compensation_deg: Positive degrees to compensate for stream arc over distance.
-
-    Returns:
-        (final_pitch, final_yaw, lead_info) where lead_info is a dict with
-        all intermediate values for GUI/calibration display.
+      3. + drop_offset_deg        (compensate for stream gravity drop)
     """
     if distance_m < 0.3 or distance_m > 8.0:
-        # Out of effective range — pass through raw angles, no correction
         return raw_pitch, raw_yaw, {
             "in_range": False,
             "distance_m": distance_m,
             "tof_ms": 0.0,
             "lead_pitch_deg": 0.0,
             "lead_yaw_deg": 0.0,
-            "arc_compensation_deg": 0.0,
+            "drop_offset_deg": 0.0,
             "total_pitch_correction": 0.0,
             "total_yaw_correction": 0.0
         }
@@ -601,12 +550,13 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
     led_pitch = raw_pitch + lead_pitch
     led_yaw = raw_yaw + lead_yaw
 
-    # --- Stage 3: Arc Compensation ---
-    # The pressurized stream travels in a ballistic arc. Over distance,
-    # gravity pulls the stream below the aim point. Adding positive pitch
-    # compensates for this drop, ensuring the stream arrives on target.
+    # --- Stage 3: Linear Drop Compensation ---
+    if distance_m <= 3.0:
+        drop_offset_deg = 0.0
+    else:
+        drop_offset_deg = -0.5 * (distance_m - 3.0)
 
-    final_pitch = led_pitch + arc_compensation_deg
+    final_pitch = led_pitch + drop_offset_deg
     final_yaw = led_yaw
 
     return final_pitch, final_yaw, {
@@ -615,8 +565,8 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         "tof_ms": round(tof * 1000, 1),
         "lead_pitch_deg": round(lead_pitch, 3),
         "lead_yaw_deg": round(lead_yaw, 3),
-        "arc_compensation_deg": round(arc_compensation_deg, 2),
-        "total_pitch_correction": round(lead_pitch + arc_compensation_deg, 3),
+        "drop_offset_deg": round(drop_offset_deg, 2),
+        "total_pitch_correction": round(lead_pitch + drop_offset_deg, 3),
         "total_yaw_correction": round(lead_yaw, 3)
     }
 

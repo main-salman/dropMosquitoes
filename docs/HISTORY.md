@@ -195,3 +195,12 @@
 - **[SPEC]** `OPS-001`, `SYS-001`, `spec.md`, `README.md`: all airburst references → arc compensation / direct stream
 - **[NOTE]** `HISTORY.md` entries from earlier sessions intentionally preserved as historical record (they reflect the state at the time)
 - **[NOTE]** `/api/airburst/set` route name kept for backward compatibility with existing dashboard HTML
+
+## 2026-05-16 — INVERTED GIMBAL GEOMETRY & LINEAR DROP PHYSICS
+- **[ARCH]** Redesigned chassis to a vertically condensed "Hanging Dome". Gimbal and cameras now hang INVERTED from the enclosure baseplate and fire downward.
+- **[CODE]** `hardware.py` & `main.py`: Inverted `pixel_to_angle` mapping so positive Y pixel offset translates to a positive pitch command (aiming downward).
+- **[CODE]** `hardware.py`: Refactored `compute_ballistic_offset` and `compute_predictive_lead`. Replaced parabolic drop math with a direct-fire linear stream drop (-0.5° per meter beyond 3m).
+- **[CODE]** `main.py` & `app.py`: Hooked orchestrator directly into `LiDARController` to dynamically calculate linear drop based on distance instead of static GUI slider.
+- **[CODE]** `gimbal_controller.py`: Added `downward_bias_deg` to `sweep()` to paint the downward-sloping ground plane during Stream-and-Sweep.
+- **[SPEC]** `HW-001` and `SW-001`: Updated to reflect inverted dome orientation, revised physical stacking, and linear trajectory physics.
+- **[DIAGRAM]** Regenerated 6 core architectural diagrams to reflect the inverted dome and linear trajectory physics. Moved out-of-date images to `diagrams/images/archive/`.

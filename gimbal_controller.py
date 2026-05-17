@@ -58,17 +58,21 @@ class GimbalController:
 
     def sweep(self, start_pitch: float, start_yaw: float,
               end_pitch: float, end_yaw: float,
-              steps: int = 5, step_delay: float = 0.04):
+              steps: int = 5, step_delay: float = 0.04, downward_bias_deg: float = 0.5):
         """
         Execute a linear sweep from (start) to (end) in `steps` increments.
         Each step waits `step_delay` seconds. Total sweep time ≈ steps × step_delay.
+        Adds a small downward_bias_deg to the end_pitch to ensure a downward slope.
 
         Used during Stream-and-Sweep: the gimbal sweeps across the predicted
         flight path while the pump is spraying, creating a wall of water.
         """
+        # Apply bias to the final pitch
+        adjusted_end_pitch = end_pitch + downward_bias_deg
+
         for i in range(steps + 1):
             t = i / steps  # 0.0 → 1.0
-            p = start_pitch + (end_pitch - start_pitch) * t
+            p = start_pitch + (adjusted_end_pitch - start_pitch) * t
             y = start_yaw + (end_yaw - start_yaw) * t
             self.aim(p, y)
             if i < steps:
@@ -76,12 +80,12 @@ class GimbalController:
 
     async def sweep_async(self, start_pitch: float, start_yaw: float,
                           end_pitch: float, end_yaw: float,
-                          steps: int = 5, step_delay: float = 0.04):
+                          steps: int = 5, step_delay: float = 0.04, downward_bias_deg: float = 0.5):
         """Non-blocking sweep dispatched to executor thread."""
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(
             None, self.sweep,
-            start_pitch, start_yaw, end_pitch, end_yaw, steps, step_delay
+            start_pitch, start_yaw, end_pitch, end_yaw, steps, step_delay, downward_bias_deg
         )
 
     def get_status(self):

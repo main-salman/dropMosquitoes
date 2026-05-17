@@ -184,7 +184,7 @@ def api_gimbal_click():
     # Stages 2+3: Velocity lead + Arc Compensation (stream trajectory over distance)
     global ARC_COMPENSATION_DEG
     final_pitch, final_yaw, lead_info = compute_predictive_lead(
-        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw, ARC_COMPENSATION_DEG
+        raw_pitch, raw_yaw, distance_m, omega_pitch, omega_yaw
     )
 
     # Move gimbal to fully corrected position

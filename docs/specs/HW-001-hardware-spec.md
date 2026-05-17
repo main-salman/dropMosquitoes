@@ -189,20 +189,19 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 
 ### 8.1 Physical Stacking (Top to Bottom)
 
-The gimbal and related components mount **above** the Jetson enclosure:
+The chassis is a vertically condensed dome enclosure with the gimbal mounted INVERTED (hanging from the bottom baseplate):
 
 ```
 ┌─────────────────────────┐
-│   Gimbal + Sniper Cam   │ ← Highest point (pan/tilt)
-│   + Nozzle + LiDAR      │
+│   Water Reservoir       │ ← Ground level or elevated shelf
+│   (intake tube drops in)│
 ├─────────────────────────┤
 │   Diaphragm Pump        │ ← Mounted on bracket, adjacent to enclosure
 ├─────────────────────────┤
-│   IP67 Enclosure        │ ← Jetson, relays, IDC40P, CSI RX boards
-│   (Yahboom inside)      │
+│   IP67 Dome Enclosure   │ ← Baseplate at top, dome hanging down. Jetson inside.
 ├─────────────────────────┤
-│   Water Reservoir       │ ← Ground level or elevated shelf
-│   (intake tube drops in)│
+│   Gimbal + Sniper Cam   │ ← Hanging INVERTED from enclosure baseplate
+│   + Nozzle + LiDAR      │   (Lowest point, firing downward)
 └─────────────────────────┘
 ```
 
@@ -214,7 +213,8 @@ The gimbal and related components mount **above** the Jetson enclosure:
 
 ## 9. Enclosure & Weatherproofing
 
-- **Shell:** Joinfworld IP67 ABS Box (11.4" × 7.5" × 5.5")
+- **Shell:** Vertically condensed IP67 Dome Enclosure
+- **Orientation:** Inverted "Hanging Dome" configuration
 - **Cable Glands:** PG9 (×2), PG11 (×1), PG13.5 (×1)
 - **Sealant:** Silicone adhesive on all gland threads
 - **Internal Mounting:** M3 standoffs (15mm) on grid plate

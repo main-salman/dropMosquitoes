@@ -12,6 +12,7 @@ from gimbal_controller import GimbalController
 from weapon_system import WeaponSystem
 from ir_controller import IRController
 from status_indicator import StatusIndicator
+from hardware import LiDARController
 
 # ==============================================================================
 # Logging — Persistent engagement log + console output
@@ -56,7 +57,7 @@ def pixel_to_angle(px: int, py: int) -> tuple:
     norm_x = (px / FRAME_W) - 0.5
     norm_y = (py / FRAME_H) - 0.5
     yaw_deg = norm_x * FOV_H
-    pitch_deg = -norm_y * FOV_V
+    pitch_deg = norm_y * FOV_V   # POSITIVE y = DOWN = POSITIVE pitch
     return pitch_deg, yaw_deg
 
 # ==============================================================================
@@ -91,6 +92,7 @@ async def orchestrator_loop():
     weapon = WeaponSystem()
     ir = IRController(auto_schedule=True)
     buzzer = StatusIndicator()
+    lidar = LiDARController()
 
     scout.start()
     sniper.start()
@@ -131,8 +133,13 @@ async def orchestrator_loop():
                 raw_pitch, raw_yaw = pixel_to_angle(tx, ty)
                 pred_pitch, pred_yaw = pixel_to_angle(pred_x, pred_y)
 
-                # Apply arc compensation (pitch offset for stream trajectory over distance)
-                arc_comp = weapon.get_arc_compensation()
+                # Apply linear drop compensation (pitch offset for stream trajectory over distance)
+                distance_m = lidar.read_distance()
+                if distance_m <= 3.0:
+                    arc_comp = 0.0
+                else:
+                    arc_comp = -0.5 * (distance_m - 3.0)
+
                 aim_pitch = pred_pitch + arc_comp
 
                 log.info(
@@ -175,7 +182,7 @@ async def orchestrator_loop():
                     if abs(vx) > 10 or abs(vy) > 10:
                         # Target is moving — sweep along velocity vector
                         sweep_end_yaw += (SWEEP_OVERSHOOT_DEG if vx > 0 else -SWEEP_OVERSHOOT_DEG)
-                        sweep_end_pitch += (SWEEP_OVERSHOOT_DEG if vy < 0 else -SWEEP_OVERSHOOT_DEG)
+                        sweep_end_pitch += (SWEEP_OVERSHOOT_DEG if vy > 0 else -SWEEP_OVERSHOOT_DEG)
 
                     await gimbal.sweep_async(
                         aim_pitch, pred_yaw,          # Start: current aim point

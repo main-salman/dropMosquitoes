@@ -76,14 +76,13 @@ The following stages execute **in sequence** for every fire decision:
   lead_pitch = ω_pitch × ToF   (degrees)
   ```
 
-#### 2.6.3 Arc Compensation (Final Stage)
-- After velocity lead offsets, apply `ARC_COMPENSATION_DEG` (default +12°) to the **final pitch angle**.
-- The 60 PSI diaphragm pump fires a direct pressurized stream that arcs downward due to gravity over distance. This offset compensates for that trajectory drop.
+#### 2.6.3 Linear Drop Compensation (Final Stage)
+- After velocity lead offsets, apply `drop_offset_deg` to the **final pitch angle**.
+- The turret is mounted inverted in an overhead dome enclosure, firing downward. The 45 PSI diaphragm pump fires a direct pressurized stream. Under 3m, the stream is dead-straight. Over 3m, we apply a slight negative pitch offset (aiming closer to horizon) to compensate for trajectory drop.
 - Execution order:
-  1. `pixel_to_angle()` → raw pitch/yaw
+  1. `pixel_to_angle()` → raw pitch/yaw (positive pitch = moves camera DOWN)
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
-  3. `+ arc_compensation_deg` → final corrected pitch
-- The offset is dynamically tunable via the Flask dashboard slider (0° to +30°).
+  3. `+ drop_offset_deg` → final corrected pitch
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
@@ -121,15 +120,15 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 
 ## 5. Physics Model
 
-- **Mounting:** Overhead, 8–10 feet (2.4–3.0m) above ground level, firing DOWNWARD
+- **Mounting:** Overhead, 8–10 feet (2.4–3.0m) above ground level, firing DOWNWARD from an INVERTED dome enclosure.
+- **Coordinate System:** Pitch axis is inverted. Positive pitch commands move the payload DOWN toward the base. Negative pitch looks OUT toward the horizon.
 - **Effective Range:** 1.0 – 5.0 meters (LiDAR-measured slant distance to background)
 - **Water Exit Velocity:** ~7 m/s
-- **Pump Type:** 12V DC Diaphragm Pump (ECO-2026-003), 60 PSI, self-priming
+- **Pump Type:** 12V DC Diaphragm Pump (ECO-2026-003), 45 PSI, self-priming
 - **Pump Spin-Up:** ~100ms mechanical delay (diaphragm motor to full pressure)
 - **Sweep Duration:** 400ms total (100ms spin-up + 300ms active spray)
-- **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water
-- **Arc Compensation:** Pitch offset compensates for gravity-induced stream arc over distance. At longer ranges, the stream drops further, requiring more offset. Combined with the sweep, this creates a curtain of water across the flight path.
-- **Arc Compensation Default:** +12° above calculated target pitch (tunable 0°–30° via dashboard)
+- **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water. Sweep includes a downward bias to match trajectory incidence.
+- **Drop Compensation:** Pitch offset compensates for gravity-induced stream drop over distance. Since gimbal is inverted, aiming "up" means negative pitch. Under 3m, correction is 0.0°. Over 3m, correction is -0.5° per meter.
 
 ## 6. Calibration Procedure
 
