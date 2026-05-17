@@ -218,3 +218,11 @@
 - **[TEST]** Executed a test training run on Apple Silicon MPS via CLI, verifying model convergence and deployment artifact auto-copy to `models/trained/best.pt`.
 - **[GOVERNANCE]** Enforced strict project-wide ban on generating dummy data. Added explicit anti-dummy rules to `rules.md`, `gemini.md`, `agents.md`, and `SW-001`.
 - **[DOCS]** Added `results.md` inside `tools/sentry_control_center/` capturing the CLI training metrics and evaluation summary.
+
+## 2026-05-17 — 100-EPOCH TRAINING, SEC-001 INCIDENT, & MOUNTING CONCEPTS
+- **[TRAINING]** Successfully completed the 100-epoch YOLOv8 tuning on Apple Silicon (MPS). Automatically captured results to `results.md` (mAP50: 0.956) and deployed `best.pt`.
+- **[SECURITY]** GitGuardian alerted an accidental leak of the Roboflow API key in commit `54cf587` because `.env` was not ignored.
+- **[SECURITY]** Remediated leak: removed `.env` from git tracking, added to `.gitignore`, and pushed. Advised user to revoke the API key immediately.
+- **[GOVERNANCE]** Added Rule 13 (SECRET PROTECTION) to `rules.md` explicitly banning `git add .` and `.env` commits.
+- **[DESIGN]** Created `docs/mounting_concepts/README.md` outlining 10 creative hardware-store mounting strategies for the inverted dome turret (umbrella, tripod, gallows, zipline, etc.).
+- **[DIAGRAM]** Generated and embedded 10 photorealistic mockups to `docs/mounting_concepts/images/` alongside structural Mermaid diagrams for each concept.

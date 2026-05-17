@@ -89,3 +89,25 @@
 - **diagrams/wire_03_relay_pump.drawio:** Rebuilt with 1N4007 diode in reverse-bias, CRITICAL callout
 - **diagrams/images/flyback_diode_wiring.png:** New wiring reference image with clamped-vs-unclamped spike comparison
 - **Cursor extension:** Installed `hediet.vscode-drawio` for native draw.io viewing
+
+## 2026-05-17
+
+### `54cf587` — [TOOL] Add CLI support for Sentry Control Center & Anti-Dummy Data Rules
+- Added argparse CLI support to `app.py` for headless execution.
+- Added dynamic platform auto-detection (CUDA vs MPS).
+- Added formal anti-dummy data rules to documentation.
+
+### `b07c3c9` — [TRAINING] Automated commit: 100-Epoch YOLO Model tuned and deployed
+- Automated commit from background monitoring script.
+- Updates `models/trained/best.pt` with final weights.
+- Appends final mAP50 precision metrics to `results.md`.
+
+### `ff51723` — [SECURITY] Remove .env from version control, add to .gitignore, update rules
+- Remediated GitGuardian SEC-001 alert for Roboflow API key.
+- `git rm --cached .env` and added `*.env` to `.gitignore`.
+- Added strict SECRET PROTECTION rule to `rules.md`.
+
+### `51c38b4` — [DOCS] Add 10 creative mounting concepts with photorealistic mockups
+- Created `docs/mounting_concepts/README.md`.
+- Added 10 photorealistic mockups to `docs/mounting_concepts/images/`.
+- Included Mermaid diagrams for Telescoping pole, Umbrella, Tripod, Gallows, Zipline, C-Stand, Deck Clamp, Speaker Stand, Rolling Base, and Tire Mount.
