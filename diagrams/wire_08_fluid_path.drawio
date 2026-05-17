@@ -9,7 +9,7 @@
         <mxCell id="res" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#90CAF9;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="40" y="110" width="140" height="120" as="geometry"/></mxCell>
         <mxCell id="reswater" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=50;" vertex="1" parent="1"><mxGeometry x="50" y="145" width="120" height="75" as="geometry"/></mxCell>
         <mxCell id="reslbl" value="&lt;b style='color:#1565C0;font-size:11px'&gt;Water Reservoir&lt;/b&gt;&lt;br&gt;&lt;span style='color:#1976D2;font-size:8px'&gt;Shallow tote + mesh lid&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="50" y="115" width="120" height="28" as="geometry"/></mxCell>
-        <!-- Pump (submerged) -->
+        <!-- Pump (Diaphragm) -->
         <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;arcSize=15;" vertex="1" parent="1"><mxGeometry x="65" y="155" width="80" height="50" as="geometry"/></mxCell>
         <mxCell id="pumpmotor" value="" style="ellipse;fillColor=#1565C0;strokeColor=#1976D2;" vertex="1" parent="1"><mxGeometry x="75" y="160" width="25" height="25" as="geometry"/></mxCell>
         <mxCell id="pumplbl" value="&lt;span style='color:#90CAF9;font-size:8px'&gt;&lt;b&gt;Diaphragm 12V&lt;/b&gt;&lt;br&gt;Surface-Mount&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="100" y="160" width="60" height="22" as="geometry"/></mxCell>

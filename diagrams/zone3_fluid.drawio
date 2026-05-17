@@ -12,7 +12,7 @@
         <mxCell id="res" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#90CAF9;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="250" width="160" height="100" as="geometry"/></mxCell>
         <mxCell id="resw" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=50;" vertex="1" parent="1"><mxGeometry x="50" y="280" width="140" height="60" as="geometry"/></mxCell>
         <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;arcSize=15;" vertex="1" parent="1"><mxGeometry x="80" y="290" width="65" height="35" as="geometry"/></mxCell>
-        <mxCell id="pumpl" value="&lt;span style='color:#90CAF9;font-size:8px'&gt;&lt;b&gt;Pump&lt;/b&gt; (submerged)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="295" width="90" height="14" as="geometry"/></mxCell>
+        <mxCell id="pumpl" value="&lt;span style='color:#90CAF9;font-size:8px'&gt;&lt;b&gt;Pump&lt;/b&gt; (Diaphragm)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="295" width="90" height="14" as="geometry"/></mxCell>
         <mxCell id="resl" value="&lt;b style='color:#1565C0'&gt;Reservoir&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px;color:#1976D2'&gt;+ mesh debris screen&lt;/span&gt;" style="text;html=1;align=center;fontSize=10;" vertex="1" parent="1"><mxGeometry x="55" y="255" width="130" height="22" as="geometry"/></mxCell>
         <!-- Check valve -->
         <mxCell id="valve" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#7986CB;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="260" y="260" width="80" height="45" as="geometry"/></mxCell>
