@@ -245,8 +245,10 @@ with tab2:
                 name_dir = "train"
                 
                 # Build YOLO command
+                import sys, shutil
+                yolo_cmd = shutil.which("yolo") or os.path.join(os.path.dirname(sys.executable), "yolo")
                 cmd = [
-                    "yolo", "detect", "train",
+                    yolo_cmd, "detect", "train",
                     f"data={dataset_yaml}",
                     f"model={base_model}",
                     f"epochs={epochs}",
@@ -332,3 +334,92 @@ with tab2:
                     st.error("❌ `yolo` CLI not found. Make sure `ultralytics` is installed: `pip install ultralytics`")
                 except Exception as e:
                     st.error(f"❌ Error starting training: {e}")
+
+# ==============================================================================
+# CLI Entry Point
+# ==============================================================================
+if __name__ == "__main__":
+    import sys
+    import argparse
+    import shutil
+
+    # Determine if script is run via python directly or via streamlit
+    is_cli = "streamlit" not in os.path.basename(sys.argv[0])
+
+    if is_cli:
+        parser = argparse.ArgumentParser(description="Sentry Control Center CLI Training Utility")
+        parser.add_argument("--train-sniper", action="store_true", help="Start YOLO training for SniperAgent")
+        parser.add_argument("--data", type=str, help="Absolute path to data.yaml")
+        parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
+        parser.add_argument("--batch", type=int, default=16, help="Batch size")
+        parser.add_argument("--imgsz", type=int, default=640, help="Image size")
+        
+        args = parser.parse_args()
+        
+        if args.train_sniper:
+            if not args.data or not os.path.exists(args.data):
+                print(f"Error: Provided data.yaml path '{args.data}' does not exist.")
+                sys.exit(1)
+
+            try:
+                import torch
+                has_cuda = torch.cuda.is_available()
+                has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            except ImportError:
+                has_cuda = False
+                has_mps = False
+            
+            if has_cuda:
+                active_engine = "cuda"
+                print(f"Auto-Detected Engine: NVIDIA CUDA (RTX 3070)")
+            elif has_mps:
+                active_engine = "mps"
+                print(f"Auto-Detected Engine: Apple Silicon MPS (M4 Pro)")
+            else:
+                active_engine = "cpu"
+                print(f"Auto-Detected Engine: Standard CPU (Fallback)")
+                
+            project_dir = os.path.join(os.getcwd(), "runs", "detect")
+            name_dir = "train"
+            
+            yolo_cmd = shutil.which("yolo") or os.path.join(os.path.dirname(sys.executable), "yolo")
+            cmd = [
+                yolo_cmd, "detect", "train",
+                f"data={args.data}",
+                f"model=yolov8n.pt",
+                f"epochs={args.epochs}",
+                f"batch={args.batch}",
+                f"imgsz={args.imgsz}",
+                f"device={active_engine}",
+                f"project={project_dir}",
+                f"name={name_dir}",
+                "exist_ok=True"
+            ]
+            
+            print(f"[{time.strftime('%H:%M:%S')}] Starting YOLO training subprocess...")
+            print("Running command:", " ".join(cmd))
+            print("-" * 60)
+            
+            process = subprocess.Popen(cmd)
+            process.wait()
+            
+            if process.returncode == 0:
+                print("✅ Training completed successfully!")
+                
+                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                deploy_model_dir = os.path.join(project_root, "models", "trained")
+                yolo_best_pt = os.path.join(project_dir, name_dir, "weights", "best.pt")
+                final_model_path = os.path.join(deploy_model_dir, "best.pt")
+                
+                if os.path.exists(yolo_best_pt):
+                    os.makedirs(deploy_model_dir, exist_ok=True)
+                    shutil.copy2(yolo_best_pt, final_model_path)
+                    print(f"Trained model saved cleanly for deployment to: {final_model_path}")
+                else:
+                    print(f"Training finished, but could not find weights at {yolo_best_pt} to copy over.")
+            else:
+                print(f"❌ Training process exited with code {process.returncode}")
+                sys.exit(process.returncode)
+        else:
+            parser.print_help()
+            sys.exit(1)

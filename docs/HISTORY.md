@@ -210,3 +210,11 @@
 - **[DIAGRAM]** Regenerated `night_operation_view.png` to depict the inverted dome turret in low-light conditions with the active 850nm IR illuminator casting a volumetric beam.
 - **[DIAGRAM]** Regenerated `full_system_assembled.png`, `10_fluid_system_assembly.png`, `6_enclosure_internal_layout.png`, and `9_csi_camera_chain.png` to reflect the inverted dome architecture, diaphragm pump, and CSI-TX board wiring.
 - **[NOTE]** Old diagram versions moved to `diagrams/images/archive/`.
+
+## 2026-05-17 — MULTI-PLATFORM ML ENGINE & DATA GOVERNANCE
+- **[TOOL]** Updated `tools/sentry_control_center/app.py` to support dynamic hardware auto-detection (CUDA -> MPS -> CPU) for YOLOv8 training.
+- **[TOOL]** Added CLI execution support to `app.py` via `argparse`, bypassing Streamlit UI when invoked directly from the terminal. Resolves YOLO binary path using `sys.executable` to prevent path issues in venv.
+- **[TOOL]** Established `tools/sentry_control_center/dataset/` to ingest real Kaggle mosquito/fly data (`FLY_MOS_Dataset`) and prepared it with `data.yaml`.
+- **[TEST]** Executed a test training run on Apple Silicon MPS via CLI, verifying model convergence and deployment artifact auto-copy to `models/trained/best.pt`.
+- **[GOVERNANCE]** Enforced strict project-wide ban on generating dummy data. Added explicit anti-dummy rules to `rules.md`, `gemini.md`, `agents.md`, and `SW-001`.
+- **[DOCS]** Added `results.md` inside `tools/sentry_control_center/` capturing the CLI training metrics and evaluation summary.

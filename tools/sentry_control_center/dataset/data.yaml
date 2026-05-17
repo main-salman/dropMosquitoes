@@ -1,0 +1,6 @@
+names:
+- mosquito
+- fly
+nc: 2
+train: /Users/salman/Documents/dropMosquitoes/tools/sentry_control_center/dataset/images/train
+val: /Users/salman/Documents/dropMosquitoes/tools/sentry_control_center/dataset/images/val
