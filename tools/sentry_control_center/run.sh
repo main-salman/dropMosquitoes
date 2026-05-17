@@ -8,6 +8,10 @@ if pgrep -f "streamlit run app.py" > /dev/null; then
     exit 1
 fi
 
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
 echo "Starting Sentry Control Center..."
 streamlit run app.py &
 echo "Started with PID $!"
