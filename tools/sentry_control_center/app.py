@@ -141,8 +141,33 @@ def enqueue_output(out, queue):
 
 with tab2:
     st.header("Sniper Model Training")
-    st.markdown("Train your custom mosquito detection model without OOM crashing the RTX 3070.")
+    st.markdown("Train your custom mosquito detection model across Windows RTX and MacBook M4 Pro.")
     
+    # Dynamic Hardware Auto-Detection
+    try:
+        import torch
+        has_cuda = torch.cuda.is_available()
+        has_mps = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    except ImportError:
+        has_cuda = False
+        has_mps = False
+
+    if has_cuda:
+        detected_engine = "cuda"
+        engine_label = "NVIDIA CUDA (RTX 3070)"
+        default_batch = 16
+        max_batch = 32
+    elif has_mps:
+        detected_engine = "mps"
+        engine_label = "Apple Silicon MPS (M4 Pro)"
+        default_batch = 32
+        max_batch = 64
+    else:
+        detected_engine = "cpu"
+        engine_label = "Standard CPU (Fallback)"
+        default_batch = 8
+        max_batch = 16
+
     col_t1, col_t2 = st.columns([1, 2])
     
     with col_t1:
@@ -150,12 +175,39 @@ with tab2:
         dataset_yaml = st.text_input("Absolute Path to data.yaml", placeholder="C:/datasets/mosquito_dataset/data.yaml")
         base_model = st.selectbox("Base Model", ["yolov8n.pt", "yolov8s.pt"])
         
-        st.subheader("Hyperparameters (RTX 3070 8GB)")
+        st.subheader("Platform Configuration")
+        st.info(f"Auto-Detected Engine: **{engine_label}**")
+        
+        engine_options = {
+            "Auto-Detect": detected_engine,
+            "CUDA (NVIDIA)": "cuda",
+            "MPS (Apple Silicon)": "mps",
+            "CPU": "cpu"
+        }
+        selected_mode = st.selectbox("Hardware Acceleration Engine Override", list(engine_options.keys()))
+        active_engine = engine_options[selected_mode]
+        
+        # Adjust limits based on override
+        if active_engine == "cuda":
+            current_max_batch = 32
+            current_default_batch = 16
+        elif active_engine == "mps":
+            current_max_batch = 64
+            current_default_batch = 32
+        else:
+            current_max_batch = 16
+            current_default_batch = 8
+            
+        st.subheader("Hyperparameters")
         epochs = st.number_input("Epochs", min_value=1, max_value=1000, value=100)
         
-        # Max 32 to prevent OOM on 8GB VRAM
-        batch_size = st.number_input("Batch Size", min_value=1, max_value=32, value=16, 
-                                     help="Max 32 to prevent CUDA Out Of Memory on 8GB VRAM.")
+        batch_size = st.number_input(
+            "Batch Size", 
+            min_value=1, 
+            max_value=current_max_batch, 
+            value=min(current_default_batch, current_max_batch),
+            help=f"Max {current_max_batch} for {active_engine} architecture."
+        )
         img_size = st.number_input("Image Size", min_value=320, max_value=1280, value=640, step=32)
         
         start_button = st.button("🚀 Start Training", use_container_width=True, type="primary")
@@ -179,6 +231,7 @@ with tab2:
                 st.error("❌ Please provide a valid path to data.yaml.")
             else:
                 st.session_state.training_logs = f"[{time.strftime('%H:%M:%S')}] Starting YOLO training subprocess...\n"
+                st.session_state.training_logs += f"  Engine:    {active_engine}\n"
                 st.session_state.training_logs += f"  Model:     {base_model}\n"
                 st.session_state.training_logs += f"  Dataset:   {dataset_yaml}\n"
                 st.session_state.training_logs += f"  Epochs:    {epochs}\n"
@@ -186,6 +239,10 @@ with tab2:
                 st.session_state.training_logs += f"  ImgSize:   {img_size}\n"
                 st.session_state.training_logs += "─" * 60 + "\n"
                 log_placeholder.code(st.session_state.training_logs, language="bash")
+                
+                # We will save to a specific project directory to control output
+                project_dir = os.path.join(os.getcwd(), "runs", "detect")
+                name_dir = "train"
                 
                 # Build YOLO command
                 cmd = [
@@ -195,10 +252,12 @@ with tab2:
                     f"epochs={epochs}",
                     f"batch={batch_size}",
                     f"imgsz={img_size}",
-                    "device=0"  # Force GPU 0
+                    f"device={active_engine}",
+                    f"project={project_dir}",
+                    f"name={name_dir}",
+                    "exist_ok=True"
                 ]
                 
-                # Spawn subprocess to prevent Streamlit UI from freezing
                 try:
                     process = subprocess.Popen(
                         cmd,
@@ -220,7 +279,6 @@ with tab2:
                     # Loop to read from queue and update UI
                     while process.poll() is None or not q.empty():
                         try:
-                            # Read multiple lines at once to avoid updating UI too frequently
                             lines = []
                             while not q.empty():
                                 line = q.get_nowait()
@@ -230,7 +288,6 @@ with tab2:
                                 new_logs = "".join(lines)
                                 st.session_state.training_logs += new_logs
                                 
-                                # Keep logs manageable length (last 20000 chars)
                                 if len(st.session_state.training_logs) > 20000:
                                     st.session_state.training_logs = "... [truncated] ...\n" + st.session_state.training_logs[-15000:]
                                     
@@ -241,24 +298,33 @@ with tab2:
                     
                     st.session_state.training_active = False
                     
-                    # Check exit code
                     if process.returncode == 0:
                         st.success("✅ Training completed successfully!")
-                        # Show where the model was saved
-                        best_pt_path = os.path.join(os.getcwd(), "runs", "detect", "train", "weights", "best.pt")
-                        result_placeholder.info(
-                            f"**Trained model saved to:**\n\n"
-                            f"`{best_pt_path}`\n\n"
-                            f"**Next steps:**\n"
-                            f"1. Copy `best.pt` to your Jetson: `scp {best_pt_path} jetson@<IP>:/home/jetson/dropMosquitoes/`\n"
-                            f"2. SSH into Jetson and convert to TensorRT for max FPS:\n"
-                            f"   ```python\n"
-                            f"   from ultralytics import YOLO\n"
-                            f"   model = YOLO('best.pt')\n"
-                            f"   model.export(format='engine', half=True, workspace=4)\n"
-                            f"   ```\n"
-                            f"3. The system auto-detects `best.engine` — no code changes needed."
-                        )
+                        
+                        # Copy best.pt to models/trained/best.pt to preserve deploy.sh pipeline
+                        import shutil
+                        yolo_best_pt = os.path.join(project_dir, name_dir, "weights", "best.pt")
+                        deploy_model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "models", "trained")
+                        
+                        # Note: If running sentry_control_center from its own directory, os.getcwd() could be tools/sentry_control_center
+                        # Let's ensure we find the project root properly:
+                        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+                        deploy_model_dir = os.path.join(project_root, "models", "trained")
+                        final_model_path = os.path.join(deploy_model_dir, "best.pt")
+                        
+                        if os.path.exists(yolo_best_pt):
+                            os.makedirs(deploy_model_dir, exist_ok=True)
+                            shutil.copy2(yolo_best_pt, final_model_path)
+                            
+                            result_placeholder.info(
+                                f"**Trained model saved cleanly for deployment to:**\n\n"
+                                f"`{final_model_path}`\n\n"
+                                f"**Deployment is ready!**\n"
+                                f"Your `deploy.sh` script will automatically pick up this model."
+                            )
+                        else:
+                            st.warning(f"Training finished, but could not find weights at `{yolo_best_pt}` to copy over.")
+                            
                     else:
                         st.error(f"❌ Training process exited with code {process.returncode}. Check logs above.")
                     
