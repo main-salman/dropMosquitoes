@@ -204,3 +204,8 @@
 - **[CODE]** `gimbal_controller.py`: Added `downward_bias_deg` to `sweep()` to paint the downward-sloping ground plane during Stream-and-Sweep.
 - **[SPEC]** `HW-001` and `SW-001`: Updated to reflect inverted dome orientation, revised physical stacking, and linear trajectory physics.
 - **[DIAGRAM]** Regenerated 6 core architectural diagrams to reflect the inverted dome and linear trajectory physics. Moved out-of-date images to `diagrams/images/archive/`.
+
+## 2026-05-16 — GIMBAL PAYLOAD AND NIGHT OPERATION DIAGRAMS
+- **[DIAGRAM]** Regenerated `gimbal_payload_v3.png` to highly detailed 3D CAD style, correctly showing the inverted Arducam IMX219, CSI-to-HDMI TX board, FPV HDMI cable, LiDAR, and water nozzle.
+- **[DIAGRAM]** Regenerated `night_operation_view.png` to depict the inverted dome turret in low-light conditions with the active 850nm IR illuminator casting a volumetric beam.
+- **[NOTE]** Old diagram versions moved to `diagrams/images/archive/`.
