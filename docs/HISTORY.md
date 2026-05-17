@@ -208,4 +208,5 @@
 ## 2026-05-16 — GIMBAL PAYLOAD AND NIGHT OPERATION DIAGRAMS
 - **[DIAGRAM]** Regenerated `gimbal_payload_v3.png` to highly detailed 3D CAD style, correctly showing the inverted Arducam IMX219, CSI-to-HDMI TX board, FPV HDMI cable, LiDAR, and water nozzle.
 - **[DIAGRAM]** Regenerated `night_operation_view.png` to depict the inverted dome turret in low-light conditions with the active 850nm IR illuminator casting a volumetric beam.
+- **[DIAGRAM]** Regenerated `full_system_assembled.png`, `10_fluid_system_assembly.png`, `6_enclosure_internal_layout.png`, and `9_csi_camera_chain.png` to reflect the inverted dome architecture, diaphragm pump, and CSI-TX board wiring.
 - **[NOTE]** Old diagram versions moved to `diagrams/images/archive/`.
