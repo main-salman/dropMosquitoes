@@ -44,3 +44,11 @@ After 5 epochs of training, the model achieved the following performance on the 
   `models/trained/best.pt`
 
 The model is now fully ready for the deployment pipeline! You can run the `deploy.sh` script to push this newly trained model to the Jetson Orin Nano payload.
+
+
+## Full 100-Epoch Run Final Results
+Training completed automatically. Here are the final metrics:
+- **Precision:** 0.947
+- **Recall:** 0.920
+- **mAP50:** 0.956
+- **mAP50-95:** 0.696
