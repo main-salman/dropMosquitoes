@@ -93,7 +93,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 1. `scout_vision.get_target_with_velocity()` returns `(x, y, vx, vy)` or `(None, None, 0, 0)`
 2. **Predict:** `pred_x = x + vx × LOOKAHEAD`, `pred_y = y + vy × LOOKAHEAD` (default 150ms lookahead)
 3. `pixel_to_angle(pred_x, pred_y)` maps predicted position to degrees
-4. Arc compensation added to predicted pitch
+4. Linear drop compensation added to predicted pitch
 5. `gimbal.aim_async(pitch, yaw)` — non-blocking serial write
 6. 50ms settle wait (reduced from 200ms — diaphragm pump spin-up covers remaining settle)
 7. `sniper_vision.verify_target()` runs YOLOv8 inference
@@ -108,7 +108,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 - Biological heuristic: bounding box too large → ignore (moth/June bug filter)
 - GPIO fail-safe: `try/finally` ensuring BCM 17 LOW on crash
 - Death Spiral prevention: yaw hard-limited ±80°, pitch ±20°
-- Arc compensation clamped: final pitch cannot exceed `PITCH_LIMIT` (±20°)
+- Linear drop compensation clamped: final pitch cannot exceed `PITCH_LIMIT` (±20°)
 
 > **Detection Strategy:** Mosquitoes are not in the COCO-80 class set. The primary
 > targeting method is **MOG2 motion detection** (ScoutAgent §2.1), which fires at
@@ -135,7 +135,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 1. Boot Jetson, wait for 15s relay boot delay
 2. Run `phantom_ping.py` to fire test shots at known distances
 3. Scout camera tracks water stream impact point
-4. System generates lookup table (distance → optimal arc compensation)
+4. System generates lookup table (distance → optimal linear drop compensation)
 5. Store calibration in `calibration.json`
 
 ## 7. Training & Tuning Pipeline

@@ -7,7 +7,7 @@
 
 ## 1. Purpose
 
-The "Sniper Messy Mortar" is an autonomous, AI-driven mosquito sentry turret. It detects flying insects via a fixed wide-angle camera, classifies them with a gimbal-mounted sniper camera running YOLOv8 on TensorRT, and fires a 400ms high-pressure mist sweep via the "Stream and Sweep" strategy — the pump fires while the gimbal sweeps along the target's predicted flight path, creating a moving wall of water.
+The "Sniper Messy Mortar" is an autonomous, AI-driven mosquito sentry turret. It detects flying insects via a fixed wide-angle camera, classifies them with a gimbal-mounted sniper camera running YOLOv8 on TensorRT, and fires a 400ms high-pressure direct water stream sweep via the "Stream and Sweep" strategy — the pump fires while the gimbal sweeps along the target's predicted flight path, creating a moving wall of water.
 
 ## 2. System Architecture
 
@@ -24,17 +24,17 @@ Supporting modules:
 | Module | File | Role |
 |:-------|:-----|:-----|
 | IR Controller | `ir_controller.py` | Dusk/dawn automated IR illuminator control |
-| Calibration | `phantom_ping.py` | Interactive stream arc compensation calibration tool |
+| Calibration | `phantom_ping.py` | Interactive linear drop calibration tool |
 | Telemetry | `main.py` | Structured JSONL engagement logging (`engagements.jsonl`) |
 
 ## 3. Physical Topology
 
-- **Scout Camera (OV9281):** FIXED to enclosure lid — does NOT move
-- **Sniper Camera (IMX219 NoIR):** Mounted on Storm32 gimbal payload — MOVES
-- **Orbit Nozzle:** Mounted on gimbal payload adjacent to sniper — MOVES
-- **12V Diaphragm Pump:** Surface-mounted on bracket adjacent to enclosure (NOT submerged)
-- **IP67 Enclosure:** Houses Jetson, Wagos, Relay, CSI TX boards
-- **Water Reservoir:** Shallow tote at base with intake tube (pump self-primes)
+- **Scout Camera (OV9281):** FIXED to enclosure baseplate (does NOT move on gimbal)
+- **Sniper Camera (IMX219 NoIR):** Mounted on INVERTED Storm32 gimbal payload (looks downward)
+- **Orbit Nozzle:** Mounted on gimbal payload adjacent to sniper (fires downward)
+- **12V Diaphragm Pump:** Surface-mounted on bracket above enclosure
+- **IP67 Enclosure:** Inverted hanging dome. Houses Jetson, Wagos, Relay, CSI RX boards
+- **Water Reservoir:** Located at ground level or on elevated shelf
 
 ## 4. References
 

@@ -83,7 +83,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | ID | Test | Procedure | Pass Criteria |
 |:---|:-----|:----------|:--------------|
 | T4.1 | Pump pressure profiling | Fire at 0.1s increments, measure stream distance | Generate distance-vs-duration curve |
-| T4.2 | Parabolic lookup table | Fire at targets at 1m, 2m, 3m, 4m, 5m | Pitch angle produces hit within 15cm circle |
+| T4.2 | Linear drop lookup table | Fire at targets at 1m, 2m, 3m, 4m, 5m | Pitch angle produces hit within 15cm circle |
 | T4.3 | Phantom Ping wind calibration | Fire test shot, Scout tracks droplet drift | Offset variable updated, next shot corrects |
 | T4.4 | Nozzle pattern tuning | Adjust Orbit nozzle from mist → stream | Narrow stream at all tested distances |
 | T4.5 | Gimbal repeatability | Send same angle 50 times | Gimbal arrives at same physical position ±0.5° |
@@ -124,5 +124,5 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 All test results MUST be logged in `docs/HISTORY.md` with the `[TEST]` category tag:
 ```
 - **[TEST]** T3.1 Kill switch PASSED — GPIO confirmed LOW after SIGKILL
-- **[TEST]** T4.2 Parabolic LUT FAILED — 4m target miss by 25cm, adjusting pitch offset
+- **[TEST]** T4.2 Linear drop LUT FAILED — 4m target miss by 25cm, adjusting pitch offset
 ```
