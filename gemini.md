@@ -47,3 +47,6 @@ import time; time.sleep(0.3)
 GPIO.output(17, GPIO.LOW)    # Relay CH1 opens → Pump stops
 GPIO.cleanup()
 ```
+
+## 6. AI Agent Guidelines
+- **No Dummy Data:** NEVER create dummy data (videos, datasets, etc.) for testing or training. Always ask the user for real data if needed.

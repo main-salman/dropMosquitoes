@@ -152,3 +152,5 @@ Training and tuning are performed on a **separate Windows workstation** (RTX 307
 - Provide labeled dataset (`data.yaml` from Roboflow)
 - Train model → collect `best.pt`
 - Copy `best.pt` to Jetson → convert to TensorRT `.engine` (see `gemini.md` §3)
+
+> **Important Rule:** NEVER create dummy data (dummy videos, generated images, fake datasets, etc.) for tuning or training. If sample data is not provided, prompt the user for real data.

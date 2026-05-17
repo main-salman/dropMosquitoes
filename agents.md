@@ -36,3 +36,4 @@ The system is divided into four asynchronous agents communicating via thread-saf
 1. **Spec Before Code:** No new agent or feature may be implemented without a corresponding spec in `docs/specs/`. Create or update the spec first, then implement.
 2. **History Logging:** Every code change, architectural decision, or procurement action MUST be appended to `docs/HISTORY.md` with a `[CATEGORY]` tag and timestamp.
 3. **Spec Traceability:** All code files should reference their governing spec in a docstring header (e.g., `# Implements: SW-001 §2.1`).
+4. **No Dummy Data:** NEVER create dummy data (videos, datasets, etc.) for testing or training. Always ask the user for real data if needed.

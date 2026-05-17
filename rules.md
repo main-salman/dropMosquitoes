@@ -13,6 +13,7 @@
 5. **BIOLOGICAL HEURISTICS:** Do not fire at everything classified as an `insect`. If the bounding box is too large (indicating a moth or June bug), ignore it. *(SAFE-001 §2)*
 6. **SAFETY NOTE:** Human/pet detection interlock has been intentionally removed per SAFE-001 §2 — the system fires water only. YOLO classification is used solely for mosquito identification, not as a fire inhibitor.
 7. **FAIL-SAFE FIRST:** Every script that touches GPIO BCM 17 must have a `try/finally` block ensuring the pin is set to `LOW` if the script crashes. *(SAFE-001 §2)*
+8. **NO DUMMY DATA:** NEVER create dummy data (videos, datasets, etc.) for testing or training. Always ask the user for real data if needed.
 
 ## Spec-Driven Development Process
 
