@@ -46,3 +46,7 @@ chathistory.txt
 firstprompt.txt
 prompt.md
 rename.md
+
+# Secrets and configs
+.env
+*.env
