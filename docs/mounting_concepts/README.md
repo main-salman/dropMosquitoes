@@ -161,6 +161,39 @@ We use **two distinct enclosures** stacked vertically around the IP67 box:
 
 ---
 
+## Aesthetic Upgrades: Off-The-Shelf Commercial Conversions
+
+To move past the basic "backyard utility" look without needing custom fabrication, you can repurpose items designed for upscale home decor, commercial lighting, or marine environments.
+
+### 1. The "Studio-Tech" Column (Acrylic Display Cylinder + Anodized Wine Chiller)
+Uses clean, modern shapes to create a minimalist tech look that belongs next to high-end electronics.
+
+![Studio-Tech Column Mockup](images/studio_tech_column_1779077975444.png)
+
+* **Structure:** The top tier is a 10-inch clear acrylic cylinder display case. The bottom is an inverted matte black anodized aluminum wine chiller bucket.
+* **Optic Layer (Top):** The Scout Camera and IR Blaster sit inside the clear upper glass-like zone for a 360-degree view.
+* **Mechanical Layer (Bottom):** The aluminum wine chiller acts as a sturdy lower housing, acting as a deep protective skirt around the inverted Storm32 Gimbal.
+
+### 2. The "Bollard Monolith" (Commercial Pathway Lens + Internal Vinyl Masking)
+Replicates the look of modern commercial landscape lighting found at luxury hotels.
+
+![Bollard Monolith Mockup](images/bollard_monolith_1779077989933.png)
+
+* **Structure:** A single, continuous heavy-duty clear polycarbonate bollard light cylinder.
+* **Optic Layer (Top):** The top third is left completely clear, allowing the Scout camera and IR array to look out cleanly.
+* **Mechanical Layer (Bottom):** To hide the internal wiring and Jetson tray, you apply matte-black automotive vinyl wrap to the *inside* surface of the lower two-thirds of the cylinder. The bottom is left open.
+
+### 3. The "Mil-Spec Marine" Shroud (Brushed Stainless Steel Vessel + Panoramic Optical Slot)
+Delivers a rugged, high-tech look inspired by naval defense hardware.
+
+![Mil-Spec Marine Shroud Mockup](images/milspec_marine_shroud_1779078007552.png)
+
+* **Structure:** An inverted brushed stainless steel seamless countertop canister.
+* **Optic Layer (Top):** A smooth, continuous horizontal slot is cut around the upper perimeter of the canister, sealed internally with a clear PETG plastic strip to form a panoramic window.
+* **Mechanical Layer (Bottom):** The electronics are tucked in the middle, and the gimbal hangs out of the wide-open bottom. The stainless steel acts as a natural heat sink.
+
+---
+
 ## Aesthetic Upgrades: High-End Commercial Lighthouse Forms
 
 To move completely away from an industrial-utility look and achieve a sleek, premium product aesthetic, you can upgrade the Lighthouse geometry using these three materials.

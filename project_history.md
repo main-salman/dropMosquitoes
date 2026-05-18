@@ -146,3 +146,8 @@
 - Added 3 premium commercial aesthetics to `docs/mounting_concepts/README.md`: Scandinavian Pillar, Marine Radome, and Minimalist Tech-Pod.
 - Generated and saved 3 photorealistic mockups (`scandinavian_pillar_*.png`, `marine_radome_*.png`, `minimalist_tech_pod_*.png`) to `docs/mounting_concepts/images/`.
 - Logged the aesthetic design additions to `docs/HISTORY.md`.
+
+### (this commit) — [DOCS] Expand Lighthouse with Off-The-Shelf Conversions
+- Added 3 readily-available conversions to `docs/mounting_concepts/README.md`: Studio-Tech Column, Bollard Monolith, and Mil-Spec Marine Shroud.
+- Generated and saved 3 photorealistic mockups (`studio_tech_column_*.png`, `bollard_monolith_*.png`, `milspec_marine_shroud_*.png`) to `docs/mounting_concepts/images/`.
+- Logged the off-the-shelf design additions to `docs/HISTORY.md`.
