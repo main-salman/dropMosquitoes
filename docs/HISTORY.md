@@ -231,4 +231,8 @@
 - **[DESIGN]** Added "Part 3: The Weatherproof Inverted Series" to `docs/mounting_concepts/README.md`. Includes the "Inverted Gallows Telescoping Post" and "Inverted Cantilever Umbrella Conversion" specialized for the hanging dome architecture.
 - **[DIAGRAM]** Generated and embedded 2 photorealistic mockups (`inverted_gallows_post_*.png`, `inverted_cantilever_umbrella_*.png`) for the Weatherproof Inverted Series.
 - **[DESIGN]** Promoted the "Heavy-Duty PA Speaker Stand (Quick-Release Tripod)" to the absolute #1 recommended mounting solution in `docs/mounting_concepts/README.md`. This perfectly pairs with the Top-Hat Flange to allow sub-10 second breakdown between indoor development and outdoor testing.
+- **[DESIGN]** Promoted the "Heavy-Duty PA Speaker Stand (Quick-Release Tripod)" to the absolute #1 recommended mounting solution in `docs/mounting_concepts/README.md`. This perfectly pairs with the Top-Hat Flange to allow sub-10 second breakdown between indoor development and outdoor testing.
 - **[DIAGRAM]** Generated a photorealistic mockup (`tripod_top_hat_studio_*.png`) showing the PA Tripod setup in an indoor office environment with a water tote counterweight.
+- **[ARCHITECTURE]** Formalized the "Deep Bell Canopy" weather shield evolution. Replaced the 12" acrylic top dome with an 18" inverted heavy-duty plastic planter (bell/lampshade).
+- **[DESIGN]** The Deep Bell Canopy protects the inverted Storm32 gimbal motors from angled rain by recessing them high inside the bell, while leaving the bottom wide open for unhindered 45 PSI water firing and natural heat sink ventilation.
+- **[DIAGRAM]** Generated and embedded a photorealistic mockup (`deep_bell_canopy_*.png`) showing the Deep Bell architecture on the tripod mount.

@@ -46,6 +46,45 @@ To solve this, the system is anchored to a heavy-duty, flat internal aluminum ba
 
 ---
 
+## The Weather Shield Evolution: The Deep Bell Canopy
+If the electronics box is sitting flat and the gimbal is hanging completely exposed underneath it, a strong gust of wind will drive rain right into the exposed copper coils of the Storm32 brushless motors.
+
+To protect the moving gimbal while still allowing the physical water nozzle to shoot out, we use the **"Deep Bell Canopy"** architecture. Instead of a clear dome that only protects the top, we take a wide, deep shell (like an 18-inch heavy-duty plastic planter) and mount it upside down like a giant lampshade.
+
+![Deep Bell Canopy Mockup](images/deep_bell_canopy_1779070506966.png)
+
+```text
+                  .=================. <--- [1] TOP-HAT FLANGE (Quick Release)
+                  |   _ _ _ _ _ _   |      (Slides onto Tripod Pole)
+                  |  |           |  |
+           .------'--|-----------|--'------.
+         /           |   JETSON  |           \  <--- [2] THE DEEP BELL CANOPY
+       /      _______|___________|_______      \     (18" Wide, opaque weather shield)
+      /      |                           |      \    (Rain rolls off the wide edges)
+     /       |   JOINFWORLD IP67 BOX     |       \   
+    |        |___________________________|        |
+    |                     |                       |
+    |                     v                       |
+    |            [========|========]              | <--- [3] STORM32 GIMBAL MOTORS
+    |             \       |       /               |      (Tucked safely HIGH UP inside 
+    |              \      v      /                |       the dry skirt of the canopy)
+    |                 [Target]                    |
+    |                 [Plate ]                    |
+    |               /    |     \                  |
+    |              v     v      v                 |
+    .           [Cam0] [Cam1] [Nozzle]            . <--- [4] SENSOR PAYLOAD
+                                                         (Sits exactly level with the 
+                                                          canopy rim to allow a clear 
+                                                          line of sight and firing arc)
+```
+
+### Why the Deep Bell is the Ultimate Mechanical Solution
+1. **Total Motor Protection:** The delicate pitch and roll motors are suspended deep inside the "ceiling" of the bell. Angled rain hits the outer skirt, never reaching the motors.
+2. **Unhindered Ballistics:** Because the bottom is wide open, the misting nozzle has a zero-obstruction path to fire its 45 PSI stream downward.
+3. **Natural Heat Venting:** The massive greenhouse heat trap of a sealed clear dome is eliminated. The ambient outdoor breeze circulates up into the bell to cool the Jetson's heat sink naturally.
+
+---
+
 # Part 1: The Primary Indoor/Outdoor Hybrid Mount
 
 ## 1. The Heavy-Duty PA Speaker Stand (Quick-Release Tripod)

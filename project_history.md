@@ -126,3 +126,8 @@
 - Reordered `docs/mounting_concepts/README.md` to feature the Quick-Release PA Tripod as the absolute #1 recommended mounting solution.
 - Generated and saved `tripod_top_hat_studio_*.png` to `docs/mounting_concepts/images/` showcasing the indoor office testing setup.
 - Logged the portable studio-grade architecture decision to `docs/HISTORY.md`.
+
+### (this commit) — [ARCH] Formalize Deep Bell Canopy Weather Shield
+- Added "The Weather Shield Evolution: The Deep Bell Canopy" to `docs/mounting_concepts/README.md`.
+- Generated and saved `deep_bell_canopy_*.png` to `docs/mounting_concepts/images/`.
+- Documented how the 18" inverted planter bell protects the Storm32 gimbal from angled rain while venting heat and allowing unobstructed firing.
