@@ -165,7 +165,34 @@ We use **two distinct enclosures** stacked vertically around the IP67 box:
 
 To move past the basic "backyard utility" look without needing custom fabrication, you can repurpose items designed for upscale home decor, commercial lighting, or marine environments.
 
-### 1. The "Studio-Tech" Column (Acrylic Display Cylinder + Anodized Wine Chiller)
+### 1. The "Dual-Tier Urban" Post Globe (Polycarbonate Streetlight Globe + Metal Reflector)
+Repurposes commercial municipal hardware to create a clean, architectural orb design.
+
+![Dual-Tier Urban Globe Mockup](images/dual_tier_urban_globe_1779078291267.png)
+
+* **Structure:** A 14-inch clear polycarbonate streetlight globe with a wide open bottom, split by an internal aluminum top glare reflector plate.
+* **Optic Layer (Top):** The Scout Camera and IR Blaster live in the clear top half, gaining a flawless 360-degree panoramic view.
+* **Mechanical Layer (Bottom):** The Storm32 Gimbal hangs from the underside of the plate into the lower half. The globe tapers inward toward its neck, acting as a built-in shield against side rain.
+
+### 2. The "Scandinavian Tiered" Canopy (Nesting Matte-Black Metal Pendant Shades)
+Uses layered geometric elements to provide full weather protection while maintaining open sightlines.
+
+![Scandinavian Tiered Canopy Mockup](images/scandinavian_tiered_canopy_1779078303837.png)
+
+* **Structure:** Two nesting matte-black aluminum pendant light shades—a smaller 10-inch cone shade on top, and a wider 16-inch flared bowl shade on the bottom.
+* **Optic Layer (Top):** A 2.5-inch open vertical gap between the shades is sealed with clear polycarbonate sheet. The Scout camera looks out horizontally between the two metal hoods.
+* **Mechanical Layer (Bottom):** The lower 16-inch shade acts as a deep umbrella skirt extending down past the inverted gimbal motors, keeping them isolated from driving rain.
+
+### 3. The "Tech Capsule" (Clear Hurricane Cylinder + Matte Anodized Caps)
+Uses a sleek, continuous cylindrical profile for a modern, minimalist look.
+
+![Tech Capsule Mockup](images/tech_capsule_1779078317388.png)
+
+* **Structure:** A 10-inch diameter, 18-inch tall clear acrylic hurricane cylinder with a matte anodized aluminum shallow metal vessel acting as a roof cap.
+* **Optic Layer (Top):** The stationary tracking sensors sit at the absolute top, viewing through the glass-like upper wall.
+* **Mechanical Layer (Bottom):** An internal horizontal divider shelf sits halfway down. The gimbal bolts to this shelf, recessed deep *inside* the lower half of the clear tube.
+
+### 4. The "Studio-Tech" Column (Acrylic Display Cylinder + Anodized Wine Chiller)
 Uses clean, modern shapes to create a minimalist tech look that belongs next to high-end electronics.
 
 ![Studio-Tech Column Mockup](images/studio_tech_column_1779077975444.png)
@@ -174,7 +201,7 @@ Uses clean, modern shapes to create a minimalist tech look that belongs next to 
 * **Optic Layer (Top):** The Scout Camera and IR Blaster sit inside the clear upper glass-like zone for a 360-degree view.
 * **Mechanical Layer (Bottom):** The aluminum wine chiller acts as a sturdy lower housing, acting as a deep protective skirt around the inverted Storm32 Gimbal.
 
-### 2. The "Bollard Monolith" (Commercial Pathway Lens + Internal Vinyl Masking)
+### 5. The "Bollard Monolith" (Commercial Pathway Lens + Internal Vinyl Masking)
 Replicates the look of modern commercial landscape lighting found at luxury hotels.
 
 ![Bollard Monolith Mockup](images/bollard_monolith_1779077989933.png)
@@ -183,7 +210,7 @@ Replicates the look of modern commercial landscape lighting found at luxury hote
 * **Optic Layer (Top):** The top third is left completely clear, allowing the Scout camera and IR array to look out cleanly.
 * **Mechanical Layer (Bottom):** To hide the internal wiring and Jetson tray, you apply matte-black automotive vinyl wrap to the *inside* surface of the lower two-thirds of the cylinder. The bottom is left open.
 
-### 3. The "Mil-Spec Marine" Shroud (Brushed Stainless Steel Vessel + Panoramic Optical Slot)
+### 6. The "Mil-Spec Marine" Shroud (Brushed Stainless Steel Vessel + Panoramic Optical Slot)
 Delivers a rugged, high-tech look inspired by naval defense hardware.
 
 ![Mil-Spec Marine Shroud Mockup](images/milspec_marine_shroud_1779078007552.png)

@@ -151,3 +151,8 @@
 - Added 3 readily-available conversions to `docs/mounting_concepts/README.md`: Studio-Tech Column, Bollard Monolith, and Mil-Spec Marine Shroud.
 - Generated and saved 3 photorealistic mockups (`studio_tech_column_*.png`, `bollard_monolith_*.png`, `milspec_marine_shroud_*.png`) to `docs/mounting_concepts/images/`.
 - Logged the off-the-shelf design additions to `docs/HISTORY.md`.
+
+### (this commit) — [DOCS] Expand Lighthouse with More Off-The-Shelf Conversions
+- Added 3 more conversions to `docs/mounting_concepts/README.md`: Dual-Tier Urban Globe, Scandinavian Tiered Canopy, and Tech Capsule.
+- Generated and saved 3 photorealistic mockups (`dual_tier_urban_globe_*.png`, `scandinavian_tiered_canopy_*.png`, `tech_capsule_*.png`) to `docs/mounting_concepts/images/`.
+- Logged the off-the-shelf design additions to `docs/HISTORY.md`.

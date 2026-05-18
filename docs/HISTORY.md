@@ -244,3 +244,5 @@
 - **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`scandinavian_pillar_*.png`, `marine_radome_*.png`, `minimalist_tech_pod_*.png`) visualizing these premium aesthetic product designs.
 - **[DESIGN]** Added three Off-The-Shelf Commercial Conversions to the Lighthouse architecture section: the "Studio-Tech" Column (Acrylic Display Cylinder + Anodized Wine Chiller), the "Bollard Monolith" (Commercial Pathway Lens + Internal Vinyl Masking), and the "Mil-Spec Marine" Shroud (Brushed Stainless Steel Vessel + Panoramic Optical Slot).
 - **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`studio_tech_column_*.png`, `bollard_monolith_*.png`, `milspec_marine_shroud_*.png`) visualizing these readily available design options.
+- **[DESIGN]** Expanded the Off-The-Shelf Commercial Conversions with 3 more variations: the "Dual-Tier Urban" Post Globe, the "Scandinavian Tiered" Canopy, and the "Tech Capsule."
+- **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`dual_tier_urban_globe_*.png`, `scandinavian_tiered_canopy_*.png`, `tech_capsule_*.png`) showcasing these additional aesthetic options.
