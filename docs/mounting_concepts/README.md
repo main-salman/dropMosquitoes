@@ -161,6 +161,39 @@ We use **two distinct enclosures** stacked vertically around the IP67 box:
 
 ---
 
+## Aesthetic Upgrades: High-End Commercial Lighthouse Forms
+
+To move completely away from an industrial-utility look and achieve a sleek, premium product aesthetic, you can upgrade the Lighthouse geometry using these three materials.
+
+### 1. The Scandinavian Architectural Pillar (Spun Aluminum + Clear Polycarbonate)
+Draws inspiration from minimalist, high-end outdoor landscape lighting.
+
+![Scandinavian Pillar Mockup](images/scandinavian_pillar_1779077750228.png)
+
+* **Structure:** A heavy-walled, 10-inch diameter clear polycarbonate cylinder sealed with a flat matte black spun aluminum cap.
+* **Optic Layer (Top):** The Scout camera and IR blaster mount inside the upper section of the clear cylinder for a flawless 360-degree panoramic view.
+* **Mechanical Layer (Bottom):** An internal horizontal shelf isolates the electronics. The gimbal bolts to the underside of this shelf, hanging completely inside the lower open-bottomed section of the cylinder.
+
+### 2. The Streamlined Marine Radome (Composite Shroud + Panoramic Window)
+Mimics the aerodynamic, eggshell-white satellite domes found on luxury yachts.
+
+![Marine Radome Mockup](images/marine_radome_1779077761086.png)
+
+* **Structure:** An eggshell-white or space-grey fiberglass composite marine radome shell.
+* **Optic Layer (Top):** A continuous horizontal slot is cut across the upper front face, sealed internally with a dark tinted PETG strip to form a panoramic window.
+* **Mechanical Layer (Bottom):** The lower mounting plane is recessed up into the belly of the dome. The gimbal is suspended inside this deep internal cavity, hidden from the side but free to fire downward.
+
+### 3. The Minimalist Tech-Pod (Tinted Cylinder + Internal Floating Chassis)
+Focuses on a clean tech aesthetic, mimicking high-end server hardware or audio equipment.
+
+![Minimalist Tech Pod Mockup](images/minimalist_tech_pod_1779077776174.png)
+
+* **Structure:** A precision-cut, smoked dark grey transparent acrylic cylinder.
+* **Optic Layer (Top):** 850nm IR light passes right through the tint at night. The Scout camera aligns with a small, clear optical cutout to ensure crisp 120FPS tracking.
+* **Mechanical Layer (Bottom):** All components bolt to a central vertical aluminum spine (chassis rack). The dark cylinder extends down past the gimbal motors but terminates exactly before the nozzle tip.
+
+---
+
 # Part 1: The Primary Indoor/Outdoor Hybrid Mount
 
 ## 1. The Heavy-Duty PA Speaker Stand (Quick-Release Tripod)

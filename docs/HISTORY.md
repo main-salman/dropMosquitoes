@@ -240,3 +240,5 @@
 - **[DIAGRAM]** Generated and embedded 2 photorealistic mockups (`stealth_industrial_pendant_*.png`, `scifi_orb_globe_*.png`) showcasing these premium materials.
 - **[ARCHITECTURE]** Formalized the "Tiered Lighthouse Assembly." This master architecture solves the FOV problem by splitting vision and mechanics. The stationary Scout/IR array sits in an upright clear 8" dome on the *roof* of the IP67 box, while the Storm32 Gimbal/Sniper array hangs in a 16" black pendant shade from the *floor* of the IP67 box.
 - **[DIAGRAM]** Generated a photorealistic mockup (`tiered_lighthouse_assembly_*.png`) showing this dual-stack maritime defense aesthetic.
+- **[DESIGN]** Added three High-End Commercial Lighthouse forms: the Scandinavian Architectural Pillar (clear polycarbonate with metal caps), the Streamlined Marine Radome (fiberglass dome with panoramic tinted window), and the Minimalist Tech-Pod (smoked dark acrylic cylinder with internal floating chassis).
+- **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`scandinavian_pillar_*.png`, `marine_radome_*.png`, `minimalist_tech_pod_*.png`) visualizing these premium aesthetic product designs.

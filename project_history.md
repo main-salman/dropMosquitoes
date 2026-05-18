@@ -141,3 +141,8 @@
 - Appended the "Tiered Lighthouse Assembly" to `docs/mounting_concepts/README.md` as the ultimate split-vision architecture.
 - Generated and saved `tiered_lighthouse_assembly_*.png` to `docs/mounting_concepts/images/`.
 - Logged the architectural pivot to `docs/HISTORY.md` detailing the clear dome (vision) and black pendant (mechanics) segregation.
+
+### (this commit) — [DOCS] Expand Lighthouse with High-End Commercial Forms
+- Added 3 premium commercial aesthetics to `docs/mounting_concepts/README.md`: Scandinavian Pillar, Marine Radome, and Minimalist Tech-Pod.
+- Generated and saved 3 photorealistic mockups (`scandinavian_pillar_*.png`, `marine_radome_*.png`, `minimalist_tech_pod_*.png`) to `docs/mounting_concepts/images/`.
+- Logged the aesthetic design additions to `docs/HISTORY.md`.
