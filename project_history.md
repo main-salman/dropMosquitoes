@@ -116,3 +116,8 @@
 - Appended the Master Blueprint for the Top-Hat Core Suspension Stack to `docs/mounting_concepts/README.md`.
 - Added `top_hat_core_suspension_*.png` to `docs/mounting_concepts/images/`.
 - Logged the architectural design decision to `docs/HISTORY.md` resolving the inverted gimbal clearance issue.
+
+### (this commit) — [DOCS] Add Weatherproof Inverted Series concepts
+- Added "Part 3: The Weatherproof Inverted Series" to `docs/mounting_concepts/README.md`.
+- Added 2 new photorealistic mockups (`inverted_gallows_post_*.png`, `inverted_cantilever_umbrella_*.png`) to `docs/mounting_concepts/images/`.
+- Logged the concept additions to `docs/HISTORY.md`.

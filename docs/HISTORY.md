@@ -228,3 +228,5 @@
 - **[DIAGRAM]** Generated and embedded 10 photorealistic mockups to `docs/mounting_concepts/images/` alongside structural Mermaid diagrams for each concept.
 - **[ARCHITECTURE]** Formalized the "Top-Hat Core Suspension Stack" mechanical design. Solved the inverted clearance issue by using the horizontal IP67 box as the structural core, mounting a 12" protective acrylic dome on top, and bolting the inverted Storm32 gimbal through the floor.
 - **[DIAGRAM]** Generated a photorealistic visualization of the Top-Hat Core Suspension Stack (`top_hat_core_suspension_*.png`) and added it to the master blueprint in `docs/mounting_concepts/README.md`.
+- **[DESIGN]** Added "Part 3: The Weatherproof Inverted Series" to `docs/mounting_concepts/README.md`. Includes the "Inverted Gallows Telescoping Post" and "Inverted Cantilever Umbrella Conversion" specialized for the hanging dome architecture.
+- **[DIAGRAM]** Generated and embedded 2 photorealistic mockups (`inverted_gallows_post_*.png`, `inverted_cantilever_umbrella_*.png`) for the Weatherproof Inverted Series.

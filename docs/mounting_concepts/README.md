@@ -393,3 +393,75 @@ flowchart TD
 
 * **Pros:** Unbeatable stability without digging holes or carrying sandbags; highly portable (just pick up the plate when the car moves).
 * **Cons:** Requires a vehicle or extremely heavy object to sit on the base plate; limits deployment strictly to the driveway/garage.
+
+---
+
+# Part 3: The Weatherproof Inverted Series
+
+To make this fully weatherproof for a permanent outdoor setup, the equipment must be protected from the rain. This changes the architectural design from an upright turret to a **"Hanging Dome"** approach. The Jetson and pump sit in the protected upper base (acting as the umbrella), and the gimbal hangs downward.
+
+Here are two updated mounting concepts designed specifically for an inverted, weatherproof dome setup:
+
+## 11. The "Inverted Gallows" Telescoping Post
+This is an updated "Post and Sleeve" design. Instead of a generic telescoping pole inside a post, use heavy-duty industrial pipe clamps to slide a strong EMT conduit arm up and down the main 4x4 wooden post. A 90-degree bend at the top of the conduit creates the hanging point for the inverted dome sentry.
+
+![Inverted Gallows Post Mockup](images/inverted_gallows_post_1779069526079.png)
+
+```mermaid
+flowchart TD
+    subgraph Support Base
+        A[4x4 Wooden Post\nCemented in Ground or Planter]
+    end
+
+    subgraph Adjusting Mechanism
+        B[1-inch Heavy-Duty EMT Conduit\nBending smooth 90° curve]
+        C[Large Industrial Pipe Clamps x 2\nLoosen to slide up/down post]
+    end
+
+    subgraph Weatherproof Payload
+        D[Conduit cap & adapter]
+        E(Inverted Sentry Dome Enclosure\n-Electronics Box acts as TOP cover\n-Gimbal hangs DOWN, protected inside dome)
+    end
+
+    A --- C
+    C --- B
+    B ---|Smooth bend| D
+    D --- E
+```
+
+* **Pros:** Extremely rigid; uses standard industrial hardware; height is fully adjustable (e.g., from 5ft to 10ft) by sliding the conduit arm.
+* **Cons:** Requires a conduit bender tool for a smooth 90-degree curve.
+
+---
+
+## 12. The Inverted Cantilever Umbrella Conversion
+Since we want to hang the turret like a dome, the absolute best off-the-shelf solution is an offset (cantilever) patio umbrella. You keep the heavy base and the main mast/arm, but remove the fabric canopy. Your inverted sentry dome will hang directly where the umbrella was, protected by its own weather shield.
+
+![Inverted Cantilever Umbrella Mockup](images/inverted_cantilever_umbrella_1779069538235.png)
+
+```mermaid
+flowchart TD
+    subgraph Umbrella Base
+        A[Heavy Sand/Water-Filled Base Weights]
+        B[Main Vertical Umbrella Mast]
+    end
+
+    subgraph Adjusting Arm
+        C[Offset Cantilever Arm]
+        D[Hand Crank Mechanism\n(Original part, fully functional)]
+    end
+
+    subgraph Weatherproof Payload
+        E[U-Bolts / Hose Clamps]
+        F(Inverted Sentry Dome Enclosure\n-Electronics Box acts as TOP cover\n-Gimbal hangs DOWN, protected inside dome)
+    end
+
+    A --- B
+    B --- D
+    D --- C
+    C ---|End of Arm| E
+    E --- F
+```
+
+* **Pros:** Zero building required; comes with a hand crank to easily raise and lower the sentry dome; portable with its own heavy base.
+* **Cons:** Large physical footprint on the ground.
