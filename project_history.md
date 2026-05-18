@@ -136,3 +136,8 @@
 - Added 3 commercial aesthetic upgrades to `docs/mounting_concepts/README.md`: Spun Aluminum Pendant Shade, Smoked Acrylic Globe, and Gutted PTZ Housing.
 - Generated and saved 2 photorealistic mockups (`stealth_industrial_pendant_*.png`, `scifi_orb_globe_*.png`) to `docs/mounting_concepts/images/`.
 - Logged the aesthetic upgrades to `docs/HISTORY.md`.
+
+### (this commit) — [ARCH] Formalize Tiered Lighthouse Assembly
+- Appended the "Tiered Lighthouse Assembly" to `docs/mounting_concepts/README.md` as the ultimate split-vision architecture.
+- Generated and saved `tiered_lighthouse_assembly_*.png` to `docs/mounting_concepts/images/`.
+- Logged the architectural pivot to `docs/HISTORY.md` detailing the clear dome (vision) and black pendant (mechanics) segregation.

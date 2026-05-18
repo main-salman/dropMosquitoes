@@ -238,3 +238,5 @@
 - **[DIAGRAM]** Generated and embedded a photorealistic mockup (`deep_bell_canopy_*.png`) showing the Deep Bell architecture on the tripod mount.
 - **[DESIGN]** Expanded the Deep Bell Canopy section with three commercial-grade aesthetic upgrades: the "Stealth Industrial" Spun Aluminum Pendant Shade (Top Pick, passive heatsink), the "Sci-Fi Orb" Smoked Acrylic Globe (UV blocking, wire-hiding), and the "Mil-Spec Security" Gutted PTZ Housing (built-in fan cooling).
 - **[DIAGRAM]** Generated and embedded 2 photorealistic mockups (`stealth_industrial_pendant_*.png`, `scifi_orb_globe_*.png`) showcasing these premium materials.
+- **[ARCHITECTURE]** Formalized the "Tiered Lighthouse Assembly." This master architecture solves the FOV problem by splitting vision and mechanics. The stationary Scout/IR array sits in an upright clear 8" dome on the *roof* of the IP67 box, while the Storm32 Gimbal/Sniper array hangs in a 16" black pendant shade from the *floor* of the IP67 box.
+- **[DIAGRAM]** Generated a photorealistic mockup (`tiered_lighthouse_assembly_*.png`) showing this dual-stack maritime defense aesthetic.

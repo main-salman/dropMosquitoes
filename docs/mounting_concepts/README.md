@@ -116,6 +116,51 @@ Buy a massive, empty housing designed for commercial Pan-Tilt-Zoom (PTZ) cameras
 
 ---
 
+## The Ultimate Vision & Mechanics Split: The "Lighthouse" Architecture
+If you drop the entire system inside a deep bell or an opaque cylinder, you completely blind your tracking sensors. The **OV9281 Scout Camera** and the **850nm IR Illuminator** cannot see through solid aluminum or tinted polycarbonate—they need a clear, unobstructed 180-degree field of view across the yard.
+
+This means we have to separate the *stationary vision* (Scout/IR) from the *moving mechanics* (Gimbal/Sniper/Nozzle). We need an architecture where the vision sits "on the roof" while the mechanics hang safely "in the basement."
+
+![Tiered Lighthouse Assembly Mockup](images/tiered_lighthouse_assembly_1779077599845.png)
+
+### The Dual-Stack Assembly
+We use **two distinct enclosures** stacked vertically around the IP67 box:
+1. **The Upper Lighthouse:** A completely clear, sealed, stationary acrylic dome mounted upright on top. The Scout Camera and IR Blaster live in here, giving them a perfect 360-degree panoramic view of the yard.
+2. **The Lower Bunker:** A matte-black, opaque bell canopy hanging underneath. The gimbal hangs deep inside the skirt of this bell, protecting it from rain while giving the nozzle an open bottom to shoot through.
+
+```text
+                  .=================. <--- [1] TOP-HAT FLANGE (Quick Release)
+                  |   _ _ _ _ _ _   |      (Slides onto Tripod Pole)
+                  |  |           |  |
+             .----'--|-----------|--'----.
+            /        |           |        \   <--- [2] CLEAR ACRYLIC OBSERVATION DOME
+           /  [IR BLASTER]   [SCOUT CAM]   \       (Faces outward. 180° unobstructed view)
+          /_________________________________\ 
+         |                                   |  <--- [3] JOINFWORLD IP67 BOX 
+         |      (Jetson, Wagos, Relays)      |       (Horizontal Tray - Seals the system)
+         |___________________________________|
+           \              |                /  
+            \             |               /   <--- [4] MATTE BLACK PENDANT CANOPY
+             \            v              /         (Bolted to the UNDERSIDE of the IP67 box)
+              \   [========|========]   /          (Deep weather skirt)
+               \   \       |       /   /
+                \   \      v      /   /       <--- [5] STORM32 GIMBAL MOTORS
+                 \     [Target]      /             (Protected high up inside the skirt)
+                  \    [Plate ]     /
+                   \  /   |    \   /
+                    v     v     v 
+               [Sniper]      [Nozzle]         <--- [6] PAYLOAD FIRING LINE
+                                                   (Aims downward out the open bottom)
+```
+
+### Why the Lighthouse Works Flawlessly:
+1. **Zero Vision Obstruction:** Because the Scout camera and IR lights are in their own upright clear dome on the very top of the stack, their view of the yard is never blocked by the metal lip of a lampshade or the mechanical arms of the gimbal.
+2. **True Weather Isolation:** The clear acrylic dome shields the delicate vision sensors, while the aluminum pendant skirt hanging below shields the delicate brushless motors. Driving rain cannot penetrate either section.
+3. **Heat Segregation:** The IR illuminator (which gets incredibly hot) is isolated in the upper dome. The Jetson sits in the middle tray. The gimbal sits in the open-air bottom section. Heat doesn't build up in one massive trap.
+4. **The "Turret" Aesthetic:** Stacking a clear dome on top of a dark, flared mechanical base looks exactly like a high-end maritime laser turret or an advanced defense array.
+
+---
+
 # Part 1: The Primary Indoor/Outdoor Hybrid Mount
 
 ## 1. The Heavy-Duty PA Speaker Stand (Quick-Release Tripod)
