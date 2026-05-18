@@ -85,6 +85,37 @@ To protect the moving gimbal while still allowing the physical water nozzle to s
 
 ---
 
+## Aesthetic Upgrades: Commercial-Grade Bell Canopies
+
+If you want to upgrade from a repurposed plastic planter (the "backyard hacker" look) to a sleek, commercial-grade product aesthetic, here are the three best materials to use for your Deep Bell Canopy.
+
+### 1. The "Stealth Industrial" Look: Spun Aluminum Pendant Shade (Top Pick)
+Repurpose a large, modern industrial lighting fixture—specifically a **Matte Black Warehouse/Barn Pendant Shade**.
+
+![Stealth Industrial Pendant Mockup](images/stealth_industrial_pendant_1779071155678.png)
+
+* **Aesthetics:** Spun aluminum with a powder-coated matte black exterior and a reflective white interior. Features a sweeping, elegant bell curve.
+* **Functional Bonus:** Aluminum is highly thermally conductive. The entire metal bell acts as a giant passive heatsink for your Jetson and pump, drawing heat up and out into the ambient air.
+* **Mounting:** Bolt the Top-Hat Flange over the existing top hole, mount the IP67 box inside the neck, and let the gimbal hang inside the wide flare at the bottom.
+
+### 2. The "Sci-Fi Orb" Look: Smoked Acrylic Streetlight Globe
+Use a **16-inch Smoked (Tinted) Acrylic Globe** with an open "neckless" bottom.
+
+![Sci-Fi Orb Globe Mockup](images/scifi_orb_globe_1779071168396.png)
+
+* **Aesthetics:** Looks like a floating dark glass orb. The heavy tint completely hides the internal messy wires, Wago connectors, and relays during the day.
+* **Functional Bonus:** The dark tint naturally blocks harsh UV rays, while the open bottom allows the gimbal to fire freely and lets air cycle up into the orb.
+* **Mounting:** Drill the top-hat flange to the top of the sphere, and mount the electronics and gimbal so they hang right at the "equator" of the open bottom.
+
+### 3. The "Mil-Spec Security" Look: A Gutted Commercial PTZ Housing
+Buy a massive, empty housing designed for commercial Pan-Tilt-Zoom (PTZ) cameras and gut the inside.
+
+* **Aesthetics:** Comes with an integrated, heavy-duty wall/pole mounting arm, internal cable routing channels, and a built-in sun shield. It is the definition of professional perimeter security.
+* **Functional Bonus:** Many commercial housings have built-in 12V exhaust fans and heaters. You can wire the existing fan directly into your power supply for instant active cooling.
+* **Mounting:** Remove the dummy camera/internals. Mount the Jetson directly to the internal metal chassis. Remove the lower glass hemisphere entirely so the water nozzle has an unobstructed path to fire downward.
+
+---
+
 # Part 1: The Primary Indoor/Outdoor Hybrid Mount
 
 ## 1. The Heavy-Duty PA Speaker Stand (Quick-Release Tripod)

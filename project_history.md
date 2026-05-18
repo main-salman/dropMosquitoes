@@ -131,3 +131,8 @@
 - Added "The Weather Shield Evolution: The Deep Bell Canopy" to `docs/mounting_concepts/README.md`.
 - Generated and saved `deep_bell_canopy_*.png` to `docs/mounting_concepts/images/`.
 - Documented how the 18" inverted planter bell protects the Storm32 gimbal from angled rain while venting heat and allowing unobstructed firing.
+
+### (this commit) — [DOCS] Expand Deep Bell Canopy with Commercial Aesthetics
+- Added 3 commercial aesthetic upgrades to `docs/mounting_concepts/README.md`: Spun Aluminum Pendant Shade, Smoked Acrylic Globe, and Gutted PTZ Housing.
+- Generated and saved 2 photorealistic mockups (`stealth_industrial_pendant_*.png`, `scifi_orb_globe_*.png`) to `docs/mounting_concepts/images/`.
+- Logged the aesthetic upgrades to `docs/HISTORY.md`.
