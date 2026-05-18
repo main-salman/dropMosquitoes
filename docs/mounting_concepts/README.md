@@ -1,8 +1,54 @@
-# Sentry Turret: 10 Creative Mounting Concepts
+# Sentry Turret: Mounting Concepts & Blueprints
 
-Here are ten creative ways to mount your "Hanging Dome" Sentry Turret. All of these concepts use readily available parts from stores like Home Depot, Rona, or Home Hardware, and focus on providing the vertical adjustability you need for indoor testing vs. outdoor deployment.
+## The Master Blueprint: Top-Hat Core Suspension Stack
+The challenge of transitioning to an inverted dome is managing the mechanical step-down from a stationary upper chassis to a dynamic, hanging payload. If the structural layers are not aligned precisely, the moving gimbal will collide with the enclosure wall. 
+
+To solve this, the system is anchored to a heavy-duty, flat internal aluminum baseplate (the NEMA box floor). The dome acts strictly as an aerodynamic skin over the top, while the gimbal drops down through a precision-cut opening.
+
+![Top-Hat Core Suspension Stack Mockup](images/top_hat_core_suspension_1779069151074.png)
+
+```text
+                 ||  [Tripod Top Pole - 35mm Outer Diameter]
+                 ||
+                 vv
+         .=================. <--- [1] ULTIMATE SUPPORT TSM-150MK TOP-HAT FLANGE
+         |   _ _ _ _ _ _   |      (Bolted directly through the box top floor)
+         |  |           |  |
+    .----'--|-----------|--'----.
+   /        |   JETSON  |        \  <--- [2] CLEAR COVERS INC. 12" FLANGED DOME
+  /  _______|___________|_______  \      (Protective outer skin / rain umbrella)
+ /  |                           |  \
+|   |   JOINFWORLD IP67 BOX    |   | <--- [3] THE STRUCTURAL ELECTRONICS HUB
+|   | (Horizontal Mounting Orientation)  (Houses Jetson, Relays, Pump, Wagos)
+|   |___________________________|   |
+ \               |                 /
+  \              | <--- [Intake]  /
+   \             v               /
+    '------------|--------------'
+                 v (Hose passes out through PG9 Gland to Ground Reservoir)
+         ========================= <--- [4] UPPER MOUNTING BASEPLATE
+                 |
+                 v 
+         [======|======] <--- [5] INVERTED STORM32 GIMBAL MOTOR AXIS
+          \     |     /       (Hangs outside the dome, directly beneath the base)
+           \    v    /
+           [=========]   <--- MOVING AXIS TARGETING PLATE
+            /   |   \
+           v    v    v        (Equipped with low-profile M2.5 Button Heads)
+        [Scout][Sniper][Orbit]
+```
+
+### Specific Component Sourcing
+1. **The Mounting Anchor:** Ultimate Support TSM-150MK Top-Hat Flange (Industrial speaker cabinet adapter). Bolts to the top of the box.
+2. **The Protective Skin:** Clear Covers 12-Inch Flanged Acrylic Hemisphere. Keeps the electronics dry while allowing the Scout camera to see through.
+3. **The Enclosure Core:** Joinfworld NEMA 4 Weatherproof Junction Box. Mounted horizontally.
+4. **The Portable Base Support:** Any 1.375-inch diameter professional PA tripod or staging pole (see 10 concepts below).
 
 ---
+
+# Part 1: The 5 Static Mounting Concepts
+
+Here are five creative ways to mount your "Hanging Dome" Sentry Turret using the Top-Hat core. All of these concepts use readily available parts from stores like Home Depot, Rona, or Home Hardware.
 
 ## 1. The "Post & Sleeve" Telescoping Mount
 This concept directly combines a sturdy wooden 4x4 post with a telescoping mechanism. By attaching a PVC "sleeve" to the wooden post, you can slide an adjustable pole up and down.

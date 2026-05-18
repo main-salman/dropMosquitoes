@@ -111,3 +111,8 @@
 - Created `docs/mounting_concepts/README.md`.
 - Added 10 photorealistic mockups to `docs/mounting_concepts/images/`.
 - Included Mermaid diagrams for Telescoping pole, Umbrella, Tripod, Gallows, Zipline, C-Stand, Deck Clamp, Speaker Stand, Rolling Base, and Tire Mount.
+
+### (this commit) — [ARCH] Formalize Top-Hat Core Suspension Stack
+- Appended the Master Blueprint for the Top-Hat Core Suspension Stack to `docs/mounting_concepts/README.md`.
+- Added `top_hat_core_suspension_*.png` to `docs/mounting_concepts/images/`.
+- Logged the architectural design decision to `docs/HISTORY.md` resolving the inverted gimbal clearance issue.
