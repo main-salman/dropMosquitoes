@@ -156,3 +156,9 @@
 - Added 3 more conversions to `docs/mounting_concepts/README.md`: Dual-Tier Urban Globe, Scandinavian Tiered Canopy, and Tech Capsule.
 - Generated and saved 3 photorealistic mockups (`dual_tier_urban_globe_*.png`, `scandinavian_tiered_canopy_*.png`, `tech_capsule_*.png`) to `docs/mounting_concepts/images/`.
 - Logged the off-the-shelf design additions to `docs/HISTORY.md`.
+
+### (this commit) — [SPEC] Create HW-002 Scandinavian Canopy Build Guide
+- Established `docs/specs/HW-002-scandinavian-canopy.md` as the final structural design spec.
+- Documented the architecture, Home Depot/Amazon BOM, and step-by-step assembly.
+- Generated and saved 7 new photorealistic images exploring various angles of the Scandinavian Canopy to `docs/mounting_concepts/images/` and embedded them into `HW-002`.
+- Logged final design selection to `docs/HISTORY.md`.

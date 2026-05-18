@@ -246,3 +246,6 @@
 - **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`studio_tech_column_*.png`, `bollard_monolith_*.png`, `milspec_marine_shroud_*.png`) visualizing these readily available design options.
 - **[DESIGN]** Expanded the Off-The-Shelf Commercial Conversions with 3 more variations: the "Dual-Tier Urban" Post Globe, the "Scandinavian Tiered" Canopy, and the "Tech Capsule."
 - **[DIAGRAM]** Generated and embedded 3 photorealistic mockups (`dual_tier_urban_globe_*.png`, `scandinavian_tiered_canopy_*.png`, `tech_capsule_*.png`) showcasing these additional aesthetic options.
+- **[ARCHITECTURE]** User selected the "Scandinavian Tiered Canopy" (Nesting Matte-Black Metal Pendant Shades) as the FINAL structural design.
+- **[SPEC]** Created `docs/specs/HW-002-scandinavian-canopy.md` establishing the formal build guide, Home Depot / Amazon Bill of Materials (BOM), and step-by-step assembly instructions.
+- **[DIAGRAM]** Generated 7 highly detailed photorealistic images exploring the Scandinavian Tiered Canopy from various angles (front, high, low, exploded, gap close-up, skirt interior, night mode) and embedded them into the `HW-002` spec.
