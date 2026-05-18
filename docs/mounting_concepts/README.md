@@ -46,11 +46,64 @@ To solve this, the system is anchored to a heavy-duty, flat internal aluminum ba
 
 ---
 
-# Part 1: The 5 Static Mounting Concepts
+# Part 1: The Primary Indoor/Outdoor Hybrid Mount
 
-Here are five creative ways to mount your "Hanging Dome" Sentry Turret using the Top-Hat core. All of these concepts use readily available parts from stores like Home Depot, Rona, or Home Hardware.
+## 1. The Heavy-Duty PA Speaker Stand (Quick-Release Tripod)
+This is the ultimate solution for hybrid development (writing code indoors, testing with live water outdoors). It breaks down into two lightweight pieces in under 10 seconds. Standard speaker tripods have a 35mm top pole that perfectly matches the Top-Hat flange. You simply lift the entire dome assembly off the pole.
 
-## 1. The "Post & Sleeve" Telescoping Mount
+![Tripod Studio Setup](images/tripod_top_hat_studio_1779069776470.png)
+
+```text
+                  .=================. <--- [1] TOP-HAT FLANGE (Quick Release)
+                  |   _ _ _ _ _ _   |      (Lifts right off the pole)
+                  |  |           |  |
+             .----'--|-----------|--'----.
+            /        |   JETSON  |        \  <--- [2] WEATHER DOME
+           /  _______|___________|_______  \      (Protective skin)
+          /  |                           |  \
+         |   |   JOINFWORLD IP67 BOX     |   | <--- [3] ELECTRONICS HUB
+         |   |___________________________|   |      (Pump & Relays inside/adjacent)
+          \               |                 /
+           \              v (Hanging)      /
+            '------------ | --------------'
+                 [========|========] <--- [4] INVERTED GIMBAL & CAMERAS
+                  \       |       /       (Shoots downward toward the floor)
+                   \      v      /
+                      [Nozzle]
+
+======================================================= (Disconnects Here)
+
+                          ||  <--- [5] TELESCOPING ALUMINUM CENTER POLE
+                          ||       (Adjusts from 40" indoor to 72" outdoor)
+                          || 
+                          ||
+                       .--||--.  <--- Tripod Collar
+                      /   ||   \
+                     /    ||    \
+                    /     ||     \
+                   /      ||      \
+             [Leg]        ||        [Leg]
+                          ||
+                          ||
+                ____[Water Tote]____  <--- [6] RESERVOIR / COUNTERWEIGHT
+               |                    |      (Sits between the tripod legs)
+               |____________________|
+```
+
+### Why the PA Tripod works perfectly:
+1. **The "Quick Release":** No unscrewing or unbolting. The flange just lifts off.
+2. **Office-Friendly Height:** Drop it to 3.5 feet indoors; extend it to 6.5 feet outdoors.
+3. **The Perfect Water Base:** The wide, folding legs create a perfect "cage" for a shallow water tote, acting as a heavy anchor weight.
+
+**Indoor Testing Note:** Unplug the relay or pull the intake tube from the water bucket indoors. The Sentry will still physically track you, aim the nozzle, and "click" the relay to fire, allowing you to debug the tracking math completely dry.
+
+---
+
+# Part 2: The Alternative Mounting Concepts
+
+Here are additional creative ways to mount your "Hanging Dome" Sentry Turret using the Top-Hat core.
+
+## 2. The "Post & Sleeve" Telescoping Mount
 This concept directly combines a sturdy wooden 4x4 post with a telescoping mechanism. By attaching a PVC "sleeve" to the wooden post, you can slide an adjustable pole up and down.
 
 ![Realistic visualization of the Post & Sleeve mount](images/post_and_sleeve_1779057420398.png)

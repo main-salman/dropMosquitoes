@@ -121,3 +121,8 @@
 - Added "Part 3: The Weatherproof Inverted Series" to `docs/mounting_concepts/README.md`.
 - Added 2 new photorealistic mockups (`inverted_gallows_post_*.png`, `inverted_cantilever_umbrella_*.png`) to `docs/mounting_concepts/images/`.
 - Logged the concept additions to `docs/HISTORY.md`.
+
+### (this commit) — [DESIGN] Promote PA Tripod as #1 Mounting Solution
+- Reordered `docs/mounting_concepts/README.md` to feature the Quick-Release PA Tripod as the absolute #1 recommended mounting solution.
+- Generated and saved `tripod_top_hat_studio_*.png` to `docs/mounting_concepts/images/` showcasing the indoor office testing setup.
+- Logged the portable studio-grade architecture decision to `docs/HISTORY.md`.
