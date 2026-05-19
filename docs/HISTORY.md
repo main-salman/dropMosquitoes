@@ -249,3 +249,6 @@
 - **[ARCHITECTURE]** User selected the "Scandinavian Tiered Canopy" (Nesting Matte-Black Metal Pendant Shades) as the FINAL structural design.
 - **[SPEC]** Created `docs/specs/HW-002-scandinavian-canopy.md` establishing the formal build guide, Home Depot / Amazon Bill of Materials (BOM), and step-by-step assembly instructions.
 - **[DIAGRAM]** Generated 7 highly detailed photorealistic images exploring the Scandinavian Tiered Canopy from various angles (front, high, low, exploded, gap close-up, skirt interior, night mode) and embedded them into the `HW-002` spec.
+
+## 2026-05-19 — SCANDINAVIAN CANOPY DESIGN SCHEMATIC UPDATE
+- **[DIAGRAM]** Added the final "Scandinavian Tiered" canopy design layout/schematic diagram to `docs/specs/HW-002-scandinavian-canopy.md` and moved the image asset to the centralized `docs/mounting_concepts/images/` directory.

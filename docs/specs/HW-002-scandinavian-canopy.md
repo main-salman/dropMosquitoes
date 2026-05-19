@@ -14,6 +14,8 @@ The enclosure is built on a vertical suspension stack. It features three distinc
 2. **The Optical Gap (2.5" Clear Band):** A continuous 360-degree clear polycarbonate window housing the stationary Scout Camera and 850nm IR Illuminator.
 3. **The Mechanical Skirt (16" Flared Bowl):** A deep, opaque lower umbrella that completely shields the hanging Storm32 gimbal and Jetson electronics from wind-driven rain and direct solar heat.
 
+![Scandinavian Tiered Canopy Layout/Schematic](../mounting_concepts/images/scand_canopy_schematic.png)
+
 ### Front Profile View
 ![Front View](../mounting_concepts/images/scand_canopy_front_view_1779078599812.png)
 

@@ -162,3 +162,7 @@
 - Documented the architecture, Home Depot/Amazon BOM, and step-by-step assembly.
 - Generated and saved 7 new photorealistic images exploring various angles of the Scandinavian Canopy to `docs/mounting_concepts/images/` and embedded them into `HW-002`.
 - Logged final design selection to `docs/HISTORY.md`.
+
+### (this commit) — [SPEC] Update HW-002 with Scandinavian Canopy Schematic
+- Standardized the new schematic image to `docs/mounting_concepts/images/scand_canopy_schematic.png` and updated relative references in `docs/specs/HW-002-scandinavian-canopy.md`.
+- Appended history tracking logs to `docs/HISTORY.md`.
