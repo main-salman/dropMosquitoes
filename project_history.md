@@ -166,3 +166,11 @@
 ### (this commit) — [SPEC] Update HW-002 with Scandinavian Canopy Schematic
 - Standardized the new schematic image to `docs/mounting_concepts/images/scand_canopy_schematic.png` and updated relative references in `docs/specs/HW-002-scandinavian-canopy.md`.
 - Appended history tracking logs to `docs/HISTORY.md`.
+
+## 2026-05-20
+
+### (this commit) — [ML] Multi-Bug YOLOv8 Ingestion & 15-Class Verification
+- Sourced and downloaded version 2 of the `tiger-emltm/insects-9yf6s` (15 classes) dataset from Roboflow Universe via `tools/sentry_control_center/download_dataset.py`.
+- Refactored `verify_target` in `sniper_vision.py` to case-insensitively classify and verify targets against all 15 insect classes instead of strictly matching `'mosquito'`.
+- Added `"is_safe": True` to `YOLODetector.detect` output in `vision.py` to maintain backwards compatibility with existing test suites and Flask UI visualization.
+- Updated `SW-001-software-spec.md` to version 5.0 and logged all engineering modifications in `docs/HISTORY.md`.

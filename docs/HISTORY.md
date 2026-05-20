@@ -252,3 +252,10 @@
 
 ## 2026-05-19 — SCANDINAVIAN CANOPY DESIGN SCHEMATIC UPDATE
 - **[DIAGRAM]** Added the final "Scandinavian Tiered" canopy design layout/schematic diagram to `docs/specs/HW-002-scandinavian-canopy.md` and moved the image asset to the centralized `docs/mounting_concepts/images/` directory.
+
+## 2026-05-20 — MULTI-BUG TRAINING AND TARGET VERIFICATION
+- **[FEATURE]** Expanded precision classifier from single-class (mosquito) / dual-class targeting to support 15 common backyard bug classes.
+- **[CODE]** `download_dataset.py`: Sourced and ingested version 2 of the `tiger-emltm/insects-9yf6s` YOLOv8 dataset (15 classes) from Roboflow Universe using `.env` secrets.
+- **[CODE]** `sniper_vision.py`: Refactored target verification to case-insensitively check predicted labels against all 15 insect classes (`spider`, `bees`, `butterfly`, `mantis`, `ant`, `beetle`, `caterpillar`, `centipedes`, `cockroach`, `dragonfly`, `fly`, `grasshopper`, `ladybug`, `mosquito`, `wasp`).
+- **[CODE]** `vision.py`: Modified legacy/fallback `YOLODetector.detect` to include `"is_safe": True` in all returned detection dicts to ensure full backward compatibility with testing suites.
+- **[SPEC]** `SW-001` updated to v5.0: Synced target classification logic, safety parameters, and training pipeline descriptions.

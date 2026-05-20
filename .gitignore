@@ -50,3 +50,6 @@ rename.md
 # Secrets and configs
 .env
 *.env
+
+# Sentry Control Center datasets
+tools/sentry_control_center/dataset/

@@ -406,7 +406,8 @@ class YOLODetector:
                     "class_id": cls_id,
                     "confidence": round(conf, 3),
                     "bbox": (x1, y1, x2, y2),
-                    "area": area
+                    "area": area,
+                    "is_safe": True
                 })
 
         return detections

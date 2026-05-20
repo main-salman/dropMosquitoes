@@ -17,6 +17,13 @@ class SniperVision:
     Precision classifier using YOLOv8.
     Auto-detects TensorRT .engine for maximum FPS, falls back to .pt.
     """
+    # Implements: SW-001 §2.3 — Sourced from Roboflow tiger-emltm/insects-9yf6s v2 dataset
+    TARGET_CLASSES = {
+        'spider', 'bees', 'butterfly', 'mantis', 'ant', 'beetle', 'caterpillar',
+        'centipedes', 'cockroach', 'dragonfly', 'fly', 'grasshopper',
+        'ladybug', 'mosquito', 'wasp'
+    }
+
     def __init__(self, model_path="best.pt"):
         # Try TensorRT engine first for maximum FPS on Jetson
         engine_path = model_path.replace('.pt', '.engine')
@@ -83,7 +90,8 @@ class SniperVision:
     async def verify_target(self) -> bool:
         """
         Grabs the latest frame and runs YOLO inference.
-        Returns True if a 'Mosquito' is detected with confidence > 0.80.
+        Returns True if any of the 14 verified backyard bug classes is detected
+        with confidence > 0.80.
         """
         if not self.model or not self._running:
             return False
@@ -104,8 +112,8 @@ class SniperVision:
                 conf = float(box.conf[0])
                 cls_name = r.names.get(cls_id, f"class_{cls_id}")
                 
-                # Check condition
-                if cls_name.lower() == 'mosquito' and conf > self.confidence_threshold:
+                # Check condition case-insensitively
+                if cls_name.lower() in self.TARGET_CLASSES and conf > self.confidence_threshold:
                     print(f"[SniperVision] Target Verified: {cls_name} ({conf:.2f})")
                     return True
 

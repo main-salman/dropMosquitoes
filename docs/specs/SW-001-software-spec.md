@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 4.0  
-**Last Updated:** 2026-05-15  
+**Version:** 5.0  
+**Last Updated:** 2026-05-20  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -37,7 +37,8 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 - **Input:** `/dev/video1` (IMX219 @ 30FPS via GStreamer `nvarguscamerasrc sensor-id=1`)
 - **Pipeline:** `appsink drop=true max-buffers=1`
 - **Processing:** YOLOv8 TensorRT classification
-- **Output:** `True` if `class == 'Mosquito'` AND `confidence > 0.80`, else `False`
+- **Output:** `True` if `class` falls in the set of 15 verified backyard bug classes AND `confidence > 0.80`, else `False`
+  *(Target classes: `spider`, `bees`, `butterfly`, `mantis`, `ant`, `beetle`, `caterpillar`, `centipedes`, `cockroach`, `dragonfly`, `fly`, `grasshopper`, `ladybug`, `mosquito`, `wasp`)*
 - **Threading:** Dedicated capture thread; inference called via `verify_target()`
 
 ### 2.4 TriggerAgent (`weapon_system.py`)
@@ -117,6 +118,8 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 > 3–20mm, mapped to bounding box area thresholds at the given LiDAR distance).
 > YOLOv8 TensorRT is used by the SniperAgent (§2.3) for secondary classification
 > and large-object rejection only (e.g., filtering out birds, leaves, moths).
+> With the multi-bug upgrade, the model is trained to recognize 14 insect classes
+> and verify target classifications using the Roboflow `tiger-emltm/insects-9yf6s` dataset.
 
 ## 5. Physics Model
 
@@ -149,7 +152,8 @@ Training and tuning are performed on a **separate Windows workstation** (RTX 307
 
 ### 7.2 Sniper Training (YOLOv8 — GPU-Intensive)
 - Tool: `tools/sentry_control_center/app.py` Tab 2
-- Provide labeled dataset (`data.yaml` from Roboflow)
+- Provide labeled dataset (`data.yaml` from Roboflow Universe `tiger-emltm/insects-9yf6s` v2)
+- Sourced and managed via `tools/sentry_control_center/download_dataset.py` using `ROBOFLOW_API_KEY`
 - Train model → collect `best.pt`
 - Copy `best.pt` to Jetson → convert to TensorRT `.engine` (see `gemini.md` §3)
 
