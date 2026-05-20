@@ -47,6 +47,25 @@ echo ""
 echo "✅ Files synced."
 echo ""
 
+# On the Jetson, copy the newly deployed trained model weights to standard target locations
+echo "🎯 Aligning model paths on Jetson..."
+ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && \
+  if [ -f models/trained/best.pt ]; then \
+    cp models/trained/best.pt best.pt && \
+    mkdir -p models && \
+    cp models/trained/best.pt models/yolov8n.pt && \
+    echo '  - Successfully copied models/trained/best.pt to best.pt and models/yolov8n.pt' && \
+    if [ -f best.engine ]; then \
+      echo '  - [NOTE] Active TensorRT engine found (best.engine/models/yolov8n.engine).' && \
+      echo '           Because the class count has changed, you must run the TensorRT export script' && \
+      echo '           (gemini.md §3) on the Jetson to rebuild the high-speed engines!' ; \
+    fi \
+  else \
+    echo '  - [WARNING] No trained model found at models/trained/best.pt' ; \
+  fi"
+echo ""
+
+
 # Install/update Python deps on Jetson
 echo "📦 Installing Python dependencies on Jetson..."
 ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && pip install -r requirements.txt 2>&1 | tail -5"

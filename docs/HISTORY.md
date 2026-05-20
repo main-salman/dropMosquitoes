@@ -259,3 +259,5 @@
 - **[CODE]** `sniper_vision.py`: Refactored target verification to case-insensitively check predicted labels against all 15 insect classes (`spider`, `bees`, `butterfly`, `mantis`, `ant`, `beetle`, `caterpillar`, `centipedes`, `cockroach`, `dragonfly`, `fly`, `grasshopper`, `ladybug`, `mosquito`, `wasp`).
 - **[CODE]** `vision.py`: Modified legacy/fallback `YOLODetector.detect` to include `"is_safe": True` in all returned detection dicts to ensure full backward compatibility with testing suites.
 - **[SPEC]** `SW-001` updated to v5.0: Synced target classification logic, safety parameters, and training pipeline descriptions.
+- **[DEPLOYMENT]** Proactively updated `deploy.sh` to automatically copy the compiled 15-class `best.pt` model weights to both `best.pt` (for `main.py` daemon) and `models/yolov8n.pt` (for `app.py` dashboard visualizer) on the Jetson, and added system checks requesting a TensorRT engine re-export to accommodate the 15-class detect head changes.
+
