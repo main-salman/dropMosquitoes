@@ -1,80 +1,114 @@
-# Dataset Strategy — Mosquito Detection Model
+# Dataset Strategy — Multi-Bug Target Classification Model
 
-> **Spec Reference:** SW-001 §7 — Training & Tuning Pipeline
+> **Spec Reference:** SW-001 §7.2 — Sniper Training Pipeline (YOLOv8 — GPU-Intensive)
 
 ## The Problem
 
-YOLOv8 needs labeled images to learn what a mosquito looks like. Without a dataset, the Sniper pipeline cannot classify targets — it will reject everything.
+YOLOv8 requires high-quality annotated images to learn the features of different insects. Under the Sentry Turret v5.0 software architecture, we have expanded our target capabilities from a basic single-class mosquito detector to a comprehensive **15-class backyard insect classifier**. 
 
-## Recommended Approach: Roboflow + Transfer Learning
+Without a properly formatted local dataset, the precision Classifier (`SniperAgent`) cannot run inference or verify targets—it will fail to identify any backyard pests.
 
-### Step 1: Find an Existing Dataset
+---
 
-Search Roboflow Universe for mosquito datasets:
-- https://universe.roboflow.com/search?q=mosquito
-- Look for datasets with at least 500+ images and bounding box annotations
-- Prefer datasets with insects photographed from overhead angles (matching our camera perspective)
+## 🎯 Primary Dataset: Roboflow `tiger-emltm/insects-9yf6s` (v2)
 
-Candidate datasets:
-- "Mosquito Detection" by various authors on Roboflow Universe
-- "Insect Detection" datasets (broader but useful for pre-training)
+To satisfy the multi-bug sentinel upgrade, we have adopted the public domain **15-Class Insect Dataset** from Roboflow Universe. This provides a robust base of pre-labeled insect images captured from overhead, side, and natural flight angles.
 
-### Step 2: Supplement with Your Own Data
+### Labeled Classes (15 Total):
+1. `spider`
+2. `bees`
+3. `butterfly`
+4. `mantis`
+5. `ant`
+6. `beetle`
+7. `caterpillar`
+8. `centipedes`
+9. `cockroach`
+10. `dragonfly`
+11. `fly`
+12. `grasshopper`
+13. `ladybug`
+14. `mosquito`
+15. `wasp`
 
-Once the turret hardware is assembled:
+---
 
-1. **Capture mode:** Run the Scout camera in a recording mode that saves frames when motion is detected
-2. **Label with Roboflow:** Upload captured frames to a Roboflow project, draw bounding boxes around mosquitoes
-3. **Target:** Aim for 1000+ labeled images (500 minimum for decent performance)
-4. **Classes:** Start simple — just two classes:
-   - `mosquito` — target (fire)
-   - `not_target` — moths, leaves, dust, shadows (reject)
+## 🛠️ Automated Dataset Ingestion Pipeline
 
-### Step 3: Export as YOLOv8 Format
+Instead of manual downloading and directory structure setup, the Sentry Control Center provides an automated dataset preparation utility:
 
-In Roboflow:
-1. Generate a version with augmentations (flip, rotate, brightness)
-2. Export → Format: "YOLOv8"
-3. Download the dataset — it will contain a `data.yaml` file
-4. Point the Sentry Control Center Trainer at this `data.yaml`
-
-### Step 4: Train
-
-Use `tools/sentry_control_center/app.py` Tab 2 on your Windows machine (RTX 3070).
-
-Recommended settings for first training run:
-- Model: `yolov8n.pt` (Nano — fastest inference on Jetson)
-- Epochs: 100
-- Batch: 16
-- Image Size: 640
-
-### Step 5: Deploy
-
-1. Copy `runs/detect/train/weights/best.pt` to the Jetson
-2. On the Jetson, convert to TensorRT (see `gemini.md` §3):
-   ```python
-   from ultralytics import YOLO
-   model = YOLO("best.pt")
-   model.export(format="engine", half=True, workspace=4)
-   ```
-3. Update `sniper_vision.py` to load `best.engine` instead of `best.pt` for maximum FPS
-
-## Sample data.yaml
-
-```yaml
-# Placeholder — replace paths with your actual dataset location
-train: C:/datasets/mosquito/train/images
-val: C:/datasets/mosquito/valid/images
-test: C:/datasets/mosquito/test/images
-
-nc: 2
-names: ['mosquito', 'not_target']
+```
+[tools/sentry_control_center/download_dataset.py]
 ```
 
-## Iterative Improvement
+This utility integrates with Roboflow Universe to handle dataset downloading, extraction, path resolution, and `data.yaml` formatting automatically.
 
-After field deployment:
-1. Review `engagements.jsonl` to identify false positives and missed targets
-2. Capture frames from those events
-3. Add to Roboflow project, re-label, re-train
-4. Repeat until false positive rate is acceptable
+### Step 1: Secure API Keys
+Add your Roboflow API key to the local `.env` file (ensure it is ignored by Git in `.gitignore`):
+```bash
+ROBOFLOW_API_KEY="your_api_key_here"
+```
+
+### Step 2: Ingest the Dataset
+Run the download script from the project root:
+```bash
+python tools/sentry_control_center/download_dataset.py
+```
+This extracts the dataset cleanly into:
+`tools/sentry_control_center/dataset/insects/`
+
+---
+
+## 🏋️ Training Protocol (Workstation)
+
+Training is highly compute-intensive and must be run on a dedicated workstation (e.g. RTX 3070 8GB or Apple Silicon M4 Pro) using the Sentry Control Center CLI:
+
+```bash
+python tools/sentry_control_center/app.py --train-sniper --data tools/sentry_control_center/dataset/insects/data.yaml --epochs 100
+```
+
+### Recommended Configurations:
+* **Model Base:** `yolov8n.pt` (Nano weights for minimal edge latency)
+* **Epochs:** `100`
+* **Batch Size:** `16` (Adjustable based on GPU VRAM availability)
+* **Image Size:** `640`
+
+Once training finishes successfully, the CLI runner automatically copies the output weights (`runs/detect/train/weights/best.pt`) to:
+`models/trained/best.pt`
+
+---
+
+## 🚀 Edge Deployment Pipeline (Jetson Orin Nano)
+
+### Step 1: Sync Files to the Jetson
+Run the deployment script from your workstation:
+```bash
+./deploy.sh
+```
+This automatically syncs the repository and runs the **model alignment hook on-device**, copying the new weights (`models/trained/best.pt`) to `best.pt` (for the orchestrator daemon) and `models/yolov8n.pt` (for the MJPEG dashboard).
+
+### Step 2: Compile High-Speed TensorRT Engine
+On the Jetson, convert the `.pt` weights to a high-speed FP16 `.engine` file to double execution speed:
+```python
+from ultralytics import YOLO
+
+# 1. Main Loop Sniper engine
+model = YOLO("best.pt")
+model.export(format="engine", half=True, workspace=4)
+
+# 2. Visualizer Dashboard engine
+model_vis = YOLO("models/yolov8n.pt")
+model_vis.export(format="engine", half=True, workspace=4)
+```
+
+The `SniperVision` class will automatically detect the presence of `best.engine` and run ultra-low latency FP16 hardware-accelerated inference.
+
+---
+
+## 🔄 Iterative Field Tuning
+
+To keep the model robust against environmental changes:
+1. Review the Flask logging systems (`engagements.jsonl`) to identify false positives or missed targets.
+2. Isolate captured video frames of missed targets.
+3. Upload and label them in your Roboflow workspace.
+4. Run the ingestion, training, and deployment pipeline again to compile an updated `best.pt` model.
