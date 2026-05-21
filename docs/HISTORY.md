@@ -261,3 +261,14 @@
 - **[SPEC]** `SW-001` updated to v5.0: Synced target classification logic, safety parameters, and training pipeline descriptions.
 - **[DEPLOYMENT]** Proactively updated `deploy.sh` to automatically copy the compiled 15-class `best.pt` model weights to both `best.pt` (for `main.py` daemon) and `models/yolov8n.pt` (for `app.py` dashboard visualizer) on the Jetson, and added system checks requesting a TensorRT engine re-export to accommodate the 15-class detect head changes.
 
+
+## 2026-05-20 — 100-EPOCH MULTI-CLASS YOLO TRAINING COMPLETE
+
+- **[TRAINING]** Completed 100-epoch YOLOv8n training on 15-class insect dataset (`tiger-emltm/insects-9yf6s`) on Apple M4 Pro (MPS). Total wall-clock time: **11.593 hours**.
+- **[TRAINING]** Final validated metrics (best.pt): **mAP50 = 0.891**, mAP50-95 = 0.565, Precision = 0.891, Recall = 0.842. 925 images, 1028 instances evaluated.
+- **[TRAINING]** Per-class mAP50: Butterfly 0.988, Fly 0.993, Spider 0.965, Ladybug 0.961, Mosquito **0.918** (primary target), Caterpillar 0.901, Wasp 0.862, Cockroach 0.853, Dragonfly 0.794, Grasshopper 0.847, Ant 0.833, Centipedes 0.836, Beetle 0.837, Bees 0.888, Mantis 0.887.
+- **[DEPLOYMENT]** Trained weights automatically deployed to `models/trained/best.pt` by Sentry Control Center CLI post-training hook.
+- **[DEPLOYMENT]** `deploy.sh` confirmed up-to-date — Jetson-side alignment hook copies weights to `best.pt` (main orchestrator) and `models/yolov8n.pt` (dashboard visualizer) with TensorRT re-export prompt.
+- **[DOCS]** `docs/DATASET_STRATEGY.md` updated to reflect 15-class automated ingestion pipeline and CLI training → deploy.sh workflow.
+- **[DOCS]** `docs/specs/SW-001-software-spec.md` corrected to v5.0: class count annotation 14 → 15.
+- **[DOCS]** `docs/specs/TEST-001-test-plan.md` promoted DRAFT → APPROVED; T3.3 updated to "Large-Object Rejection".
