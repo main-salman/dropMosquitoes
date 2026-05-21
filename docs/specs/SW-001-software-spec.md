@@ -118,8 +118,9 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 > 3–20mm, mapped to bounding box area thresholds at the given LiDAR distance).
 > YOLOv8 TensorRT is used by the SniperAgent (§2.3) for secondary classification
 > and large-object rejection only (e.g., filtering out birds, leaves, moths).
-> With the multi-bug upgrade, the model is trained to recognize 14 insect classes
+> With the multi-bug upgrade, the model is trained to recognize 15 insect classes
 > and verify target classifications using the Roboflow `tiger-emltm/insects-9yf6s` dataset.
+
 
 ## 5. Physics Model
 
