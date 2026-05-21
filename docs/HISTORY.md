@@ -272,3 +272,4 @@
 - **[DOCS]** `docs/DATASET_STRATEGY.md` updated to reflect 15-class automated ingestion pipeline and CLI training → deploy.sh workflow.
 - **[DOCS]** `docs/specs/SW-001-software-spec.md` corrected to v5.0: class count annotation 14 → 15.
 - **[DOCS]** `docs/specs/TEST-001-test-plan.md` promoted DRAFT → APPROVED; T3.3 updated to "Large-Object Rejection".
+- **[DECISION]** Removed `*.pt` exclusion from `.gitignore` following user design request to track custom model weight files in version control.
