@@ -29,7 +29,6 @@ calibration.json
 .sentry.pid
 *.engine
 *.onnx
-*.pt
 !requirements*.txt
 
 # Test output
@@ -53,3 +52,8 @@ rename.md
 
 # Sentry Control Center datasets
 tools/sentry_control_center/dataset/
+
+# Exclude stock/base models (track custom trained models only)
+yolov8n.pt
+models/yolov8n.pt
+tools/sentry_control_center/yolov8n.pt
