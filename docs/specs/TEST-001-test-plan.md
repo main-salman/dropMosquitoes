@@ -1,9 +1,10 @@
 # TEST-001: Test Plan Specification
 
-**Status:** DRAFT  
+**Status:** APPROVED  
 **Version:** 1.0  
-**Last Updated:** 2026-05-14  
+**Last Updated:** 2026-05-20  
 **Owner:** Salman
+
 
 ## 1. Test Philosophy
 
@@ -68,8 +69,9 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 |:---|:-----|:----------|:--------------|
 | T3.1 | Kill switch | Kill Python process mid-fire | BCM 17 goes LOW within 10ms (measured with oscilloscope or LED) |
 | T3.2 | Power loss recovery | Yank DC power during gimbal motion | Gimbal settles safely, no stuck relay |
-| T3.3 | Human detection override | Place person in sniper FOV during auto-tracking | `is_safe_to_fire` returns False, pump does NOT fire |
+| T3.3 | Large-Object Rejection | Place large object (person, bird) in sniper FOV | Object rejected as non-target, pump does NOT fire |
 | T3.4 | Software endstop enforcement | Command yaw=180° via API | Gimbal clamps to ±80°, no wire strain |
+
 | T3.5 | Death Spiral prevention | Sweep target past 160° boundary | Gimbal unwinds opposite direction, no full rotation |
 | T3.6 | Check valve test | Tilt nozzle 45° downward, wait 5 min | No water drip from nozzle (siphon blocked) |
 | T3.7 | Back-EMF isolation | Fire pump 100× rapidly (fire_sweep 400ms, 600ms cooldown) | No serial corruption, no Jetson GPIO damage |
