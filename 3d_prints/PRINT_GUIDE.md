@@ -14,7 +14,7 @@
 4. Slice the STL in your slicer (Cura, PrusaSlicer, etc.)
 5. Print with the settings listed below for each part
 
-> **Important:** Measure YOUR actual hardware before printing! The `.scad` files have labeled parameters at the top of each file — adjust them to match your specific Storm32 gimbal, OV9281 module, pole diameter, etc.
+> **Important:** Measure YOUR actual hardware before printing! The `.scad` files have labeled parameters at the top of each file — adjust them to match your specific Storm32 gimbal, IMX219 NoIR module, pole diameter, etc.
 
 ---
 
@@ -46,7 +46,7 @@
 | Supports | No |
 | Print Time | ~30 min |
 
-**What it does:** Single-piece mount that replaces buying a whole standoff kit. Has 4x integrated standoff posts (8mm tall) for the OV9281 PCB, plus 4x M3 holes for bolting to the enclosure lid. Includes a centered lens aperture hole.
+**What it does:** Single-piece mount that replaces buying a whole standoff kit. Has 4x integrated standoff posts (8mm tall) for the IMX219 NoIR PCB, plus 4x M3 holes for bolting to the enclosure lid. Includes a centered lens aperture hole.
 
 ---
 

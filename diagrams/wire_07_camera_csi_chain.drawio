@@ -65,7 +65,7 @@
         <mxCell id="jetcap" value="&lt;b style='color:#333;font-size:10px'&gt;Jetson&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:9px'&gt;CSI Port 1&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="905" y="200" width="130" height="25" as="geometry"/></mxCell>
 
         <mxCell id="note1" value="&lt;b&gt;⚠ BOM CONSTRAINT:&lt;/b&gt; HDMI cable MUST be &lt;b&gt;ultra-thin FPV-grade&lt;/b&gt; (ribbon-like). Standard monitor cables will stall Storm32 motors and destroy FPC ribbons." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FF6D00;fontColor=#333;fontSize=10;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="30" y="400" width="630" height="35" as="geometry"/></mxCell>
-        <mxCell id="note2" value="&lt;b&gt;Scout Camera (OV9281):&lt;/b&gt; Same chain but both TX/RX boards are static inside enclosure → standard HDMI cable is fine." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#2196F3;fontColor=#333;fontSize=10;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="30" y="445" width="630" height="30" as="geometry"/></mxCell>
+        <mxCell id="note2" value="&lt;b&gt;Scout Camera (IMX219 NoIR):&lt;/b&gt; Same chain but both TX/RX boards are static inside enclosure → standard HDMI cable is fine." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#2196F3;fontColor=#333;fontSize=10;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="30" y="445" width="630" height="30" as="geometry"/></mxCell>
 
       </root>
     </mxGraphModel>

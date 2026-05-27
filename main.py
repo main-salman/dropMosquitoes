@@ -49,7 +49,7 @@ def log_engagement(event_type: str, data: dict):
 # ==============================================================================
 FRAME_W = 1280
 FRAME_H = 720
-# Scout IMX219 camera FOV (replaces OV9281 — see HISTORY.md 2026-05-27)
+# Scout IMX219 NoIR camera FOV (Arducam NoIR IMX219 8MP — 24/7 day+night)
 FOV_H = 62.2   # IMX219 horizontal FOV (degrees)
 FOV_V = 48.8   # IMX219 vertical FOV (degrees)
 

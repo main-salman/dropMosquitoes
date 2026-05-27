@@ -18,7 +18,7 @@ Purchase everything in [parts.csv](../../parts.csv) AND [moreparts.csv](../../mo
 When parts arrive, verify:
 - [ ] Yahboom Jetson Orin Nano SUPER powers on and boots to JetPack desktop
 - [ ] Both CSI→HDMI kits contain: TX board, RX board, FPC ribbon cable, 15→22 adapter
-- [ ] OV9281 + IMX219 cameras have matching 15-pin FPC connectors
+- [ ] Both IMX219 NoIR cameras have matching 15-pin FPC connectors
 - [ ] Monk Makes relay has 2 independent channels with screw terminals
 - [ ] Storm32 gimbal arms swing freely with no mechanical binding
 - [ ] Orbit nozzle threads into the 1/4" tubing barb tightly
@@ -152,7 +152,7 @@ Keep these open during assembly (all in `diagrams/` directory):
 | 7 | Wire Monk Makes relay to IDC40P (§5.3 in HW-001) | `python3 -c "import Jetson.GPIO as GPIO; ..."` relay clicks | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
 | 8 | Solder 1N4007 flyback diode across pump terminals | Visual — cathode stripe toward +12V | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
 | 9 | Wire pump to relay CH1 NO contact + Wago GND | Relay trigger → pump runs | [wire_03_relay_pump](../../diagrams/wire_03_relay_pump.drawio) |
-| 10 | Mount Scout camera (OV9281) to enclosure lid | `v4l2-ctl --list-devices` shows /dev/video0 | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
+| 10 | Mount Scout camera (IMX219 NoIR) to enclosure lid | `v4l2-ctl --list-devices` shows /dev/video0 | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
 | 11 | Connect Scout CSI chain → Jetson Port 0 | `gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! fakesink` | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
 | 12 | Mount Storm32 gimbal to pole/bracket | Manual — arms swing freely | [assembly_3_gimbal](../../diagrams/assembly_3_gimbal.drawio) |
 | 13 | Wire gimbal to relay CH2 + Wago + UART (IDC40P terminals) | Power on → gimbal calibrates | [wire_04_relay_gimbal](../../diagrams/wire_04_relay_gimbal.drawio), [wire_05_gimbal_serial](../../diagrams/wire_05_gimbal_serial.drawio) |
@@ -222,7 +222,7 @@ ssh jetson@192.168.0.100 'sudo systemctl restart sentry'
 2. Start the Flask dashboard: `python3 app.py`
 3. Open `http://192.168.0.100:8000` in your browser
 4. Verify both camera feeds are live (Scout and Sniper)
-5. The Scout camera (OV9281) FOV should cover the target zone — if not, adjust physical mount angle
+5. The Scout camera (IMX219 NoIR) FOV should cover the target zone — if not, adjust physical mount angle
 6. The Sniper camera (IMX219) should be centered on the gimbal boresight — verify by clicking the center of the Scout feed and checking if the Sniper frame shows the same area
 
 ### 5.2 Gimbal Calibration

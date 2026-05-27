@@ -29,7 +29,7 @@ model.export(format="engine", half=True, workspace=4, dynamic=False)
 
 ## 4. Verify Camera Interfaces
 ```bash
-# Scout camera (OV9281, FIXED to enclosure, MIPI Port 0)
+# Scout camera (IMX219 NoIR, FIXED to enclosure, MIPI Port 0)
 v4l2-ctl --list-devices
 # Should show /dev/video0
 

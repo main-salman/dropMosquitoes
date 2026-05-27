@@ -200,4 +200,9 @@
 - Confirmed full 24/7 operational capability (sees 850nm IR light at night for MOG2 tracking).
 - Verified pinkish daytime footage has zero effect on binary motion blobs. Logged to `HISTORY.md`.
 
+### (this commit) — [DOCS] Scout Camera Ordered: Full Codebase Documentation Sweep
+- User ordered the Arducam NoIR IMX219 8MP ($53.70 CAD). All OV9281 references purged from active code, specs, docs, and diagrams.
+- Updated 5 spec files (HW-001, SW-001, SYS-001, OPS-001, spec.md), 3 code files (scout_vision.py, main.py, deploy.sh), 5 docs (gemini.md, README.md, prompt.md, PRINT_GUIDE.md, mounting_concepts/README.md), and 4 draw.io diagrams.
+- OV9281 references remain only in `HISTORY.md` as historical records.
+
 

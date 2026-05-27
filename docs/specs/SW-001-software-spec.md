@@ -18,7 +18,7 @@
 All agents run as threaded modules coordinated by the asyncio orchestrator in `main.py`.
 
 ### 2.1 ScoutAgent (`scout_vision.py`)
-- **Input:** `/dev/video0` (OV9281 @ 120FPS via GStreamer `nvarguscamerasrc sensor-id=0`)
+- **Input:** `/dev/video0` (IMX219 NoIR @ 60FPS via GStreamer `nvarguscamerasrc sensor-id=0`)
 - **Pipeline:** `appsink drop=true max-buffers=1` (mandatory for 8GB memory constraint)
 - **Processing:** OpenCV MOG2 Background Subtraction
 - **Config:** Reads tuning parameters from `scout_config.json` (exported by Sentry Control Center)

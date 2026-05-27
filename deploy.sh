@@ -42,16 +42,8 @@ rsync -avz --progress \
   --exclude='sentry.log' \
   --exclude='*.engine' \
   "${PROJECT_DIR}/" "${JETSON_USER}@${JETSON_HOST}:${JETSON_PATH}/"
-# Sync OV9281 kernel driver (if present) to Jetson
-if [ -f drivers/nv_ov9281.ko ]; then
-  rsync -avz --progress \
-    drivers/nv_ov9281.ko \
-    "${JETSON_USER}@${JETSON_HOST}:/lib/modules/\$(ssh \${JETSON_USER}@\${JETSON_HOST} 'uname -r')/kernel/drivers/media/i2c/"
-  # Load the driver on Jetson
-  ssh "${JETSON_USER}@${JETSON_HOST}" "sudo modprobe nv_ov9281 || sudo insmod /lib/modules/\$(uname -r)/kernel/drivers/media/i2c/nv_ov9281.ko"
-else
-  echo "ℹ️ No custom OV9281 driver found. Running in native Shared Camera Mode (CSI-0 only)."
-fi
+# Both Scout and Sniper use IMX219 NoIR sensors — native imx219-dual.dtbo handles both.
+# No custom kernel drivers required.
 
 echo ""
 echo "✅ Files synced."

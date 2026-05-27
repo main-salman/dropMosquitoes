@@ -117,7 +117,7 @@ Buy a massive, empty housing designed for commercial Pan-Tilt-Zoom (PTZ) cameras
 ---
 
 ## The Ultimate Vision & Mechanics Split: The "Lighthouse" Architecture
-If you drop the entire system inside a deep bell or an opaque cylinder, you completely blind your tracking sensors. The **OV9281 Scout Camera** and the **850nm IR Illuminator** cannot see through solid aluminum or tinted polycarbonate—they need a clear, unobstructed 180-degree field of view across the yard.
+If you drop the entire system inside a deep bell or an opaque cylinder, you completely blind your tracking sensors. The **IMX219 NoIR Scout Camera** and the **850nm IR Illuminator** cannot see through solid aluminum or tinted polycarbonate—they need a clear, unobstructed 180-degree field of view across the yard.
 
 This means we have to separate the *stationary vision* (Scout/IR) from the *moving mechanics* (Gimbal/Sniper/Nozzle). We need an architecture where the vision sits "on the roof" while the mechanics hang safely "in the basement."
 

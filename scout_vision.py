@@ -67,8 +67,8 @@ class ScoutVision:
             return
 
         # GStreamer pipeline with drop=true max-buffers=1 for strict memory constraint
-        # NOTE: OV9281 replaced with IMX219 — using 1280x720@60fps (IMX219 Mode 4)
-        # The IMX219 does not support 1280x800 or 120fps natively.
+        # Scout: Arducam NoIR IMX219 @ 1280x720 60fps (Mode 4) — no IR-cut filter for 24/7 ops
+        # Both Scout and Sniper use IMX219 sensors, detected by imx219-dual.dtbo
         pipeline = (
             "nvarguscamerasrc sensor-id=0 ! "
             "video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=60/1 ! "

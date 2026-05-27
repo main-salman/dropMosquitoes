@@ -2,7 +2,7 @@
 Act as a Senior Autonomous Robotics Engineer. We are building an edge-AI powered, 2-axis mosquito tracking and extermination turret using an NVIDIA Jetson Orin Nano Super.
 
 ## Core Architecture
-1. **The Vision Array:** - Scout Camera (MIPI CSI Port 0): Arducam OV9281 (1MP Global Shutter). Runs at 120FPS doing simple contour/motion tracking to find fast-moving targets.
+1. **The Vision Array:** - Scout Camera (MIPI CSI Port 0): Arducam NoIR IMX219 (8MP, no IR-cut filter). Runs at 60FPS doing simple contour/motion tracking to find fast-moving targets. 24/7 day+night via 850nm IR illuminator.
    - Sniper Camera (MIPI CSI Port 1): Arducam IMX477 (12.3MP). Runs at 60FPS using YOLOv8 to verify the target shape and run Human Safety detection.
 2. **The Turret:** A custom aluminum gimbal driven by two brushless motors, controlled by a Storm32 32-Bit BGC via Serial UART from the Jetson.
 3. **The Weapon:** A 12V 70PSI water line, triggered by a 12V direct-acting solenoid. The solenoid is fired via a MOSFET connected to a Jetson 3.3V GPIO pin.

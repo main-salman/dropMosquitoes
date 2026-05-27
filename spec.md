@@ -6,7 +6,7 @@
 - **Python:** Python 3.10+
 
 ## Camera Interfaces (MIPI CSI-2)
-- **Scout Camera (OV9281):** `/dev/video0` (1280x800 @ 120 FPS via GStreamer).
+- **Scout Camera (IMX219 NoIR):** `/dev/video0` (1280x720 @ 60 FPS via GStreamer).
 - **Sniper Camera (IMX219 NoIR):** `/dev/video1` (1920x1080 @ 30 FPS via GStreamer).
 
 ## Pinout & Comms

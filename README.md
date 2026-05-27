@@ -6,7 +6,7 @@ An autonomous AI-powered mosquito sentry turret built on the NVIDIA Jetson Orin 
 
 The system uses a **"Two-Brain" dual-pipeline architecture**:
 
-1. **The Scout** (OpenCV) — A high-speed global shutter camera (OV9281 @ 120FPS) detects motion using background subtraction. When it spots a flying insect, it hands off coordinates to the gimbal.
+1. **The Scout** (OpenCV) — A NoIR camera (IMX219 @ 60FPS) detects motion using background subtraction. Its lack of an IR-cut filter enables 24/7 operation with the 850nm IR illuminator at night. When it spots a flying insect, it hands off coordinates to the gimbal.
 
 2. **The Sniper** (YOLOv8) — A precision RGB-IR camera (IMX219 @ 30FPS) mounted on the gimbal verifies the target using a custom-trained neural network. If it confirms "mosquito" with >80% confidence, it authorizes the shot.
 
@@ -79,7 +79,7 @@ python3 phantom_ping.py
 ## Hardware
 
 - **Compute:** NVIDIA Jetson Orin Nano SUPER 8GB
-- **Scout Camera:** OV9281 Global Shutter (120FPS, fixed mount)
+- **Scout Camera:** IMX219 NoIR (60FPS, fixed mount, 24/7 day+night)
 - **Sniper Camera:** IMX219 NoIR with IR-Cut (on gimbal)
 - **Gimbal:** Storm32 2-Axis BGC
 - **Pump:** 12V micro diaphragm via Monk Makes relay

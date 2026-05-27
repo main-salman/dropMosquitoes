@@ -325,4 +325,22 @@
 - **[DECISION]** Confirmed 100% hardware compatibility (includes 15-to-22 pin FPC cable for Orin Nano CSI ports).
 - **[DESIGN]** Verified that the lack of an IR-cut filter enables flawless night tracking using the 850nm IR illuminator. Documented that while daylight footage will appear pink/purple (due to solar IR), this color distortion has zero negative impact on the Scout's OpenCV MOG2 Background Subtraction, which analyzes grayscale motion blobs.
 
-
+## 2026-05-27 — SCOUT CAMERA ORDERED: FULL CODEBASE DOCUMENTATION SWEEP
+- **[PROCUREMENT]** User ordered the **Arducam NoIR IMX219 8MP Camera Module ($53.70 CAD)**.
+- **[SPEC]** `HW-001`: Removed transitional ECO-2026-004 references. Scout camera row now reads "Arducam NoIR IMX219 8MP". §2.2 rewritten to describe 24/7 day+night operation.
+- **[SPEC]** `SW-001`: Updated ScoutAgent input from `OV9281 @ 120FPS` to `IMX219 NoIR @ 60FPS`.
+- **[SPEC]** `SYS-001`: Updated ScoutAgent role and Physical Topology section.
+- **[SPEC]** `OPS-001`: Updated incoming inspection, assembly step 10, and camera calibration section.
+- **[SPEC]** `spec.md`: Updated Scout Camera entry with correct resolution and FPS.
+- **[CODE]** `scout_vision.py`: Updated GStreamer pipeline comments to reference IMX219 NoIR.
+- **[CODE]** `main.py`: Updated FOV constant comments to reference IMX219 NoIR 24/7 operation.
+- **[CODE]** `deploy.sh`: Removed legacy OV9281 kernel driver sync block (both cameras now native IMX219).
+- **[DOCS]** `gemini.md`: Updated camera verification comments.
+- **[DOCS]** `README.md`: Updated Scout Camera description and hardware list.
+- **[DOCS]** `prompt.md`: Updated Scout Camera from OV9281 to IMX219 NoIR.
+- **[DOCS]** `3d_prints/PRINT_GUIDE.md`: Updated PCB references from OV9281 to IMX219 NoIR.
+- **[DOCS]** `docs/mounting_concepts/README.md`: Updated Lighthouse architecture camera reference.
+- **[DIAGRAM]** `sentry_diagram.drawio`: Updated Scout camera cell from OV9281 to Arducam NoIR IMX219.
+- **[DIAGRAM]** `diagrams/arch_11_software_v2.drawio`: Updated ScoutAgent camera from OV9281@120fps to IMX219 NoIR@60fps.
+- **[DIAGRAM]** `diagrams/wire_07_camera_csi_chain.drawio`: Updated Scout Camera note.
+- **[DIAGRAM]** `diagrams/zone2_logic.drawio`: Updated Scout label from OV9281 to IMX219 NoIR.

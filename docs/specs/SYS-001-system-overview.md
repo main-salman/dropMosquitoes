@@ -15,7 +15,7 @@ An asyncio orchestrator (`main.py`) coordinates four modular agents on an NVIDIA
 
 | Agent | File | Role |
 |:------|:-----|:-----|
-| ScoutAgent | `scout_vision.py` | Motion detection via OV9281 (120FPS, FIXED to enclosure) |
+| ScoutAgent | `scout_vision.py` | Motion detection via IMX219 NoIR (60FPS, FIXED to enclosure) |
 | TurretAgent | `gimbal_controller.py` | Translates pixel coords → Storm32 pitch/yaw serial commands |
 | SniperAgent | `sniper_vision.py` | YOLOv8 TensorRT classification (>80% confidence gate) |
 | TriggerAgent | `weapon_system.py` | GPIO BCM 17 relay trigger (400ms Stream-and-Sweep) with safety interlocks |
@@ -29,7 +29,7 @@ Supporting modules:
 
 ## 3. Physical Topology
 
-- **Scout Camera (OV9281):** FIXED to enclosure baseplate (does NOT move on gimbal)
+- **Scout Camera (IMX219 NoIR):** FIXED to enclosure baseplate (does NOT move on gimbal)
 - **Sniper Camera (IMX219 NoIR):** Mounted on INVERTED Storm32 gimbal payload (looks downward)
 - **Orbit Nozzle:** Mounted on gimbal payload adjacent to sniper (fires downward)
 - **12V Diaphragm Pump:** Surface-mounted on bracket above enclosure

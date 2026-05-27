@@ -374,8 +374,8 @@ Prints a helpful TIP if running on `.pt` suggesting the TensorRT export command.
 
 | Camera | Resolution | FPS | FOV | GStreamer Pipeline |
 |--------|-----------|-----|-----|-------------------|
-| Scout (OV9281) | 1280×800 | 120 | 110°H × 75°V | `nvarguscamerasrc sensor-id=0` |
-| Sniper (IMX219) | 1920×1080 | 30 | Standard | `nvarguscamerasrc sensor-id=1` |
+| Scout (IMX219 NoIR) | 1280×720 | 60 | 62.2°H × 48.8°V | `nvarguscamerasrc sensor-id=0` |
+| Sniper (IMX219 NoIR) | 1920×1080 | 30 | Standard | `nvarguscamerasrc sensor-id=1` |
 
 Both use `appsink drop=true max-buffers=1` to prevent memory saturation on 8GB Jetson.
 
