@@ -52,20 +52,22 @@ stop_local
 if [[ "${1:-}" != "--local" ]]; then
     if ssh -o ConnectTimeout=3 -o BatchMode=yes "${JETSON_USER}@${JETSON_HOST}" "echo ok" > /dev/null 2>&1; then
         echo "🛑 Stopping server on Jetson (${JETSON_HOST})..."
-        ssh "${JETSON_USER}@${JETSON_HOST}" "
-            cd ${JETSON_PATH} 2>/dev/null || true
+        ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
+            cd /home/jetson/dropMosquitoes 2>/dev/null || true
+
+            # Stop systemd sentry service (runs main.py as root)
+            echo '${JETSON_PASSWORD}' | sudo -S systemctl stop sentry 2>/dev/null || true
+
+            # Kill any root-owned python3 processes
+            echo '${JETSON_PASSWORD}' | sudo -S killall python3 2>/dev/null || true
+            sleep 1
+
+            # Clean up PID file
             if [ -f .sentry.pid ]; then
-                PID=\$(cat .sentry.pid)
-                if kill -0 \$PID 2>/dev/null; then
-                    kill -INT \$PID 2>/dev/null
-                    sleep 2
-                    kill -9 \$PID 2>/dev/null || true
-                fi
                 rm -f .sentry.pid
             fi
-            pkill -f 'python3 app.py' 2>/dev/null || true
             echo '✅ Jetson server stopped.'
-        "
+ENDSSH
     else
         echo "ℹ️  Jetson not reachable at ${JETSON_HOST} — skipping remote stop."
     fi

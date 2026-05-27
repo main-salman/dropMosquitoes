@@ -73,34 +73,58 @@ fi
 # Step 2: Stop any existing server on Jetson
 echo ""
 echo "🛑 Step 2/3: Stopping any existing server on Jetson..."
-ssh "${JETSON_USER}@${JETSON_HOST}" "
-    cd ${JETSON_PATH} 2>/dev/null || true
-    # Kill any existing app.py process
-    pkill -f 'python3 app.py' 2>/dev/null || true
-    sleep 1
+# NOTE: main.py runs as ROOT via systemd — needs sudo to stop.
+# We pipe the password via sudo -S to avoid TTY requirement.
+ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
+    cd /home/jetson/dropMosquitoes 2>/dev/null || true
+
+    # Stop the systemd sentry service (runs main.py as root)
+    echo '${JETSON_PASSWORD}' | sudo -S systemctl stop sentry 2>/dev/null || true
+
+    # Kill any remaining root-owned main.py or app.py processes
+    echo '${JETSON_PASSWORD}' | sudo -S killall -9 python3 2>/dev/null || true
+    sleep 2
+
+    # Also kill any user-owned processes
+    if [ -f .sentry.pid ]; then
+        PID=\$(cat .sentry.pid)
+        kill "\$PID" 2>/dev/null || true
+        rm -f .sentry.pid
+    fi
+    pgrep -f '[a]pp.py' | xargs -r kill 2>/dev/null || true
     echo '   Done.'
-"
+ENDSSH
 
 # Step 3: Start server on Jetson
 echo ""
 echo "🎯 Step 3/3: Starting server on Jetson..."
-ssh "${JETSON_USER}@${JETSON_HOST}" "
-    cd ${JETSON_PATH}
+ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
+    cd /home/jetson/dropMosquitoes
+
+    # Prevent systemd from restarting main.py while we run app.py
+    echo '${JETSON_PASSWORD}' | sudo -S systemctl disable sentry 2>/dev/null || true
+
     # Maximize Jetson performance
-    sudo nvpmodel -m 0 2>/dev/null || true
-    sudo jetson_clocks 2>/dev/null || true
+    echo '${JETSON_PASSWORD}' | sudo -S nvpmodel -m 0 2>/dev/null || true
+    echo '${JETSON_PASSWORD}' | sudo -S jetson_clocks 2>/dev/null || true
+
+    # Fix log file ownership if root-owned from systemd
+    echo '${JETSON_PASSWORD}' | sudo -S chown ${JETSON_USER}:${JETSON_USER} sentry.log 2>/dev/null || true
+    rm -f sentry.log
+
     # Start server in background with nohup so it survives SSH disconnect
     nohup python3 app.py --port ${PORT} > sentry.log 2>&1 &
-    echo \$! > .sentry.pid
-    sleep 3
-    if kill -0 \$(cat .sentry.pid) 2>/dev/null; then
-        echo '✅ Server started on Jetson (PID '\$(cat .sentry.pid)')'
+    SERVER_PID=\$!
+    echo \$SERVER_PID > .sentry.pid
+    sleep 4
+    if kill -0 \$SERVER_PID 2>/dev/null; then
+        echo "✅ Server started on Jetson (PID \$SERVER_PID)"
     else
-        echo '❌ Server failed to start. Last 20 lines of log:'
+        echo "❌ Server failed to start. Last 20 lines of log:"
         tail -20 sentry.log
         exit 1
     fi
-"
+ENDSSH
 
 echo ""
 echo "══════════════════════════════════════════════"
