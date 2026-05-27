@@ -195,3 +195,9 @@
 - Evaluated and confirmed the Arducam IMX219 camera module ($24.28 CAD) as an ideal, plug-and-play replacement for the Scout Camera (OV9281).
 - Added procurement history entry to `docs/HISTORY.md` and logged the hardware specifications and cables included in the package.
 
+### (this commit) — [PROCUREMENT] Confirm Arducam NoIR IMX219 24/7 Compatibility
+- Evaluated the NoIR (Night Vision) version of the Arducam IMX219 ($53.70 CAD).
+- Confirmed full 24/7 operational capability (sees 850nm IR light at night for MOG2 tracking).
+- Verified pinkish daytime footage has zero effect on binary motion blobs. Logged to `HISTORY.md`.
+
+

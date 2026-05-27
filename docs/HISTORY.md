@@ -320,3 +320,9 @@
 - **[PROCUREMENT]** Evaluated and confirmed compatibility of the **Arducam IMX219 8MP Camera Module ($24.28 CAD)** as the permanent replacement for the Scout Camera (OV9281).
 - **[DECISION]** Confirmed plug-and-play compatibility with JetPack 6's built-in `imx219-dual.dtbo` overlay. Recommended the **Arducam NoIR IMX219** variant for night operation consistency with the 850nm IR illuminator.
 
+## 2026-05-27 — PROCUREMENT ADVICE: SCOUT CAMERA REPLACEMENT (NoIR IMX219)
+- **[PROCUREMENT]** Evaluated and confirmed the **Arducam NoIR IMX219 8MP Camera Module ($53.70 CAD)** as the optimal 24/7 replacement for the Scout Camera.
+- **[DECISION]** Confirmed 100% hardware compatibility (includes 15-to-22 pin FPC cable for Orin Nano CSI ports).
+- **[DESIGN]** Verified that the lack of an IR-cut filter enables flawless night tracking using the 850nm IR illuminator. Documented that while daylight footage will appear pink/purple (due to solar IR), this color distortion has zero negative impact on the Scout's OpenCV MOG2 Background Subtraction, which analyzes grayscale motion blobs.
+
+
