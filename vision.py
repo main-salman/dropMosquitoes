@@ -49,9 +49,9 @@ class VelocityTracker:
     Thread-safe for concurrent reads from the ballistic pipeline.
     """
 
-    def __init__(self, history_size: int = 8, fps: float = 120.0,
-                 fov_h: float = 110.0, fov_v: float = 75.0,
-                 frame_w: int = 1280, frame_h: int = 800,
+    def __init__(self, history_size: int = 8, fps: float = 60.0,
+                 fov_h: float = 62.2, fov_v: float = 48.8,
+                 frame_w: int = 1280, frame_h: int = 720,
                  ema_alpha: float = 0.4):
         """
         Args:
@@ -232,23 +232,35 @@ class CameraStream:
             return
 
         import os
+        import platform
         device_path = f"/dev/video{self.sensor_id}"
-        # On Linux/Jetson, verify that the physical device path exists before probing
-        if not os.path.exists(device_path):
-            print(f"[{self.name}] WARNING: {device_path} does not exist. Falling back to test pattern.")
-            self._cap = None
-        else:
+        is_jetson = os.path.exists("/etc/nv_tegra_release") or os.path.exists("/proc/device-tree/compatible")
+
+        if is_jetson and os.path.exists(device_path):
+            # Jetson path: use GStreamer nvarguscamerasrc for hardware ISP
             pipeline = self._build_gstreamer_pipeline()
             print(f"[{self.name}] GStreamer pipeline:\n  {pipeline}")
             self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
             if not self._cap.isOpened():
-                # Fallback: try standard V4L2 device for dev/testing
+                # Fallback: try standard V4L2 device
                 print(f"[{self.name}] GStreamer failed. Trying /dev/video{self.sensor_id}...")
                 self._cap = cv2.VideoCapture(self.sensor_id)
 
             if not self._cap.isOpened():
                 print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
+                self._cap = None
+        else:
+            # Dev machine (macOS/Windows): try system camera via OS backend
+            print(f"[{self.name}] Non-Jetson detected. Trying system camera index {self.sensor_id}...")
+            self._cap = cv2.VideoCapture(self.sensor_id)
+            if self._cap.isOpened():
+                # Set resolution to match expected dimensions
+                self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+                self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+                print(f"[{self.name}] System camera {self.sensor_id} opened successfully.")
+            else:
+                print(f"[{self.name}] No camera at index {self.sensor_id}. Using test pattern.")
                 self._cap = None
 
         self._running = True
