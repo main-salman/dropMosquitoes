@@ -32,6 +32,7 @@ class ScoutVision:
         self.target_y = None
         self.velocity_x = 0.0  # px/sec
         self.velocity_y = 0.0  # px/sec
+        self.latest_frame = None
 
         # Ring buffer for trajectory smoothing: (x, y, timestamp)
         self._position_history = deque(maxlen=self.VELOCITY_WINDOW)
@@ -139,6 +140,7 @@ class ScoutVision:
                 self.target_y = best_cy
                 self.velocity_x = vx
                 self.velocity_y = vy
+                self.latest_frame = frame.copy() if frame is not None else None
 
     def get_target(self):
         """Returns (X, Y) of the largest moving contour, or (None, None)."""
@@ -154,6 +156,11 @@ class ScoutVision:
         """
         with self._lock:
             return self.target_x, self.target_y, self.velocity_x, self.velocity_y
+
+    def get_latest_frame(self):
+        """Returns the latest raw BGR frame captured from the shared CSI-0 camera."""
+        with self._lock:
+            return self.latest_frame.copy() if self.latest_frame is not None else None
 
     def stop(self):
         self._running = False

@@ -174,3 +174,24 @@
 - Refactored `verify_target` in `sniper_vision.py` to case-insensitively classify and verify targets against all 15 insect classes instead of strictly matching `'mosquito'`.
 - Added `"is_safe": True` to `YOLODetector.detect` output in `vision.py` to maintain backwards compatibility with existing test suites and Flask UI visualization.
 - Updated `SW-001-software-spec.md` to version 5.0 and logged all engineering modifications in `docs/HISTORY.md`.
+
+## 2026-05-27
+
+### (this commit) — [ARCH] Monocular Shared-Camera Architecture Pivot
+- Refactored `vision.py` to introduce `SharedCameraStream` proxy class and added physical path validation `os.path.exists()` in `CameraStream.start()` to prevent CSI-1 hardware probing.
+- Refactored `app.py` to utilize `SharedCameraStream` on Port 0 (1280x720@60fps natively supported by IMX219) for the Sniper camera stream.
+- Refactored `scout_vision.py` to run native Mode 4 GStreamer capture at 1280x720@60fps and cache captured frames.
+- Refactored `sniper_vision.py` start to bypass hardware camera openings and enhanced `verify_target` to accept thread-safely passed frames.
+- Refactored `main.py` orchestrator to pass captured frames from `scout` directly to `sniper.verify_target()`.
+- Successfully deployed to the Jetson, validating a clean 60.2 FPS GStreamer capture and a stable background sentry systemd service execution.
+
+### (this commit) — [BUG FIX] Watchdog Integration and Serial Port ttyTHS1 Correction
+- Modified `main.py` to run an asynchronous background `watchdog_ping_loop()` checking for `NOTIFY_SOCKET` and sending periodic `b"WATCHDOG=1"` keep-alives to prevent systemd's watchdog from SIGABRT-killing the sentry service every 60 seconds.
+- Corrected the `nvpmodel` pre-start absolute path in `sentry.service` to `/usr/sbin/nvpmodel`.
+- Updated `gimbal_controller.py` and `hardware.py` to auto-detect gimbal serial connection, trying `/dev/ttyTHS1` first (the physical header serial port on Orin Nano SUPER) and then `/dev/ttyTHS0`, with a clean fallback to STUB mode.
+- Updated `spec.md`, `agents.md`, `HW-001`, and `SW-001` specifications to align with `/dev/ttyTHS1` serial port mapping and documented the active watchdog integration.
+
+### (this commit) — [PROCUREMENT] Confirm Arducam IMX219 Scout replacement compatibility
+- Evaluated and confirmed the Arducam IMX219 camera module ($24.28 CAD) as an ideal, plug-and-play replacement for the Scout Camera (OV9281).
+- Added procurement history entry to `docs/HISTORY.md` and logged the hardware specifications and cables included in the package.
+

@@ -56,27 +56,9 @@ class SniperVision:
         if self._running:
             return
             
-        pipeline = (
-            "nvarguscamerasrc sensor-id=1 ! "
-            "video/x-raw(memory:NVMM), width=1920, height=1080, format=NV12, framerate=30/1 ! "
-            "nvvidconv ! video/x-raw, format=BGRx ! "
-            "videoconvert ! video/x-raw, format=BGR ! "
-            "appsink drop=true max-buffers=1"
-        )
-        
-        self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-        if not self._cap.isOpened():
-            print("[SniperVision] Warning: GStreamer failed. Trying /dev/video1...")
-            self._cap = cv2.VideoCapture(1)
-            
-        if not self._cap.isOpened():
-            print("[SniperVision] Error: Cannot open Sniper camera.")
-            return
-
+        # Shared-camera mode: do not open CSI-1 device to prevent I2C timeout crashes.
         self._running = True
-        self._thread = threading.Thread(target=self._capture_loop, daemon=True)
-        self._thread.start()
-        print("[SniperVision] Started.")
+        print("[SniperVision] Shared-mode started (no independent camera opened).")
 
     def _capture_loop(self):
         while self._running:
@@ -87,19 +69,23 @@ class SniperVision:
             else:
                 time.sleep(0.01)
 
-    async def verify_target(self) -> bool:
+    async def verify_target(self, frame=None) -> bool:
         """
-        Grabs the latest frame and runs YOLO inference.
-        Returns True if any of the 14 verified backyard bug classes is detected
+        Grabs the passed frame (from shared Scout camera) and runs YOLO inference.
+        Returns True if any of the TARGET_CLASSES is detected
         with confidence > 0.80.
         """
         if not self.model or not self._running:
             return False
 
-        with self._lock:
-            if self._latest_frame is None:
-                return False
-            frame_to_process = self._latest_frame.copy()
+        if frame is None:
+            # Fallback for stub/headless mode without passed frame
+            with self._lock:
+                if self._latest_frame is None:
+                    return False
+                frame_to_process = self._latest_frame.copy()
+        else:
+            frame_to_process = frame.copy()
 
         # Run inference (blocking, but we are inside an async wrapper usually or run_in_executor)
         results = self.model(frame_to_process, conf=self.confidence_threshold, verbose=False)

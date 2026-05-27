@@ -22,13 +22,13 @@ Wants=network-online.target
 Type=simple
 User=root
 WorkingDirectory=/home/jetson/dropMosquitoes
-ExecStartPre=/bin/bash -c '/usr/bin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
+ExecStartPre=-/bin/bash -c '/usr/sbin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
 ExecStartPre=/usr/bin/sleep 5
 ExecStart=/usr/bin/python3 main.py
 Restart=always
 RestartSec=10
 WatchdogSec=60
-Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONUNBUFFERED=1 PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages
 
 [Install]
 WantedBy=multi-user.target

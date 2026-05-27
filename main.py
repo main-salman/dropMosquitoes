@@ -82,6 +82,34 @@ SWEEP_STEP_DELAY = 0.04    # Seconds between each micro-step
 POST_ENGAGEMENT_COOLDOWN_SEC = 1.0
 
 # ==============================================================================
+# Systemd Watchdog Support
+# ==============================================================================
+async def watchdog_ping_loop():
+    """Periodically ping the systemd watchdog to prevent service restarts."""
+    import os
+    import socket
+
+    sock_path = os.environ.get('NOTIFY_SOCKET')
+    if not sock_path:
+        log.debug("NOTIFY_SOCKET not set, systemd watchdog pinging disabled.")
+        return
+
+    log.info(f"Systemd watchdog active (NOTIFY_SOCKET={sock_path}). Starting ping loop...")
+
+    # Handle abstract socket paths (prefixed with @)
+    if sock_path.startswith('@'):
+        sock_path = '\0' + sock_path[1:]
+
+    while True:
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
+                sock.connect(sock_path)
+                sock.sendall(b"WATCHDOG=1")
+        except Exception as e:
+            log.warning(f"Failed to ping systemd watchdog: {e}")
+        await asyncio.sleep(15.0)  # Ping every 15s (well within WatchdogSec=60)
+
+# ==============================================================================
 # Main Orchestration Loop
 # ==============================================================================
 async def orchestrator_loop():
@@ -97,6 +125,9 @@ async def orchestrator_loop():
 
     scout.start()
     sniper.start()
+
+    # Start systemd watchdog ping loop
+    asyncio.create_task(watchdog_ping_loop())
 
     # Wait for cameras to warm up
     await asyncio.sleep(2.0)
@@ -155,7 +186,12 @@ async def orchestrator_loop():
                 await asyncio.sleep(0.05)
 
                 # ── Phase 4: Sniper Verify ───────────────────────────
-                is_verified = await sniper.verify_target()
+                latest_frame = scout.get_latest_frame()
+                if latest_frame is not None:
+                    is_verified = await sniper.verify_target(latest_frame)
+                else:
+                    log.warning("No frame available from Scout for verification.")
+                    is_verified = False
                 stats["verifications"] += 1
 
                 if is_verified:

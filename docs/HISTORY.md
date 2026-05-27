@@ -294,9 +294,29 @@
   - The existing `tegra234-p3767-camera-p3768-imx219-dual.dtbo` overlay will instantly detect both cameras on buses 9 and 10 with zero kernel modifications.
   - The Scout camera's MOG2 background subtraction pipeline does not benefit from global shutter — rolling shutter at 60fps is more than sufficient for blob centroid detection.
   - Cost: ~$25 CAD. Time to operational: immediate (plug and play).
-- **[CODE]** `scout_vision.py`: Updated GStreamer pipeline from `1280x800@120fps` (OV9281) to `1280x720@60fps` (IMX219 Mode 4).
-- **[CODE]** `main.py`: Updated Scout FOV constants from OV9281 (110°H × 75°V, 1280×800) to IMX219 (62.2°H × 48.8°V, 1280×720).
-- **[SPEC]** `HW-001-hardware-spec.md`: Updated §2 camera table and §2.2 Scout Camera section with ECO-2026-004 notice and new IMX219 specifications.
+- [CODE] `scout_vision.py`: Updated GStreamer pipeline from `1280x800@120fps` (OV9281) to `1280x720@60fps` (IMX219 Mode 4).
+- [CODE] `main.py`: Updated Scout FOV constants from OV9281 (110°H × 75°V, 1280×800) to IMX219 (62.2°H × 48.8°V, 1280×720).
+- [SPEC] `HW-001-hardware-spec.md`: Updated §2 camera table and §2.2 Scout Camera section with ECO-2026-004 notice and new IMX219 specifications.
 
+## 2026-05-27 — MONOCULAR SHARED-CAMERA RECOVERY
+- **[DECISION]** Aborted custom out-of-tree OV9281 driver compilation on JetPack 6 to eliminate kernel panics.
+- **[ARCH]** Implemented Monocular Shared-Camera Architecture (Option 1) using a single physical IMX219 on CSI-0 (`/dev/video0`).
+- **[CODE]** `vision.py`: Created `SharedCameraStream` proxy class and added `os.path.exists` device safety checks.
+- **[CODE]** `app.py`: Hooked up Sniper stream to consume from Scout's CSI-0 feed.
+- **[CODE]** `scout_vision.py`: Switched to native GStreamer Mode 4 (1280x720@60fps) and cached latest frames.
+- **[CODE]** `sniper_vision.py`: Bypassed CSI-1 raw device probing and refactored `verify_target` to accept frames.
+- **[CODE]** `main.py`: Retrieved frames from Scout and passed them to Sniper for YOLO target verification.
+- **[CODE]** `deploy.sh`: Made custom driver loading conditional to prevent deploy exit failures in Monocular Mode.
+- **[TEST]** Verified 60.2 FPS GStreamer capture on Jetson CSI-0 and running background sentry systemd daemon.
 
+## 2026-05-27 — WATCHDOG INTEGRATION & GIMBAL SERIAL PATH CORRECTION
+- **[BUG FIX]** `main.py`: Implemented systemd watchdog keep-alive loop (`watchdog_ping_loop`) running asynchronously every 15 seconds to satisfy `WatchdogSec=60` and prevent premature systemd SIGABRT daemon termination.
+- **[BUG FIX]** `sentry.service`: Corrected absolute path of `nvpmodel` pre-start command to `/usr/sbin/nvpmodel`.
+- **[CODE]** `gimbal_controller.py` & `hardware.py`: Implemented dynamic gimbal serial port auto-detection (prioritizing `/dev/ttyTHS1` over `/dev/ttyTHS0`) to natively support the Yahboom carrier board header pins under JetPack 6.
+- **[CODE]** `tests/test_serial.py`: Changed default test argument port to `/dev/ttyTHS1`.
+- **[SPEC]** `HW-001`, `SW-001`, `spec.md`, `agents.md`: Updated hardware serial communications specification to document `/dev/ttyTHS1` and active systemd watchdog notification pings.
+
+## 2026-05-27 — PROCUREMENT ADVICE: SCOUT CAMERA REPLACEMENT (IMX219)
+- **[PROCUREMENT]** Evaluated and confirmed compatibility of the **Arducam IMX219 8MP Camera Module ($24.28 CAD)** as the permanent replacement for the Scout Camera (OV9281).
+- **[DECISION]** Confirmed plug-and-play compatibility with JetPack 6's built-in `imx219-dual.dtbo` overlay. Recommended the **Arducam NoIR IMX219** variant for night operation consistency with the 850nm IR illuminator.
 

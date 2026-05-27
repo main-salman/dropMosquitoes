@@ -231,19 +231,25 @@ class CameraStream:
         if self._running:
             return
 
-        pipeline = self._build_gstreamer_pipeline()
-        print(f"[{self.name}] GStreamer pipeline:\n  {pipeline}")
-
-        self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-
-        if not self._cap.isOpened():
-            # Fallback: try standard V4L2 device for dev/testing
-            print(f"[{self.name}] GStreamer failed. Trying /dev/video{self.sensor_id}...")
-            self._cap = cv2.VideoCapture(self.sensor_id)
-
-        if not self._cap.isOpened():
-            print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
+        import os
+        device_path = f"/dev/video{self.sensor_id}"
+        # On Linux/Jetson, verify that the physical device path exists before probing
+        if not os.path.exists(device_path):
+            print(f"[{self.name}] WARNING: {device_path} does not exist. Falling back to test pattern.")
             self._cap = None
+        else:
+            pipeline = self._build_gstreamer_pipeline()
+            print(f"[{self.name}] GStreamer pipeline:\n  {pipeline}")
+            self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+
+            if not self._cap.isOpened():
+                # Fallback: try standard V4L2 device for dev/testing
+                print(f"[{self.name}] GStreamer failed. Trying /dev/video{self.sensor_id}...")
+                self._cap = cv2.VideoCapture(self.sensor_id)
+
+            if not self._cap.isOpened():
+                print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
+                self._cap = None
 
         self._running = True
         self._thread = threading.Thread(target=self._capture_loop, daemon=True)
@@ -321,6 +327,41 @@ class CameraStream:
         if self._thread:
             self._thread.join(timeout=2.0)
         print(f"[{self.name}] Stopped.")
+
+
+class SharedCameraStream:
+    """
+    A proxy camera stream class that thread-safely shares the feed of an existing CameraStream.
+    Does not open any real camera device itself, preventing I2C timeouts/conflicts.
+    """
+    def __init__(self, parent_stream, width=1280, height=720, name="SharedCamera"):
+        self.parent = parent_stream
+        self.width = width
+        self.height = height
+        self.name = name
+
+    def start(self):
+        # No-op, parent manages lifecycle
+        pass
+
+    def get_frame(self) -> np.ndarray:
+        frame = self.parent.get_frame()
+        if frame is not None:
+            if frame.shape[1] != self.width or frame.shape[0] != self.height:
+                frame = cv2.resize(frame, (self.width, self.height))
+        return frame
+
+    def get_jpeg(self) -> bytes:
+        # Re-use parent's JPEG buffer directly for low overhead
+        return self.parent.get_jpeg()
+
+    def get_resolution(self) -> tuple:
+        return self.width, self.height
+
+    def stop(self):
+        # No-op
+        pass
+
 
 
 class YOLODetector:

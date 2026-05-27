@@ -1,0 +1,33 @@
+/dts-v1/;
+
+/ {
+    fragment@0 {
+        target = <&i2c2>; // I2C bus 2 (adjust if needed)
+        __overlay__ {
+            ov9281@60 {
+                compatible = "ovti,ov9281";
+                reg = <0x60>;
+                status = "okay";
+                // CSI lane mapping for Port 1 (CSI1)
+                ports {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    port@0 {
+                        reg = <0>;
+                        endpoint {
+                            remote-endpoint = <&csi1_in>;
+                            data-lanes = <4>; // use two lanes (0 and 1)
+                        };
+                    };
+                };
+            };
+        };
+    };
+
+    fragment@1 {
+        target = <&csi1>;
+        __overlay__ {
+            status = "okay";
+        };
+    };
+};

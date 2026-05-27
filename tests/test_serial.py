@@ -189,7 +189,7 @@ if __name__ == "__main__":
     parser.add_argument('--loopback', action='store_true', help='TX→RX loopback test')
     parser.add_argument('--storm32', action='store_true', help='Storm32 handshake test')
     parser.add_argument('--sweep', action='store_true', help='Full gimbal angle sweep')
-    parser.add_argument('--port', default='/dev/ttyTHS0', help='Serial port')
+    parser.add_argument('--port', default='/dev/ttyTHS1', help='Serial port')
     parser.add_argument('--baud', type=int, default=115200, help='Baud rate')
     args = parser.parse_args()
 

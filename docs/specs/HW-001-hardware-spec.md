@@ -54,7 +54,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 - **Yaw Range:** ±130° mechanical (software endstop: ±80° — see SW-001 §4)
 - **Pitch Range:** ±45° mechanical (software endstop: ±20°)
 - **Comms:** Jetson UART TX/RX → Storm32 RC_PITCH / RC_YAW pins
-- **Serial:** `/dev/ttyTHS0` @ 115200 baud
+- **Serial:** `/dev/ttyTHS1` @ 115200 baud
 
 ## 4. Power Infrastructure (12V Star Topology)
 
@@ -237,7 +237,7 @@ The turret must start automatically on power-up without manual SSH intervention.
 
 - **Service File:** `sentry.service` (systemd unit, included in repo)
 - **Install:** `sudo cp sentry.service /etc/systemd/system/ && sudo systemctl enable sentry`
-- **Watchdog:** systemd watchdog set to 60s — restarts automatically on crash
+- **Watchdog:** systemd watchdog set to 60s. The orchestrator daemon (`main.py`) pings systemd via the `sd_notify` protocol over `NOTIFY_SOCKET` every 15s to satisfy the watchdog timer and prevent premature termination.
 - **Logs:** `journalctl -u sentry -f`
 
 ## 12. Bill of Materials

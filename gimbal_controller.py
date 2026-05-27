@@ -13,8 +13,7 @@ class GimbalController:
     Serial writes are dispatched via a background thread so the
     async orchestrator loop never blocks on UART I/O.
     """
-    def __init__(self, port="/dev/ttyTHS0", baudrate=115200):
-        self.port = port
+    def __init__(self, port=None, baudrate=115200):
         self.baudrate = baudrate
         self.ser = None
         self.pitch = 0.0
@@ -25,11 +24,27 @@ class GimbalController:
         self.PITCH_LIMIT = 20.0
         self.YAW_LIMIT = 80.0
 
-        try:
-            self.ser = serial.Serial(self.port, self.baudrate, timeout=1)
-            print(f"[GimbalController] Connected on {self.port}")
-        except Exception as e:
-            print(f"[GimbalController] WARNING: Could not connect to {self.port}: {e}")
+        # Dynamic port detection: ttyTHS1 (default header on Orin Nano), then ttyTHS0
+        ports_to_try = []
+        if port is not None:
+            ports_to_try.append(port)
+        ports_to_try.extend(["/dev/ttyTHS1", "/dev/ttyTHS0"])
+
+        self.port = None
+        for p in ports_to_try:
+            try:
+                import os
+                if os.path.exists(p):
+                    self.ser = serial.Serial(p, self.baudrate, timeout=1)
+                    self.port = p
+                    print(f"[GimbalController] Connected on {p}")
+                    break
+            except Exception as e:
+                print(f"[GimbalController] Failed to connect on {p}: {e}")
+
+        if not self.ser:
+            self.port = port or "/dev/ttyTHS1"
+            print(f"[GimbalController] WARNING: Could not connect to any serial port. Running in STUB mode on {self.port}")
 
     def aim(self, pitch: float, yaw: float):
         """

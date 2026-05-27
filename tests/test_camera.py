@@ -146,12 +146,12 @@ if __name__ == "__main__":
         args.both = True  # Default: test both
 
     if args.scout or args.both:
-        test_camera("Scout", sensor_id=0, width=1280, height=800,
-                     target_fps=120, duration=args.duration, save=args.save)
+        test_camera("Scout", sensor_id=0, width=1280, height=720,
+                     target_fps=60, duration=args.duration, save=args.save)
 
     if args.sniper or args.both:
-        test_camera("Sniper", sensor_id=1, width=1920, height=1080,
-                     target_fps=30, duration=args.duration, save=args.save)
+        test_camera("Sniper", sensor_id=1, width=1280, height=720,
+                     target_fps=60, duration=args.duration, save=args.save)
 
     print(f"\n{'='*50}")
     print(f"  CAMERA TESTS: {PASS} passed, {FAIL} failed")

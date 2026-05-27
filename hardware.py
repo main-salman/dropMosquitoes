@@ -182,7 +182,7 @@ class GimbalController:
     # Jetson Orin Nano UART: /dev/ttyTHS0 or /dev/ttyTHS1
     # USB-to-Serial adapter: /dev/ttyUSB0
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    SERIAL_PORT = "/dev/ttyTHS0"
+    SERIAL_PORT = "/dev/ttyTHS1"
     BAUD_RATE = 115200
 
     # Storm32 serial command IDs (o323BGC protocol)
@@ -195,16 +195,25 @@ class GimbalController:
         self._serial = None
 
         if SERIAL_AVAILABLE:
-            try:
-                self._serial = serial.Serial(
-                    port=self.SERIAL_PORT,
-                    baudrate=self.BAUD_RATE,
-                    timeout=0.1
-                )
-                print(f"[GimbalController] Serial opened on {self.SERIAL_PORT} @ {self.BAUD_RATE}")
-            except serial.SerialException as e:
-                print(f"[GimbalController] Serial FAILED: {e}. Running in STUB mode.")
-                self._serial = None
+            # Dynamic port detection: ttyTHS1 (default header on Orin Nano), then ttyTHS0
+            ports_to_try = [self.SERIAL_PORT, "/dev/ttyTHS0"]
+            for p in ports_to_try:
+                try:
+                    import os
+                    if os.path.exists(p):
+                        self._serial = serial.Serial(
+                            port=p,
+                            baudrate=self.BAUD_RATE,
+                            timeout=0.1
+                        )
+                        self.SERIAL_PORT = p
+                        print(f"[GimbalController] Serial opened on {p} @ {self.BAUD_RATE}")
+                        break
+                except Exception as e:
+                    print(f"[GimbalController] Failed to connect serial on {p}: {e}")
+            
+            if not self._serial:
+                print(f"[GimbalController] Serial FAILED on all ports. Running in STUB mode.")
         else:
             print("[GimbalController] STUB MODE — no serial available.")
 

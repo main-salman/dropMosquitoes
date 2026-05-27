@@ -29,7 +29,7 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 ### 2.2 TurretAgent (`gimbal_controller.py`)
 - **Input:** `(x, y)` pixel coordinates from ScoutAgent
 - **Processing:** `pixel_to_angle()` conversion, pitch/yaw boundary enforcement (±20° pitch, ±80° yaw)
-- **Output:** Serial command string to Storm32 via `/dev/ttyTHS0` @ 115200 baud
+- **Output:** Serial command string to Storm32 via `/dev/ttyTHS1` @ 115200 baud
 - **Async:** `aim_async()` and `sweep_async()` dispatch serial writes via `run_in_executor` — never blocks asyncio loop
 - **Sweep:** `sweep()` performs multi-step linear gimbal motion from point A to B, used during Stream-and-Sweep firing
 
