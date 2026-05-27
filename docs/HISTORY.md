@@ -273,3 +273,30 @@
 - **[DOCS]** `docs/specs/SW-001-software-spec.md` corrected to v5.0: class count annotation 14 → 15.
 - **[DOCS]** `docs/specs/TEST-001-test-plan.md` promoted DRAFT → APPROVED; T3.3 updated to "Large-Object Rejection".
 - **[DECISION]** Removed `*.pt` exclusion from `.gitignore` following user design request to track custom model weight files in version control.
+
+## 2026-05-26 — INITIAL JETSON DEPLOYMENT AND CONNECTION VERIFICATION
+- **[CONNECTION]** Successfully verified physical connection to the NVIDIA Jetson Orin Nano SUPER (192.168.0.196) via network ping and automated SSH passwordless login using local SSH keys.
+- **[DEPLOY]** Deployed the first software stack to `/home/jetson/dropMosquitoes` on the Jetson Orin Nano SUPER using the system's `deploy.sh` script.
+- **[BUG FIX]** Resolved a NumPy 2.2.6 compatibility issue on the Jetson that broke OpenCV and Ultralytics by downgrading it to `numpy<2` (specifically version `1.26.4`). Locked the numpy dependency in `requirements.txt` to `numpy>=1.24.0,<2.0.0` to prevent future deployment breakage.
+- **[CAMERA DETECT]** Investigated camera detection of newly connected OV9281 (Scout) and IMX219 (Sniper). Found they are currently undetected due to the active `primary` boot label in `extlinux.conf` disabling overlays on boot, and noted that JetPack 6 lacks the out-of-the-box driver module for OV9281.
+- **[CAMERA CONFIG]** Patched the Jetson bootloader `/boot/extlinux/extlinux.conf` to boot via `JetsonIO` by default. Triggered a remote reboot to load the device tree overlays.
+- **[CAMERA VERIFY]** Verified that the reboot successfully brought the physical IMX219 (Sniper Camera) online at `/dev/video0`. The background systemd `sentry` daemon automatically started on boot, claimed the IMX219 camera device, and is successfully capturing frames!
+
+## 2026-05-27 — ECO-2026-004: SCOUT CAMERA OV9281 → IMX219 SWAP
+- **[DIAGNOSTIC]** Ran comprehensive I2C bus scan across all buses (0-11) on the Jetson Orin Nano SUPER to locate the OV9281 sensor.
+- **[DIAGNOSTIC]** Confirmed OV9281 hardware is **100% functional** — Chip ID register read (`i2ctransfer -y 9 w2@0x60 0x30 0x0a r2`) returned `0x92 0x81` (correct silicon ID for OV9281).
+- **[DIAGNOSTIC]** OV9281 detected at I2C address `0x60` on both bus 9 (CSI mux channel 0) and bus 2 (raw I2C bus).
+- **[DIAGNOSTIC]** Root cause identified: `dmesg` shows `imx219 9-0010: imx219_board_setup: error during i2c read probe (-121)` — the `imx219-dual.dtbo` overlay tries to probe bus 9 at address `0x10` (IMX219 default), but the OV9281 lives at `0x60`.
+- **[DIAGNOSTIC]** Confirmed **no kernel driver** (`nv_ov9281.ko`) exists anywhere in `/lib/modules/5.15.148-tegra/`. No Arducam packages are installed.
+- **[DIAGNOSTIC]** Confirmed **no device tree overlay** for OV9281 exists in `/boot/`. Only IMX219 and IMX477 overlays are available in JetPack 6 (L4T R36.4.7).
+- **[RESEARCH]** Exhaustive search of Arducam GitHub (`MIPI_Camera` repo), Arducam Docs, NVIDIA Developer Forums, and public kernel sources. Result: No pre-built OV9281 driver or DTBO available for L4T 36.x. Arducam's Jetvariety driver only provides pre-built binaries for old Nano and Xavier NX, and requires a proprietary adapter board.
+- **[ECO]** **ECO-2026-004 Decision:** Replace the OV9281 Scout Camera with a second Arducam NoIR IMX219 8MP module. Rationale:
+  - The existing `tegra234-p3767-camera-p3768-imx219-dual.dtbo` overlay will instantly detect both cameras on buses 9 and 10 with zero kernel modifications.
+  - The Scout camera's MOG2 background subtraction pipeline does not benefit from global shutter — rolling shutter at 60fps is more than sufficient for blob centroid detection.
+  - Cost: ~$25 CAD. Time to operational: immediate (plug and play).
+- **[CODE]** `scout_vision.py`: Updated GStreamer pipeline from `1280x800@120fps` (OV9281) to `1280x720@60fps` (IMX219 Mode 4).
+- **[CODE]** `main.py`: Updated Scout FOV constants from OV9281 (110°H × 75°V, 1280×800) to IMX219 (62.2°H × 48.8°V, 1280×720).
+- **[SPEC]** `HW-001-hardware-spec.md`: Updated §2 camera table and §2.2 Scout Camera section with ECO-2026-004 notice and new IMX219 specifications.
+
+
+

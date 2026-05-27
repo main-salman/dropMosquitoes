@@ -16,7 +16,7 @@
 
 | Role | Sensor | Resolution | FPS | Mount | MIPI Port | Extension |
 |:-----|:-------|:-----------|:----|:------|:----------|:----------|
-| Scout | OV9281 1MP Global Shutter | 1280×800 | 120 | FIXED to enclosure | Port 0 | CSI→HDMI kit |
+| Scout | Arducam NoIR IMX219 8MP (replaces OV9281 — ECO-2026-004) | 1280×720 | 60 | FIXED to enclosure | Port 0 | CSI→HDMI kit |
 | Sniper | Arducam NoIR IMX219 8MP | 1920×1080 | 30 | GIMBAL payload | Port 1 | CSI→HDMI kit |
 
 **Camera Extension Chain:** Camera → 15-pin FPC → TX Board → HDMI Cable → RX Board → 15-pin FPC → 15→22 Adapter → Jetson MIPI Port
@@ -42,7 +42,9 @@
 - 15-pin FPC → 15→22 pin adapter → Jetson MIPI **Port 1**
 - *Rule:* RX Board is static. Standard ribbon cables are fine here.
 
-### 2.2 Scout Camera (OV9281) — Simplified Chain
+### 2.2 Scout Camera (IMX219, replaces OV9281 — ECO-2026-004) — Simplified Chain
+
+> **ECO-2026-004:** The original OV9281 global-shutter sensor was replaced with a second IMX219 rolling-shutter sensor. JetPack 6 (L4T 36.4) lacks a native kernel driver (`nv_ov9281.ko`) for the OV9281, and no pre-built overlay exists. The IMX219 works immediately with the existing `imx219-dual.dtbo` overlay. The Scout's MOG2 blob-detection pipeline does not require global shutter — rolling shutter at 60fps is more than sufficient.
 
 The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses the same CSI→HDMI kit but with a standard HDMI cable between TX/RX boards. Both boards are inside the enclosure.
 

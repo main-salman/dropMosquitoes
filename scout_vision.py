@@ -66,9 +66,11 @@ class ScoutVision:
             return
 
         # GStreamer pipeline with drop=true max-buffers=1 for strict memory constraint
+        # NOTE: OV9281 replaced with IMX219 — using 1280x720@60fps (IMX219 Mode 4)
+        # The IMX219 does not support 1280x800 or 120fps natively.
         pipeline = (
             "nvarguscamerasrc sensor-id=0 ! "
-            "video/x-raw(memory:NVMM), width=1280, height=800, format=NV12, framerate=120/1 ! "
+            "video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=60/1 ! "
             "nvvidconv ! video/x-raw, format=BGRx ! "
             "videoconvert ! video/x-raw, format=BGR ! "
             "appsink drop=true max-buffers=1"

@@ -48,9 +48,10 @@ def log_engagement(event_type: str, data: dict):
 # Coordinate Mapping — Scout pixel → Gimbal degrees
 # ==============================================================================
 FRAME_W = 1280
-FRAME_H = 800
-FOV_H = 110.0  # Scout OV9281 horizontal FOV
-FOV_V = 75.0   # Scout OV9281 vertical FOV
+FRAME_H = 720
+# Scout IMX219 camera FOV (replaces OV9281 — see HISTORY.md 2026-05-27)
+FOV_H = 62.2   # IMX219 horizontal FOV (degrees)
+FOV_V = 48.8   # IMX219 vertical FOV (degrees)
 
 def pixel_to_angle(px: int, py: int) -> tuple:
     """Map (X, Y) pixel from Scout to physical Pan/Tilt."""
