@@ -344,3 +344,11 @@
 - **[DIAGRAM]** `diagrams/arch_11_software_v2.drawio`: Updated ScoutAgent camera from OV9281@120fps to IMX219 NoIR@60fps.
 - **[DIAGRAM]** `diagrams/wire_07_camera_csi_chain.drawio`: Updated Scout Camera note.
 - **[DIAGRAM]** `diagrams/zone2_logic.drawio`: Updated Scout label from OV9281 to IMX219 NoIR.
+
+## 2026-05-27 — FIX: run-ai.sh / stop.sh now target Jetson via SSH
+- **[FIX]** `run-ai.sh`: Was running the Flask server **locally on the dev machine**, using the Mac's webcam instead of the Jetson's CSI cameras. Rewritten to: (1) deploy code to Jetson, (2) SSH in, (3) start `app.py` on the Jetson with `nohup`. Dashboard is now accessed via `http://<JETSON_IP>:8000`.
+- **[FIX]** `stop.sh`: Now stops both local and Jetson servers. Connects to Jetson via SSH to kill the remote process.
+- **[FIX]** `vision.py`: `CameraStream.start()` now detects Jetson vs dev machine. On macOS, falls back to `cv2.VideoCapture(index)` for webcam dev testing.
+- **[FIX]** `vision.py`: `VelocityTracker` defaults updated from OV9281 specs (120fps, 110°×75°, 1280×800) to IMX219 NoIR specs (60fps, 62.2°×48.8°, 1280×720).
+- **[FIX]** `templates/index.html`: Updated Scout card title from "OV9281 Fixed · 120 FPS" to "IMX219 NoIR Fixed · 60 FPS". Fixed click-to-aim frame height from 800→720.
+- **[USAGE]** `./run-ai.sh` — deploy + start on Jetson (default). `./run-ai.sh --local` — dev testing on Mac. `./run-ai.sh --no-deploy` — start without re-deploying.
