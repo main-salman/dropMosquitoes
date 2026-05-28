@@ -359,6 +359,8 @@
 ## 2026-05-28 — SCHEMATIC UPDATE: DETAILED POWER DISTRIBUTION
 - **[DIAGRAM]** `diagrams/images/power_distribution.png`: Generated a highly detailed wiring schematic clarifying power pathways. The Jetson Orin Nano is connected to a 12V 5A main source via an always-on bypass (no relay). The 12V pump (Relay Channel 1) and the Storm32 turret gimbal (Relay Channel 2) are wired through the Monk Makes Dual Relay Module to enable software power control.
 - **[DIAGRAM]** `diagrams/images/power_distribution_with_gpio.png`: Created a dedicated version of the schematic showing the GPIO logic control lines. Pin 11 (BCM 17) uses a Yellow wire to trigger Relay CH1 (Pump), Pin 13 (BCM 27) uses an Orange wire to trigger Relay CH2 (Gimbal), and Pin 9 (GND) connects to the logic ground on the Monk Makes Dual Relay Module.
+- **[DIAGRAM]** `diagrams/images/scout_and_ir_placement.png`: Created a detailed dual-view (Front View and Side View) mechanical assembly drawing showing the optimal physical mounting layout of the Scout Camera and the Univivi IR Blaster on the vertical post. Illustrates depth protrusion (camera forward by 1-2" to prevent washout), vertical separation (6-12" to prevent backscatter), and elevation stacking (IR blaster on top so rising heat and bugs swarm clear of the lens).
+
 
 
 
