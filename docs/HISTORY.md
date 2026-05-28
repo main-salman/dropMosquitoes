@@ -358,5 +358,7 @@
 
 ## 2026-05-28 — SCHEMATIC UPDATE: DETAILED POWER DISTRIBUTION
 - **[DIAGRAM]** `diagrams/images/power_distribution.png`: Generated a highly detailed wiring schematic clarifying power pathways. The Jetson Orin Nano is connected to a 12V 5A main source via an always-on bypass (no relay). The 12V pump (Relay Channel 1) and the Storm32 turret gimbal (Relay Channel 2) are wired through the Monk Makes Dual Relay Module to enable software power control.
+- **[DIAGRAM]** `diagrams/images/power_distribution_with_gpio.png`: Created a dedicated version of the schematic showing the GPIO logic control lines. Pin 11 (BCM 17) uses a Yellow wire to trigger Relay CH1 (Pump), Pin 13 (BCM 27) uses an Orange wire to trigger Relay CH2 (Gimbal), and Pin 9 (GND) connects to the logic ground on the Monk Makes Dual Relay Module.
+
 
 
