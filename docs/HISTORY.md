@@ -356,3 +356,7 @@
 ## 2026-05-27 — REMOTE SHUTDOWN UTILITY
 - **[CODE]** Created `shutdown.sh`: Added utility script to remotely power off the Jetson Orin Nano from the host Mac/PC. The script (1) triggers `./stop.sh` to gracefully stop running servers and services, (2) checks network reachability of the Jetson, and (3) logs in via SSH to run `sudo shutdown now` using the password configured in `.env`.
 
+## 2026-05-28 — SCHEMATIC UPDATE: DETAILED POWER DISTRIBUTION
+- **[DIAGRAM]** `diagrams/images/power_distribution.png`: Generated a highly detailed wiring schematic clarifying power pathways. The Jetson Orin Nano is connected to a 12V 5A main source via an always-on bypass (no relay). The 12V pump (Relay Channel 1) and the Storm32 turret gimbal (Relay Channel 2) are wired through the Monk Makes Dual Relay Module to enable software power control.
+
+
