@@ -352,3 +352,7 @@
 - **[FIX]** `vision.py`: `VelocityTracker` defaults updated from OV9281 specs (120fps, 110°×75°, 1280×800) to IMX219 NoIR specs (60fps, 62.2°×48.8°, 1280×720).
 - **[FIX]** `templates/index.html`: Updated Scout card title from "OV9281 Fixed · 120 FPS" to "IMX219 NoIR Fixed · 60 FPS". Fixed click-to-aim frame height from 800→720.
 - **[USAGE]** `./run-ai.sh` — deploy + start on Jetson (default). `./run-ai.sh --local` — dev testing on Mac. `./run-ai.sh --no-deploy` — start without re-deploying.
+
+## 2026-05-27 — REMOTE SHUTDOWN UTILITY
+- **[CODE]** Created `shutdown.sh`: Added utility script to remotely power off the Jetson Orin Nano from the host Mac/PC. The script (1) triggers `./stop.sh` to gracefully stop running servers and services, (2) checks network reachability of the Jetson, and (3) logs in via SSH to run `sudo shutdown now` using the password configured in `.env`.
+
