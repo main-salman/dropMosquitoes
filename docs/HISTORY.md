@@ -363,6 +363,8 @@
 - **[DIAGRAM]** `diagrams/images/power_distribution_with_wago.png`: Created an advanced wiring schematic showcasing the exact 5-port Wago lever-nut wiring routes for dividing the +12V rail (always-on bypass to Jetson, power to relay inputs) and consolidating the central grounds (Jetson, Relay, Pump, Gimbal) into a unified GND bus.
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Authored a highly accurate vector `.drawio` schematic mirroring the power and control logic routing. Resolves AI rendering anomalies (such as duplicate channel names and overlapping wire routes) by using standard Draw.io shapes, precise connection coordinates, and clear orthogonal routing for Wago ports and GPIO connections.
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Added a 1N4007 flyback protection diode wired in reverse-bias directly in parallel across the 12V diaphragm pump's input terminals (Cathode stripe to positive switched feed, Anode to negative return line) to safely suppress motor voltage spikes and protect the Monk Makes Relay module.
+- **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Redesigned layout to utilize a crisp white background with highly visible dark high-contrast fonts. Simplified the 1N4007 flyback diode wiring by representing it as a direct vertical parallel "ladder bridge" tapped directly into the positive and ground terminals right before they enter the pump motor, completely eliminating loop wires.
+
 
 
 
