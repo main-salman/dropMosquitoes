@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2026-05-29T01:23:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
+<mxfile host="Electron" modified="2026-05-31T09:53:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
   <diagram name="Power &amp; Control Logic" id="power_wago_logic">
     <mxGraphModel dx="1420" dy="850" grid="1" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#0F172A">
       <root>
@@ -6,7 +6,7 @@
         <mxCell id="1" parent="0"/>
         
         <!-- Schematic Title -->
-        <mxCell id="title" value="&lt;b style='font-size:20px;color:#F8FAFC'&gt;Autonomous Mosquito Sentry Sytem&lt;/b&gt;&lt;br&gt;&lt;span style='color:#94A3B8;font-size:12px'&gt;Power &amp; Control Logic Schematic (Wago 221-415 Hubs &amp; GPIO Breakout)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;" vertex="1" parent="1">
+        <mxCell id="title" value="&lt;b style='font-size:20px;color:#F8FAFC'&gt;Autonomous Mosquito Sentry System&lt;/b&gt;&lt;br&gt;&lt;span style='color:#94A3B8;font-size:12px'&gt;Power &amp; Control Logic Schematic (Wago 221-415 Hubs, GPIO Breakout &amp; Flyback Protection)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=10;" vertex="1" parent="1">
           <mxGeometry x="40" y="30" width="800" height="60" as="geometry"/>
         </mxCell>
 
@@ -72,6 +72,21 @@
         </mxCell>
         <mxCell id="gimbal_lbl" value="&lt;b style='color:#F8FAFC;font-size:12px'&gt;Storm32 Gimbal&lt;/b&gt;&lt;br&gt;&lt;span style='color:#94A3B8;font-size:9px'&gt;Turret Controller &amp; Gimbal&lt;br&gt;&lt;span style='color:#F472B6'&gt;[Switchable via CH2]&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="gimbal">
           <mxGeometry x="5" y="10" width="140" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- 9. 1N4007 Flyback Diode -->
+        <mxCell id="diode_body" value="" style="rounded=1;fillColor=#0F172A;strokeColor=#475569;arcSize=30;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="850" y="135" width="80" height="24" as="geometry"/>
+        </mxCell>
+        <!-- Cathode Band (Silver Stripe) -->
+        <mxCell id="diode_band" value="" style="rounded=0;fillColor=#CBD5E1;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="918" y="135" width="8" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="diode_lbl" value="&lt;span style='color:#F8FAFC;font-size:9px'&gt;&lt;b&gt;1N4007&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="850" y="135" width="65" height="24" as="geometry"/>
+        </mxCell>
+        <mxCell id="diode_desc" value="&lt;b style='color:#F8FAFC;font-size:10px'&gt;Flyback Diode (1N4007)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#EF4444;font-size:8px'&gt;⚠ REVERSE-BIASED across pump&lt;br&gt;Cathode (Stripe) to V+ Positive&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="800" y="85" width="180" height="40" as="geometry"/>
         </mxCell>
 
         <!-- =================== CONNECTIONS / EDGES =================== -->
@@ -165,7 +180,7 @@
         <mxCell id="wire_gnd_relay" value="" style="endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="wago_gnd" target="relay">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="430" y="410" as="sourcePoint"/>
-            <mxPoint x="510" y="390" as="targetPoint"/>
+            <mxPoint x="510" y="370" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="460" y="410"/>
               <mxPoint x="460" y="370"/>
@@ -181,8 +196,8 @@
         <!-- 7. Relay CH1 Switch Out to Pump Positive (+) -->
         <mxCell id="wire_ch1_pump" value="" style="endArrow=block;endFill=1;strokeColor=#EF4444;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="relay" target="pump">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="730" y="280" as="sourcePoint"/>
-            <mxPoint x="830" y="230" as="targetPoint"/>
+            <mxPoint x="720" y="290" as="sourcePoint"/>
+            <mxPoint x="840" y="230" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="780" y="290"/>
               <mxPoint x="780" y="235"/>
@@ -198,8 +213,8 @@
         <!-- 8. Relay CH2 Switch Out to Gimbal Positive (+) -->
         <mxCell id="wire_ch2_gimbal" value="" style="endArrow=block;endFill=1;strokeColor=#EF4444;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="relay" target="gimbal">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="730" y="380" as="sourcePoint"/>
-            <mxPoint x="830" y="375" as="targetPoint"/>
+            <mxPoint x="720" y="390" as="sourcePoint"/>
+            <mxPoint x="840" y="375" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="790" y="390"/>
               <mxPoint x="790" y="375"/>
@@ -250,13 +265,50 @@
           </mxGeometry>
         </mxCell>
 
+        <!-- =================== DIODE WIRES =================== -->
+
+        <!-- 11. Diode Anode (Left side of diode, x=850) to Pump GND wire -->
+        <mxCell id="wire_diode_anode" value="" style="endArrow=none;strokeColor=#64748B;strokeWidth=2;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="850" y="147" as="sourcePoint"/>
+            <mxPoint x="915" y="310" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="825" y="147"/>
+              <mxPoint x="825" y="310"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wire_diode_anode_lbl" value="Anode (GND)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#94A3B8;fontSize=8;backgroundColor=#0F172A;" vertex="1" connectable="0" parent="wire_diode_anode">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 12. Diode Cathode (Right side of diode, x=930) to Switched Positive wire -->
+        <mxCell id="wire_diode_cathode" value="" style="endArrow=none;strokeColor=#EF4444;strokeWidth=2;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="930" y="147" as="sourcePoint"/>
+            <mxPoint x="780" y="235" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="1000" y="147"/>
+              <mxPoint x="1000" y="185"/>
+              <mxPoint x="780" y="185"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wire_diode_cathode_lbl" value="Cathode stripe (V+)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#EF4444;fontSize=8;backgroundColor=#0F172A;" vertex="1" connectable="0" parent="wire_diode_cathode">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint x="0" y="0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
         <!-- =================== GPIO LOGIC CONNECTIONS =================== -->
 
-        <!-- 11. IDC Terminal 11 (BCM 17) Yellow wire to IN1 on Relay -->
+        <!-- 13. IDC Terminal 11 (BCM 17) Yellow wire to IN1 on Relay -->
         <mxCell id="wire_idc_in1" value="" style="endArrow=block;endFill=1;strokeColor=#FBBF24;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="345" y="530" as="sourcePoint"/>
-            <mxPoint x="530" y="380" as="targetPoint"/>
+            <mxPoint x="345" y="540" as="sourcePoint"/>
+            <mxPoint x="520" y="380" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="345" y="500"/>
               <mxPoint x="490" y="500"/>
@@ -271,11 +323,11 @@
           </mxGeometry>
         </mxCell>
 
-        <!-- 12. IDC Terminal 13 (BCM 27) Orange wire to IN2 on Relay -->
+        <!-- 14. IDC Terminal 13 (BCM 27) Orange wire to IN2 on Relay -->
         <mxCell id="wire_idc_in2" value="" style="endArrow=block;endFill=1;strokeColor=#F97316;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="365" y="530" as="sourcePoint"/>
-            <mxPoint x="530" y="400" as="targetPoint"/>
+            <mxPoint x="365" y="540" as="sourcePoint"/>
+            <mxPoint x="520" y="400" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="365" y="520"/>
               <mxPoint x="500" y="520"/>
@@ -290,11 +342,11 @@
           </mxGeometry>
         </mxCell>
 
-        <!-- 13. IDC Terminal 9 (GND) Black wire to Logic GND on Relay -->
+        <!-- 15. IDC Terminal 9 (GND) Black wire to Logic GND on Relay -->
         <mxCell id="wire_idc_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#E2E8F0;strokeWidth=2;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="325" y="530" as="sourcePoint"/>
-            <mxPoint x="530" y="420" as="targetPoint"/>
+            <mxPoint x="325" y="540" as="sourcePoint"/>
+            <mxPoint x="520" y="420" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="325" y="480"/>
               <mxPoint x="480" y="480"/>

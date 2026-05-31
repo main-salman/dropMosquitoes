@@ -362,6 +362,8 @@
 - **[DIAGRAM]** `diagrams/images/scout_and_ir_placement.png`: Created a detailed dual-view (Front View and Side View) mechanical assembly drawing showing the optimal physical mounting layout of the Scout Camera and the Univivi IR Blaster on the vertical post. Illustrates depth protrusion (camera forward by 1-2" to prevent washout), vertical separation (6-12" to prevent backscatter), and elevation stacking (IR blaster on top so rising heat and bugs swarm clear of the lens).
 - **[DIAGRAM]** `diagrams/images/power_distribution_with_wago.png`: Created an advanced wiring schematic showcasing the exact 5-port Wago lever-nut wiring routes for dividing the +12V rail (always-on bypass to Jetson, power to relay inputs) and consolidating the central grounds (Jetson, Relay, Pump, Gimbal) into a unified GND bus.
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Authored a highly accurate vector `.drawio` schematic mirroring the power and control logic routing. Resolves AI rendering anomalies (such as duplicate channel names and overlapping wire routes) by using standard Draw.io shapes, precise connection coordinates, and clear orthogonal routing for Wago ports and GPIO connections.
+- **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Added a 1N4007 flyback protection diode wired in reverse-bias directly in parallel across the 12V diaphragm pump's input terminals (Cathode stripe to positive switched feed, Anode to negative return line) to safely suppress motor voltage spikes and protect the Monk Makes Relay module.
+
 
 
 
