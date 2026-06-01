@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2026-05-31T09:56:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
+<mxfile host="Electron" modified="2026-06-01T10:30:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
   <diagram name="Power &amp; Control Logic" id="power_wago_logic">
     <mxGraphModel dx="1420" dy="850" grid="1" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="800" background="#FFFFFF">
       <root>
@@ -30,7 +30,7 @@
         <mxCell id="wago_gnd" value="" style="rounded=1;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=3;shadow=1;arcSize=6;" vertex="1" parent="1">
           <mxGeometry x="270" y="340" width="150" height="110" as="geometry"/>
         </mxCell>
-        <mxCell id="wago_gnd_lbl" value="&lt;b style='color:#0369A1;font-size:12px'&gt;GND WAGO BUS&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Wago 221-415 (5-Port)&lt;/span&gt;&lt;br&gt;&lt;span style='color:#0F172A;font-size:8px'&gt;1: GND Input&lt;br&gt;2: To Jetson Nano GND&lt;br&gt;3: To Relay logic GND&lt;br&gt;4: From Pump GND&lt;br&gt;5: From Gimbal GND&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="wago_gnd">
+        <mxCell id="wago_gnd_lbl" value="&lt;b style='color:#0369A1;font-size:12px'&gt;GND WAGO BUS&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Wago 221-415 (5-Port)&lt;/span&gt;&lt;br&gt;&lt;span style='color:#0F172A;font-size:8px'&gt;1: GND Input&lt;br&gt;2: To Jetson Nano GND&lt;br&gt;3: To Relay GND pin&lt;br&gt;4: From Pump GND&lt;br&gt;5: From Gimbal GND&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="wago_gnd">
           <mxGeometry x="5" y="5" width="140" height="100" as="geometry"/>
         </mxCell>
 
@@ -42,12 +42,47 @@
           <mxGeometry x="5" y="10" width="170" height="70" as="geometry"/>
         </mxCell>
 
-        <!-- 5. Monk Makes Dual Relay Module -->
+        <!-- 5. Monk Makes Dual Relay Module (Aligned with User Hardware Photo) -->
         <mxCell id="relay" value="" style="rounded=1;fillColor=#FFF1F2;strokeColor=#F43F5E;strokeWidth=2;shadow=1;arcSize=6;" vertex="1" parent="1">
-          <mxGeometry x="520" y="250" width="200" height="200" as="geometry"/>
+          <mxGeometry x="520" y="240" width="200" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="relay_lbl" value="&lt;b style='color:#9F1239;font-size:12px'&gt;Monk Makes Dual Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Power Switched Outputs&lt;/span&gt;&lt;br&gt;&lt;hr style='border-color:#E2E8F0;margin:5px 0;'&gt;&lt;span style='color:#0F172A;font-size:9px;text-align:left;display:block;'&gt;• IN1 (Trigger Channel 1 - Pump)&lt;br&gt;• IN2 (Trigger Channel 2 - Gimbal)&lt;br&gt;• GND (Common Logic Ground)&lt;br&gt;&lt;br&gt;• CH1 Switch: Cuts Positive (+) Pump Line&lt;br&gt;• CH2 Switch: Cuts Positive (+) Gimbal Line&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="relay">
-          <mxGeometry x="5" y="5" width="190" height="190" as="geometry"/>
+        <mxCell id="relay_lbl" value="&lt;b style='color:#9F1239;font-size:12px'&gt;Monk Makes Dual Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Solid State Switch Module&lt;/span&gt;&lt;br&gt;&lt;hr style='border-color:#E2E8F0;margin:5px 0;'&gt;" style="text;html=1;align=center;verticalAlign=top;spacingTop=5;" vertex="1" parent="relay">
+          <mxGeometry x="0" y="0" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Relay Left Controls Pins (IN Headers) -->
+        <mxCell id="relay_in_title" value="&lt;b style='color:#9F1239;font-size:10px'&gt;IN (Pins)&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="relay">
+          <mxGeometry x="10" y="45" width="60" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="pin_a" value="&lt;b style='color:#0F172A'&gt;A&lt;/b&gt; &lt;span style='color:#475569;font-size:8px'&gt;(Pump Trigger)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=5;" vertex="1" parent="relay">
+          <mxGeometry x="10" y="70" width="90" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="pin_b" value="&lt;b style='color:#0F172A'&gt;B&lt;/b&gt; &lt;span style='color:#475569;font-size:8px'&gt;(Gimbal Trigger)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=5;" vertex="1" parent="relay">
+          <mxGeometry x="10" y="115" width="95" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="pin_gnd" value="&lt;b style='color:#0F172A'&gt;GND&lt;/b&gt; &lt;span style='color:#475569;font-size:8px'&gt;(Logic GND)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=5;" vertex="1" parent="relay">
+          <mxGeometry x="10" y="160" width="90" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Relay Right Output Screw Terminals -->
+        <mxCell id="relay_out_title" value="&lt;b style='color:#9F1239;font-size:10px'&gt;OUT (Green Screws)&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="relay">
+          <mxGeometry x="80" y="45" width="110" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- Relay A Screw 1 & 2 -->
+        <mxCell id="screw_a1" value="&lt;span style='font-size:9px'&gt;[+12V Feed] &lt;/span&gt;&lt;b style='color:#EF4444'&gt;A&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;spacingRight=5;" vertex="1" parent="relay">
+          <mxGeometry x="90" y="70" width="100" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="screw_a2" value="&lt;span style='font-size:9px'&gt;[To Pump +] &lt;/span&gt;&lt;b style='color:#EF4444'&gt;A&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;spacingRight=5;" vertex="1" parent="relay">
+          <mxGeometry x="90" y="90" width="100" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- Relay B Screw 1 & 2 -->
+        <mxCell id="screw_b1" value="&lt;span style='font-size:9px'&gt;[+12V Feed] &lt;/span&gt;&lt;b style='color:#F59E0B'&gt;B&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;spacingRight=5;" vertex="1" parent="relay">
+          <mxGeometry x="90" y="140" width="100" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="screw_b2" value="&lt;span style='font-size:9px'&gt;[To Gimbal +] &lt;/span&gt;&lt;b style='color:#F59E0B'&gt;B&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;spacingRight=5;" vertex="1" parent="relay">
+          <mxGeometry x="90" y="160" width="100" height="20" as="geometry"/>
         </mxCell>
 
         <!-- 6. IDC40P 40-Pin Breakout Terminal Block -->
@@ -62,7 +97,7 @@
         <mxCell id="pump" value="" style="rounded=1;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;shadow=1;arcSize=8;" vertex="1" parent="1">
           <mxGeometry x="840" y="210" width="150" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="pump_lbl" value="&lt;b style='color:#0F172A;font-size:12px'&gt;12V Water Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Diaphragm Motor&lt;br&gt;&lt;span style='color:#2563EB'&gt;[Switchable via CH1]&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="pump">
+        <mxCell id="pump_lbl" value="&lt;b style='color:#0F172A;font-size:12px'&gt;12V Water Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Diaphragm Motor&lt;br&gt;&lt;span style='color:#2563EB'&gt;[Switchable via CH A]&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="pump">
           <mxGeometry x="5" y="10" width="140" height="60" as="geometry"/>
         </mxCell>
 
@@ -70,7 +105,7 @@
         <mxCell id="gimbal" value="" style="rounded=1;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;shadow=1;arcSize=8;" vertex="1" parent="1">
           <mxGeometry x="840" y="350" width="150" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="gimbal_lbl" value="&lt;b style='color:#0F172A;font-size:12px'&gt;Storm32 Gimbal&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Turret Controller &amp; Gimbal&lt;br&gt;&lt;span style='color:#DB2777'&gt;[Switchable via CH2]&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="gimbal">
+        <mxCell id="gimbal_lbl" value="&lt;b style='color:#0F172A;font-size:12px'&gt;Storm32 Gimbal&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:9px'&gt;Turret Controller &amp; Gimbal&lt;br&gt;&lt;span style='color:#DB2777'&gt;[Switchable via CH B]&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="gimbal">
           <mxGeometry x="5" y="10" width="140" height="60" as="geometry"/>
         </mxCell>
 
@@ -160,69 +195,90 @@
           </mxGeometry>
         </mxCell>
 
-        <!-- 5. Wago +12V Port 3 to Relay module +12V inputs -->
-        <mxCell id="wire_pos_relay" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="wago_pos" target="relay">
+        <!-- 5. Wago +12V Port 3 split to both Relay A and Relay B input screws -->
+        <!-- Path 5a: To Relay A input screw (topmost green connector terminal) -->
+        <mxCell id="wire_pos_relay_a" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="wago_pos" target="relay">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="430" y="210" as="sourcePoint"/>
-            <mxPoint x="510" y="290" as="targetPoint"/>
+            <mxPoint x="420" y="195" as="sourcePoint"/>
+            <mxPoint x="520" y="320" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="450" y="220"/>
-              <mxPoint x="450" y="290"/>
+              <mxPoint x="460" y="210"/>
+              <mxPoint x="460" y="320"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_pos_relay_lbl" value="V+ Relay Supply" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_pos_relay">
+        <mxCell id="wire_pos_relay_a_lbl" value="12V Feed (CH A)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_pos_relay_a">
           <mxGeometry x="-0.1" relative="1" as="geometry">
             <mxPoint x="5" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 6. Wago GND Port 3 to Relay Module GND -->
-        <mxCell id="wire_gnd_relay" value="" style="endArrow=block;endFill=1;strokeColor=#475569;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="wago_gnd" target="relay">
+        <!-- Path 5b: To Relay B input screw (third green connector terminal from top) -->
+        <mxCell id="wire_pos_relay_b" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="430" y="410" as="sourcePoint"/>
-            <mxPoint x="510" y="370" as="targetPoint"/>
+            <mxPoint x="460" y="235" as="sourcePoint"/>
+            <mxPoint x="720" y="390" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="460" y="410"/>
-              <mxPoint x="460" y="370"/>
+              <mxPoint x="460" y="235"/>
+              <mxPoint x="480" y="235"/>
+              <mxPoint x="480" y="475"/>
+              <mxPoint x="740" y="475"/>
+              <mxPoint x="740" y="390"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_gnd_relay_lbl" value="Relay GND" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_gnd_relay">
+        <mxCell id="wire_pos_relay_b_lbl" value="12V Feed (CH B)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_pos_relay_b">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint x="5" y="0" as="offset"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 6. Wago GND Port 3 to Relay Module GND Header Pin -->
+        <mxCell id="wire_gnd_relay" value="" style="endArrow=block;endFill=1;strokeColor=#475569;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="wago_gnd" target="relay">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="420" y="410" as="sourcePoint"/>
+            <mxPoint x="520" y="410" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="470" y="410"/>
+              <mxPoint x="470" y="430"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="wire_gnd_relay_lbl" value="Relay GND Pin" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_gnd_relay">
           <mxGeometry x="-0.2" relative="1" as="geometry">
             <mxPoint x="5" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 7. Relay CH1 Switch Out to Pump Positive (+) with Parallel Diode Tap -->
-        <mxCell id="wire_ch1_pump" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="relay" target="pump">
+        <!-- 7. Relay CH A Switch Out (second terminal from top) to Pump Positive (+) with Parallel Diode Tap -->
+        <mxCell id="wire_ch_a_pump" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" target="pump">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="720" y="290" as="sourcePoint"/>
+            <mxPoint x="720" y="340" as="sourcePoint"/>
             <mxPoint x="840" y="235" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="780" y="290"/>
-              <mxPoint x="780" y="235"/>
+              <mxPoint x="775" y="340"/>
+              <mxPoint x="775" y="235"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_ch1_pump_lbl" value="Switched V+ (CH1)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_ch1_pump">
+        <mxCell id="wire_ch_a_pump_lbl" value="Switched V+ (A)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_ch_a_pump">
           <mxGeometry x="0.1" relative="1" as="geometry">
             <mxPoint x="-5" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 8. Relay CH2 Switch Out to Gimbal Positive (+) -->
-        <mxCell id="wire_ch2_gimbal" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="relay" target="gimbal">
+        <!-- 8. Relay CH B Switch Out (bottommost terminal) to Gimbal Positive (+) -->
+        <mxCell id="wire_ch_b_gimbal" value="" style="endArrow=block;endFill=1;strokeColor=#DC2626;strokeWidth=3;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" target="gimbal">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="720" y="390" as="sourcePoint"/>
+            <mxPoint x="720" y="410" as="sourcePoint"/>
             <mxPoint x="840" y="375" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="790" y="390"/>
-              <mxPoint x="790" y="375"/>
+              <mxPoint x="800" y="410"/>
+              <mxPoint x="800" y="375"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_ch2_gimbal_lbl" value="Switched V+ (CH2)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_ch2_gimbal">
+        <mxCell id="wire_ch_b_gimbal_lbl" value="Switched V+ (B)" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#0F172A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_ch_b_gimbal">
           <mxGeometry x="0.1" relative="1" as="geometry">
             <mxPoint x="-5" y="0" as="offset"/>
           </mxGeometry>
@@ -286,58 +342,55 @@
 
         <!-- =================== GPIO LOGIC CONNECTIONS =================== -->
 
-        <!-- 13. IDC Terminal 11 (BCM 17) Yellow wire to IN1 on Relay -->
+        <!-- 13. IDC Terminal 11 (BCM 17) Yellow wire to IN Pin A on Relay -->
         <mxCell id="wire_idc_in1" value="" style="endArrow=block;endFill=1;strokeColor=#D97706;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="345" y="540" as="sourcePoint"/>
-            <mxPoint x="520" y="380" as="targetPoint"/>
+            <mxPoint x="520" y="310" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="345" y="500"/>
-              <mxPoint x="490" y="500"/>
-              <mxPoint x="490" y="380"/>
-              <mxPoint x="520" y="380"/>
+              <mxPoint x="500" y="500"/>
+              <mxPoint x="500" y="310"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_idc_in1_lbl" value="IN1 (BCM 17) [Yellow]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#92400E;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_in1">
+        <mxCell id="wire_idc_in1_lbl" value="IN A (BCM 17) [Yellow]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#92400E;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_in1">
           <mxGeometry x="-0.4" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 14. IDC Terminal 13 (BCM 27) Orange wire to IN2 on Relay -->
+        <!-- 14. IDC Terminal 13 (BCM 27) Orange wire to IN Pin B on Relay -->
         <mxCell id="wire_idc_in2" value="" style="endArrow=block;endFill=1;strokeColor=#EA580C;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="365" y="540" as="sourcePoint"/>
-            <mxPoint x="520" y="400" as="targetPoint"/>
+            <mxPoint x="520" y="355" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="365" y="520"/>
-              <mxPoint x="500" y="520"/>
-              <mxPoint x="500" y="400"/>
-              <mxPoint x="520" y="400"/>
+              <mxPoint x="510" y="520"/>
+              <mxPoint x="510" y="355"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_idc_in2_lbl" value="IN2 (BCM 27) [Orange]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#C2410C;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_in2">
+        <mxCell id="wire_idc_in2_lbl" value="IN B (BCM 27) [Orange]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#C2410C;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_in2">
           <mxGeometry x="-0.4" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 15. IDC Terminal 9 (GND) Black wire to Logic GND on Relay -->
+        <!-- 15. IDC Terminal 9 (GND) Black wire to Logic GND Pin on Relay -->
         <mxCell id="wire_idc_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#475569;strokeWidth=2;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="idc" target="relay">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="325" y="540" as="sourcePoint"/>
-            <mxPoint x="520" y="420" as="targetPoint"/>
+            <mxPoint x="520" y="400" as="targetPoint"/>
             <Array as="points">
               <mxPoint x="325" y="480"/>
-              <mxPoint x="480" y="480"/>
-              <mxPoint x="480" y="420"/>
-              <mxPoint x="520" y="420"/>
+              <mxPoint x="490" y="480"/>
+              <mxPoint x="490" y="400"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_idc_gnd_lbl" value="Logic GND [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#475569;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_gnd">
+        <mxCell id="wire_idc_gnd_lbl" value="Logic GND Pin [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#475569;fontSize=9;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_idc_gnd">
           <mxGeometry x="-0.5" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>

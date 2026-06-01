@@ -371,6 +371,10 @@
 - **[CODE]** `sniper_vision.py`: Restored independent thread capture loop with optimized CSI-1 GStreamer capture pipeline. Integrated an automatic high-performance test pattern fallback for dev machine (non-Jetson) robustness.
 - **[CODE]** `main.py`: Reverted the transitional verification logic, calling `sniper.verify_target()` without arguments to trigger target verification directly from the Sniper's independent gimbal-mounted video stream.
 
+## 2026-06-01 — PHYSICAL RELAY MAPPING
+- **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Updated the Monk Makes Dual Relay Module representation to precisely mirror the physical v1b hardware board. Mapped the 3 left input header pins (A, B, GND) to their respective GPIO control feeds (Yellow BCM 17, Orange BCM 27, Black Logic GND) and the 4 right green screw terminal slots (two top slots for A, two bottom slots for B) to the interrupted +12V power feeds to the Pump and Gimbal.
+
+
 
 
 
