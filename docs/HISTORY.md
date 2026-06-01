@@ -384,3 +384,5 @@
 - **[CODE]** `hardware.py`: Integrated `_configure_push_pull()` in `RelayController.__init__` to directly map physical pad multiplexer memory pages (`0x02430000`) and clear Bit 4 (Open Drain) from register `0x02430098` (PR4) and `0x0243d030` (PY0) on startup (works automatically when run as root systemd service).
 - **[CODE]** `run-ai.sh`: Added the same `/dev/mem` pad register bitwise override to the startup shell deploy script utilizing `sudo` to configure the pinmux for immediate standard push-pull operation when launching the Flask dashboard.
 
+## 2026-06-01 — GIMBAL PAYLOAD MOUNT SCHEMATIC
+- **[DIAGRAM]** `diagrams/images/gimbal_mount_design.png`: Created a highly detailed CAD-style mechanical engineering design schematic (Front View and Side View) demonstrating how to mount a custom 4cm x 4cm sniper camera, a 1cm x 2cm TF-Luna LiDAR, and a 0.75cm x 0.75cm water nozzle onto the action-camera brushless gimbal. Illustrates the vertical co-axial stacking order for perfect roll-axis balance and perfect alignment of all three components' center of gravity with the brushless pitch motor pivot shaft to prevent motor overload.
