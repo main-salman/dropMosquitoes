@@ -26,7 +26,7 @@ from hardware import (
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
     YAW_LIMIT, PITCH_LIMIT
 )
-from vision import CameraStream, SharedCameraStream, YOLODetector, VelocityTracker
+from vision import CameraStream, YOLODetector, VelocityTracker
 
 # ============================================================================
 # FLASK APP INITIALIZATION
@@ -43,9 +43,11 @@ lidar = LiDARController()
 velocity_tracker = VelocityTracker()
 
 # Camera streams — dimensions must match HW-001 §2
-# Shared Monocular Camera Architecture: Both Scout and Sniper share CSI-0 (IMX219 at 1280x720 @ 60 FPS)
+# Full Dual-Camera Architecture:
+# - Scout camera: CSI-0 (IMX219 NoIR at 1280x720 @ 60 FPS) fixed to enclosure
+# - Sniper camera: CSI-1 (IMX219 NoIR with Motorized IR-Cut at 1280x720 @ 60 FPS) on gimbal
 scout_cam = CameraStream(sensor_id=0, width=1280, height=720, fps=60, name="Scout")
-sniper_cam = SharedCameraStream(scout_cam, width=1280, height=720, name="Sniper")
+sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=60, name="Sniper")
 
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None

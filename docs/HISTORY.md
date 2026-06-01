@@ -365,6 +365,13 @@
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Added a 1N4007 flyback protection diode wired in reverse-bias directly in parallel across the 12V diaphragm pump's input terminals (Cathode stripe to positive switched feed, Anode to negative return line) to safely suppress motor voltage spikes and protect the Monk Makes Relay module.
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Redesigned layout to utilize a crisp white background with highly visible dark high-contrast fonts. Simplified the 1N4007 flyback diode wiring by representing it as a direct vertical parallel "ladder bridge" tapped directly into the positive and ground terminals right before they enter the pump motor, completely eliminating loop wires.
 
+## 2026-06-01 — RESTORE FULL DUAL-CAMERA ARCHITECTURE
+- **[ARCH]** Restored full dual-camera pipeline as both IMX219 NoIR cameras are now physically connected to the system.
+- **[CODE]** `app.py`: Reverted from shared monocular camera stream to independent `CameraStream(sensor_id=1)` on CSI-1 for the Sniper, while retaining `CameraStream(sensor_id=0)` on CSI-0 for the Scout. Removed unused `SharedCameraStream` imports.
+- **[CODE]** `sniper_vision.py`: Restored independent thread capture loop with optimized CSI-1 GStreamer capture pipeline. Integrated an automatic high-performance test pattern fallback for dev machine (non-Jetson) robustness.
+- **[CODE]** `main.py`: Reverted the transitional verification logic, calling `sniper.verify_target()` without arguments to trigger target verification directly from the Sniper's independent gimbal-mounted video stream.
+
+
 
 
 

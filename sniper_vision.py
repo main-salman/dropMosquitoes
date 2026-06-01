@@ -56,30 +56,77 @@ class SniperVision:
         if self._running:
             return
             
-        # Shared-camera mode: do not open CSI-1 device to prevent I2C timeout crashes.
+        # GStreamer pipeline with drop=true max-buffers=1 for strict memory constraint
+        # Sniper: Arducam NoIR IMX219 w/ Motorized IR-Cut @ 1280x720 60fps (Mode 4) on CSI-1
+        pipeline = (
+            "nvarguscamerasrc sensor-id=1 ! "
+            "video/x-raw(memory:NVMM), width=1280, height=720, format=NV12, framerate=60/1 ! "
+            "nvvidconv ! video/x-raw, format=BGRx ! "
+            "videoconvert ! video/x-raw, format=BGR ! "
+            "appsink drop=true max-buffers=1"
+        )
+
+        import os
+        is_jetson = os.path.exists("/etc/nv_tegra_release") or os.path.exists("/proc/device-tree/compatible")
+
+        if is_jetson and os.path.exists("/dev/video1"):
+            print(f"[SniperVision] GStreamer pipeline:\n  {pipeline}")
+            self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+            if not self._cap.isOpened():
+                print("[SniperVision] Warning: GStreamer failed. Trying /dev/video1...")
+                self._cap = cv2.VideoCapture(1)
+        else:
+            print("[SniperVision] Stub/Dev mode: Camera index 1 not found. Using simulated stream.")
+            self._cap = None
+
         self._running = True
-        print("[SniperVision] Shared-mode started (no independent camera opened).")
+        self._thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self._thread.start()
+        print("[SniperVision] Started.")
 
     def _capture_loop(self):
         while self._running:
-            ret, frame = self._cap.read()
+            if self._cap is None:
+                frame = self._generate_test_pattern()
+                ret = True
+            else:
+                ret, frame = self._cap.read()
+
             if ret:
                 with self._lock:
                     self._latest_frame = frame
+                if self._cap is None:
+                    time.sleep(1.0 / 60.0)
             else:
                 time.sleep(0.01)
 
+    def _generate_test_pattern(self):
+        import numpy as np
+        height, width = 720, 1280
+        frame = np.zeros((height, width, 3), dtype=np.uint8)
+        # Grid lines
+        for x in range(0, width, 80):
+            cv2.line(frame, (x, 0), (x, height), (30, 30, 40), 1)
+        for y in range(0, height, 80):
+            cv2.line(frame, (0, y), (width, y), (30, 30, 40), 1)
+        # Crosshair
+        cx, cy = width // 2, height // 2
+        cv2.line(frame, (cx - 30, cy), (cx + 30, cy), (0, 0, 255), 2)
+        cv2.line(frame, (cx, cy - 30), (cx, cy + 30), (0, 0, 255), 2)
+        # Label
+        cv2.putText(frame, "Sniper (CSI-1) — NO CAMERA",
+                    (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        return frame
+
     async def verify_target(self, frame=None) -> bool:
         """
-        Grabs the passed frame (from shared Scout camera) and runs YOLO inference.
-        Returns True if any of the TARGET_CLASSES is detected
-        with confidence > 0.80.
+        Grabs the latest frame from its own gimbal-mounted CSI-1 camera and runs YOLO inference.
+        Returns True if any of the TARGET_CLASSES is detected with confidence > 0.80.
         """
         if not self.model or not self._running:
             return False
 
         if frame is None:
-            # Fallback for stub/headless mode without passed frame
             with self._lock:
                 if self._latest_frame is None:
                     return False
@@ -112,3 +159,4 @@ class SniperVision:
         if self._cap:
             self._cap.release()
         print("[SniperVision] Stopped.")
+

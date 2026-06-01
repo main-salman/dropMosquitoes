@@ -186,12 +186,8 @@ async def orchestrator_loop():
                 await asyncio.sleep(0.05)
 
                 # ── Phase 4: Sniper Verify ───────────────────────────
-                latest_frame = scout.get_latest_frame()
-                if latest_frame is not None:
-                    is_verified = await sniper.verify_target(latest_frame)
-                else:
-                    log.warning("No frame available from Scout for verification.")
-                    is_verified = False
+                # Sniper reads from its own gimbal-mounted CSI-1 camera stream
+                is_verified = await sniper.verify_target()
                 stats["verifications"] += 1
 
                 if is_verified:
