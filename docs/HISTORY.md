@@ -374,12 +374,8 @@
 ## 2026-06-01 — PHYSICAL RELAY MAPPING
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Updated the Monk Makes Dual Relay Module representation to precisely mirror the physical v1b hardware board. Mapped the 3 left input header pins (A, B, GND) to their respective GPIO control feeds (Yellow BCM 17, Orange BCM 27, Black Logic GND) and the 4 right green screw terminal slots (two top slots for A, two bottom slots for B) to the interrupted +12V power feeds to the Pump and Gimbal.
 
-
-
-
-
-
-
-
-
+## 2026-06-01 — GPIO PINMUX PUSH-PULL REG OVERRIDE (ECO-2026-004)
+- **[HW]** Identified that third-party Jetson carrier boards (Yahboom) initialize the 40-pin header's BCM 17 (Pin 11 / PR.04) and BCM 27 (Pin 13 / PY.00) in Open-Drain mode rather than Push-Pull by default, preventing the pins from sourcing 3.3V logic high signals to trigger external relay modules.
+- **[CODE]** `hardware.py`: Integrated `_configure_push_pull()` in `RelayController.__init__` to directly map physical pad multiplexer memory pages (`0x02430000`) and clear Bit 4 (Open Drain) from register `0x02430098` (PR4) and `0x0243d030` (PY0) on startup (works automatically when run as root systemd service).
+- **[CODE]** `run-ai.sh`: Added the same `/dev/mem` pad register bitwise override to the startup shell deploy script utilizing `sudo` to configure the pinmux for immediate standard push-pull operation when launching the Flask dashboard.
 

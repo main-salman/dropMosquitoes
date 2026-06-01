@@ -77,6 +77,7 @@ class RelayController:
         self._lock = threading.Lock()
 
         if JETSON_AVAILABLE:
+            self._configure_push_pull()
             GPIO.setmode(GPIO.BCM)
             GPIO.setwarnings(False)
             GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
@@ -84,6 +85,39 @@ class RelayController:
             print(f"[RelayController] GPIO initialized. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
         else:
             print("[RelayController] STUB MODE — no real GPIO control.")
+
+    def _configure_push_pull(self):
+        """
+        ECO-2026-004: Third-party carrier boards (like Yahboom) often initialize 
+        BCM 17 (Pin 11 / PR.04) and BCM 27 (Pin 13 / PY.00) in Open-Drain mode.
+        This modifies the Tegra pinmux register bits directly in memory to force
+        both pins into standard 3.3V Push-Pull GPIO mode so they can source 
+        sufficient current to drive the Monk Makes Dual Relay logic inputs.
+        """
+        try:
+            import mmap
+            import struct
+            # PR.04 (Pin 11): Reg 0x02430098
+            # PY.00 (Pin 13): Reg 0x0243d030
+            # Offset must be page-aligned (4096 bytes)
+            with open("/dev/mem", "r+b") as f:
+                mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
+                
+                # PR.04 (Pin 11) - clear Bit 4 (Open Drain)
+                val_pr4 = struct.unpack("<I", mem[0x98:0x9c])[0]
+                new_pr4 = val_pr4 & ~(1 << 4)
+                mem[0x98:0x9c] = struct.pack("<I", new_pr4)
+                
+                # PY.00 (Pin 13) - clear Bit 4 (Open Drain)
+                val_py0 = struct.unpack("<I", mem[0xd030:0xd034])[0]
+                new_py0 = val_py0 & ~(1 << 4)
+                mem[0xd030:0xd034] = struct.pack("<I", new_py0)
+                
+                print(f"[RelayController] Pinmux forced to Push-Pull: PR4={hex(new_pr4)}, PY0={hex(new_py0)}")
+        except Exception as e:
+            # Under user execution (without sudo), this will fail gracefully but log the warning.
+            print(f"[RelayController] WARNING: Could not force Push-Pull mode (needs root): {e}")
+
 
     # -- Pump (CH1) ----------------------------------------------------------
 

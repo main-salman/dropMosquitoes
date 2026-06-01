@@ -108,6 +108,10 @@ ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     echo '${JETSON_PASSWORD}' | sudo -S nvpmodel -m 0 2>/dev/null || true
     echo '${JETSON_PASSWORD}' | sudo -S jetson_clocks 2>/dev/null || true
 
+    # Configure GPIO Pin 11 (BCM 17 / PR.04) and Pin 13 (BCM 27 / PY.00) to push-pull mode by clearing Open-Drain bit (Bit 4)
+    echo '${JETSON_PASSWORD}' | sudo -S PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages python3 -c 'import mmap, struct; f = open("/dev/mem", "r+b"); mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000); mem[0x98:0x9c] = struct.pack("<I", struct.unpack("<I", mem[0x98:0x9c])[0] & ~(1 << 4)); mem[0xd030:0xd034] = struct.pack("<I", struct.unpack("<I", mem[0xd030:0xd034])[0] & ~(1 << 4))' 2>/dev/null || true
+
+
     # Fix log file ownership if root-owned from systemd
     echo '${JETSON_PASSWORD}' | sudo -S chown ${JETSON_USER}:${JETSON_USER} sentry.log 2>/dev/null || true
     rm -f sentry.log
