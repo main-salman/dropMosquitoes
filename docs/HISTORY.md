@@ -365,11 +365,16 @@
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Added a 1N4007 flyback protection diode wired in reverse-bias directly in parallel across the 12V diaphragm pump's input terminals (Cathode stripe to positive switched feed, Anode to negative return line) to safely suppress motor voltage spikes and protect the Monk Makes Relay module.
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Redesigned layout to utilize a crisp white background with highly visible dark high-contrast fonts. Simplified the 1N4007 flyback diode wiring by representing it as a direct vertical parallel "ladder bridge" tapped directly into the positive and ground terminals right before they enter the pump motor, completely eliminating loop wires.
 
-## 2026-06-01 — RESTORE FULL DUAL-CAMERA ARCHITECTURE
-- **[ARCH]** Restored full dual-camera pipeline as both IMX219 NoIR cameras are now physically connected to the system.
+## 2026-06-01 — RESTORE FULL DUAL-CAMERA ARCHITECTURE & HARDWARE RESOLUTION
+- **[ARCH]** Restored full dual-camera pipeline as both IMX219 NoIR cameras are now physically connected to the system and fully functional.
+- **[HW]** Resolved physical camera connectivity issues:
+  - Isolated camera port failure by swapping CSI-0 and CSI-1 camera ports on the Jetson, validating the driver and device tree configurations while confirming one of the original camera cables was damaged.
+  - Resolved signal issues with the Petit Studio CSI-to-HDMI extension adapters by correcting the ribbon cable orientation (fixing pins being backwards due to a flipped ribbon cable at the connector interface).
+  - Replaced the failing ribbon cable with a verified new high-bandwidth flex cable, restoring reliable high-speed GStreamer captures on both MIPI CSI buses.
 - **[CODE]** `app.py`: Reverted from shared monocular camera stream to independent `CameraStream(sensor_id=1)` on CSI-1 for the Sniper, while retaining `CameraStream(sensor_id=0)` on CSI-0 for the Scout. Removed unused `SharedCameraStream` imports.
 - **[CODE]** `sniper_vision.py`: Restored independent thread capture loop with optimized CSI-1 GStreamer capture pipeline. Integrated an automatic high-performance test pattern fallback for dev machine (non-Jetson) robustness.
 - **[CODE]** `main.py`: Reverted the transitional verification logic, calling `sniper.verify_target()` without arguments to trigger target verification directly from the Sniper's independent gimbal-mounted video stream.
+
 
 ## 2026-06-01 — PHYSICAL RELAY MAPPING
 - **[DIAGRAM]** `diagrams/power_distribution_with_wago.drawio`: Updated the Monk Makes Dual Relay Module representation to precisely mirror the physical v1b hardware board. Mapped the 3 left input header pins (A, B, GND) to their respective GPIO control feeds (Yellow BCM 17, Orange BCM 27, Black Logic GND) and the 4 right green screw terminal slots (two top slots for A, two bottom slots for B) to the interrupted +12V power feeds to the Pump and Gimbal.
