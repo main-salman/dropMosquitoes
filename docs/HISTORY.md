@@ -390,3 +390,10 @@
 ## 2026-06-02 — GIMBAL WIRING SCHEMATICS CLARIFICATION
 - **[DIAGRAM]** `diagrams/wire_04_relay_gimbal.drawio`: Redesigned to clarify physical gimbal power routing. Replaced the generic relay symbol with the custom Monk Makes Dual Relay v1b layout (showing A, B, GND inputs and A/B green output screw terminals). Clearly illustrated the 12V high-power circuit loops: Switched +12V (Screw terminal B2) to Gimbal Red (+) power wire, and Gimbal Black (-) power wire directly back to the central GND Wago Bus (Port 5).
 - **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Redesigned to resolve RC header confusion. Added the physical dual-row 2x6 RC header layout (showing GND, RC-0, RC-1, RC-2, and RC-3/RC pins) and explicitly showed that the two rows (inner and outer) are electrically connected in parallel. Documented the exact three-wire UART connection from the Jetson GPIO breakout (Terminals 8, 10, 14) to the outer row pins (GND, RC-0/Pitch, and RC-2/Yaw) to ensure the user knows exactly where to plug in their jumpers.
+
+## 2026-06-02 — GIMBAL USB INTEGRATION PATCH (ECO-2026-005)
+- **[HW]** Upgraded gimbal communication interface to use a direct USB-A to Mini-USB cable (connecting Jetson USB 3.2 port to Storm32 Mini-USB port) instead of the 3-wire UART jumper cables to achieve complete electromagnetic noise immunity (from the 12V pump) and eliminate physical connector fatigue/vibration failures.
+- **[SPEC]** `HW-001-hardware-spec.md` & `SW-001-software-spec.md`: Updated serial communications sections to adopt USB interfaces and marked the terminal block UART pins 8, 10, and 14 as reserved/unused.
+- **[CODE]** `hardware.py`: Added `/dev/ttyUSB0` and `/dev/ttyACM0` to the serial port auto-detection array in `GimbalController.__init__` for plug-and-play USB connection support.
+- **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Modified diagram layout to show a direct, single USB cable run from the Jetson's USB-A port to the Storm32's Mini-USB port (labeled USB/调参), replacing the multi-wire UART jumper design.
+

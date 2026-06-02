@@ -229,8 +229,8 @@ class GimbalController:
         self._serial = None
 
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: ttyTHS1 (default header on Orin Nano), then ttyTHS0
-            ports_to_try = [self.SERIAL_PORT, "/dev/ttyTHS0"]
+            # Dynamic port detection: ttyUSB0/ttyACM0 (USB-to-Serial), ttyTHS1/0 (UART)
+            ports_to_try = ["/dev/ttyUSB0", "/dev/ttyACM0", self.SERIAL_PORT, "/dev/ttyTHS0"]
             for p in ports_to_try:
                 try:
                     import os
@@ -247,6 +247,7 @@ class GimbalController:
                     print(f"[GimbalController] Failed to connect serial on {p}: {e}")
             
             if not self._serial:
+
                 print(f"[GimbalController] Serial FAILED on all ports. Running in STUB mode.")
         else:
             print("[GimbalController] STUB MODE — no serial available.")
