@@ -386,3 +386,7 @@
 
 ## 2026-06-01 — GIMBAL PAYLOAD MOUNT SCHEMATIC
 - **[DIAGRAM]** `diagrams/images/gimbal_mount_design.png`: Created a highly detailed CAD-style mechanical engineering design schematic (Front View and Side View) demonstrating how to mount a custom 4cm x 4cm sniper camera, a 1cm x 2cm TF-Luna LiDAR, and a 0.75cm x 0.75cm water nozzle onto the action-camera brushless gimbal. Illustrates the vertical co-axial stacking order for perfect roll-axis balance and perfect alignment of all three components' center of gravity with the brushless pitch motor pivot shaft to prevent motor overload.
+
+## 2026-06-02 — GIMBAL WIRING SCHEMATICS CLARIFICATION
+- **[DIAGRAM]** `diagrams/wire_04_relay_gimbal.drawio`: Redesigned to clarify physical gimbal power routing. Replaced the generic relay symbol with the custom Monk Makes Dual Relay v1b layout (showing A, B, GND inputs and A/B green output screw terminals). Clearly illustrated the 12V high-power circuit loops: Switched +12V (Screw terminal B2) to Gimbal Red (+) power wire, and Gimbal Black (-) power wire directly back to the central GND Wago Bus (Port 5).
+- **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Redesigned to resolve RC header confusion. Added a visual warning block on the Storm32 2x6 RC header to prevent miswiring receiver pins (RC-0, RC-1, RC-2) for serial data. Explicitly mapped the three-wire UART connection from the Jetson GPIO header (Pins 8, 10, 14) to the Storm32's dedicated 3-pin UART port (GND, RX, TX) near the buttons, documenting the TX-to-RX and RX-to-TX cross-connection rule.
