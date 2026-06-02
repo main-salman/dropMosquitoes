@@ -401,3 +401,7 @@
 - **[SPEC]** `HW-001-hardware-spec.md` & `SW-001-software-spec.md`: Updated serial communications sections to adopt USB interfaces and marked the terminal block UART pins 8, 10, and 14 as reserved/unused.
 - **[CODE]** `hardware.py`: Added `/dev/ttyUSB0` and `/dev/ttyACM0` to the serial port auto-detection array in `GimbalController.__init__` for plug-and-play USB connection support.
 - **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Modified diagram layout to show a direct, single USB cable run from the Jetson's USB-A port to the Storm32's Mini-USB port (labeled USB/调参), replacing the multi-wire UART jumper design.
+
+## 2026-06-02 — GUI GIMBAL CONTROL BUG FIX
+- **[BUG FIX]** `templates/index.html`: Fixed HTML ID collision where both the Gimbal Power toggle checkbox and the Test Grid container shared `id="tg"`. Renamed the Test Grid container to `id="test-grid"` and updated `loadTests()` to select `$('test-grid')`. This resolves a critical issue where navigating to the Tests tab destroyed/corrupted the Gimbal Power toggle checkbox, preventing users from turning on gimbal power and causing WASD controls to appear non-functional.
+

@@ -307,7 +307,7 @@
     <span style="flex:1"></span>
     <span id="ts" style="font-size:12px;color:var(--dim)"></span>
   </div>
-  <div class="test-grid" id="tg"></div>
+  <div class="test-grid" id="test-grid"></div>
 </div>
 
 <!-- Toast notification for click-to-aim -->
@@ -364,7 +364,7 @@ async function poll(){try{const r=await fetch('/api/status');const d=await r.jso
 setInterval(poll,1500);poll();
 
 // ---- Tests ----
-async function loadTests(){const r=await fetch('/api/tests/list');const s=await r.json();const g=$('tg');g.innerHTML='';for(const id of SUITES){const t=s[id];if(!t)continue;ST[id]={p:0,f:0};g.innerHTML+=`<div class="tc" id="tc-${id}"><div class="tc-head"><span class="tc-icon">${ICONS[t.layer]||'📦'}</span><div class="tc-info"><h3>${t.name}</h3><p>${t.description}</p></div><span class="tc-badge idle" id="b-${id}">IDLE</span></div><div class="tc-body"><div class="tc-actions"><button class="btn btn-sm btn-green" id="r-${id}" onclick="runT('${id}')">▶ Run</button><button class="btn btn-sm" onclick="$('l-${id}').classList.toggle('vis')">📋 Log</button><span class="score" id="s-${id}"></span></div><div class="tc-log" id="l-${id}"></div></div></div>`}tl=true}
+async function loadTests(){const r=await fetch('/api/tests/list');const s=await r.json();const g=$('test-grid');g.innerHTML='';for(const id of SUITES){const t=s[id];if(!t)continue;ST[id]={p:0,f:0};g.innerHTML+=`<div class="tc" id="tc-${id}"><div class="tc-head"><span class="tc-icon">${ICONS[t.layer]||'📦'}</span><div class="tc-info"><h3>${t.name}</h3><p>${t.description}</p></div><span class="tc-badge idle" id="b-${id}">IDLE</span></div><div class="tc-body"><div class="tc-actions"><button class="btn btn-sm btn-green" id="r-${id}" onclick="runT('${id}')">▶ Run</button><button class="btn btn-sm" onclick="$('l-${id}').classList.toggle('vis')">📋 Log</button><span class="score" id="s-${id}"></span></div><div class="tc-log" id="l-${id}"></div></div></div>`}tl=true}
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
