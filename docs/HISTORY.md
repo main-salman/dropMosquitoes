@@ -396,5 +396,8 @@
 - **[SPEC]** `HW-001-hardware-spec.md` & `SW-001-software-spec.md`: Retained UART communication on `/dev/ttyTHS1` and the physical Terminal Block mappings (Terminals 8, 10, and 14).
 - **[CODE]** `hardware.py`: Prioritized `/dev/ttyTHS1` and `/dev/ttyTHS0` at the front of the auto-detect list in `GimbalController.__init__` while retaining USB serial (`ttyUSB0`/`ttyACM0`) as fallback options.
 - **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Authored a highly detailed 2x6 dual-row parallel RC pinout schematic showing exactly how to wire the green (TX), blue (RX), and black (GND) jumpers to the outer row pins (GND, RC-0/Pitch, and RC-2/Yaw) from the IDC40P breakout.
-
-
+## 2026-06-02 — GIMBAL USB INTEGRATION (ECO-2026-005)
+- **[HW]** Upgraded gimbal communication interface to use a direct USB-A to Mini-USB cable (connecting Jetson USB 3.2 port to Storm32 Mini-USB port) instead of the 3-wire UART jumper cables to achieve complete electromagnetic noise immunity (from the 12V pump) and eliminate physical connector fatigue/vibration failures.
+- **[SPEC]** `HW-001-hardware-spec.md` & `SW-001-software-spec.md`: Updated serial communications sections to adopt USB interfaces and marked the terminal block UART pins 8, 10, and 14 as reserved/unused.
+- **[CODE]** `hardware.py`: Added `/dev/ttyUSB0` and `/dev/ttyACM0` to the serial port auto-detection array in `GimbalController.__init__` for plug-and-play USB connection support.
+- **[DIAGRAM]** `diagrams/wire_05_gimbal_serial.drawio`: Modified diagram layout to show a direct, single USB cable run from the Jetson's USB-A port to the Storm32's Mini-USB port (labeled USB/调参), replacing the multi-wire UART jumper design.

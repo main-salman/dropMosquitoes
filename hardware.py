@@ -207,7 +207,7 @@ class GimbalController:
     Sends RC-override style commands to RC_PITCH and RC_YAW pins.
     Implements software endstops and the "Death Spiral" unwind prevention.
 
-    HW-001 §3: Serial on /dev/ttyTHS1 @ 115200 baud.
+    HW-001 §3: Serial on /dev/ttyUSB0 / /dev/ttyACM0 (fallback to /dev/ttyTHS1) @ 115200 baud.
     SAFE-001 §2: Yaw hard-limited to ±80°, Pitch to ±20° (software endstops).
     """
 
@@ -228,8 +228,8 @@ class GimbalController:
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: ttyTHS1/0 (UART), ttyUSB0/ttyACM0 (USB-to-Serial)
-            ports_to_try = [self.SERIAL_PORT, "/dev/ttyTHS0", "/dev/ttyUSB0", "/dev/ttyACM0"]
+            # Dynamic port detection: ttyUSB0/ttyACM0 (USB-to-Serial), ttyTHS1/0 (UART)
+            ports_to_try = ["/dev/ttyUSB0", "/dev/ttyACM0", self.SERIAL_PORT, "/dev/ttyTHS0"]
             for p in ports_to_try:
                 try:
                     import os

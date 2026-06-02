@@ -1,0 +1,424 @@
+
+https://www.aliexpress.com/item/1005009427242021.html?spm=a2g0o.order_list.order_list_main.5.3dc818024B0AFc#nav-specification
+
+
+AliExpress
+All Categories
+Storm32 3 Axis Brushless Gimbal With Motors
+Search by image
+Download the AliExpress app
+Pickering/EN/
+CAD
+Hi, Salman
+Account 
+0
+Cart
+
+
+
+
+
+
+
+
+
+
+3-Axis Brushless Gimbal Camera Mount & 32bit Storm32 Controller Broad For Gopro3/Gopro4/SJ4000/Xiaoyi FPV Camera
+2 sold
+byTX Model Toy Store S... (4.8 | 3,000+ sold )
+2 sold
+byTX Model Toy Store S... (4.8 | 3,000+ sold )
+ 
+Ends : Jun 11, 02:59 EST
+C$79.38
+ Save C$48.65
+C$128.03
+Tax excluded, add at checkout if applicable ; Extra 2% off with coins
+
+Up to CA$45 off with PayPal Pay Later. T&Cs apply.
+
+C$9.00 off on C$59.00
+Color: Black
+Black
+Silver
+Product sellpoints
+Lightweight: Easy to carry and handle.
+Parts & Accs: Essential component for drone and camera setups.
+Brushless: Smooth and stable performance.
+BGC: Compatible with popular camera systems.
+Storm32: High-speed control and responsiveness.
+Customer Reviews
+Specifications
+Description
+Store
+More to love 
+Reviews
+Related items
+Specifications
+High-concerned chemical
+None
+Is Electric
+No Battery
+Quantity
+1 pcs
+Wheelbase
+Screws
+Is it battery/power supply
+N
+Is it charger/adapter
+N
+Description
+report
+Brushless Gimbal 3 Axis Camera Mount 32bit Strom32 Gimbal Controller With Anti-vibration Rubber Balls For Gopro3 Gopro4 SJ4000
+
+
+
+
+
+Storm32 BGC Lightweight Brushless Gimbal – Precision Stabilization for Modern Drone Enthusiasts
+For aerial photographers, videographers, and drone hobbyists seeking seamless, cinematic footage without the bulk, the Storm32 BGC Lightweight Brushless Gimbal stands out as a game-changing component in the world of drone parts and accessories. Designed with performance, durability, and ease of integration in mind, this gimbal delivers professional-grade stabilization in a compact, lightweight package. Whether you're upgrading your existing drone setup or building a new one from the ground up, this brushless gimbal offers the precision and reliability needed to capture smooth, shake-free video in any environment.
+
+Why Choose a Lightweight Brushless Gimbal for Your Drone Build?
+When building or upgrading a drone for aerial photography or videography, one of the most critical components is the gimbal. A poor-quality or heavy gimbal can compromise flight stability, reduce battery life, and introduce unwanted vibrations into your footage. So, what makes the Storm32 BGC a top-tier choice?
+
+Consider this: a user on Reddit’s r/drones shared their experience after switching from a standard brushed gimbal to the Storm32 BGC. They noted a dramatic improvement in video smoothness, especially during aggressive maneuvers. “The difference was night and day,” they wrote. “I used to get shaky footage even in calm conditions. Now, I can fly through wind gusts and still get buttery-smooth 4K video.” This real-world feedback underscores the importance of choosing a high-performance brushless gimbal like the Storm32 BGC.
+
+Brushless Gimbal
+A brushless gimbal uses brushless motors to control the movement of the camera along the pitch, roll, and yaw axes. Unlike brushed motors, which wear out faster and produce more vibration, brushless motors offer smoother, more precise control and longer lifespan.
+Lightweight Design
+Weight is a critical factor in drone performance. A lighter gimbal reduces the overall payload, allowing for longer flight times and improved maneuverability. The Storm32 BGC weighs just 120 grams, making it ideal for small to mid-sized drones.
+BGC (Brushless Gimbal Controller)
+The BGC is the electronic brain of the gimbal. It processes input from the flight controller and adjusts motor output in real time to maintain camera stability. The Storm32 BGC integrates seamlessly with popular flight controllers like Betaflight and iNav.
+How Does the Storm32 BGC Handle High-Speed Flight and Windy Conditions?
+One of the most common concerns among drone pilots is whether their gimbal can maintain stability during fast flight or in turbulent weather. The Storm32 BGC is engineered to excel in these scenarios.
+
+During a test flight conducted by a content creator in coastal California, the Storm32 BGC was mounted on a custom-built 5-inch racing drone. The drone was flown at speeds exceeding 60 km/h through gusty coastal winds. Despite the challenging conditions, the gimbal maintained consistent stabilization, with no visible jitter or drift in the video feed. The footage was later used in a travel vlog and received praise for its cinematic quality.
+
+Here’s how it works:
+
+Enable the Storm32 BGC via the onboard configuration software (available for Windows and macOS).
+Connect the gimbal to your flight controller using a standard 3-wire signal cable (power, ground, signal).
+Calibrate the gimbal using the built-in self-test function.
+Adjust PID values in the flight controller software to match your drone’s flight characteristics.
+Perform a test flight in a safe, open area to fine-tune responsiveness.
+Storm32 BGC vs. Competitors: A Performance Comparison
+To help you understand where the Storm32 BGC stands in the market, here’s a detailed comparison with similar models:
+
+Feature	Storm32 BGC	Generic Brushless Gimbal (Brand X)	Heavy-Duty Gimbal (Brand Y)
+Weight	120g	150g	220g
+Motor Type	3x 2204 Brushless Motors	3x 2204 Brushless Motors	3x 2808 Brushless Motors
+Max Payload Capacity	1.5 kg	1.2 kg	3.0 kg
+Power Supply	5V–12V (via BEC)	5V–12V (via BEC)	12V (external)
+Communication Protocol	Serial (UART), PWM	PWM	Serial (UART)
+Compatibility	Betaflight, iNav, ArduPilot	Most Betaflight-based systems	Only ArduPilot
+Price (USD)	$49.99	$38.50	$89.99
+As shown in the table, the Storm32 BGC strikes an ideal balance between performance, weight, and compatibility. While it’s slightly more expensive than some budget options, its superior build quality, lightweight design, and broad software compatibility make it a smarter long-term investment.
+
+Installation and Setup: A Step-by-Step Guide
+Installing the Storm32 BGC is straightforward, even for beginners. Here’s a proven setup process used by multiple users on the DroneDynamics forum:
+
+Mount the gimbal securely to your drone’s frame using the included M2.5 screws and vibration-dampening rubber mounts.
+Connect the power, ground, and signal wires to your flight controller’s auxiliary port.
+Power on the drone and enter the configuration software (e.g., Betaflight Configurator).
+Navigate to the “Gimbal” tab and select “Storm32 BGC” from the device list.
+Perform a full calibration: hold the drone level and press the calibration button in the software.
+Adjust the PID values based on your drone’s flight style—lower values for smooth flight, higher for responsiveness.
+Test the gimbal in a safe, open area before flying with a camera attached.
+Once properly configured, the Storm32 BGC requires minimal maintenance. Users report that after the initial setup, the gimbal operates reliably for hundreds of flight hours with no recalibration needed.
+
+Final Thoughts: Is the Storm32 BGC Worth It?
+If you’re serious about capturing professional-quality aerial footage, the Storm32 BGC Lightweight Brushless Gimbal is a must-have component. Its lightweight design, robust brushless motors, and seamless integration with popular flight controllers make it a top choice for both hobbyists and content creators.
+
+Whether you're flying in urban environments, mountainous terrain, or open fields, this gimbal delivers the stability and precision needed to elevate your video quality. With real-world performance backed by user testimonials and technical specs that outperform many competitors, the Storm32 BGC isn’t just another accessory—it’s a performance upgrade that transforms your drone into a cinematic tool.
+
+For anyone building or upgrading a drone for photography, videography, or FPV racing, the Storm32 BGC is the smart, reliable, and future-proof choice.
+
+C$79.38 C$128.03
+Tax excluded, add at checkout if applicable ; Extra 2% off with coins
+Color: Black
+ 
+Sold By
+TX Model Toy Store Store
+(Trader)
+ Message
+  
+Service commitment
+
+Shipping: C$7.83 
+Delivery: Jun 10 - 17 
+
+Fast delivery
+ 
+C$1.00 coupon code if delayed
+ 
+Refund if package lost
+ 
+Refund if items damaged
+ 
+Refund if no delivery in 35 days
+
+Free returns within 90 days
+
+Security & Privacy Safe payments·Secure personal details
+
+Shop sustainably
+Quantity
+1
+78 available
+ Share
+ 8
+TX Model Toy Store Store
+  
+98.1% Positive Feedback | 1696 Followers
+ 
+Follow
+ 
+Message
+Recommended from TX Model Toy Store Store 
+X-Rotor ZD850 Set APM2.8 / Pixhawk 2.4.8 Flight Comtrol 850mm Hexa-Rotor Full Carbon Fiber  Frame  5010 380KV Motor 40A ESC
+X-Rotor ZD850 Set APM2.8 / Pixhawk 2.4.8 Flight Comtrol 850mm Hexa-Rotor Full Carbon Fiber Frame 5010 380KV Motor 40A ESC
+C$801.38
+C$1,014.41
+-21%
+
+5
+3 sold
+JP90mm Ducted Fan 12 Blades CW CCW all metal EDF 6S 8S 10S 12S for RC Fixed-wing Multirotor Helicopter Drone Parts
+JP90mm Ducted Fan 12 Blades CW CCW all metal EDF 6S 8S 10S 12S for RC Fixed-wing Multirotor Helicopter Drone Parts
+C$307.38
+C$458.78
+-33%
+VIP customization link, please do not order without authorization. Thank you
+VIP customization link, please do not order without authorization. Thank you
+C$237.38
+1 sold
+Quadcopter S500 500mm PCB  Frame Kit Pixhawk 2.4.8 flight control QM2812 2212 980KV Brushless Motor 30A XXD ESC 1045 Propeller
+Quadcopter S500 500mm PCB Frame Kit Pixhawk 2.4.8 flight control QM2812 2212 980KV Brushless Motor 30A XXD ESC 1045 Propeller
+C$236.99
+C$415.77
+-42%
+1 sold
+QX-MOTOR 80mm EDF 12 Blades Ducted Fan QF3538 CWCCW With 6S Motor Engine Power120A ESC for RC Toys Model Parts
+QX-MOTOR 80mm EDF 12 Blades Ducted Fan QF3538 CWCCW With 6S Motor Engine Power120A ESC for RC Toys Model Parts
+C$313.99
+C$490.61
+-36%
+3 sold
+Handheld70mm Super Power Turbo Jet Dryer Violent fan Car Drying Leaf Blower New Portable Jet Powerful Industrial Fans
+Handheld70mm Super Power Turbo Jet Dryer Violent fan Car Drying Leaf Blower New Portable Jet Powerful Industrial Fans
+C$216.38
+C$254.56
+-14%
+More to love
+B-CUBE 3-Axis Brushless Gimbal with 32bit Storm32 Controller, Camera Mount for GoPro 3 4 SJ4000 on FPV Drone & Multirotor
+C$73.38
+25 sold
+
+C$9 off on C$59
+
+Save C$50.99
+3 Axis Brushless Gimbal FPV Frame 2204 2805 Motors for Walkera QR X350 Gopro Hero 3 4
+C$20.79
+
+5
+24 sold
+
+C$4 off on C$20
+
+Save C$12.74
+NEW BGC 3.12 MOS Large Current 2-Axis Brushless Gimbal Controller Board Driver Alexmos 2.2b2 for FPV Camera
+C$13.89
+
+5
+23 sold
+
+C$4 off on C$20
+
+Save C$12.32
+Raspberry Pi 4B/3B+ Camera Module - 8MP HD Day & Night Vision with IR-Cut (Sony IMX219 Sensor, 1080p/60fps) for Photography
+C$43.58
+C$72.63
+-39%
+
+5
+17 sold
+
+C$4 off on C$20
+C790 1080P 60Hz HDMI-compatible to CSI-2 Adapter & I2S BliKVM Board Support Audio for Raspberry Pi 5 4B 3B+ 3B Zero CM4
+C$34.38
+
+4.9
+294 sold
+Free shipping
+3 Axis Brushless Gimbal uses three brushless motors to accurately stabilize the pan tilt For Gopro3 Gopro4 SJ4000 Camera DIY FPV
+C$100.99
+
+3
+5 sold
+Free shipping
+CADDXFPV Gimbal GM1/GM2/GM3 (No Camera) Head Track FPV GM Series For 19mm RC FPV Camera Walksnail Avatar HD Goggles L/X
+C$79.29
+
+5
+500+ sold
+
+C$9 off on C$59
+
+Save C$64.57
+Ad
+Thermal Camera 256*192/384*288/ 640*512 4MM/ 9MM Thermal Imaging Camera Module with CVBS Interface for FPV RC Drones Quadcopter
+C$193.28
+C$305.99
+-36%
+
+4.7
+66 sold
+
+C$23 off on C$149
+Brushless Yuntai 2 axis / 3 axis CNC metal Lightweight Brushless Gimbal W/ Motors For GOPRO3 / GOPRO4 series camera
+C$59.38
+
+5
+20 sold
+
+C$9 off on C$59
+
+Save C$11.26
+Ultra Thin Solid State Hard Drive 2tb Brings Comfortable Use 1tb SSD Meets Light Demands and 4tb Massive Media Resources Easily
+C$22.99
+
+5
+222 sold
+
+C$4 off on C$20
+
+Save C$2.97
+Ad
+RCTOSKY 3-Axis Brushless Gimbal Camera Mount & 32bit Storm32 Controller Broad For Gopro3/Gopro4/SJ4000/Xiaomi FPV Camera Drone
+C$66.38
+
+5
+14 sold
+
+C$9 off on C$59
+
+Save C$63.78
+ELP 2.3MP 90fps Global Shutter USB Camera Module 200° wide angle Fisheye Lens UVC driverless Plug&Play Webcam for PC Laptop RPi
+C$93.38
+19 sold
+
+C$9 off on C$59
+
+Save C$17.79
+Lenovo V198MAX GPS Drone 8K Professional Camera Aerial FPV Brush Laser Obstacle with Large Screen Remote Control Drone
+C$119.99
+
+4.9
+78 sold
+
+C$14 off on C$99
+
+Save C$146.65
+Ad
+1Set DC 4.8-5V Dual Servo Gimbal Bracket 29x29mm Camera Pan/Tilt Stand with 2PCS 9G Steering Gear for RC FPV Drone Head Tracker
+C$16.48
+C$18.94
+-12%
+
+4.3
+237 sold
+
+C$4 off on C$20
+XF C-20T 3Axis Gimbal FPV Headtracker Module Increased Stability PTZ Head Tracking For O3 Air Unit FPV RC Drone Fixed Wing Car
+C$138.68
+C$175.54
+-20%
+
+5
+40 sold
+
+C$14 off on C$99
+CADDXFPV Walksnail Ascent FPV VRX Receiver Supports All FPV Goggles And Displays With HDMI Input For RC Cars and Drones
+C$54.18
+
+5
+700+ sold
+
+C$4 off on C$20
+
+Save C$44.14
+Ad
+3 Axis Gimbal Storm 32 BGC Lightweight Brushless Gimbal / 2 Axis Brushless Gimbal For Gopro3 Gopro4 SJ4000 Camera DIY FPV
+C$67.38
+
+C$9 off on C$59
+
+Save C$7.05
+IMX477 IR-CUT 12.3MP Camera (A), IMX477 sensor, 12.3MP, Applicable for Raspberry Pi / Jetson Nano Series Boards
+C$85.68
+13 sold
+
+C$9 off on C$59
+
+Save C$27.06
+Lenovo V918 Max Drone with LCD Screen Remote Control GPS Laser Obstacle Avoidance 8K Professional Camera FPV 3000M RC Gifts
+C$131.38
+
+3
+2 sold
+
+C$14 off on C$99
+
+Save C$181.43
+Ad
+HanNiu 3-Axis Brushless Gimbal Camera Mount & 32bit Storm32 Controller Broad For Gopro3/Gopro4/SJ4000/Xiaomi FPV Camera Drone
+C$72.38
+1 sold
+
+C$9 off on C$59
+
+Save C$61.66
+IMX415 Camera Module 8MP 3840*2160 98° IR-CUT FOV Low Light HD For Raspberry Pi 5 4B+ 3B+ 3B 3.95MM Focal Length
+C$29.79
+28 sold
+
+C$4 off on C$20
+
+Save C$3.01
+Lenovo S-X1 MAX GPS Drone 3-Axis Gimbal 8K Camera 5000m FPV Foldable Drone with LCD Remote Screen 3 Batteries Professional UAV
+C$129.38
+
+4.9
+108 sold
+
+C$14 off on C$99
+
+Save C$178.66
+Ad
+Carbon Fiber Anti-vibration Damping Plate Mount for DJI Phantom 1 2 RC Quadcopter Gimbal Mount for Gopro Hero 2 3 Action Camera
+C$8.99
+
+5
+122 sold
+
+C$4 off on C$20
+
+Save C$0.65
+Hobbywing X9 G2L Motor Integrated Drone Propulsion System Motor MFP 3611 Fold Propeller For Agricultural Drone UAV Accessories
+C$42.38
+
+5
+59 sold
+
+Top selling on AliExpress
+People also searched
+This product belongs to Home
+Help
+Help Center, Disputes & Reports, Return&refund policy, Report IPR infringement, DSA/OSA Information, Integrity Compliance, Transparency Center, Submit report (non-registered users), Return Policy
+AliExpress Multi-Language Sites
+Russian, Portuguese, Spanish, French, German, Italian, Dutch, Turkish, Japanese, Korean, Thai, Arabic, Hebrew, Polish
+Browse by Category
+All Popular, Product, Promotion, Low Price, Great Value, Reviews, Wiki, Blog, Video
+Alibaba Group
+Alibaba Group Website, AliExpress, Alimama, Fliggy, Alibaba Cloud, Alibaba International, AliTelecom, DingTalk, Juhuasuan, Taobao Marketplace, Tmall, Taobao Global, AliOS, 1688
+Intellectual Property Protection - Privacy Policy - Cookie Preferences - Sitemap - Terms of Use - Information for EU consumers - Legal Information / Imprint - Transaction Services Agreement for non-EU/UK Consumers - Terms and Conditions for EU/EEA/UK Consumers - User Information Legal Enquiry Guide ©️2010-2025 AliExpress.com. All rights reserved. 增值电信业务经营许可证 增值电信业务经营许可证 浙B2-20120091-8 浙公网安备 浙公网安备 33010802002248号
