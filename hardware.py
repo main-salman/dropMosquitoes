@@ -128,17 +128,26 @@ class RelayController:
     """
 
     def __init__(self):
+        global JETSON_AVAILABLE
         self._pump_state = False
         self._gimbal_state = True  # Always True since gimbal is directly powered via 2A fuse
         self._lock = threading.Lock()
 
         if JETSON_AVAILABLE:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setwarnings(False)
-            GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
-            GPIO.setup(RELAY_GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
-            configure_push_pull()
-            print(f"[RelayController] GPIO initialized and Pinmux forced to Push-Pull. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
+            try:
+                GPIO.setmode(GPIO.BCM)
+                GPIO.setwarnings(False)
+                GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
+                GPIO.setup(RELAY_GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
+                configure_push_pull()
+                print(f"[RelayController] GPIO initialized and Pinmux forced to Push-Pull. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
+            except OSError as e:
+                # Device busy or unavailable – fall back to stub mode
+                print(f"[RelayController] GPIO init failed ({e}); running in STUB mode.")
+                JETSON_AVAILABLE = False
+            except Exception as e:
+                print(f"[RelayController] Unexpected GPIO init error: {e}; proceeding in STUB mode.")
+                JETSON_AVAILABLE = False
         else:
             print("[RelayController] STUB MODE — no real GPIO control.")
 

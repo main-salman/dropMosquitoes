@@ -70,99 +70,81 @@ else
     echo "⏭  Skipping deploy (--no-deploy flag)"
 fi
 
-# Step 2: Stop any existing server on Jetson
+# Step 2: Reboot the Jetson for clean CSI camera state
+# The MIPI CSI-2 PHY retains lane sync state that `modprobe -r` cannot clear.
+# Only a full reboot guarantees clean video on both sensors (especially sensor-1/Sniper).
 echo ""
-echo "🛑 Step 2/3: Stopping any existing server on Jetson..."
-# NOTE: main.py runs as ROOT via systemd — needs sudo to stop.
-# We pipe the password via sudo -S to avoid TTY requirement.
+echo "🔄 Step 2/3: Rebooting Jetson for clean camera state..."
 ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     cd /home/jetson/dropMosquitoes 2>/dev/null || true
 
-    # Stop the systemd sentry service (runs main.py as root)
+    # Stop the systemd sentry service first for clean shutdown
     echo '${JETSON_PASSWORD}' | sudo -S systemctl stop sentry 2>/dev/null || true
+    sleep 1
 
-    # Graceful shutdown first — SIGTERM triggers our signal handler which
-    # properly tears down GStreamer pipelines and releases MIPI CSI sensors.
-    # Without this, nvarguscamerasrc leaves the sensor in a bad state and
-    # the Sniper camera feed becomes garbled on restart.
+    # Kill any lingering python3 processes
     echo '${JETSON_PASSWORD}' | sudo -S killall -TERM python3 2>/dev/null || true
-    sleep 3
-
-    # Force-kill any stubborn processes only after giving 3s for graceful cleanup
+    sleep 2
     echo '${JETSON_PASSWORD}' | sudo -S killall -9 python3 2>/dev/null || true
 
-    # Also kill any user-owned processes gracefully
-    if [ -f .sentry.pid ]; then
-        PID=\$(cat .sentry.pid)
-        kill "\$PID" 2>/dev/null || true
-        sleep 1
-        kill -9 "\$PID" 2>/dev/null || true
-        rm -f .sentry.pid
-    fi
-    pgrep -f '[a]pp.py' | xargs -r kill 2>/dev/null || true
-    sleep 1
-    pgrep -f '[a]pp.py' | xargs -r kill -9 2>/dev/null || true
-
-    # Full camera subsystem reset: unload and reload the IMX219 sensor
-    # kernel module to reset CSI hardware state. Without this, the Sniper
-    # camera feed is garbled on every restart (requires full Jetson reboot).
-    # This is the software equivalent of a reboot for the camera subsystem.
-    echo '${JETSON_PASSWORD}' | sudo -S systemctl stop nvargus-daemon 2>/dev/null || true
-    sleep 1
-    echo '${JETSON_PASSWORD}' | sudo -S killall -9 nvargus-daemon 2>/dev/null || true
-    sleep 1
-    echo '${JETSON_PASSWORD}' | sudo -S modprobe -r nv_imx219 2>/dev/null || true
-    sleep 2
-    echo '${JETSON_PASSWORD}' | sudo -S modprobe nv_imx219 2>/dev/null || true
-    sleep 2
-    echo '${JETSON_PASSWORD}' | sudo -S systemctl start nvargus-daemon 2>/dev/null || true
-    sleep 3
-
-    echo '   Done.'
-ENDSSH
-
-# Step 3: Start server on Jetson
-echo ""
-echo "🎯 Step 3/3: Starting server on Jetson..."
-ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
-    cd /home/jetson/dropMosquitoes
-
-    # Note: sentry.service also runs app.py, so no conflict.
-    # Service stays enabled for auto-start on boot.
-
-    # Maximize Jetson performance
-    echo '${JETSON_PASSWORD}' | sudo -S nvpmodel -m 0 2>/dev/null || true
-    echo '${JETSON_PASSWORD}' | sudo -S jetson_clocks 2>/dev/null || true
-
-    # Configure GPIO Pin 11 (BCM 17 / PR.04) and Pin 13 (BCM 27 / PY.00) to push-pull mode by clearing Open-Drain bit (Bit 4)
-    echo '${JETSON_PASSWORD}' | sudo -S PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages python3 -c 'import mmap, struct; f = open("/dev/mem", "r+b"); mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000); mem[0x98:0x9c] = struct.pack("<I", struct.unpack("<I", mem[0x98:0x9c])[0] & ~(1 << 4)); mem[0xd030:0xd034] = struct.pack("<I", struct.unpack("<I", mem[0xd030:0xd034])[0] & ~(1 << 4))' 2>/dev/null || true
-
-
-    # Fix log file ownership if root-owned from systemd
+    # Clean up log for fresh start
     echo '${JETSON_PASSWORD}' | sudo -S chown ${JETSON_USER}:${JETSON_USER} sentry.log 2>/dev/null || true
     rm -f sentry.log
 
-    # Start server as ROOT in background with nohup so it has direct mmap /dev/mem write access to override pad registers
-    echo '${JETSON_PASSWORD}' | sudo -S PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages nohup python3 -u app.py --port ${PORT} > sentry.log 2>&1 &
-
-    sleep 2
-    SERVER_PID=\$(pgrep -o -f 'app.py --port ${PORT}')
-    if [ -n "\$SERVER_PID" ]; then
-        echo \$SERVER_PID > .sentry.pid
-        echo "✅ Server started on Jetson (PID \$SERVER_PID)"
-    else
-        echo "❌ Server failed to start. Last 20 lines of log:"
-        tail -20 sentry.log
-        exit 1
-    fi
+    echo '   Rebooting...'
+    echo '${JETSON_PASSWORD}' | sudo -S reboot 2>/dev/null || true
 ENDSSH
+
+# Step 3: Wait for Jetson to come back up and verify dashboard
+echo ""
+echo "⏳ Step 3/3: Waiting for Jetson to reboot..."
+
+# Wait for SSH to become available (up to 120 seconds)
+WAIT_MAX=120
+WAITED=0
+while [ $WAITED -lt $WAIT_MAX ]; do
+    if ssh -o ConnectTimeout=3 -o BatchMode=yes "${JETSON_USER}@${JETSON_HOST}" "echo ok" > /dev/null 2>&1; then
+        echo "   SSH is up after ${WAITED}s."
+        break
+    fi
+    sleep 5
+    WAITED=$((WAITED + 5))
+    echo "   Waiting... (${WAITED}s)"
+done
+
+if [ $WAITED -ge $WAIT_MAX ]; then
+    echo "❌ Jetson did not come back after ${WAIT_MAX}s. Check power and network."
+    exit 1
+fi
+
+# Wait for sentry.service to start and dashboard to become reachable
+echo "   Waiting for sentry.service and dashboard..."
+DASH_MAX=90
+DASH_WAITED=0
+while [ $DASH_WAITED -lt $DASH_MAX ]; do
+    HTTP_CODE=$(ssh -o ConnectTimeout=3 "${JETSON_USER}@${JETSON_HOST}" "curl -s -o /dev/null -w '%{http_code}' http://localhost:${PORT}/ 2>/dev/null" 2>/dev/null || echo "000")
+    if [ "$HTTP_CODE" = "200" ]; then
+        echo "   Dashboard responding (HTTP 200) after ${DASH_WAITED}s."
+        break
+    fi
+    sleep 5
+    DASH_WAITED=$((DASH_WAITED + 5))
+    echo "   Dashboard not ready yet... (${DASH_WAITED}s)"
+done
+
+if [ $DASH_WAITED -ge $DASH_MAX ]; then
+    echo "⚠️  Dashboard not responding after ${DASH_MAX}s. Check sentry.log:"
+    ssh "${JETSON_USER}@${JETSON_HOST}" "tail -20 /home/jetson/dropMosquitoes/sentry.log" 2>/dev/null || true
+    exit 1
+fi
 
 echo ""
 echo "══════════════════════════════════════════════"
-echo "  ✅ Server running on Jetson!"
+echo "  ✅ Server running on Jetson (clean reboot)!"
 echo ""
 echo "  Dashboard: http://${JETSON_HOST}:${PORT}"
 echo ""
 echo "  To stop:   ./stop.sh"
 echo "  To view logs: ssh ${JETSON_USER}@${JETSON_HOST} 'tail -f ${JETSON_PATH}/sentry.log'"
 echo "══════════════════════════════════════════════"
+

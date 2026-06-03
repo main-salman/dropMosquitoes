@@ -219,11 +219,10 @@ class CameraStream:
         """
         return (
             f"nvarguscamerasrc sensor-id={self.sensor_id} ! "
-            f"video/x-raw(memory:NVMM), width={self.width}, height={self.height}, "
-            f"format=NV12, framerate={self.fps}/1 ! "
-            f"nvvidconv ! video/x-raw, format=BGRx ! "
-            f"videoconvert ! video/x-raw, format=BGR ! "
-            f"appsink drop=1 max-buffers=2"
+            f"video/x-raw(memory:NVMM), width={self.width}, height={self.height}, format=NV12, framerate={self.fps}/1 ! "
+            "nvvidconv ! video/x-raw, format=BGRx ! "
+            "videoconvert ! video/x-raw, format=BGR ! "
+            "appsink drop=1 sync=false max-buffers=1"
         )
 
     def start(self):
@@ -240,21 +239,34 @@ class CameraStream:
             # Jetson path: use GStreamer nvarguscamerasrc for hardware ISP
             pipeline = self._build_gstreamer_pipeline()
             print(f"[{self.name}] GStreamer pipeline:\n  {pipeline}")
-            self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-
+            # Try opening the pipeline up to 3 times with delays
+            self._cap = None
+            for attempt in range(1, 4):
+                self._cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
+                if self._cap.isOpened():
+                    print(f"[{self.name}] GStreamer opened on attempt {attempt}.")
+                    break
+                else:
+                    print(f"[{self.name}] GStreamer open failed (attempt {attempt}); retrying in 2s.")
+                    if self._cap is not None:
+                        self._cap.release()
+                    time.sleep(2)
             if not self._cap.isOpened():
                 # Fallback: try standard V4L2 device
-                print(f"[{self.name}] GStreamer failed. Trying /dev/video{self.sensor_id}...")
+                print(f"[{self.name}] GStreamer failed after retries. Trying /dev/video{self.sensor_id}...")
                 self._cap = cv2.VideoCapture(self.sensor_id)
 
             if not self._cap.isOpened():
                 print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
                 self._cap = None
             else:
+                # Allow sensor hardware to settle after daemon restart
+
+                time.sleep(5)
                 # Flush stale ISP frames left over from previous unclean shutdown.
-                # Without this, the first N frames are garbled after nvargus-daemon restart.
+                # Increased to 200 frames for deep warm‑up.
                 flushed = 0
-                for _ in range(15):
+                for _ in range(200):
                     ret, _ = self._cap.read()
                     if ret:
                         flushed += 1

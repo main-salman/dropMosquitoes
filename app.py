@@ -744,7 +744,7 @@ if __name__ == '__main__':
     # Camera subsystem reset is handled by run-ai.sh (modprobe -r/modprobe nv_imx219).
     # Here we just verify nvargus-daemon is running before opening cameras.
     try:
-        result = subprocess.run(['pgrep', '-x', 'nvargus-daemo'], capture_output=True)
+        result = subprocess.run(['pgrep', '-x', 'nvargus-daemon'], capture_output=True)
         if result.returncode != 0:
             print("[app] nvargus-daemon not running — starting it...")
             subprocess.run(['sudo', 'systemctl', 'start', 'nvargus-daemon'],

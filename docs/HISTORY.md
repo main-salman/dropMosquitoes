@@ -482,3 +482,18 @@
 - **[CODE]** `run-ai.sh`: Removed `systemctl disable sentry` — service now runs same `app.py`, no conflict. Stays enabled for auto-start on boot.
 - **[OPS]** Installed and enabled sentry.service on Jetson via `systemctl enable sentry.service`. App will auto-start on every boot with clean video (fresh CSI state).
 
+## 2026-06-03 — CRITICAL BUG FIXES (Dashboard Crash + Garbled Video)
+
+- **[BUG FIX]** `hardware.py`: Added `global JETSON_AVAILABLE` to `RelayController.__init__`. Python treated the variable as local due to `except` block assignments, causing `UnboundLocalError` on line 135 — the app crashed before Flask ever started. This was the root cause of dashboard unreachability.
+- **[BUG FIX]** `app.py`: Fixed typo `nvargus-daemo` → `nvargus-daemon` in `pgrep` check at startup. The misspelling meant the daemon check always failed and triggered unnecessary restarts.
+- **[BUG FIX]** `vision.py`: Fixed invalid GStreamer pipeline syntax. `nvvidconv memory:NVMM ! video/x-raw(memory:NVMM), format=RGB` is not valid — `memory:NVMM` is a caps feature not an element property. Replaced with standard `nvvidconv ! video/x-raw, format=BGRx` which lets nvvidconv handle the NVMM→CPU transition correctly, avoiding the software fallback path that caused garbled horizontal color lines.
+- **[BUG FIX]** `run-ai.sh`: Eliminated dual-process port conflict. Step 3 was starting `app.py` via `nohup` AND then restarting `sentry.service` which also runs `app.py` on port 8000. Two processes fought for the port and both died. Now uses `sentry.service` as the single server lifecycle manager.
+
+## 2026-06-03 — GARBLED SNIPER VIDEO ROOT CAUSE (CSI PHY)
+
+- **[DIAGNOSIS]** Confirmed via direct `gst-launch` tests that sensor-1 (Sniper) garbling is NOT caused by Python/GStreamer pipeline configuration. The garbled horizontal color lines persist even with standalone `gst-launch-1.0` after a `modprobe -r`/`modprobe` cycle.
+- **[DIAGNOSIS]** Confirmed that sensor-1 produces clean video after a full Jetson reboot. Scout (sensor-0) always works regardless of reset method.
+- **[ROOT CAUSE]** The MIPI CSI-2 PHY hardware on the Orin Nano retains lane synchronization state that `modprobe -r nv_imx219` cannot clear. Only a full power-cycle (reboot) resets the CSI PHY registers for CSI lane 1. This is a known Jetson platform limitation.
+- **[CODE]** `run-ai.sh`: Replaced the broken `modprobe -r`/`modprobe` camera reset with a full Jetson reboot. After deploying code, the script reboots the Jetson and polls SSH + dashboard until both are reachable (~60-90s). `sentry.service` auto-starts on boot with clean CSI state.
+- **[CODE]** `sentry.service`: Removed the harmful `modprobe -r`/`modprobe` cycle from ExecStartPre. On a clean boot, the kernel loads nv_imx219 with fresh CSI state — no modprobe cycling needed. On a `systemctl restart`, the modprobe cycle was actively causing the garbling. Replaced with a simple `systemctl restart nvargus-daemon`.
+

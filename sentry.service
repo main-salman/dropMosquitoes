@@ -26,9 +26,12 @@ WorkingDirectory=/home/jetson/dropMosquitoes
 # --- Pre-start: maximize performance ---
 ExecStartPre=-/bin/bash -c '/usr/sbin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
 
-# --- Pre-start: full camera subsystem reset ---
-# Ensures clean CSI state on every boot (prevents garbled Sniper video).
-ExecStartPre=-/bin/bash -c 'systemctl stop nvargus-daemon; sleep 1; modprobe -r nv_imx219; sleep 2; modprobe nv_imx219; sleep 2; systemctl start nvargus-daemon; sleep 3'
+# --- Pre-start: camera subsystem ---
+# NOTE: Do NOT modprobe -r/modprobe nv_imx219 here. The MIPI CSI-2 PHY retains
+# lane sync state that modprobe cannot clear, causing garbled video on sensor-1.
+# Clean camera state requires a full Jetson reboot (handled by run-ai.sh).
+# On a fresh boot, the kernel loads nv_imx219 with clean CSI state automatically.
+ExecStartPre=-/bin/bash -c 'systemctl restart nvargus-daemon; sleep 3'
 
 # --- Pre-start: configure GPIO pinmux (push-pull mode for relay pins) ---
 ExecStartPre=-/usr/bin/python3 -c 'import mmap, struct; f = open("/dev/mem", "r+b"); mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000); mem[0x98:0x9c] = struct.pack("<I", struct.unpack("<I", mem[0x98:0x9c])[0] & ~(1 << 4)); mem[0xd030:0xd034] = struct.pack("<I", struct.unpack("<I", mem[0xd030:0xd034])[0] & ~(1 << 4))'
