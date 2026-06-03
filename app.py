@@ -47,8 +47,8 @@ velocity_tracker = VelocityTracker()
 # Full Dual-Camera Architecture:
 # - Scout camera: CSI-0 (IMX219 NoIR at 1280x720 @ 60 FPS) fixed to enclosure
 # - Sniper camera: CSI-1 (IMX219 NoIR with Motorized IR-Cut at 1280x720 @ 60 FPS) on gimbal
-scout_cam = CameraStream(sensor_id=0, width=1280, height=720, fps=60, name="Scout")
-sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=60, name="Sniper")
+scout_cam = CameraStream(sensor_id=0, width=1280, height=720, fps=30, name="Scout")
+sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=30, name="Sniper")
 
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
@@ -599,6 +599,20 @@ TEST_SUITES = {
         "args": [],
         "layer": 4,
     },
+    "pwm_gimbal": {
+        "name": "PWM Gimbal Sweep (Layer 1)",
+        "description": "Hardware PWM → Storm32 RC pins: yaw ±30° sweep, pitch ±20° sweep, combined",
+        "script": "tests/test_pwm_gimbal.py",
+        "args": [],
+        "layer": 1,
+    },
+    "sysfs_pwm": {
+        "name": "Direct sysfs PWM (Layer 0)",
+        "description": "Bypasses Jetson.GPIO — writes directly to /sys/class/pwm/ kernel interface",
+        "script": "tests/test_sysfs_pwm.py",
+        "args": [],
+        "layer": 0,
+    },
 }
 
 
@@ -727,20 +741,23 @@ if __name__ == '__main__':
     else:
         print("[app] AI detection DISABLED (--no-ai flag)")
 
-    # Reset nvargus-daemon to clear stale MIPI CSI state from previous
-    # unclean shutdown (prevents garbled Sniper camera feed)
+    # Camera subsystem reset is handled by run-ai.sh (modprobe -r/modprobe nv_imx219).
+    # Here we just verify nvargus-daemon is running before opening cameras.
     try:
-        subprocess.run(
-            ['sudo', 'systemctl', 'restart', 'nvargus-daemon'],
-            timeout=5, capture_output=True
-        )
-        time.sleep(1)  # Give daemon time to fully restart
-        print("[app] nvargus-daemon restarted (clean CSI state).")
+        result = subprocess.run(['pgrep', '-x', 'nvargus-daemo'], capture_output=True)
+        if result.returncode != 0:
+            print("[app] nvargus-daemon not running — starting it...")
+            subprocess.run(['sudo', 'systemctl', 'start', 'nvargus-daemon'],
+                           timeout=10, capture_output=True)
+            time.sleep(3)
+        print("[app] nvargus-daemon is running.")
     except Exception as e:
         print(f"[app] nvargus-daemon restart skipped: {e}")
 
-    # Start camera streams
+    # Start camera streams sequentially with delay.
+    # Starting both simultaneously after a restart can garble sensor-id=1.
     scout_cam.start()
+    time.sleep(2)  # Let Scout's ISP pipeline fully initialize before Sniper
     sniper_cam.start()
 
     # Center gimbal to forward-facing home position on startup

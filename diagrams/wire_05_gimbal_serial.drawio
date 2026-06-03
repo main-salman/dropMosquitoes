@@ -1,29 +1,34 @@
-<mxfile host="Electron" modified="2026-06-02T13:48:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
-  <diagram name="Gimbal Serial" id="gimbal_serial_v4">
+<mxfile host="Electron" modified="2026-06-03T14:00:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
+  <diagram name="Gimbal PWM" id="gimbal_pwm_v5">
     <mxGraphModel dx="1420" dy="850" grid="1" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="700" background="#FFFFFF">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
         
         <!-- Title -->
-        <mxCell id="t1" value="&lt;b style='font-size:20px;color:#0F172A'&gt;WIRE 05: Gimbal Serial Control (UART)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:12px'&gt;Bi-directional serial communication between Jetson Orin Nano UART and Storm32 BGC RC pins&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1">
+        <mxCell id="t1" value="&lt;b style='font-size:20px;color:#0F172A'&gt;WIRE 05: Gimbal PWM RC Control&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:12px'&gt;Hardware PWM output from Jetson Orin Nano to Storm32 BGC RC input pins (50 Hz, 1000–2000 μs)&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1">
           <mxGeometry x="40" y="15" width="850" height="45" as="geometry"/>
         </mxCell>
 
-        <!-- Jetson GPIO Breakout / UART Header -->
+        <!-- ECO Change Notice -->
+        <mxCell id="eco" value="&lt;b style='color:#DC2626'&gt;⚠ ECO-2026-008:&lt;/b&gt; &lt;span style='color:#0F172A'&gt;Changed from UART serial (Terminals 8/10) to Hardware PWM (Terminals 32/33). UART pins (BCM 14/15) are NOT available as GPIO on Jetson Orin Nano.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#0F172A;fontSize=10;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="65" width="850" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Jetson GPIO Breakout / PWM Header -->
         <mxCell id="gpio" value="" style="rounded=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;shadow=1;arcSize=8;" vertex="1" parent="1">
           <mxGeometry x="60" y="150" width="240" height="180" as="geometry"/>
         </mxCell>
-        <mxCell id="gpiot" value="&lt;b style='color:#065F46;font-size:12px'&gt;IDC40P Breakout Block&lt;/b&gt;&lt;br&gt;&lt;span style='color:#047857;font-size:9px'&gt;UART Serial output pins&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="gpio">
+        <mxCell id="gpiot" value="&lt;b style='color:#065F46;font-size:12px'&gt;IDC40P Breakout Block&lt;/b&gt;&lt;br&gt;&lt;span style='color:#047857;font-size:9px'&gt;Hardware PWM output pins&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="gpio">
           <mxGeometry x="10" y="8" width="220" height="28" as="geometry"/>
         </mxCell>
-        <mxCell id="pintx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#D97706'&gt;Terminal 8 (UART TX)&lt;/b&gt; [Green]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
+        <mxCell id="pintx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#16A34A'&gt;Terminal 32 (PWM0 / BCM 12)&lt;/b&gt; [Green]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
           <mxGeometry x="10" y="55" width="220" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="pinrx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#2563EB'&gt;Terminal 10 (UART RX)&lt;/b&gt; [Blue]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
+        <mxCell id="pinrx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#2563EB'&gt;Terminal 33 (PWM2 / BCM 13)&lt;/b&gt; [Blue]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
           <mxGeometry x="10" y="90" width="220" height="22" as="geometry"/>
         </mxCell>
-        <mxCell id="pingnd2" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#475569'&gt;Terminal 14 (UART GND)&lt;/b&gt; [Black]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
+        <mxCell id="pingnd2" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#475569'&gt;Terminal 14 (GND)&lt;/b&gt; [Black]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
           <mxGeometry x="10" y="125" width="220" height="22" as="geometry"/>
         </mxCell>
 
@@ -54,7 +59,7 @@
         <mxCell id="lbl_l_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
           <mxGeometry x="10" y="90" width="70" height="30" as="geometry"/>
         </mxCell>
-        <mxCell id="pin_l_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#D97706;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
+        <mxCell id="pin_l_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
           <mxGeometry x="90" y="95" width="20" height="20" as="geometry"/>
         </mxCell>
 
@@ -94,7 +99,7 @@
           <mxGeometry x="180" y="40" width="70" height="30" as="geometry"/>
         </mxCell>
 
-        <mxCell id="pin_r_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#D97706;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
+        <mxCell id="pin_r_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
           <mxGeometry x="150" y="95" width="20" height="20" as="geometry"/>
         </mxCell>
         <mxCell id="lbl_r_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
@@ -124,7 +129,7 @@
 
         <!-- BRIDGES SHOWING THEY ARE IN PARALLEL -->
         <mxCell id="bridge_gnd" value="" style="endArrow=none;strokeColor=#475569;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_gnd" target="pin_r_gnd"/>
-        <mxCell id="bridge_rc0" value="" style="endArrow=none;strokeColor=#D97706;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc0" target="pin_r_rc0"/>
+        <mxCell id="bridge_rc0" value="" style="endArrow=none;strokeColor=#16A34A;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc0" target="pin_r_rc0"/>
         <mxCell id="bridge_rc1" value="" style="endArrow=none;strokeColor=#94A3B8;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc1" target="pin_r_rc1"/>
         <mxCell id="bridge_rc2" value="" style="endArrow=none;strokeColor=#2563EB;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc2" target="pin_r_rc2"/>
 
@@ -134,7 +139,7 @@
 
         <!-- =================== WIRES =================== -->
 
-        <!-- 1. Jetson TX (Terminal 8) Green Wire to Storm32 RC-0 (Pitch) -->
+        <!-- 1. Jetson PWM0 (Terminal 32, BCM 12) Green Wire to Storm32 RC-0 (Pitch) -->
         <mxCell id="wire_tx" value="" style="endArrow=block;endFill=1;strokeColor=#16A34A;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gpio" target="pin_l_rc0">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="300" y="205" as="sourcePoint"/>
@@ -145,13 +150,13 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_tx_lbl" value="TX → RC-0 (Pitch) [Green]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#16A34A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_tx">
+        <mxCell id="wire_tx_lbl" value="PWM0 → RC-0 (Pitch) [Green]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#16A34A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_tx">
           <mxGeometry x="-0.4" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
-        <!-- 2. Jetson RX (Terminal 10) Blue Wire to Storm32 RC-2 (Yaw) -->
+        <!-- 2. Jetson PWM2 (Terminal 33, BCM 13) Blue Wire to Storm32 RC-2 (Yaw) -->
         <mxCell id="wire_rx" value="" style="endArrow=block;endFill=1;strokeColor=#2563EB;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gpio" target="pin_l_rc2">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="300" y="240" as="sourcePoint"/>
@@ -162,7 +167,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_rx_lbl" value="RX → RC-2 (Yaw) [Blue]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#2563EB;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_rx">
+        <mxCell id="wire_rx_lbl" value="PWM2 → RC-2 (Yaw) [Blue]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#2563EB;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_rx">
           <mxGeometry x="-0.4" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>
@@ -179,15 +184,15 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="wire_gnd_lbl" value="GND → GND [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor:#475569;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_gnd">
+        <mxCell id="wire_gnd_lbl" value="GND → GND [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#475569;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_gnd">
           <mxGeometry x="-0.4" relative="1" as="geometry">
             <mxPoint x="10" y="0" as="offset"/>
           </mxGeometry>
         </mxCell>
 
         <!-- Footnote note -->
-        <mxCell id="note" value="&lt;b&gt;Parallel Header Pin Mapping Note:&lt;/b&gt; The Storm32 2x6 RC header has two parallel rows of pins (an outer/left row and an inner/right row). These two rows are electrically bridged 1:1 on the circuit board (e.g. both RC-0 pins are connected to the same trace, both GND pins to the ground plane). You can plug your Jumper/UART leads into &lt;b&gt;either row&lt;/b&gt; (top/outer row or bottom/inner row). For consistency, this diagram routes to the outer row pins (GND, RC-0, and RC-2)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontColor=#0F172A;fontSize=11;strokeWidth=1.5;" vertex="1" parent="1">
-          <mxGeometry x="60" y="550" width="1060" height="50" as="geometry"/>
+        <mxCell id="note" value="&lt;b&gt;Wiring Instructions:&lt;/b&gt; Move the &lt;b style='color:#16A34A'&gt;Green wire&lt;/b&gt; from IDC40P Terminal 8 to &lt;b&gt;Terminal 32&lt;/b&gt; (PWM0). Move the &lt;b style='color:#2563EB'&gt;Blue wire&lt;/b&gt; from Terminal 10 to &lt;b&gt;Terminal 33&lt;/b&gt; (PWM2). &lt;b&gt;Black wire&lt;/b&gt; stays on Terminal 14 (GND). On the Storm32 side, all three wires stay on the same RC header pins (outer row: GND, RC-0, RC-2)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontColor=#0F172A;fontSize=11;strokeWidth=1.5;" vertex="1" parent="1">
+          <mxGeometry x="60" y="550" width="1060" height="55" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>

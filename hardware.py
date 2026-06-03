@@ -67,6 +67,33 @@ def configure_push_pull():
         print(f"[PADMUX] WARNING: Could not force Push-Pull mode (needs root): {e}")
 
 
+def configure_pwm_pinmux():
+    """
+    ECO-2026-008: Configure pinmux for PWM output on BCM 12 (Pin 32) and BCM 13 (Pin 33).
+    These pins drive the Storm32 RC-0 (Pitch) and RC-2 (Yaw) inputs via hardware PWM.
+    Without this, the pins are locked to INPUT mode and no PWM signal reaches the wires.
+    Uses direct /dev/mem writes (same approach as configure_push_pull).
+    Needs root privileges.
+    """
+    try:
+        import mmap
+        import struct
+        with open("/dev/mem", "r+b") as f:
+            # BCM 12 (Pin 32, PWM0) at register 0x2434080 → write 0x5 (output)
+            mem1 = mmap.mmap(f.fileno(), 0x10000, offset=0x2430000)
+            mem1[0x4080:0x4084] = struct.pack("<I", 0x5)
+            mem1.close()
+
+            # BCM 13 (Pin 33, PWM2) at register 0x2434040 → write 0x4 (output)
+            mem2 = mmap.mmap(f.fileno(), 0x10000, offset=0x2430000)
+            mem2[0x4040:0x4044] = struct.pack("<I", 0x4)
+            mem2.close()
+
+        print("[PADMUX] PWM pinmux configured: BCM12=0x5 (output), BCM13=0x4 (output)")
+    except Exception as e:
+        print(f"[PADMUX] WARNING: Could not configure PWM pinmux: {e}")
+
+
 try:
     import smbus2
     I2C_AVAILABLE = True
@@ -188,13 +215,15 @@ class RelayController:
 # Hardware mechanical limits are wider (±130° yaw, ±45° pitch), but software
 # clamps to the values below to protect wiring through cable glands/service loops.
 # ============================================================================
-YAW_LIMIT = 80.0     # Max ±80° yaw (160° total sweep)
-PITCH_LIMIT = 20.0   # Max ±20° pitch (40° total sweep)
+YAW_LIMIT = 80.0      # Max ±80° yaw (160° total sweep)
+PITCH_LIMIT = 100.0    # Max ±100° pitch — wide enough for down-mount → forward
 
 # Mount compensation: the camera/lidar/nozzle assembly points DOWN at pitch=0°
 # due to the physical gimbal mount orientation (USB/UART ports = "front").
-# PITCH_HOME tilts UP so the payload points FORWARD by default.
-PITCH_HOME = 20.0    # degrees — set to max pitch-up for forward-facing default
+# Negative pitch = tilt toward forward/horizontal.
+# PITCH_HOME tilts the payload so it faces FORWARD by default.
+PITCH_HOME = 0.0       # degrees — neutral start. Use WASD to find forward-facing angle.
+                       # Storm32 oscillates if commanded beyond its mechanical pitch limit.
 
 
 class GimbalController:
@@ -224,8 +253,8 @@ class GimbalController:
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: UART prioritized, USB serial as fallback
-            ports_to_try = ["/dev/ttyTHS1", "/dev/ttyTHS0", "/dev/ttyACM0", "/dev/ttyUSB0"]
+            # Dynamic port detection: USB serial prioritized (ECO-2026-008: PWM/UART dead on Yahboom)
+            ports_to_try = ["/dev/ttyACM0", "/dev/ttyUSB0", "/dev/ttyTHS1", "/dev/ttyTHS0"]
             for p in ports_to_try:
                 try:
                     import os

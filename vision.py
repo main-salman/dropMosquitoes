@@ -250,6 +250,15 @@ class CameraStream:
             if not self._cap.isOpened():
                 print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
                 self._cap = None
+            else:
+                # Flush stale ISP frames left over from previous unclean shutdown.
+                # Without this, the first N frames are garbled after nvargus-daemon restart.
+                flushed = 0
+                for _ in range(15):
+                    ret, _ = self._cap.read()
+                    if ret:
+                        flushed += 1
+                print(f"[{self.name}] Flushed {flushed} startup frames (ISP warmup).")
         else:
             # Dev machine (macOS/Windows): try system camera via OS backend
             print(f"[{self.name}] Non-Jetson detected. Trying system camera index {self.sensor_id}...")
@@ -271,12 +280,18 @@ class CameraStream:
     def _capture_loop(self):
         """Background thread: continuously reads frames and encodes JPEG."""
         while self._running:
-            if self._cap is None:
+            cap = self._cap  # Local ref — stop() may set self._cap to None
+            if cap is None:
                 # Generate a test pattern when no camera is available
                 frame = self._generate_test_pattern()
             else:
-                ret, frame = self._cap.read()
+                try:
+                    ret, frame = cap.read()
+                except Exception:
+                    break  # Pipeline was released by stop()
                 if not ret:
+                    if not self._running:
+                        break  # stop() released the pipeline
                     time.sleep(0.01)
                     continue
 
@@ -291,9 +306,7 @@ class CameraStream:
                 self._frame = frame
                 self._jpeg = jpeg.tobytes()
 
-        # Cleanup
-        if self._cap:
-            self._cap.release()
+        # Note: cap.release() is handled by stop(), not here.
 
     def _generate_test_pattern(self) -> np.ndarray:
         """Generate a labeled test pattern when no camera hardware is present."""
@@ -334,10 +347,27 @@ class CameraStream:
         return self.width, self.height
 
     def stop(self):
-        """Stop the capture thread."""
+        """Stop the capture thread and release the GStreamer pipeline.
+
+        CRITICAL: We must release cap BEFORE joining the thread, because
+        cap.read() may be blocking. Releasing the pipeline unblocks it.
+        Without this, nvarguscamerasrc leaves the CSI sensor in a bad state,
+        causing garbled video on the next startup.
+        """
         self._running = False
+        # Force-release the GStreamer pipeline to unblock any stuck cap.read()
+        cap = self._cap
+        self._cap = None
+        if cap:
+            try:
+                cap.release()
+                print(f"[{self.name}] GStreamer pipeline released.")
+            except Exception as e:
+                print(f"[{self.name}] Pipeline release error: {e}")
         if self._thread:
-            self._thread.join(timeout=2.0)
+            self._thread.join(timeout=3.0)
+            if self._thread.is_alive():
+                print(f"[{self.name}] WARNING: Capture thread did not exit in time.")
         print(f"[{self.name}] Stopped.")
 
 

@@ -103,10 +103,20 @@ ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     sleep 1
     pgrep -f '[a]pp.py' | xargs -r kill -9 2>/dev/null || true
 
-    # Restart nvargus-daemon to reset MIPI CSI sensor state.
-    # This prevents garbled camera feeds after an unclean shutdown.
-    echo '${JETSON_PASSWORD}' | sudo -S systemctl restart nvargus-daemon 2>/dev/null || true
+    # Full camera subsystem reset: unload and reload the IMX219 sensor
+    # kernel module to reset CSI hardware state. Without this, the Sniper
+    # camera feed is garbled on every restart (requires full Jetson reboot).
+    # This is the software equivalent of a reboot for the camera subsystem.
+    echo '${JETSON_PASSWORD}' | sudo -S systemctl stop nvargus-daemon 2>/dev/null || true
     sleep 1
+    echo '${JETSON_PASSWORD}' | sudo -S killall -9 nvargus-daemon 2>/dev/null || true
+    sleep 1
+    echo '${JETSON_PASSWORD}' | sudo -S modprobe -r nv_imx219 2>/dev/null || true
+    sleep 2
+    echo '${JETSON_PASSWORD}' | sudo -S modprobe nv_imx219 2>/dev/null || true
+    sleep 2
+    echo '${JETSON_PASSWORD}' | sudo -S systemctl start nvargus-daemon 2>/dev/null || true
+    sleep 3
 
     echo '   Done.'
 ENDSSH
