@@ -502,4 +502,5 @@
 - **[ARCHITECTURE]** Identified that Storm32 gimbal pitch range (±45° mechanical, ±25° joystick) is insufficient for ceiling-mount at 8-10ft where ~45° outward tilt is needed to cover mosquito flight zones at ground level.
 - **[ARCHITECTURE]** Analyzed 5 alternative mounting options: (1) 45° wedge bracket, (2) 90° perpendicular side mount, (3) drop-arm with swivel ball joint, (4) high wall mount, (5) 3D-printed angled payload cradle. Generated photorealistic reference images for each.
 - **[ARCHITECTURE]** Recommended Option 1 (wedge bracket) as primary solution — minimal mechanical change, zero motor stress, full 360° coverage, easy fabrication. Fallback: Option 4 (wall mount) for corner deployments.
+- **[DOCS]** Saved mounting options analysis to `docs/gimbal/mounting_options.md` with 5 photorealistic reference images in `docs/gimbal/mounting_options/`.
 
