@@ -504,3 +504,10 @@
 - **[ARCHITECTURE]** Recommended Option 1 (wedge bracket) as primary solution — minimal mechanical change, zero motor stress, full 360° coverage, easy fabrication. Fallback: Option 4 (wall mount) for corner deployments.
 - **[DOCS]** Saved mounting options analysis to `docs/gimbal/mounting_options.md` with 5 photorealistic reference images in `docs/gimbal/mounting_options/`.
 
+## 2026-06-03 — PERPENDICULAR PAYLOAD MOUNTING: ROLL MOTOR CLEARANCE
+
+- **[ARCHITECTURE]** Focused analysis on the specific problem: rotating camera/LiDAR/nozzle 90° on the Storm32 payload cradle causes collision with the roll motor housing. Stock cradle provides only ~10-15mm clearance vs. ~25mm needed for sideways IMX219.
+- **[ARCHITECTURE]** Analyzed 5 payload-level mechanical solutions: (1) Drop-down L-bracket adapter, (2) Side-mount offset plate, (3) Extended taller custom cradle, (4) 45° wedge adapter, (5) Pendulum extension arm. Generated photorealistic concept images for each.
+- **[ARCHITECTURE]** Recommended Solution 1 (Drop-Down L-Bracket) as primary — zero gimbal modification, ~15g added weight, ~30mm clearance gained, easy 3D print, fully reversible. Fallback: Solution 4 (45° wedge) as simplest first step giving ~85° total range when combined with gimbal pitch.
+- **[DOCS]** Saved perpendicular mounting analysis to `docs/gimbal/perpendicular_mounting.md` with 6 concept images in `docs/gimbal/perpendicular_mounting/`.
+
