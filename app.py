@@ -764,6 +764,38 @@ if __name__ == '__main__':
     gimbal.center()
     print(f"[app] Gimbal centered to home (pitch={PITCH_HOME}°, yaw=0°).")
 
+    # Apply reduced Yaw Vmax on every startup to prevent motor overheating.
+    # The 2805/100T yaw motor runs hot at default Vmax=88. Lowering to 60
+    # reduces heat while retaining adequate slew speed for mosquito tracking.
+    # This is in RAM only (EEPROM store command not supported), so we must
+    # apply it on every boot.
+    YAW_VMAX_ADDR = 15
+    YAW_VMAX_TARGET = 60
+    try:
+        ser = gimbal._serial
+        if ser and ser.is_open:
+            import struct as _struct
+            def _crc(data):
+                c = 0xFFFF
+                for b in data:
+                    c ^= b << 8
+                    for _ in range(8):
+                        c = ((c << 1) ^ 0x1021 if c & 0x8000 else c << 1) & 0xFFFF
+                return c
+            # CMD 0x04 = SET_PARAMETER: [addr_lo, addr_hi, val_lo, val_hi]
+            payload = _struct.pack('<HH', YAW_VMAX_ADDR, YAW_VMAX_TARGET)
+            pkt = bytes([0xFA, len(payload), 0x04]) + payload
+            pkt += _struct.pack('<H', _crc(pkt))
+            ser.reset_input_buffer()
+            ser.write(pkt)
+            time.sleep(0.2)
+            ser.read(200)  # Consume response
+            print(f"[app] Yaw Vmax set to {YAW_VMAX_TARGET} (addr={YAW_VMAX_ADDR}).")
+        else:
+            print("[app] Yaw Vmax tuning skipped — gimbal serial not open.")
+    except Exception as e:
+        print(f"[app] Yaw Vmax tuning skipped: {e}")
+
     print(f"\n{'='*60}")
     print(f"  SNIPER MESSY MORTAR — Control Dashboard")
     print(f"  http://0.0.0.0:{args.port}")

@@ -91,19 +91,22 @@ def store_eeprom(ser):
                 return True, store_cmd
     return False, None
 
-# Storm32 v0.90 parameter map (confirmed by probe)
+# Storm32 v0.90 parameter map — 6 parameters per axis (confirmed by probe)
+# Groups: [P, I, D, Vmax, Extra1, Extra2] × 3 axes
 # CMD 0x03 response: FB [len=4] [cmd=0x03] [addr_lo] [addr_hi] [val_lo] [val_hi] [crc]
 PARAM_MAP = {
     0: "Pitch P",       1: "Pitch I",       2: "Pitch D",
-    3: "Pitch Power",   4: "Roll P",        5: "Roll I",
-    6: "Roll D",        7: "Roll Power",    8: "Yaw P",
-    9: "Yaw I",         10: "Yaw D",        11: "Yaw Power",
+    3: "Pitch Vmax",    4: "Pitch MotDir",  5: "Pitch Offset",
+    6: "Roll P",        7: "Roll I",        8: "Roll D",
+    9: "Roll Vmax",     10: "Roll MotDir",  11: "Roll Offset",
+    12: "Yaw P",        13: "Yaw I",        14: "Yaw D",
+    15: "Yaw Vmax",     16: "Yaw MotDir",   17: "Yaw Offset",
 }
 
 VMAX_PARAMS = {
     'pitch': 3,
-    'roll': 7,
-    'yaw': 11,
+    'roll': 9,
+    'yaw': 15,
 }
 
 def main():
@@ -148,7 +151,7 @@ def main():
         if result:
             addr_echo, value = result
             name = PARAM_MAP.get(addr, f"Param-{addr}")
-            marker = " ◀ MOTOR POWER" if addr in [3, 7, 11] else ""
+            marker = " ◀ MOTOR POWER" if addr in VMAX_PARAMS.values() else ""
             print(f"  [{addr:2d}] {name:20s} = {value:5d}{marker}")
         else:
             name = PARAM_MAP.get(addr, f"Param-{addr}")
@@ -157,15 +160,15 @@ def main():
     # --- Write Vmax if requested ---
     writes = {}
     if args.all_vmax is not None:
-        writes[3] = args.all_vmax
-        writes[7] = args.all_vmax
-        writes[11] = args.all_vmax
+        writes[VMAX_PARAMS['pitch']] = args.all_vmax
+        writes[VMAX_PARAMS['roll']] = args.all_vmax
+        writes[VMAX_PARAMS['yaw']] = args.all_vmax
     if args.pitch_vmax is not None:
-        writes[3] = args.pitch_vmax
+        writes[VMAX_PARAMS['pitch']] = args.pitch_vmax
     if args.roll_vmax is not None:
-        writes[7] = args.roll_vmax
+        writes[VMAX_PARAMS['roll']] = args.roll_vmax
     if args.yaw_vmax is not None:
-        writes[11] = args.yaw_vmax
+        writes[VMAX_PARAMS['yaw']] = args.yaw_vmax
 
     if writes:
         print(f"\n{'='*50}")
@@ -201,7 +204,7 @@ def main():
 
         # Re-read to confirm
         print(f"\n  Final values:")
-        for addr in [3, 7, 11]:
+        for axis, addr in VMAX_PARAMS.items():
             result = read_parameter(ser, addr)
             if result:
                 name = PARAM_MAP.get(addr, f"Param-{addr}")
