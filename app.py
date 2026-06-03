@@ -770,7 +770,7 @@ if __name__ == '__main__':
     # This is in RAM only (EEPROM store command not supported), so we must
     # apply it on every boot.
     YAW_VMAX_ADDR = 15
-    YAW_VMAX_TARGET = 60
+    YAW_VMAX_TARGET = 40
     try:
         ser = gimbal._serial
         if ser and ser.is_open:
