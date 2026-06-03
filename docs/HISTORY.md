@@ -432,3 +432,11 @@
 - **[RECOVERY PLAN]** Established step-by-step recovery process:
   - **Step A:** Test Power Supply in isolation using a multimeter (expect ~12V; 0V or smell indicates death).
   - **Step B:** Inspect Jetson Orin Nano for physical damage, re-power in isolation, and check status of power LED and booting behavior.
+
+## 2026-06-03 — GIMBAL UART-ONLY TRANSITION & ISOLATION RECOVERY (ECO-2026-007)
+- **[HW]** Gimbal transitioned to exclusive 3-Wire UART control (TX on Terminal 8, RX on Terminal 10, GND on Terminal 14). Bypassed and completely disconnected the USB data connection to prevent ground loops and 5V regulator clashes during live operations.
+- **[CODE]** `hardware.py` & `gimbal_controller.py`: Restored `/dev/ttyTHS1` and `/dev/ttyTHS0` to the serial port dynamic auto-detection lists with top priority.
+- **[CODE]** `gimbal_controller.py`: Fixed `aim()` method to serialize target angles using correct binary `o323BGC` float32 layout and 2-byte zero CRC, matching the Flask HAL protocol.
+- **[SPEC]** Updated `HW-001`, `SW-001`, `SAFE-001`, `spec.md`, and `agents.md` specifications to enforce the USB disconnect rule and formalize the UART-only control design.
+- **[TEST]** Updated `tests/test_serial.py`, `tests/test_usb_gimbal.py`, `tests/test_usb_gimbal_binary.py`, and `tests/test_usb_gimbal_long.py` to default to `/dev/ttyTHS1` and use the corrected float32 formatting. Successfully verified dynamic serial port activation and sweep operation on the Jetson Orin Nano.
+

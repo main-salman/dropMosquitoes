@@ -53,8 +53,9 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 - **Model:** Storm32 2-Axis Pre-Assembled (CNC Metal)
 - **Yaw Range:** ±130° mechanical (software endstop: ±80° — see SW-001 §4)
 - **Pitch Range:** ±45° mechanical (software endstop: ±20°)
-- **Comms:** Jetson USB-A Port → USB-A to Mini-USB Cable → Storm32 Mini-USB Port (highly recommended to prevent motor EMI noise and loose jumper pins)
-- **Serial:** `/dev/ttyUSB0` or `/dev/ttyACM0` (auto-detected) @ 115200 baud. Direct hardware UART connections are strictly disabled.
+- **Comms:** Jetson GPIO BREAKOUT (Pins 8 TX, 10 RX, 14 GND) → 3-Wire UART (no power wire) → Storm32 RC Pins (outer row: GND, RC-0/Pitch TX, RC-2/Yaw RX). USB data cable must be completely disconnected during live operation.
+- **Serial:** `/dev/ttyTHS1` or `/dev/ttyTHS0` (auto-detected) @ 115200 baud (with `/dev/ttyACM0`/`/dev/ttyUSB0` as fallback).
+
 
 
 
@@ -118,9 +119,9 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
 | **LiDAR V- (GND)** | Pin 6 | — | Terminal 6 | BLACK | TF-Luna ground |
 | **LiDAR CFG→GND** | Pin 9 | — | Terminal 9 | GREEN | TF-Luna Pin 5 CFG (shared with relay GND) |
-| **UART TX** | Pin 8 | BCM 14 | Terminal 8 | — | Reserved / Unused (Replaced by USB-to-MiniUSB cable) |
-| **UART RX** | Pin 10 | BCM 15 | Terminal 10 | — | Reserved / Unused (Replaced by USB-to-MiniUSB cable) |
-| **UART GND** | Pin 14 | — | Terminal 14 | — | Reserved / Unused (Replaced by USB-to-MiniUSB cable) |
+| **UART TX** | Pin 8 | BCM 14 | Terminal 8 | GREEN | UART control to Gimbal RC-2/Yaw RX pin |
+| **UART RX** | Pin 10 | BCM 15 | Terminal 10 | BLUE | UART control to Gimbal RC-0/Pitch TX pin |
+| **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
 

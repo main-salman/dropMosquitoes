@@ -52,7 +52,7 @@ print("  Storm32 CORRECT Protocol Test")
 print("  Using ROS2 driver format: 0xFA + float32 angles")
 print("=" * 60)
 
-ser = serial.Serial("/dev/ttyACM0", 115200, timeout=2.0)
+ser = serial.Serial("/dev/ttyTHS1", 115200, timeout=2.0)
 time.sleep(0.5)
 ser.reset_input_buffer()
 

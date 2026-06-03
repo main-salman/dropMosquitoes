@@ -224,8 +224,8 @@ class GimbalController:
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: USB serial only to prevent conflicts with empty hardware UARTs
-            ports_to_try = ["/dev/ttyACM0", "/dev/ttyUSB0"]
+            # Dynamic port detection: UART prioritized, USB serial as fallback
+            ports_to_try = ["/dev/ttyTHS1", "/dev/ttyTHS0", "/dev/ttyACM0", "/dev/ttyUSB0"]
             for p in ports_to_try:
                 try:
                     import os

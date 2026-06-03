@@ -227,3 +227,10 @@
 - **[RECOVERY PLAN]** Established step-by-step recovery process:
   - **Step A:** Test Power Supply in isolation using a multimeter (expect ~12V; 0V or smell indicates death).
   - **Step B:** Inspect Jetson Orin Nano for physical damage, re-power in isolation, and check status of power LED and booting behavior.
+
+### (this commit) — [CODE] Gimbal UART-Only Transition & Isolation Recovery (ECO-2026-007)
+- **gimbal_controller.py & hardware.py:** Restored `/dev/ttyTHS1` and `/dev/ttyTHS0` to dynamic connection list and purged blocklists to re-enable UART-only serial control of the Storm32 gimbal.
+- **gimbal_controller.py:** Fixed `aim()` method to build and send float32 IEEE 754 angles and a 2-byte zero CRC, resolving the int16 binary format serialization bug.
+- **tests/:** Updated `test_serial.py`, `test_usb_gimbal.py`, `test_usb_gimbal_binary.py`, and `test_usb_gimbal_long.py` to default to `/dev/ttyTHS1` and use the corrected float32 packing logic.
+- **Specs & Guides:** Updated HW-001, SW-001, SAFE-001, spec.md, and agents.md to enforce electrical isolation (disconnection of the USB data cable during live operation) to mitigate ground loops and voltage regulator fights.
+

@@ -25,14 +25,11 @@ class GimbalController:
         self.PITCH_LIMIT = 20.0
         self.YAW_LIMIT = 80.0
 
-        # Dynamic port detection: USB serial only. Direct UART/ttyTHS ports are strictly blocked.
+        # Dynamic port detection: UART prioritized, USB serial as fallback.
         ports_to_try = []
         if port is not None:
-            if "ttyTHS" in port:
-                print(f"[GimbalController] UART port {port} is strictly disabled to avoid conflict. Forcing USB detection.")
-            else:
-                ports_to_try.append(port)
-        ports_to_try.extend(["/dev/ttyACM0", "/dev/ttyUSB0"])
+            ports_to_try.append(port)
+        ports_to_try.extend(["/dev/ttyTHS1", "/dev/ttyTHS0", "/dev/ttyACM0", "/dev/ttyUSB0"])
 
         self.port = None
         for p in ports_to_try:
@@ -58,28 +55,25 @@ class GimbalController:
         self.pitch = max(-self.PITCH_LIMIT, min(self.PITCH_LIMIT, pitch))
         self.yaw = max(-self.YAW_LIMIT, min(self.YAW_LIMIT, yaw))
 
-        # Scale to degrees * 100 for Storm32 o323BGC int16 format
-        pitch_val = int(self.pitch * 100)
-        roll_val = 0
-        yaw_val = int(self.yaw * 100)
+        roll_deg = 0.0
+        # Pack angles as float32 (4 bytes each) + 2-byte flags
+        payload = struct.pack('<fffH',
+                              self.pitch,   # pitch (float32)
+                              roll_deg,     # roll (float32, unused)
+                              self.yaw,     # yaw (float32)
+                              0)            # flags (0 = unlimited)
 
-        # Pack payload (14 bytes): pitch (int16), roll (int16), yaw (int16), flags (uint16), type (uint16)
-        payload = struct.pack('<hhhHH', pitch_val, roll_val, yaw_val, 0, 0)
-        payload += b'\x00' * (14 - len(payload))
+        data_len = len(payload)  # 14 bytes (4+4+4+2)
+        cmd_id = 0x11  # CMD_SET_ANGLES
 
-        # Build packet: 0xFA (start), data_len (14), cmd_id (0x11 = Set Camera Angles)
-        packet = bytes([0xFA, len(payload), 0x11]) + payload
-
-        # XOR Checksum of all bytes after the 0xFA start marker
-        crc = 0
-        for b in packet[1:]:
-            crc ^= b
-        packet += bytes([crc])
+        # Build full packet: header + payload + 2-byte CRC (0x00 0x00)
+        packet = bytes([0xFA, data_len, cmd_id]) + payload
+        packet += bytes([0x00, 0x00])  # CRC — board does not check
 
         with self._write_lock:
             if self.ser and self.ser.is_open:
                 self.ser.write(packet)
-                print(f"[GimbalController] Moved (binary o323BGC) to Pitch: {self.pitch:.2f}, Yaw: {self.yaw:.2f}")
+                print(f"[GimbalController] Moved (binary o323BGC float32) to Pitch: {self.pitch:.2f}, Yaw: {self.yaw:.2f}")
             else:
                 print(f"[GimbalController] STUB — Pitch: {self.pitch:.2f}, Yaw: {self.yaw:.2f}")
 

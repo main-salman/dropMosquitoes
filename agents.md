@@ -15,7 +15,7 @@ The system is divided into four asynchronous agents communicating via thread-saf
 2. **TurretAgent (`gimbal_controller.py`):**
    - Translates Cartesian pixel coordinates into Pitch/Yaw degree commands.
    - Enforces the -80/+80 Yaw boundary.
-   - Commands the Storm32 gimbal via binary o323BGC packets over USB (/dev/ttyACM0 or /dev/ttyUSB0).
+   - Commands the Storm32 gimbal via binary o323BGC packets over UART (/dev/ttyTHS1 or /dev/ttyTHS0).
    
 3. **SniperAgent (`sniper_vision.py`):**
    - Reads `/dev/video1` via GStreamer `nvarguscamerasrc sensor-id=1`.

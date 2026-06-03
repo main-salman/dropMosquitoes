@@ -19,35 +19,13 @@ def build_storm32_packet(pitch_deg: float, yaw_deg: float) -> bytes:
     """
     Build a Storm32 o323BGC 'Set Camera Angles' packet.
     """
-    # angles scaled by 100
-    pitch_val = int(pitch_deg * 100)
-    roll_val = 0
-    yaw_val = int(yaw_deg * 100)
-
-    # Pack values: pitch (int16), roll (int16), yaw (int16), flags (uint16), type (uint16)
-    payload = struct.pack('<hhhHH',
-                          pitch_val,
-                          roll_val,
-                          yaw_val,
-                          0,  # flags: 0 = absolute control
-                          0)  # type: 0 = normal angles
-    
-    # Pad payload to 14 bytes
-    payload += b'\x00' * (14 - len(payload))
-
-    # Header: 0xFA (start), data_len (14), cmd_id (0x11 = Set Angles)
-    header = bytes([0xFA, len(payload), 0x11])
-    packet = header + payload
-
-    # CRC: XOR of all bytes after the 0xFA start marker
-    crc = 0
-    for b in packet[1:]:
-        crc ^= b
-        
-    return packet + bytes([crc])
+    roll_deg = 0.0
+    payload = struct.pack('<fffH', pitch_deg, roll_deg, yaw_deg, 0)
+    packet = bytes([0xFA, len(payload), 0x11]) + payload + bytes([0x00, 0x00])
+    return packet
 
 def test_usb_movement():
-    port = "/dev/ttyACM0"
+    port = "/dev/ttyTHS1"
     baud = 115200
     
     try:

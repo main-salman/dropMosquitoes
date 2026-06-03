@@ -29,7 +29,7 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 ### 2.2 TurretAgent (`gimbal_controller.py`)
 - **Input:** `(x, y)` pixel coordinates from ScoutAgent
 - **Processing:** `pixel_to_angle()` conversion, pitch/yaw boundary enforcement (±20° pitch, ±80° yaw)
-- **Output:** Binary command packet (`o323BGC` protocol) to Storm32 via USB serial `/dev/ttyUSB0` or `/dev/ttyACM0` (auto-detected) @ 115200 baud. UART is disabled.
+- **Output:** Binary command packet (`o323BGC` protocol) to Storm32 via UART serial `/dev/ttyTHS1` or `/dev/ttyTHS0` (auto-detected) @ 115200 baud. USB is disabled during live operations to prevent ground loops.
 
 
 - **Async:** `aim_async()` and `sweep_async()` dispatch serial writes via `run_in_executor` — never blocks asyncio loop

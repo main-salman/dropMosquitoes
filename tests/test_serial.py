@@ -67,9 +67,7 @@ def test_storm32(port, baud=115200):
 
     test("Serial port opens", ser.is_open)
 
-    # Storm32 GetVersion command (o323BGC protocol)
-    # 0xFA = start, 0x00 = data_len, 0x01 = CMD_GET_VERSION
-    cmd = bytes([0xFA, 0x00, 0x01, 0x01])  # Last byte = CRC
+    cmd = bytes([0xFA, 0x00, 0x01, 0x00, 0x00])  # GetVersion with 2-byte zero CRC
     ser.reset_input_buffer()
     ser.write(cmd)
     time.sleep(0.5)
@@ -153,7 +151,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Serial USB Test")
     parser.add_argument('--storm32', action='store_true', help='Storm32 handshake test')
     parser.add_argument('--sweep', action='store_true', help='Full gimbal angle sweep')
-    parser.add_argument('--port', default='/dev/ttyACM0', help='Serial port')
+    parser.add_argument('--port', default='/dev/ttyTHS1', help='Serial port')
     parser.add_argument('--baud', type=int, default=115200, help='Baud rate')
     args = parser.parse_args()
 

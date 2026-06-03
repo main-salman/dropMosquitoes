@@ -16,20 +16,13 @@ except ImportError:
     print("Jetson.GPIO not available, running in STUB/DRY-RUN mode.")
 
 def build_storm32_packet(pitch_deg: float, yaw_deg: float) -> bytes:
-    pitch_val = int(pitch_deg * 100)
-    roll_val = 0
-    yaw_val = int(yaw_deg * 100)
-    payload = struct.pack('<hhhHH', pitch_val, roll_val, yaw_val, 0, 0)
-    payload += b'\x00' * (14 - len(payload))
-    header = bytes([0xFA, len(payload), 0x11])
-    packet = header + payload
-    crc = 0
-    for b in packet[1:]:
-        crc ^= b
-    return packet + bytes([crc])
+    roll_deg = 0.0
+    payload = struct.pack('<fffH', pitch_deg, roll_deg, yaw_deg, 0)
+    packet = bytes([0xFA, len(payload), 0x11]) + payload + bytes([0x00, 0x00])
+    return packet
 
 def test_usb_movement():
-    port = "/dev/ttyACM0"
+    port = "/dev/ttyTHS1"
     baud = 115200
     
     try:
