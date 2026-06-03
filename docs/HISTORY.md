@@ -440,3 +440,33 @@
 - **[SPEC]** Updated `HW-001`, `SW-001`, `SAFE-001`, `spec.md`, and `agents.md` specifications to enforce the USB disconnect rule and formalize the UART-only control design.
 - **[TEST]** Updated `tests/test_serial.py`, `tests/test_usb_gimbal.py`, `tests/test_usb_gimbal_binary.py`, and `tests/test_usb_gimbal_long.py` to default to `/dev/ttyTHS1` and use the corrected float32 formatting. Successfully verified dynamic serial port activation and sweep operation on the Jetson Orin Nano.
 
+## 2026-06-03 — GIMBAL USB SERIAL CONTROL RESTORED
+
+- **[HW]** Discovered UART pins (Terminals 8/10 on IDC40P) are non-functional for gimbal communication. No electrical activity detected.
+- **[HW]** Confirmed IDC40P PWM pins (Terminals 32/33) are dead — Yahboom carrier board reads constant 2.90V DC regardless of software PWM state.
+- **[HW]** Reconnected USB cable from Storm32 gimbal to Jetson via `/dev/ttyACM0`. This is the ONLY working communication method.
+- **[CODE]** `hardware.py`: Switched serial port priority to `/dev/ttyACM0` (USB) as primary gimbal interface.
+- **[DECISION]** USB serial via o323BGC binary protocol is the sole viable gimbal control method on this hardware.
+
+## 2026-06-03 — PITCH OSCILLATION FIX & GIMBAL LIMITS CONFIRMED
+
+- **[BUG]** Gimbal pitch motor oscillated continuously when PITCH_HOME was set to -20° or lower. Root cause: commanding angles beyond mechanical endstop (±25°) caused PID hunting.
+- **[CODE]** `hardware.py`: Changed `PITCH_HOME` from `-20.0` to `0.0`. Expanded `PITCH_LIMIT` to `100.0` for user calibration via WASD keys.
+- **[HW-FINDING]** Gimbal spec sheet confirms mechanical limits: Pitch ±25° (50° total), Roll ±25°, Yaw ±90°. Firmware v0.90 (o323bgc-release-v090), Hardware V130.
+- **[HW-FINDING]** Mounting geometry problem: with ±25° pitch and camera pointing down at gimbal 0°, max forward tilt = 25° from vertical — insufficient for horizontal targeting. Payload bracket must be pre-angled ~65° toward forward.
+
+## 2026-06-03 — SNIPER VIDEO GARBLING: ROOT CAUSE & FIX
+
+- **[BUG]** Sniper camera (sensor-id=1, IMX219 on MIPI CSI Port 1) produced garbled video on every `run-ai.sh` restart. Only a full Jetson reboot restored clean video.
+- **[ANALYSIS]** Investigated: nvargus-daemon restart (insufficient), kernel module reload via `modprobe -r nv_imx219` (works but had race condition), direct `gst-launch-1.0` test (confirmed clean frames after modprobe — proving teardown is the issue).
+- **[ROOT CAUSE]** `CameraStream.stop()` in `vision.py` called `cap.release()` inside the capture thread AFTER the while loop exited, but `cap.read()` blocks indefinitely. The 2-second `thread.join()` timeout expired, `stop()` returned, process was killed — leaving the GStreamer pipeline orphaned and CSI sensor corrupted.
+- **[CODE]** `vision.py`: Fixed `stop()` to call `cap.release()` BEFORE joining the thread, unblocking stuck `cap.read()`. Added exception handling for externally-released pipeline.
+- **[CODE]** `run-ai.sh`: Added full camera subsystem reset in stop phase — `modprobe -r nv_imx219` / `modprobe nv_imx219` (software-equivalent reboot for camera subsystem).
+- **[CODE]** `app.py`: Reduced camera FPS 60→30. Added 2-second sequential delay between Scout and Sniper camera start.
+
+## 2026-06-03 — YAW MOTOR OVERHEATING & VMAX TUNING
+
+- **[HW-FINDING]** Yaw motor runs significantly hotter than pitch/roll. Yaw uses larger 2805/100T motor vs 2206/100T for pitch/roll.
+- **[ANALYSIS]** Likely caused by excessive Vmax (motor power) in Storm32 firmware PID. o323BGCTool Windows download links are broken (GitHub repo and wiki).
+- **[CODE]** `tests/tune_storm32_vmax.py`: Created Jetson-based Python script to read/write Storm32 motor parameters via USB serial. Uses o323BGC CMD 0x03 (GET_PARAMETER) and CMD 0x04 (SET_PARAMETER) with proper 4-byte response parsing.
+- **[PROBE]** Confirmed firmware v0.90 via CMD 0x01. Parameter map: Pitch Power (addr 3) = 95, Roll Power (addr 7), Yaw Power (addr 11). Full PID + Power addresses 0-11 validated.
