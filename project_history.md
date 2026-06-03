@@ -205,4 +205,25 @@
 - Updated 5 spec files (HW-001, SW-001, SYS-001, OPS-001, spec.md), 3 code files (scout_vision.py, main.py, deploy.sh), 5 docs (gemini.md, README.md, prompt.md, PRINT_GUIDE.md, mounting_concepts/README.md), and 4 draw.io diagrams.
 - OV9281 references remain only in `HISTORY.md` as historical records.
 
+### (this commit) — [CODE] Gimbal Pure USB Transition & o323BGC Protocol Serialization Fix
+- **gimbal_controller.py:** Refactored the `aim` method to write binary `o323BGC` packets (start frame `0xFA`, command ID `0x11`, scaled int16 angles, XOR checksum) instead of `$CMD` NMEA text strings, restoring physical autonomous turret movements.
+- **gimbal_controller.py & hardware.py:** Purged Jetson UART serial port devices (`/dev/ttyTHS1`/`/dev/ttyTHS0`) and fallback routing, leaving only USB (`/dev/ttyACM0`/`/dev/ttyUSB0`) to avoid port resource confusion.
+- **tests/test_serial.py:** Modified defaults to target `/dev/ttyACM0` and removed direct pin-based UART loopback tests.
+- **tests/test_usb_gimbal.py & test_usb_gimbal_long.py:** Updated to serialize command packets using the binary `o323BGC` protocol.
+- **Specs & Guides:** Updated HW-001, SW-001, TEST-001, OPS-001, spec.md, and agents.md to reflect USB serial as the exclusive gimbal communications channel.
 
+### (this commit) — [CODE] Fused Gimbal Power & Relay Bypass
+- **hardware.py:** Refactored `RelayController` to bypass BCM 27 (Relay CH2) and initialize `self._gimbal_state = True` since it is now always powered.
+- **tests/test_usb_gimbal.py, test_usb_gimbal_long.py, test_usb_gimbal_binary.py:** Bypassed relay toggle commands and removed startup delays.
+- **Specs & Guides:** Updated HW-001, SAFE-001, TEST-001, OPS-001, and spec.md to reserve BCM 27 and establish the direct 2A fused power architecture.
+
+### (this commit) — [INCIDENT] Catastrophic Gimbal Short Circuit & Emergency Shutdown
+- **[INCIDENT]** Melted red wire detected, indicating a catastrophic dead short circuit where the gimbal controller (or wiring) created a direct bridge between the 12V and Ground lines.
+- **[ANALYSIS]** Because the relay was bypassed and there was likely no inline fuse installed (or it was bypassed), the gimbal pulled the maximum amperage the power supply could deliver (10+ Amps) until the wire physically acted as a fuse and melted.
+- **[DIAGNOSTIC]** The audible "beep" during the failure was analyzed:
+  - **Power Supply (Most Likely):** Internal Over-Current Protection (OCP) tripped. Rapid discharge of massive internal capacitors when unplugged can produce a sharp electronic "squeak" or double-beep.
+  - **Gimbal Motors:** Blown motor driver MOSFETs or voltage regulators on the Storm32 board could cause residual power draining through coils to emit a high-pitched beep/whine as they die.
+- **[VERDICT]** The Storm32 controller board is dead and must be quarantined. Do not attempt to wire this gimbal board back to power or connect it to the Jetson via USB or UART, as it is a fire hazard and could push 12V back up the data lines.
+- **[RECOVERY PLAN]** Established step-by-step recovery process:
+  - **Step A:** Test Power Supply in isolation using a multimeter (expect ~12V; 0V or smell indicates death).
+  - **Step B:** Inspect Jetson Orin Nano for physical damage, re-power in isolation, and check status of power LED and booting behavior.

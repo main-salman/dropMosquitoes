@@ -405,3 +405,30 @@
 ## 2026-06-02 — GUI GIMBAL CONTROL BUG FIX
 - **[BUG FIX]** `templates/index.html`: Fixed HTML ID collision where both the Gimbal Power toggle checkbox and the Test Grid container shared `id="tg"`. Renamed the Test Grid container to `id="test-grid"` and updated `loadTests()` to select `$('test-grid')`. This resolves a critical issue where navigating to the Tests tab destroyed/corrupted the Gimbal Power toggle checkbox, preventing users from turning on gimbal power and causing WASD controls to appear non-functional.
 
+## 2026-06-02 — HARDWARE LIFECYCLE & PINMUX STABILIZATION
+- **[CODE]** `hardware.py` & `weapon_system.py`: Refactored `configure_push_pull()` to a module-level helper function and postponed its call to execute immediately **after** `GPIO.setup()` inside both `RelayController.__init__` and `WeaponSystem.__init__`. This prevents `Jetson.GPIO` (which uses `/sys/class/gpio` exports) from resetting the pad registers back to Open-Drain mode.
+- **[CODE]** `run-ai.sh`: Updated Step 3 to start `app.py` in background as **root** (using `sudo`) so it possesses mmap write access to `/dev/mem` for register modifications.
+- **[CODE]** `run-ai.sh`: Updated Step 2 to terminate existing python processes gracefully (`SIGTERM` via `killall` first, sleeping for 2 seconds, and only then falling back to `kill -9` as a final measure). This allows OpenCV and GStreamer's `nvarguscamerasrc` to safely execute their `atexit` cleanups, close their sockets, and release the CSI-1/CSI-0 camera handles, preventing horizontal line noise/distortion (garbled Bayer outputs) on subsequent startups.
+
+## 2026-06-02 — GIMBAL PURE USB TRANSITION & PROTOCOL FIX
+- **[HW]** Purged all UART fallback ports (`/dev/ttyTHS0`/`/dev/ttyTHS1`) from gimbal auto-detection connection lists and serial tests.
+- **[CODE]** `gimbal_controller.py`: Refactored to build and transmit standard 18-byte binary `o323BGC` packets over USB instead of NMEA `$CMD` strings, resolving the "limp/dead" non-responsive gimbal behavior in autonomous tracking mode.
+- **[CODE]** `tests/`: Refactored `test_usb_gimbal.py`, `test_usb_gimbal_long.py`, and `test_serial.py` to use pure USB (`/dev/ttyACM0`) and serialize commands using the binary protocol.
+- **[SPEC]** Updated `HW-001`, `SW-001`, `TEST-001`, `OPS-001`, `spec.md`, and `agents.md` to establish USB serial as the exclusive gimbal communications channel.
+
+## 2026-06-03 — FUSED GIMBAL POWER & RELAY BYPASS (ECO-2026-006)
+- **[HW]** Gimbal transitioned to a direct 2A fused power connection on the 12V star topology, completely bypassing the BCM 27 (Relay CH2) power interlock for reliability and constant calibration.
+- **[CODE]** `hardware.py`: Refactored `RelayController` to bypass BCM 27 relay logic and report gimbal power state as always `True` (since it is directly powered).
+- **[CODE]** `tests/`: Removed relay power toggling and startup boot delays from `test_usb_gimbal.py`, `test_usb_gimbal_long.py`, and `test_usb_gimbal_binary.py`.
+- **[SPEC]** Updated `HW-001`, `SAFE-001`, `TEST-001`, `OPS-001`, and `spec.md` to define BCM 27 as reserved/unused and establish the 2A fused power design.
+
+## 2026-06-03 — CATASTROPHIC HARDWARE FAILURE: GIMBAL SHORT CIRCUIT
+- **[INCIDENT]** Melted red wire detected, indicating a catastrophic dead short circuit where the gimbal controller (or wiring) created a direct bridge between the 12V and Ground lines.
+- **[ANALYSIS]** Because the relay was bypassed and there was likely no inline fuse installed (or it was bypassed), the gimbal pulled the maximum amperage the power supply could deliver (10+ Amps) until the wire physically acted as a fuse and melted.
+- **[DIAGNOSTIC]** The audible "beep" during the failure was analyzed:
+  - **Power Supply (Most Likely):** Internal Over-Current Protection (OCP) tripped. Rapid discharge of massive internal capacitors when unplugged can produce a sharp electronic "squeak" or double-beep.
+  - **Gimbal Motors:** Blown motor driver MOSFETs or voltage regulators on the Storm32 board could cause residual power draining through coils to emit a high-pitched beep/whine as they die.
+- **[VERDICT]** The Storm32 controller board is dead and must be quarantined. Do not attempt to wire this gimbal board back to power or connect it to the Jetson via USB or UART, as it is a fire hazard and could push 12V back up the data lines.
+- **[RECOVERY PLAN]** Established step-by-step recovery process:
+  - **Step A:** Test Power Supply in isolation using a multimeter (expect ~12V; 0V or smell indicates death).
+  - **Step B:** Inspect Jetson Orin Nano for physical damage, re-power in isolation, and check status of power LED and booting behavior.
