@@ -155,7 +155,7 @@ Keep these open during assembly (all in `diagrams/` directory):
 | 10 | Mount Scout camera (IMX219 NoIR) to enclosure lid | `v4l2-ctl --list-devices` shows /dev/video0 | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
 | 11 | Connect Scout CSI chain → Jetson Port 0 | `gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! fakesink` | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |
 | 12 | Mount Storm32 gimbal to pole/bracket | Manual — arms swing freely | [assembly_3_gimbal](../../diagrams/assembly_3_gimbal.drawio) |
-| 13 | Wire gimbal to relay CH2 + Wago + UART (IDC40P terminals) | Power on → gimbal calibrates | [wire_04_relay_gimbal](../../diagrams/wire_04_relay_gimbal.drawio), [wire_05_gimbal_serial](../../diagrams/wire_05_gimbal_serial.drawio) |
+| 13 | Connect gimbal +12V to Wago +12V block via 2A inline fuse, and USB cable to Jetson | Power on → gimbal calibrates | [wire_04_relay_gimbal](../../diagrams/wire_04_relay_gimbal.drawio), [wire_05_gimbal_serial](../../diagrams/wire_05_gimbal_serial.drawio) |
 | 14 | Mount Sniper camera (IMX219) to gimbal payload | Firmly seated on payload plate | [gimbal_payload](../../diagrams/gimbal_payload.drawio) |
 | 15 | Mount Orbit nozzle on gimbal payload | Angle matches camera boresight | [gimbal_payload](../../diagrams/gimbal_payload.drawio) |
 | 16 | Run Sniper CSI chain (Camera → TX → FPV HDMI → RX → Jetson Port 1) | `gst-launch-1.0 nvarguscamerasrc sensor-id=1 ! fakesink` | [wire_07_camera_csi_chain](../../diagrams/wire_07_camera_csi_chain.drawio) |

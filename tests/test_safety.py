@@ -71,10 +71,9 @@ def test_boot_sequence():
     print(f"  T3.2: Boot Sequence — Gimbal Power Default")
     print(f"{'='*50}")
 
-    relay = RelayController()
-
-    test("Gimbal power OFF at init (SAFE-001 §1)",
-         relay.get_status()["gimbal_power"] == False)
+    # ECO-2026-006: Gimbal power is bypassed via 2A fuse, so it starts as True (always ON)
+    test("Gimbal power ON at init (bypassed via 2A fuse)",
+         relay.get_status()["gimbal_power"] == True)
     test("Pump OFF at init",
          relay.get_status()["pump"] == False)
 

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-# Implements: TEST-001 Layer 1, T1.5–T1.6 — Serial UART tests
+# Implements: TEST-001 Layer 1, T1.5–T1.6 — Serial USB tests
 """
-test_serial.py — Serial loopback and Storm32 handshake test.
+test_serial.py — Storm32 USB handshake and sweep test.
 
-Tests the UART connection to the Storm32 BGC board. Includes:
-  - Loopback test (TX→RX with wire jumper)
+Tests the USB connection to the Storm32 BGC board. Includes:
   - Storm32 version query
   - Angle command round-trip
 
 Usage (on Jetson):
-    python3 tests/test_serial.py --loopback           # TX→RX loopback test
     python3 tests/test_serial.py --storm32             # Storm32 handshake
     python3 tests/test_serial.py --sweep               # Full angle sweep test
 """
@@ -44,40 +42,7 @@ def test(name, condition, detail=""):
         print(f"  ❌ {name} — {detail}")
 
 
-def test_loopback(port, baud=115200):
-    """
-    T1.5: Serial loopback test. Requires a physical wire jumper
-    connecting TX to RX on the Jetson UART header.
-    """
-    print(f"\n{'='*50}")
-    print(f"  T1.5: Serial Loopback Test")
-    print(f"  Port: {port} @ {baud}")
-    print(f"  ⚠️  Requires TX→RX jumper wire on UART header!")
-    print(f"{'='*50}")
 
-    if not SERIAL_AVAILABLE:
-        print("  ❌ pyserial not installed. Skipping.")
-        return
-
-    try:
-        ser = serial.Serial(port, baud, timeout=1.0)
-    except serial.SerialException as e:
-        test("Serial port opens", False, str(e))
-        return
-
-    test("Serial port opens", ser.is_open)
-
-    # Send test patterns
-    patterns = [b'\xAA\x55', b'\x00\xFF', b'HELLO', b'\xFA\x0E\x11']
-    for pat in patterns:
-        ser.reset_input_buffer()
-        ser.write(pat)
-        time.sleep(0.1)
-        received = ser.read(len(pat))
-        test(f"Loopback {pat.hex()} → {received.hex()}", received == pat,
-             f"sent {pat.hex()}, got {received.hex()}")
-
-    ser.close()
 
 
 def test_storm32(port, baud=115200):
@@ -185,19 +150,16 @@ def test_sweep():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Serial UART Test")
-    parser.add_argument('--loopback', action='store_true', help='TX→RX loopback test')
+    parser = argparse.ArgumentParser(description="Serial USB Test")
     parser.add_argument('--storm32', action='store_true', help='Storm32 handshake test')
     parser.add_argument('--sweep', action='store_true', help='Full gimbal angle sweep')
-    parser.add_argument('--port', default='/dev/ttyTHS1', help='Serial port')
+    parser.add_argument('--port', default='/dev/ttyACM0', help='Serial port')
     parser.add_argument('--baud', type=int, default=115200, help='Baud rate')
     args = parser.parse_args()
 
-    if not (args.loopback or args.storm32 or args.sweep):
+    if not (args.storm32 or args.sweep):
         args.sweep = True  # Default: sweep test (works in stub mode)
 
-    if args.loopback:
-        test_loopback(args.port, args.baud)
     if args.storm32:
         test_storm32(args.port, args.baud)
     if args.sweep:

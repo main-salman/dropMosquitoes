@@ -10,7 +10,7 @@
 | Hazard | Mitigation | Spec Reference |
 |:-------|:-----------|:---------------|
 | 12V back-EMF from pump | Monk Makes relay provides opto-isolation between Jetson 3.3V GPIO and 12V motor circuit | HW-001 §5 |
-| Gimbal boot instability | Relay CH2 holds gimbal power OFF for 15s until Jetson IMU init completes | HW-001 §5 |
+| Gimbal boot instability | Gimbal is directly powered via 2A fuse and boots independently of the Jetson. BCM 27 relay CH2 is bypassed. | HW-001 §5 |
 | Water siphon on downward pitch | Feelers 1/4" spring check valve inline prevents gravity drain | HW-001 §6 |
 | Dew/rain infiltration | IP67 enclosure + silicone-sealed cable glands + Park Mode | HW-001 §7 |
 | Cable snap during rotation | 3" service loop + FPC strain relief anchors with zip ties | HW-001 §6 |

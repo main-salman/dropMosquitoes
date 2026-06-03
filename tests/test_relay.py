@@ -92,37 +92,29 @@ def test_pump_relay(relay, cycles=3, pulse_sec=0.3):
 
 def test_gimbal_relay(relay):
     """
-    Test Relay CH2 (Gimbal Power).
+    Test Relay CH2 (Gimbal Power - Bypassed).
 
-    T1.4: Relay clicks, gimbal motors power up.
-    SAFE-001 §1: Must default to OFF at boot.
+    T1.4: Gimbal power is bypassed via a 2A fuse and is always ON.
     """
     print(f"\n{'='*50}")
-    print(f"  T1.4: Gimbal Power Relay Test")
+    print(f"  T1.4: Gimbal Power Relay Test (Bypassed via 2A Fuse)")
     if not JETSON_AVAILABLE:
         print("  ⚠️  STUB MODE — verify logic only.")
     print(f"{'='*50}")
 
-    # SAFE-001 §1: Initial state MUST be OFF
+    # Gimbal power must default to ON (bypassed)
     status = relay.get_status()
-    test("Gimbal power initial state is OFF (SAFE-001 §1)", status["gimbal_power"] == False)
+    test("Gimbal power is ON at boot", status["gimbal_power"] == True)
 
-    # Turn ON
-    print("\n  Turning gimbal power ON...")
+    # Set ON should keep it ON
     relay.set_gimbal_power(True)
-    time.sleep(0.5)
     status = relay.get_status()
-    test("Gimbal power ON", status["gimbal_power"] == True)
+    test("Gimbal power remains ON when set to True", status["gimbal_power"] == True)
 
-    if JETSON_AVAILABLE:
-        input("  ⏸️  Press ENTER after verifying gimbal motors are energized...")
-
-    # Turn OFF
-    print("  Turning gimbal power OFF...")
+    # Set OFF should keep it ON (since bypassed)
     relay.set_gimbal_power(False)
-    time.sleep(0.5)
     status = relay.get_status()
-    test("Gimbal power OFF", status["gimbal_power"] == False)
+    test("Gimbal power remains ON when set to False (bypassed)", status["gimbal_power"] == True)
 
 
 if __name__ == "__main__":

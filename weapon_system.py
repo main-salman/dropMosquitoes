@@ -36,7 +36,13 @@ class WeaponSystem:
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self.relay_pin, GPIO.OUT)
             GPIO.output(self.relay_pin, GPIO.LOW)
-            print(f"[WeaponSystem] Initialized on Pin {self.relay_pin}")
+            try:
+                from hardware import configure_push_pull
+                configure_push_pull()
+            except ImportError:
+                pass
+            print(f"[WeaponSystem] Initialized on Pin {self.relay_pin} and forced to Push-Pull")
+
 
     @property
     def is_firing(self) -> bool:

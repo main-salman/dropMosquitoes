@@ -40,8 +40,8 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | T1.1 | Scout camera GStreamer | Run `test_camera.py --scout` | Live 120FPS feed, no dropped frames for 30s |
 | T1.2 | Sniper camera GStreamer | Run `test_camera.py --sniper` | Live 30FPS feed, frame shape 1920×1080 |
 | T1.3 | GPIO Relay 1 (Pump) | Run `test_relay.py --pump` | Relay audibly clicks ON/OFF, multimeter shows 12V |
-| T1.4 | GPIO Relay 2 (Gimbal) | Run `test_relay.py --gimbal` | Relay clicks, gimbal motors power up |
-| T1.5 | Serial UART TX | Run `test_serial.py --loopback` | TX→RX loopback receives sent bytes |
+| T1.4 | Reserved (Relay 2) | Run `test_relay.py --gimbal` | BCM 27 toggles, relay clicks (gimbal is powered directly via 2A fuse) |
+| T1.5 | Serial USB Connection | Run `test_serial.py --storm32` | Connection established over USB serial |
 | T1.6 | Storm32 response | Run `test_serial.py --storm32` | Board replies with version/status packet |
 | T1.7 | TensorRT model load | Run `test_yolo.py` | Model loads in <3s, inference on test image returns detections |
 
@@ -55,7 +55,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | T2.1 | Dual camera simultaneous | Both cameras streaming to MJPEG at once | No bus conflict, both feeds >15FPS |
 | T2.2 | Camera + Serial | Stream camera while sending gimbal commands | No serial timeout, no frame drops |
 | T2.3 | GPIO + Serial | Fire pump relay while gimbal is moving | No back-EMF interference on UART |
-| T2.4 | Full boot sequence | Power on → Relay 2 OFF → Serial init → Relay 2 ON | Gimbal doesn't jerk on boot |
+| T2.4 | Reserved (Boot sequence) | Power on mains | Gimbal directly powered, calibrates immediately on startup |
 | T2.5 | YOLO + camera | Run inference on live sniper feed | >10 FPS inference, correct bounding boxes |
 | T2.6 | Click-to-aim live | Click on Scout feed → gimbal moves to target | Gimbal arrives within ±3° of target |
 | T2.7 | Stream-and-Sweep parallel | Trigger fire_sweep() + sweep_async() simultaneously | Pump runs 400ms, gimbal completes sweep, no thread deadlock |
@@ -68,7 +68,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | ID | Test | Procedure | Pass Criteria |
 |:---|:-----|:----------|:--------------|
 | T3.1 | Kill switch | Kill Python process mid-fire | BCM 17 goes LOW within 10ms (measured with oscilloscope or LED) |
-| T3.2 | Power loss recovery | Yank DC power during gimbal motion | Gimbal settles safely, no stuck relay |
+| T3.2 | Power loss recovery | Yank DC power during gimbal motion | Gimbal settles safely |
 | T3.3 | Large-Object Rejection | Place large object (person, bird) in sniper FOV | Object rejected as non-target, pump does NOT fire |
 | T3.4 | Software endstop enforcement | Command yaw=180° via API | Gimbal clamps to ±80°, no wire strain |
 
@@ -116,7 +116,7 @@ This system combines computer vision, serial robotics, fluid dynamics, and edge 
 | `tests/test_smoke.py` | 0 | Automated: starts server, hits all API endpoints, checks responses |
 | `tests/test_camera.py` | 1 | Standalone camera test with FPS counter and frame saver |
 | `tests/test_relay.py` | 1 | GPIO relay pulse test with configurable timing |
-| `tests/test_serial.py` | 1 | Serial loopback and Storm32 handshake test |
+| `tests/test_serial.py` | 1 | Serial Storm32 handshake and sweep test |
 | `tests/test_yolo.py` | 1 | TensorRT model load and single-frame inference |
 | `tests/test_safety.py` | 3 | Automated safety interlock verification |
 | `tests/test_accuracy.py` | 4 | Click-to-aim and endstop validation |

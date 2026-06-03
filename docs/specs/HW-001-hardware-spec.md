@@ -54,7 +54,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 - **Yaw Range:** ±130° mechanical (software endstop: ±80° — see SW-001 §4)
 - **Pitch Range:** ±45° mechanical (software endstop: ±20°)
 - **Comms:** Jetson USB-A Port → USB-A to Mini-USB Cable → Storm32 Mini-USB Port (highly recommended to prevent motor EMI noise and loose jumper pins)
-- **Serial:** `/dev/ttyUSB0` or `/dev/ttyACM0` (auto-detected fallback to `/dev/ttyTHS1` / `/dev/ttyTHS0`) @ 115200 baud
+- **Serial:** `/dev/ttyUSB0` or `/dev/ttyACM0` (auto-detected) @ 115200 baud. Direct hardware UART connections are strictly disabled.
 
 
 
@@ -74,7 +74,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | 2 | Yahboom Jetson (barrel jack) |
 | 3 | Univivi IR Illuminator (direct, always-on) |
 | 4 | Relay CH1 Common (→ Pump +12V via NO contact) |
-| 5 | Relay CH2 Common (→ Gimbal +12V via NO contact) |
+| 5 | Gimbal +12V (direct connection via 2A inline fuse) |
 
 ### Wago GND Port Map
 
@@ -112,7 +112,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **Relay V+ (5V)** | Pin 2 | — | Terminal 2 | RED | Monk Makes relay power input |
 | **Relay V- (GND)** | Pin 9 | — | Terminal 9 | BLACK | Monk Makes relay ground |
 | **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → CH1 (Water Pump) |
-| **Relay CH2 (Gimbal)** | Pin 13 | BCM 27 | Terminal 13 | ORANGE | Trigger line → CH2 (Storm32 Power) |
+| **Reserved (Relay CH2)** | Pin 13 | BCM 27 | Terminal 13 | ORANGE | Reserved / Unused (Gimbal now directly powered via 2A fuse) |
 | **LiDAR I2C SDA** | Pin 3 | BCM 2 | Terminal 3 | BLUE | TF-Luna data line |
 | **LiDAR I2C SCL** | Pin 5 | BCM 3 | Terminal 5 | YELLOW | TF-Luna clock line |
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
@@ -128,7 +128,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
   - CH1: Pump trigger (GPIO 17 → 3.3V control → NO closes → Pump gets +12V)
-  - CH2: Gimbal boot delay (GPIO 27 → holds gimbal off until Jetson boots)
+  - CH2: Reserved / Unused (previously Gimbal boot delay, now bypassed via 2A fuse)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
 ### 6.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)

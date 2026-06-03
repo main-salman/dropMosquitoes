@@ -11,9 +11,9 @@
 
 ## Pinout & Comms
 - **Pump Relay (Monk Makes CH1):** Jetson GPIO BCM 17 (IDC40P Terminal 11, 3.3V logic).
-- **Gimbal Relay (Monk Makes CH2):** Jetson GPIO BCM 27 (IDC40P Terminal 13).
+- **Reserved (previously Gimbal Relay):** Jetson GPIO BCM 27 (IDC40P Terminal 13, unused).
 - **Status Buzzer:** Jetson GPIO BCM 4 (IDC40P Terminal 7).
-- **Turret Comms (Storm32):** `/dev/ttyTHS1` (Jetson UART). Baud rate: 115200.
+- **Turret Comms (Storm32):** `/dev/ttyACM0` or `/dev/ttyUSB0` (USB Serial). Baud rate: 115200.
 
 ## Fluid System (ECO-2026-003)
 - **Pump:** 12V DC Diaphragm Pump (60 PSI, self-priming). Surface-mounted adjacent to enclosure.

@@ -81,17 +81,33 @@ ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     # Stop the systemd sentry service (runs main.py as root)
     echo '${JETSON_PASSWORD}' | sudo -S systemctl stop sentry 2>/dev/null || true
 
-    # Kill any remaining root-owned main.py or app.py processes
-    echo '${JETSON_PASSWORD}' | sudo -S killall -9 python3 2>/dev/null || true
-    sleep 2
+    # Graceful shutdown first — SIGTERM triggers our signal handler which
+    # properly tears down GStreamer pipelines and releases MIPI CSI sensors.
+    # Without this, nvarguscamerasrc leaves the sensor in a bad state and
+    # the Sniper camera feed becomes garbled on restart.
+    echo '${JETSON_PASSWORD}' | sudo -S killall -TERM python3 2>/dev/null || true
+    sleep 3
 
-    # Also kill any user-owned processes
+    # Force-kill any stubborn processes only after giving 3s for graceful cleanup
+    echo '${JETSON_PASSWORD}' | sudo -S killall -9 python3 2>/dev/null || true
+
+    # Also kill any user-owned processes gracefully
     if [ -f .sentry.pid ]; then
         PID=\$(cat .sentry.pid)
         kill "\$PID" 2>/dev/null || true
+        sleep 1
+        kill -9 "\$PID" 2>/dev/null || true
         rm -f .sentry.pid
     fi
     pgrep -f '[a]pp.py' | xargs -r kill 2>/dev/null || true
+    sleep 1
+    pgrep -f '[a]pp.py' | xargs -r kill -9 2>/dev/null || true
+
+    # Restart nvargus-daemon to reset MIPI CSI sensor state.
+    # This prevents garbled camera feeds after an unclean shutdown.
+    echo '${JETSON_PASSWORD}' | sudo -S systemctl restart nvargus-daemon 2>/dev/null || true
+    sleep 1
+
     echo '   Done.'
 ENDSSH
 
@@ -116,12 +132,13 @@ ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     echo '${JETSON_PASSWORD}' | sudo -S chown ${JETSON_USER}:${JETSON_USER} sentry.log 2>/dev/null || true
     rm -f sentry.log
 
-    # Start server in background with nohup so it survives SSH disconnect
-    nohup python3 app.py --port ${PORT} > sentry.log 2>&1 &
-    SERVER_PID=\$!
-    echo \$SERVER_PID > .sentry.pid
-    sleep 4
-    if kill -0 \$SERVER_PID 2>/dev/null; then
+    # Start server as ROOT in background with nohup so it has direct mmap /dev/mem write access to override pad registers
+    echo '${JETSON_PASSWORD}' | sudo -S PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages nohup python3 -u app.py --port ${PORT} > sentry.log 2>&1 &
+
+    sleep 2
+    SERVER_PID=\$(pgrep -o -f 'app.py --port ${PORT}')
+    if [ -n "\$SERVER_PID" ]; then
+        echo \$SERVER_PID > .sentry.pid
         echo "✅ Server started on Jetson (PID \$SERVER_PID)"
     else
         echo "❌ Server failed to start. Last 20 lines of log:"

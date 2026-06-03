@@ -29,7 +29,7 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 ### 2.2 TurretAgent (`gimbal_controller.py`)
 - **Input:** `(x, y)` pixel coordinates from ScoutAgent
 - **Processing:** `pixel_to_angle()` conversion, pitch/yaw boundary enforcement (±20° pitch, ±80° yaw)
-- **Output:** Serial command string to Storm32 via `/dev/ttyUSB0` or `/dev/ttyACM0` (fallback to UART `/dev/ttyTHS1` / `/dev/ttyTHS0`) @ 115200 baud
+- **Output:** Binary command packet (`o323BGC` protocol) to Storm32 via USB serial `/dev/ttyUSB0` or `/dev/ttyACM0` (auto-detected) @ 115200 baud. UART is disabled.
 
 
 - **Async:** `aim_async()` and `sweep_async()` dispatch serial writes via `run_in_executor` — never blocks asyncio loop
@@ -138,7 +138,7 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 
 ## 6. Calibration Procedure
 
-1. Boot Jetson, wait for 15s relay boot delay
+1. Power on gimbal and Jetson, wait 15s for gimbal IMU calibration
 2. Run `phantom_ping.py` to fire test shots at known distances
 3. Scout camera tracks water stream impact point
 4. System generates lookup table (distance → optimal linear drop compensation)

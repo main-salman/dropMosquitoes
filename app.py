@@ -15,6 +15,7 @@ Usage:
 import argparse
 import atexit
 import os
+import signal
 import re
 import subprocess
 import sys
@@ -24,7 +25,7 @@ from flask import Flask, render_template, Response, request, jsonify
 from hardware import (
     RelayController, GimbalController, LiDARController,
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
-    YAW_LIMIT, PITCH_LIMIT
+    YAW_LIMIT, PITCH_LIMIT, PITCH_HOME
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
 
@@ -59,7 +60,13 @@ ARC_COMPENSATION_DEG = 12.0
 # ============================================================================
 # CLEANUP — SAFE-001 §2: Guarantee all hardware is safe on exit
 # ============================================================================
+_cleanup_done = False
+
 def cleanup():
+    global _cleanup_done
+    if _cleanup_done:
+        return
+    _cleanup_done = True
     print("\n[app] Shutting down...")
     scout_cam.stop()
     sniper_cam.stop()
@@ -68,6 +75,16 @@ def cleanup():
     relay.cleanup()
     print("[app] Shutdown complete.")
 
+def _signal_handler(signum, frame):
+    """Handle SIGTERM/SIGINT to ensure GStreamer pipelines are torn down cleanly.
+    Without this, nvarguscamerasrc leaves the MIPI CSI sensor in a bad state,
+    causing garbled frames on the next startup."""
+    print(f"\n[app] Received signal {signum}, shutting down gracefully...")
+    cleanup()
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, _signal_handler)
+signal.signal(signal.SIGINT, _signal_handler)
 atexit.register(cleanup)
 
 
@@ -120,7 +137,8 @@ def index():
     """Serve the main control dashboard."""
     return render_template('index.html',
                            yaw_limit=YAW_LIMIT,
-                           pitch_limit=PITCH_LIMIT)
+                           pitch_limit=PITCH_LIMIT,
+                           pitch_home=PITCH_HOME)
 
 
 # ============================================================================
@@ -709,9 +727,25 @@ if __name__ == '__main__':
     else:
         print("[app] AI detection DISABLED (--no-ai flag)")
 
+    # Reset nvargus-daemon to clear stale MIPI CSI state from previous
+    # unclean shutdown (prevents garbled Sniper camera feed)
+    try:
+        subprocess.run(
+            ['sudo', 'systemctl', 'restart', 'nvargus-daemon'],
+            timeout=5, capture_output=True
+        )
+        time.sleep(1)  # Give daemon time to fully restart
+        print("[app] nvargus-daemon restarted (clean CSI state).")
+    except Exception as e:
+        print(f"[app] nvargus-daemon restart skipped: {e}")
+
     # Start camera streams
     scout_cam.start()
     sniper_cam.start()
+
+    # Center gimbal to forward-facing home position on startup
+    gimbal.center()
+    print(f"[app] Gimbal centered to home (pitch={PITCH_HOME}°, yaw=0°).")
 
     print(f"\n{'='*60}")
     print(f"  SNIPER MESSY MORTAR — Control Dashboard")

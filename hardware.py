@@ -38,6 +38,35 @@ except ImportError:
     SERIAL_AVAILABLE = False
     print("[hardware] WARNING: pyserial not found. Gimbal commands will be no-ops.")
 
+def configure_push_pull():
+    """
+    ECO-2026-004: Directly clear Bit 4 (Open Drain) from the pinmux registers of
+    BCM 17 (PR.04) and BCM 27 (PY.00) to force them into standard 3.3V Push-Pull GPIO mode.
+    Needs root privileges to write to /dev/mem.
+    """
+    try:
+        import mmap
+        import struct
+        # PR.04 (Pin 11): Reg 0x02430098
+        # PY.00 (Pin 13): Reg 0x0243d030
+        with open("/dev/mem", "r+b") as f:
+            mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
+            
+            # PR.04 (Pin 11) - clear Bit 4 (Open Drain)
+            val_pr4 = struct.unpack("<I", mem[0x98:0x9c])[0]
+            new_pr4 = val_pr4 & ~(1 << 4)
+            mem[0x98:0x9c] = struct.pack("<I", new_pr4)
+            
+            # PY.00 (Pin 13) - clear Bit 4 (Open Drain)
+            val_py0 = struct.unpack("<I", mem[0xd030:0xd034])[0]
+            new_py0 = val_py0 & ~(1 << 4)
+            mem[0xd030:0xd034] = struct.pack("<I", new_py0)
+            
+            print(f"[PADMUX] Pinmux forced to Push-Pull: PR4={hex(new_pr4)}, PY0={hex(new_py0)}")
+    except Exception as e:
+        print(f"[PADMUX] WARNING: Could not force Push-Pull mode (needs root): {e}")
+
+
 try:
     import smbus2
     I2C_AVAILABLE = True
@@ -73,50 +102,18 @@ class RelayController:
 
     def __init__(self):
         self._pump_state = False
-        self._gimbal_state = False
+        self._gimbal_state = True  # Always True since gimbal is directly powered via 2A fuse
         self._lock = threading.Lock()
 
         if JETSON_AVAILABLE:
-            self._configure_push_pull()
             GPIO.setmode(GPIO.BCM)
             GPIO.setwarnings(False)
             GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
             GPIO.setup(RELAY_GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
-            print(f"[RelayController] GPIO initialized. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
+            configure_push_pull()
+            print(f"[RelayController] GPIO initialized and Pinmux forced to Push-Pull. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
         else:
             print("[RelayController] STUB MODE — no real GPIO control.")
-
-    def _configure_push_pull(self):
-        """
-        ECO-2026-004: Third-party carrier boards (like Yahboom) often initialize 
-        BCM 17 (Pin 11 / PR.04) and BCM 27 (Pin 13 / PY.00) in Open-Drain mode.
-        This modifies the Tegra pinmux register bits directly in memory to force
-        both pins into standard 3.3V Push-Pull GPIO mode so they can source 
-        sufficient current to drive the Monk Makes Dual Relay logic inputs.
-        """
-        try:
-            import mmap
-            import struct
-            # PR.04 (Pin 11): Reg 0x02430098
-            # PY.00 (Pin 13): Reg 0x0243d030
-            # Offset must be page-aligned (4096 bytes)
-            with open("/dev/mem", "r+b") as f:
-                mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
-                
-                # PR.04 (Pin 11) - clear Bit 4 (Open Drain)
-                val_pr4 = struct.unpack("<I", mem[0x98:0x9c])[0]
-                new_pr4 = val_pr4 & ~(1 << 4)
-                mem[0x98:0x9c] = struct.pack("<I", new_pr4)
-                
-                # PY.00 (Pin 13) - clear Bit 4 (Open Drain)
-                val_py0 = struct.unpack("<I", mem[0xd030:0xd034])[0]
-                new_py0 = val_py0 & ~(1 << 4)
-                mem[0xd030:0xd034] = struct.pack("<I", new_py0)
-                
-                print(f"[RelayController] Pinmux forced to Push-Pull: PR4={hex(new_pr4)}, PY0={hex(new_py0)}")
-        except Exception as e:
-            # Under user execution (without sudo), this will fail gracefully but log the warning.
-            print(f"[RelayController] WARNING: Could not force Push-Pull mode (needs root): {e}")
 
 
     # -- Pump (CH1) ----------------------------------------------------------
@@ -155,19 +152,14 @@ class RelayController:
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
-    # -- Gimbal Power (CH2) ---------------------------------------------------
-
     def set_gimbal_power(self, state: bool):
         """
-        Turn gimbal power ON or OFF.
-        SAFE-001 §1: Must default to OFF at boot. Only enable after serial
-        comms are confirmed.
+        Turn gimbal power ON or OFF (Bypassed via 2A inline fuse).
+        Gimbal is always powered. Keep state as True.
         """
         with self._lock:
-            self._gimbal_state = state
-            if JETSON_AVAILABLE:
-                GPIO.output(RELAY_GIMBAL_PIN, GPIO.HIGH if state else GPIO.LOW)
-            print(f"[RelayController] Gimbal Power {'ON' if state else 'OFF'}")
+            self._gimbal_state = True
+            print(f"[RelayController] Gimbal power relay bypassed (2A fuse). Gimbal is always ON.")
 
     # -- Status ---------------------------------------------------------------
 
@@ -199,6 +191,11 @@ class RelayController:
 YAW_LIMIT = 80.0     # Max ±80° yaw (160° total sweep)
 PITCH_LIMIT = 20.0   # Max ±20° pitch (40° total sweep)
 
+# Mount compensation: the camera/lidar/nozzle assembly points DOWN at pitch=0°
+# due to the physical gimbal mount orientation (USB/UART ports = "front").
+# PITCH_HOME tilts UP so the payload points FORWARD by default.
+PITCH_HOME = 20.0    # degrees — set to max pitch-up for forward-facing default
+
 
 class GimbalController:
     """
@@ -207,29 +204,28 @@ class GimbalController:
     Sends RC-override style commands to RC_PITCH and RC_YAW pins.
     Implements software endstops and the "Death Spiral" unwind prevention.
 
-    HW-001 §3: Serial on /dev/ttyUSB0 / /dev/ttyACM0 (fallback to /dev/ttyTHS1) @ 115200 baud.
+    HW-001 §3: Serial on /dev/ttyUSB0 / /dev/ttyACM0 @ 115200 baud.
     SAFE-001 §2: Yaw hard-limited to ±80°, Pitch to ±20° (software endstops).
     """
 
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     # CUSTOMIZE: Set to your actual serial port.
-    # Jetson Orin Nano UART: /dev/ttyTHS0 or /dev/ttyTHS1
-    # USB-to-Serial adapter: /dev/ttyUSB0
+    # USB-to-Serial/Storm32 USB: /dev/ttyACM0 or /dev/ttyUSB0
     # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    SERIAL_PORT = "/dev/ttyTHS1"
+    SERIAL_PORT = "/dev/ttyACM0"
     BAUD_RATE = 115200
 
     # Storm32 serial command IDs (o323BGC protocol)
     CMD_SET_ANGLES = 0x11  # Set Camera Angles command
 
     def __init__(self):
-        self._yaw = 0.0    # Current yaw angle (degrees)
-        self._pitch = 0.0  # Current pitch angle (degrees)
+        self._yaw = 0.0          # Current yaw angle (degrees)
+        self._pitch = PITCH_HOME  # Current pitch angle — start at forward-facing home
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: ttyUSB0/ttyACM0 (USB-to-Serial), ttyTHS1/0 (UART)
-            ports_to_try = ["/dev/ttyUSB0", "/dev/ttyACM0", self.SERIAL_PORT, "/dev/ttyTHS0"]
+            # Dynamic port detection: USB serial only to prevent conflicts with empty hardware UARTs
+            ports_to_try = ["/dev/ttyACM0", "/dev/ttyUSB0"]
             for p in ports_to_try:
                 try:
                     import os
@@ -280,59 +276,53 @@ class GimbalController:
         self.set_angles(self._pitch + d_pitch, self._yaw + d_yaw)
 
     def center(self):
-        """Return gimbal to home position (0, 0)."""
-        self.set_angles(0.0, 0.0)
+        """Return gimbal to home position (PITCH_HOME, 0).
+        PITCH_HOME compensates for the downward-pointing mount so that
+        'centered' means the camera/nozzle faces FORWARD."""
+        self.set_angles(PITCH_HOME, 0.0)
 
     def _send_storm32_command(self, pitch_deg: float, yaw_deg: float):
         """
         Build and send a Storm32 o323BGC 'Set Camera Angles' packet.
 
-        Packet format (o323BGC protocol):
-          Byte 0:    0xFA (start marker)
-          Byte 1:    Data length (14 bytes)
-          Byte 2:    Command ID (0x11 = Set Angles)
-          Bytes 3-4: Pitch angle (int16, degrees * 100)
-          Bytes 5-6: Roll angle (int16, always 0 for 2-axis)
-          Bytes 7-8: Yaw angle (int16, degrees * 100)
-          Bytes 9-10: Flags (0x00)
-          Bytes 11-12: Type (0x00)
-          Bytes 13-16: Reserved
-          Byte 17:   CRC (XOR of bytes 1-16)
+        Packet format (o323BGC protocol, verified against ROS2 driver):
+          Byte 0:       0xFA (start marker)
+          Byte 1:       Data length (14 bytes)
+          Byte 2:       Command ID (0x11 = CMD_SETANGLE)
+          Bytes 3-6:    Pitch angle (float32, IEEE 754 little-endian, degrees)
+          Bytes 7-10:   Roll angle (float32, always 0.0 for 2-axis)
+          Bytes 11-14:  Yaw angle (float32, degrees)
+          Bytes 15-16:  Flags (0x0000 = unlimited mode)
+          Bytes 17-18:  CRC (2 bytes, board does not verify — set to 0x0000)
         """
-        pitch_val = int(pitch_deg * 100)
-        roll_val = 0
-        yaw_val = int(yaw_deg * 100)
+        roll_deg = 0.0
 
-        payload = struct.pack('<hhhHH',
-                              pitch_val,  # pitch (int16)
-                              roll_val,   # roll (int16, unused)
-                              yaw_val,    # yaw (int16)
-                              0,          # flags
-                              0)          # type
-        # Pad to 14 bytes
-        payload += b'\x00' * (14 - len(payload))
+        # Pack angles as float32 (4 bytes each) + 2-byte flags
+        payload = struct.pack('<fffH',
+                              pitch_deg,   # pitch (float32)
+                              roll_deg,    # roll (float32, unused)
+                              yaw_deg,     # yaw (float32)
+                              0)           # flags (0 = unlimited)
 
-        data_len = len(payload)
+        data_len = len(payload)  # 14 bytes (4+4+4+2)
         cmd_id = self.CMD_SET_ANGLES
 
-        # Build full packet
+        # Build full packet: header + payload + 2-byte CRC
         packet = bytes([0xFA, data_len, cmd_id]) + payload
-
-        # CRC: XOR of all bytes after the start marker
-        crc = 0
-        for b in packet[1:]:
-            crc ^= b
-        packet += bytes([crc])
+        packet += bytes([0x00, 0x00])  # CRC — board does not check
 
         try:
             self._serial.write(packet)
+            print(f"[GimbalController] Sent o323BGC packet: {packet.hex().upper()}")
         except Exception as e:
             print(f"[GimbalController] Serial write error: {e}")
+
 
     def get_status(self) -> dict:
         return {
             "pitch": round(self._pitch, 1),
             "yaw": round(self._yaw, 1),
+            "pitch_home": PITCH_HOME,
             "connected": self._serial is not None and self._serial.is_open
         }
 
