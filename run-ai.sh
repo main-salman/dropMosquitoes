@@ -127,8 +127,8 @@ echo "🎯 Step 3/3: Starting server on Jetson..."
 ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
     cd /home/jetson/dropMosquitoes
 
-    # Prevent systemd from restarting main.py while we run app.py
-    echo '${JETSON_PASSWORD}' | sudo -S systemctl disable sentry 2>/dev/null || true
+    # Note: sentry.service also runs app.py, so no conflict.
+    # Service stays enabled for auto-start on boot.
 
     # Maximize Jetson performance
     echo '${JETSON_PASSWORD}' | sudo -S nvpmodel -m 0 2>/dev/null || true

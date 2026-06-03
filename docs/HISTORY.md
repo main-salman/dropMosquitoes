@@ -470,3 +470,15 @@
 - **[ANALYSIS]** Likely caused by excessive Vmax (motor power) in Storm32 firmware PID. o323BGCTool Windows download links are broken (GitHub repo and wiki).
 - **[CODE]** `tests/tune_storm32_vmax.py`: Created Jetson-based Python script to read/write Storm32 motor parameters via USB serial. Uses o323BGC CMD 0x03 (GET_PARAMETER) and CMD 0x04 (SET_PARAMETER) with proper 4-byte response parsing.
 - **[PROBE]** Confirmed firmware v0.90 via CMD 0x01. Parameter map: Pitch Power (addr 3) = 95, Roll Power (addr 7), Yaw Power (addr 11). Full PID + Power addresses 0-11 validated.
+- **[PROBE]** Corrected parameter map to 6-per-axis grouping: Pitch Vmax=addr3 (95), Roll Vmax=addr9 (105), Yaw Vmax=addr15 (88).
+- **[HW]** Yaw Vmax lowered: 88 → 60 → 40. Motor heat significantly reduced at Vmax=40.
+- **[CODE]** `app.py`: Auto-applies Yaw Vmax=40 on every startup via gimbal serial connection (EEPROM store not supported by firmware).
+- **[FINDING]** CMD 0x15 is "restore FROM EEPROM" not "store TO EEPROM" — discovered when write was verified then overwritten.
+
+## 2026-06-03 — SYSTEMD AUTO-START & RESTART SCRIPT
+
+- **[CODE]** `sentry.service`: Updated systemd service to run `app.py` (was `main.py`). Added full camera subsystem reset (`modprobe -r/modprobe nv_imx219`), nvargus-daemon management, pinmux configuration, and log redirection to `sentry.log`.
+- **[CODE]** `restart.sh`: Created script to remotely reboot Jetson. Supports `--wait` flag that polls SSH + dashboard until accessible (~90s).
+- **[CODE]** `run-ai.sh`: Removed `systemctl disable sentry` — service now runs same `app.py`, no conflict. Stays enabled for auto-start on boot.
+- **[OPS]** Installed and enabled sentry.service on Jetson via `systemctl enable sentry.service`. App will auto-start on every boot with clean video (fresh CSI state).
+
