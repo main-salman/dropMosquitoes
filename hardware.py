@@ -262,42 +262,55 @@ class GimbalController:
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
+            import os
+            import time as _t
+
             # Dynamic port detection: probe each port with GET_VERSION to find Storm32.
-            # USB serial prioritized (ECO-2026-008: PWM/UART dead on Yahboom)
+            # USB serial prioritized (ECO-2026-008: PWM/UART dead on Yahboom).
+            # Retry loop: USB devices may not exist yet at boot — kernel needs
+            # time to enumerate USB after power-on (~5-10s on Orin Nano).
             ports_to_try = ["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0", "/dev/ttyTHS1", "/dev/ttyTHS0"]
-            for p in ports_to_try:
-                try:
-                    import os
-                    if not os.path.exists(p):
-                        continue
-                    candidate = serial.Serial(
-                        port=p,
-                        baudrate=self.BAUD_RATE,
-                        timeout=0.5
-                    )
-                    # Probe: send GET_VERSION (cmd 0x01) and check for Storm32 response
-                    import time as _t
-                    candidate.reset_input_buffer()
-                    candidate.write(bytes([0xFA, 0x00, 0x01, 0x00, 0x01]))
-                    _t.sleep(0.5)
-                    if candidate.in_waiting > 0:
-                        resp = candidate.read(candidate.in_waiting)
-                        if len(resp) >= 2 and resp[0] == 0xFB:
-                            self._serial = candidate
-                            self.SERIAL_PORT = p
-                            print(f"[GimbalController] Storm32 detected on {p} (version probe OK, {len(resp)} bytes)")
-                            break
+            MAX_RETRIES = 10
+            RETRY_DELAY = 1.0  # seconds between retries
+
+            for attempt in range(1, MAX_RETRIES + 1):
+                for p in ports_to_try:
+                    try:
+                        if not os.path.exists(p):
+                            continue
+                        candidate = serial.Serial(
+                            port=p,
+                            baudrate=self.BAUD_RATE,
+                            timeout=0.5
+                        )
+                        # Probe: send GET_VERSION (cmd 0x01) and check for Storm32 response
+                        candidate.reset_input_buffer()
+                        candidate.write(bytes([0xFA, 0x00, 0x01, 0x00, 0x01]))
+                        _t.sleep(0.5)
+                        if candidate.in_waiting > 0:
+                            resp = candidate.read(candidate.in_waiting)
+                            if len(resp) >= 2 and resp[0] == 0xFB:
+                                self._serial = candidate
+                                self.SERIAL_PORT = p
+                                print(f"[GimbalController] Storm32 detected on {p} (version probe OK, {len(resp)} bytes, attempt {attempt})")
+                                break
+                            else:
+                                print(f"[GimbalController] {p}: unexpected response {resp.hex()[:20]}, skipping")
+                                candidate.close()
                         else:
-                            print(f"[GimbalController] {p}: unexpected response {resp.hex()[:20]}, skipping")
+                            print(f"[GimbalController] {p}: no response to GET_VERSION probe, skipping")
                             candidate.close()
-                    else:
-                        print(f"[GimbalController] {p}: no response to GET_VERSION probe, skipping")
-                        candidate.close()
-                except Exception as e:
-                    print(f"[GimbalController] Failed to probe {p}: {e}")
-            
+                    except Exception as e:
+                        print(f"[GimbalController] Failed to probe {p}: {e}")
+
+                if self._serial:
+                    break  # Found the Storm32, stop retrying
+                if attempt < MAX_RETRIES:
+                    print(f"[GimbalController] No Storm32 found (attempt {attempt}/{MAX_RETRIES}), waiting {RETRY_DELAY}s for USB...")
+                    _t.sleep(RETRY_DELAY)
+
             if not self._serial:
-                print(f"[GimbalController] Serial FAILED on all ports. Running in STUB mode.")
+                print(f"[GimbalController] Serial FAILED on all ports after {MAX_RETRIES} attempts. Running in STUB mode.")
         else:
             print("[GimbalController] STUB MODE — no serial available.")
 
