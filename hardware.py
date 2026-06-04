@@ -406,6 +406,196 @@ class GimbalController:
 
 
 # ============================================================================
+# SERVO TURRET CONTROLLER (PCA9685 + MG996R) — HW-001 §3 (planned)
+# High-torque geared pan/tilt using MG996R metal-gear servos driven by
+# a PCA9685 16-channel I2C PWM driver board.
+#
+# Replaces the Storm32 brushless gimbal for applications requiring
+# mechanical holding torque (e.g., fighting water hose spring tension).
+#
+# I2C Bus 1, PCA9685 default address 0x40 (TF-Luna is 0x10, no conflict).
+# Power: Dedicated 12V→5V 10A buck converter (isolated from Jetson 5V rail).
+# ============================================================================
+
+# PCA9685 servo channel assignments
+SERVO_CH_YAW = 0     # Channel 0 = Pan (horizontal rotation)
+SERVO_CH_PITCH = 1   # Channel 1 = Tilt (vertical rotation)
+
+# MG996R servo pulse range (microseconds)
+SERVO_MIN_PULSE = 500    # 0° position
+SERVO_MAX_PULSE = 2500   # 180° position
+SERVO_RANGE_DEG = 180.0  # Total mechanical range
+
+# Servo endstops (degrees from center, where center = 90° servo = 0° turret)
+SERVO_YAW_LIMIT = 80.0    # ±80° yaw (same as Storm32 for software compatibility)
+SERVO_PITCH_LIMIT = 90.0  # ±90° pitch (full servo range)
+
+try:
+    from adafruit_servokit import ServoKit
+    SERVOKIT_AVAILABLE = True
+except ImportError:
+    SERVOKIT_AVAILABLE = False
+
+
+class ServoTurretController:
+    """
+    Controls a 2-axis geared pan/tilt turret via PCA9685 I2C servo driver.
+
+    Provides the SAME API as GimbalController so the rest of the system
+    (app.py, dashboard, AI pipeline, tests) requires ZERO changes.
+
+    Implements: SW-001 §2.2 (TurretAgent interface)
+    Safety: SAFE-001 §2 (software endstops)
+
+    Hardware:
+        - PCA9685 on I2C Bus 1, address 0x40
+        - Channel 0: MG996R yaw servo (pan)
+        - Channel 1: MG996R pitch servo (tilt)
+        - Power: 12V→5V 10A buck converter (isolated from Jetson)
+    """
+
+    PCA9685_ADDRESS = 0x40
+    I2C_BUS = 1
+
+    def __init__(self):
+        self._yaw = 0.0          # Current yaw angle (degrees, -80..+80)
+        self._pitch = PITCH_HOME # Current pitch angle (degrees, -90..+90)
+        self._lock = threading.Lock()
+        self._kit = None
+
+        if SERVOKIT_AVAILABLE:
+            try:
+                import board
+                import busio
+                # Initialize PCA9685 on I2C bus 1
+                i2c = busio.I2C(board.SCL, board.SDA)
+                self._kit = ServoKit(
+                    channels=16,
+                    i2c=i2c,
+                    address=self.PCA9685_ADDRESS
+                )
+                # Configure pulse range for MG996R servos
+                self._kit.servo[SERVO_CH_YAW].set_pulse_width_range(
+                    SERVO_MIN_PULSE, SERVO_MAX_PULSE)
+                self._kit.servo[SERVO_CH_PITCH].set_pulse_width_range(
+                    SERVO_MIN_PULSE, SERVO_MAX_PULSE)
+                print(f"[ServoTurret] PCA9685 initialized on I2C bus {self.I2C_BUS}, "
+                      f"address 0x{self.PCA9685_ADDRESS:02X}")
+                # Center servos on startup
+                self.center()
+            except Exception as e:
+                print(f"[ServoTurret] PCA9685 init FAILED: {e}")
+                print("[ServoTurret] Running in STUB mode.")
+                self._kit = None
+        else:
+            print("[ServoTurret] STUB MODE — adafruit-servokit not installed.")
+            print("[ServoTurret] Install: pip install adafruit-circuitpython-servokit")
+
+    def _deg_to_servo(self, angle_deg: float) -> float:
+        """
+        Convert turret angle (-90..+90) to servo angle (0..180).
+
+        Turret angle 0° = center = servo 90°.
+        Turret angle -90° = servo 0°.
+        Turret angle +90° = servo 180°.
+        """
+        return max(0.0, min(180.0, angle_deg + 90.0))
+
+    def set_angles(self, pitch: float, yaw: float):
+        """
+        Command the turret to absolute pitch/yaw angles (in degrees).
+
+        Applies software endstops before sending. Values are clamped.
+        API-compatible with GimbalController.set_angles().
+
+        Args:
+            pitch: Target pitch angle (clamped to ±SERVO_PITCH_LIMIT).
+            yaw: Target yaw angle (clamped to ±SERVO_YAW_LIMIT).
+        """
+        with self._lock:
+            # Clamp to software endstops (SAFE-001 §2)
+            self._pitch = max(-SERVO_PITCH_LIMIT, min(SERVO_PITCH_LIMIT, pitch))
+            self._yaw = max(-SERVO_YAW_LIMIT, min(SERVO_YAW_LIMIT, yaw))
+
+            if self._kit:
+                try:
+                    self._kit.servo[SERVO_CH_YAW].angle = self._deg_to_servo(self._yaw)
+                    self._kit.servo[SERVO_CH_PITCH].angle = self._deg_to_servo(self._pitch)
+                    print(f"[ServoTurret] Set yaw={self._yaw:.1f}° pitch={self._pitch:.1f}°")
+                except Exception as e:
+                    print(f"[ServoTurret] Servo write error: {e}")
+            else:
+                print(f"[ServoTurret] STUB: pitch={self._pitch:.1f}° yaw={self._yaw:.1f}°")
+
+    def nudge(self, d_pitch: float = 0.0, d_yaw: float = 0.0):
+        """
+        Relative movement (for WASD manual control).
+        Adds delta to current position and re-clamps.
+        API-compatible with GimbalController.nudge().
+        """
+        self.set_angles(self._pitch + d_pitch, self._yaw + d_yaw)
+
+    def center(self):
+        """Return turret to home position (PITCH_HOME, 0).
+        API-compatible with GimbalController.center()."""
+        self.set_angles(PITCH_HOME, 0.0)
+
+    def get_status(self) -> dict:
+        return {
+            "pitch": round(self._pitch, 1),
+            "yaw": round(self._yaw, 1),
+            "pitch_home": PITCH_HOME,
+            "connected": self._kit is not None
+        }
+
+    def cleanup(self):
+        """Center turret on shutdown."""
+        print("[ServoTurret] Centering turret on shutdown...")
+        try:
+            self.center()
+            time.sleep(0.3)
+        except Exception as e:
+            print(f"[ServoTurret] Cleanup error: {e}")
+
+
+def create_turret_controller():
+    """
+    Factory function: auto-detect available turret hardware.
+
+    Priority:
+      1. PCA9685 I2C servo driver (new geared turret)
+      2. Storm32 BGC USB serial (legacy brushless gimbal)
+      3. Stub mode (no hardware)
+
+    Returns a controller with the standard API:
+        set_angles(pitch, yaw), nudge(d_pitch, d_yaw),
+        center(), get_status(), cleanup()
+    """
+    # Try PCA9685 first (new geared turret)
+    if SERVOKIT_AVAILABLE:
+        try:
+            import board
+            import busio
+            i2c = busio.I2C(board.SCL, board.SDA)
+            # Probe: check if PCA9685 responds on 0x40
+            while not i2c.try_lock():
+                pass
+            addrs = i2c.scan()
+            i2c.unlock()
+            if 0x40 in addrs:
+                print("[TurretFactory] PCA9685 detected at 0x40 — using ServoTurretController")
+                return ServoTurretController()
+            else:
+                print(f"[TurretFactory] PCA9685 not found (scanned: {[hex(a) for a in addrs]})")
+        except Exception as e:
+            print(f"[TurretFactory] PCA9685 probe failed: {e}")
+
+    # Fall back to Storm32 BGC (legacy)
+    print("[TurretFactory] Falling back to GimbalController (Storm32 BGC)")
+    return GimbalController()
+
+
+# ============================================================================
 # TF-LUNA LiDAR (I2C) — HW-001 §6, SW-001 §2.5
 # Benewake TF-Luna: I2C Bus 1, default address 0x10
 # Reads distance in cm, converts to meters.

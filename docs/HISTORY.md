@@ -518,3 +518,15 @@
 - **[DIAGNOSIS]** Storm32 firmware confirmed: OlliW o323BGC v0.90 on STM32F103RC (v1.30 hardware). Successfully communicated via binary protocol (GET_VERSION, GET_DATA, SET_ANGLES) and text commands ('v', 'g', 'd').
 - **[DIAGNOSIS]** Gimbal was initially stuck in STARTUP_RELEVEL state (state 3) with all status flags zero (IMU not detected, motors off). After user balanced the perpendicular payload with a counterweight, gimbal reached NORMAL state (state 6).
 - **[DIAGNOSIS]** Investigated PID oscillation caused by perpendicular payload mount. Read full PID parameter block via 'g' text command (381 bytes). Original PIDs: Pitch P=540/I=4000/D=350, Roll P=800/I=4800/D=2000, Yaw P=460/I=1400/D=1000. Tested two PID adjustments but oscillation was mechanical (balance), not PID. Original PID values backed up to `~/storm32_params_backup.bin` on Jetson and restored.
+- **[DIAGNOSIS]** Systematic PID re-tuning from safe baseline (P=100, I=0, D=100). P swept to 500 on all 3 axes with no oscillation — confirmed payload is well-balanced. Adding I=500 and D=200 reintroduced jerkiness. Final stable values: P=400, I=0, D=100 for all axes.
+- **[DIAGNOSIS]** Root cause of original oscillation: factory I gains (4000-4800) were causing integral windup under the new payload geometry. The I term accumulated positional error and caused aggressive overcorrection loops.
+
+## 2026-06-04 — ARCHITECTURE: GEARED SERVO TURRET MIGRATION
+
+- **[ARCHITECTURE]** Decision to migrate from Storm32 brushless gimbal to geared MG996R servo pan-tilt system. Brushless motors lacked mechanical holding torque — couldn't fight water hose spring tension, causing stall and violent oscillation. Servos provide 10-13 kg·cm torque with mechanical gear locking.
+- **[BOM]** Bolsen 2-DOF aluminum pan-tilt bracket kit (rigid metal cage, ball bearings). Aideepen MG996R metal-gear servos (6-pack). DWEII 12V→5V 10A buck converter (isolated servo power, prevents Jetson brownout).
+- **[ARCHITECTURE]** Electrical isolation: dedicated 10A buck converter for servo power, common ground tie to Jetson for PWM signal reference. Eliminates the USB/UART ground loop that caused previous short circuit.
+- **[CODE]** Added `ServoTurretController` class in `hardware.py` — PCA9685 I2C servo driver (addr 0x40) on I2C Bus 1. Same API as `GimbalController` (`set_angles`, `nudge`, `center`, `get_status`, `cleanup`). Dashboard, AI pipeline, and tests require zero changes.
+- **[CODE]** Added `create_turret_controller()` factory function — auto-detects PCA9685 (new) vs Storm32 (legacy) at startup. PCA9685 takes priority when detected.
+- **[FLAG]** Yahboom carrier board GPIO PWM pins are dead (ECO-2026-008). PCA9685 I2C servo driver board required for PWM generation. Shares I2C Bus 1 with TF-Luna LiDAR (addr 0x10, no conflict).
+- **[DOCS]** Architecture review saved to `docs/gimbal/geared_turret_architecture.md`.
