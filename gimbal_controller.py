@@ -25,23 +25,39 @@ class GimbalController:
         self.PITCH_LIMIT = 20.0
         self.YAW_LIMIT = 80.0
 
-        # Dynamic port detection: UART prioritized, USB serial as fallback.
+        # Dynamic port detection: probe each port with GET_VERSION to find Storm32.
         ports_to_try = []
         if port is not None:
             ports_to_try.append(port)
-        ports_to_try.extend(["/dev/ttyTHS1", "/dev/ttyTHS0", "/dev/ttyACM0", "/dev/ttyUSB0"])
+        ports_to_try.extend(["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0", "/dev/ttyTHS1", "/dev/ttyTHS0"])
 
         self.port = None
         for p in ports_to_try:
             try:
                 import os
-                if os.path.exists(p):
-                    self.ser = serial.Serial(p, self.baudrate, timeout=1)
-                    self.port = p
-                    print(f"[GimbalController] Connected on {p}")
-                    break
+                if not os.path.exists(p):
+                    continue
+                candidate = serial.Serial(p, self.baudrate, timeout=1)
+                # Probe: send GET_VERSION (cmd 0x01) and check for response
+                import time as _t
+                candidate.reset_input_buffer()
+                candidate.write(bytes([0xFA, 0x00, 0x01, 0x00, 0x01]))
+                _t.sleep(0.5)
+                if candidate.in_waiting > 0:
+                    resp = candidate.read(candidate.in_waiting)
+                    if len(resp) >= 2 and resp[0] == 0xFB:
+                        self.ser = candidate
+                        self.port = p
+                        print(f"[GimbalController] Storm32 detected on {p} (version probe OK, {len(resp)} bytes)")
+                        break
+                    else:
+                        print(f"[GimbalController] {p}: unexpected response {resp.hex()[:20]}, skipping")
+                        candidate.close()
+                else:
+                    print(f"[GimbalController] {p}: no response to GET_VERSION probe, skipping")
+                    candidate.close()
             except Exception as e:
-                print(f"[GimbalController] Failed to connect on {p}: {e}")
+                print(f"[GimbalController] Failed to probe {p}: {e}")
 
         if not self.ser:
             self.port = port or "/dev/ttyACM0"

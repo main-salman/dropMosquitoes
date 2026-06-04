@@ -262,25 +262,41 @@ class GimbalController:
         self._lock = threading.Lock()
         self._serial = None
         if SERIAL_AVAILABLE:
-            # Dynamic port detection: USB serial prioritized (ECO-2026-008: PWM/UART dead on Yahboom)
-            ports_to_try = ["/dev/ttyACM0", "/dev/ttyUSB0", "/dev/ttyTHS1", "/dev/ttyTHS0"]
+            # Dynamic port detection: probe each port with GET_VERSION to find Storm32.
+            # USB serial prioritized (ECO-2026-008: PWM/UART dead on Yahboom)
+            ports_to_try = ["/dev/ttyACM0", "/dev/ttyACM1", "/dev/ttyUSB0", "/dev/ttyTHS1", "/dev/ttyTHS0"]
             for p in ports_to_try:
                 try:
                     import os
-                    if os.path.exists(p):
-                        self._serial = serial.Serial(
-                            port=p,
-                            baudrate=self.BAUD_RATE,
-                            timeout=0.1
-                        )
-                        self.SERIAL_PORT = p
-                        print(f"[GimbalController] Serial opened on {p} @ {self.BAUD_RATE}")
-                        break
+                    if not os.path.exists(p):
+                        continue
+                    candidate = serial.Serial(
+                        port=p,
+                        baudrate=self.BAUD_RATE,
+                        timeout=0.5
+                    )
+                    # Probe: send GET_VERSION (cmd 0x01) and check for Storm32 response
+                    import time as _t
+                    candidate.reset_input_buffer()
+                    candidate.write(bytes([0xFA, 0x00, 0x01, 0x00, 0x01]))
+                    _t.sleep(0.5)
+                    if candidate.in_waiting > 0:
+                        resp = candidate.read(candidate.in_waiting)
+                        if len(resp) >= 2 and resp[0] == 0xFB:
+                            self._serial = candidate
+                            self.SERIAL_PORT = p
+                            print(f"[GimbalController] Storm32 detected on {p} (version probe OK, {len(resp)} bytes)")
+                            break
+                        else:
+                            print(f"[GimbalController] {p}: unexpected response {resp.hex()[:20]}, skipping")
+                            candidate.close()
+                    else:
+                        print(f"[GimbalController] {p}: no response to GET_VERSION probe, skipping")
+                        candidate.close()
                 except Exception as e:
-                    print(f"[GimbalController] Failed to connect serial on {p}: {e}")
+                    print(f"[GimbalController] Failed to probe {p}: {e}")
             
             if not self._serial:
-
                 print(f"[GimbalController] Serial FAILED on all ports. Running in STUB mode.")
         else:
             print("[GimbalController] STUB MODE — no serial available.")

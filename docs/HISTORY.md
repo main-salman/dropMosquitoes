@@ -511,3 +511,10 @@
 - **[ARCHITECTURE]** Recommended Solution 1 (Drop-Down L-Bracket) as primary — zero gimbal modification, ~15g added weight, ~30mm clearance gained, easy 3D print, fully reversible. Fallback: Solution 4 (45° wedge) as simplest first step giving ~85° total range when combined with gimbal pitch.
 - **[DOCS]** Saved perpendicular mounting analysis to `docs/gimbal/perpendicular_mounting.md` with 6 concept images in `docs/gimbal/perpendicular_mounting/`.
 
+## 2026-06-04 — GIMBAL SERIAL PORT DETECTION FIX & PID INVESTIGATION
+
+- **[BUG FIX]** WASD gimbal controls were non-functional. Root cause: Storm32 BGC is connected via USB (enumerates as `/dev/ttyACM0` or `/dev/ttyACM1` depending on boot order), but the port detection code tried `/dev/ttyTHS1` first — a built-in Jetson hardware UART with nothing connected. Since `ttyTHS1` exists and opens successfully, the code latched onto it and sent commands into the void.
+- **[CODE]** `hardware.py` + `gimbal_controller.py`: Replaced blind port detection with probe-based detection. Now sends a GET_VERSION command (0xFA 0x00 0x01) to each candidate port and only accepts ports where the Storm32 responds with a valid 0xFB header. Also added `/dev/ttyACM1` to the port list. USB serial ports prioritized over hardware UART.
+- **[DIAGNOSIS]** Storm32 firmware confirmed: OlliW o323BGC v0.90 on STM32F103RC (v1.30 hardware). Successfully communicated via binary protocol (GET_VERSION, GET_DATA, SET_ANGLES) and text commands ('v', 'g', 'd').
+- **[DIAGNOSIS]** Gimbal was initially stuck in STARTUP_RELEVEL state (state 3) with all status flags zero (IMU not detected, motors off). After user balanced the perpendicular payload with a counterweight, gimbal reached NORMAL state (state 6).
+- **[DIAGNOSIS]** Investigated PID oscillation caused by perpendicular payload mount. Read full PID parameter block via 'g' text command (381 bytes). Original PIDs: Pitch P=540/I=4000/D=350, Roll P=800/I=4800/D=2000, Yaw P=460/I=1400/D=1000. Tested two PID adjustments but oscillation was mechanical (balance), not PID. Original PID values backed up to `~/storm32_params_backup.bin` on Jetson and restored.
