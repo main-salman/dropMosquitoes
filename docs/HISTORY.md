@@ -530,3 +530,8 @@
 - **[CODE]** Added `create_turret_controller()` factory function — auto-detects PCA9685 (new) vs Storm32 (legacy) at startup. PCA9685 takes priority when detected.
 - **[FLAG]** Yahboom carrier board GPIO PWM pins are dead (ECO-2026-008). PCA9685 I2C servo driver board required for PWM generation. Shares I2C Bus 1 with TF-Luna LiDAR (addr 0x10, no conflict).
 - **[DOCS]** Architecture review saved to `docs/gimbal/geared_turret_architecture.md`.
+
+## 2026-06-06 — DOCS: SERVO TURRET ASSEMBLY & WIRING GUIDES
+
+- **[DOCS]** Created interactive 3D assembly guide (`docs/gimbal/turret_3d_assembly.html`) using Three.js with OrbitControls. 5-step walkthrough: component layout → pan servo mount → U-bracket + tilt servo → electronics wiring → payload mounting. Features explode view, animated camera transitions, and keyboard nav. Models match actual Bolsen black anodized bracket kit from user photos.
+- **[DOCS]** Created draw.io wiring diagram (`docs/gimbal/turret_wiring.drawio`) showing complete cabling between Jetson Orin Nano IDC40P header, SunFounder PCA9685 I2C servo driver, DWEII 12V→5V 10A buck converter, and two MG996R servos. Color-coded wire routing with safety notes (ground tie jumper, power isolation, TF-Luna I2C coexistence).

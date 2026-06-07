@@ -1,200 +1,164 @@
-<mxfile host="Electron" modified="2026-06-03T14:00:00.000Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.2.8 Chrome/112.0.5615.204 Electron/24.6.0 Safari/537.36" version="21.2.8" type="device">
-  <diagram name="Gimbal PWM" id="gimbal_pwm_v5">
-    <mxGraphModel dx="1420" dy="850" grid="1" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="700" background="#FFFFFF">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        
-        <!-- Title -->
-        <mxCell id="t1" value="&lt;b style='font-size:20px;color:#0F172A'&gt;WIRE 05: Gimbal PWM RC Control&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:12px'&gt;Hardware PWM output from Jetson Orin Nano to Storm32 BGC RC input pins (50 Hz, 1000–2000 μs)&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1">
-          <mxGeometry x="40" y="15" width="850" height="45" as="geometry"/>
-        </mxCell>
-
-        <!-- ECO Change Notice -->
-        <mxCell id="eco" value="&lt;b style='color:#DC2626'&gt;⚠ ECO-2026-008:&lt;/b&gt; &lt;span style='color:#0F172A'&gt;Changed from UART serial (Terminals 8/10) to Hardware PWM (Terminals 32/33). UART pins (BCM 14/15) are NOT available as GPIO on Jetson Orin Nano.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#0F172A;fontSize=10;strokeWidth=1.5;" vertex="1" parent="1">
-          <mxGeometry x="40" y="65" width="850" height="30" as="geometry"/>
-        </mxCell>
-
-        <!-- Jetson GPIO Breakout / PWM Header -->
-        <mxCell id="gpio" value="" style="rounded=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;shadow=1;arcSize=8;" vertex="1" parent="1">
-          <mxGeometry x="60" y="150" width="240" height="180" as="geometry"/>
-        </mxCell>
-        <mxCell id="gpiot" value="&lt;b style='color:#065F46;font-size:12px'&gt;IDC40P Breakout Block&lt;/b&gt;&lt;br&gt;&lt;span style='color:#047857;font-size:9px'&gt;Hardware PWM output pins&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="gpio">
-          <mxGeometry x="10" y="8" width="220" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="pintx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#16A34A'&gt;Terminal 32 (PWM0 / BCM 12)&lt;/b&gt; [Green]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
-          <mxGeometry x="10" y="55" width="220" height="22" as="geometry"/>
-        </mxCell>
-        <mxCell id="pinrx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#2563EB'&gt;Terminal 33 (PWM2 / BCM 13)&lt;/b&gt; [Blue]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
-          <mxGeometry x="10" y="90" width="220" height="22" as="geometry"/>
-        </mxCell>
-        <mxCell id="pingnd2" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#475569'&gt;Terminal 14 (GND)&lt;/b&gt; [Black]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" vertex="1" parent="gpio">
-          <mxGeometry x="10" y="125" width="220" height="22" as="geometry"/>
-        </mxCell>
-
-        <!-- Storm32 Controller Representation -->
-        <mxCell id="s32body" value="" style="rounded=1;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;shadow=1;arcSize=6;" vertex="1" parent="1">
-          <mxGeometry x="500" y="100" width="620" height="420" as="geometry"/>
-        </mxCell>
-        <mxCell id="s32lbl" value="&lt;b style='color:#0F172A;font-size:14px'&gt;Storm32 BGC Board (v1.31) — RC Pins Detail&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:10px'&gt;Dual-row 2x6 Header Configuration&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=top;spacingTop=5;" vertex="1" parent="s32body">
-          <mxGeometry x="0" y="0" width="620" height="40" as="geometry"/>
-        </mxCell>
-
-        <!-- The 2x6 Header Visual Representation -->
-        <mxCell id="header_bg" value="" style="rounded=1;fillColor=#1E293B;strokeColor=#0F172A;strokeWidth=2;" vertex="1" parent="s32body">
-          <mxGeometry x="180" y="60" width="260" height="330" as="geometry"/>
-        </mxCell>
-        <mxCell id="header_title" value="&lt;b style='color:#FFF;font-size:11px'&gt; Storm32 2x6 RC Input Pins&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="5" width="240" height="20" as="geometry"/>
-        </mxCell>
-
-        <!-- LEFT COLUMN OF PINS (OUTER ROW - Labeled on Left) -->
-        <mxCell id="lbl_l_gnd" value="&lt;b style='color:#94A3B8'&gt;GND&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="40" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_gnd" value="" style="ellipse;fillColor=#FFF;strokeColor=#475569;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="45" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lbl_l_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="90" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="95" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lbl_l_rc1" value="&lt;b style='color:#64748B'&gt;RC-1&lt;/b&gt; &lt;span style='color:#64748B;font-size:8px'&gt;(Roll)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="140" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_rc1" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="145" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lbl_l_rc2" value="&lt;b style='color:#FFF'&gt;RC-2&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Yaw)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="190" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_rc2" value="" style="ellipse;fillColor=#FFF;strokeColor=#2563EB;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="195" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lbl_l_rc3" value="&lt;b style='color:#64748B'&gt;RC-3&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="240" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_rc3" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="245" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="lbl_l_rc2_sub" value="&lt;b style='color:#64748B;font-size:9px'&gt;RC2&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="285" width="70" height="30" as="geometry"/>
-        </mxCell>
-        <mxCell id="pin_l_rc2_sub" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="90" y="290" width="20" height="20" as="geometry"/>
-        </mxCell>
-
-        <!-- RIGHT COLUMN OF PINS (INNER ROW - Labeled on Right) -->
-        <mxCell id="pin_r_gnd" value="" style="ellipse;fillColor=#FFF;strokeColor=#475569;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="150" y="45" width="20" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="lbl_r_gnd" value="&lt;b style='color:#94A3B8'&gt;GND&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="180" y="40" width="70" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="pin_r_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="150" y="95" width="20" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="lbl_r_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="180" y="90" width="70" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="pin_r_rc1" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="150" y="145" width="20" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="lbl_r_rc1" value="&lt;b style='color:#64748B'&gt;RC-1&lt;/b&gt; &lt;span style='color:#64748B;font-size:8px'&gt;(Roll)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="180" y="140" width="70" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="pin_r_rc2" value="" style="ellipse;fillColor=#FFF;strokeColor=#2563EB;strokeWidth=3;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="150" y="195" width="20" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="lbl_r_rc2" value="&lt;b style='color:#FFF'&gt;RC-2&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Yaw)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="180" y="190" width="70" height="30" as="geometry"/>
-        </mxCell>
-
-        <mxCell id="pin_r_rc3" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" vertex="1" parent="header_bg">
-          <mxGeometry x="150" y="245" width="20" height="20" as="geometry"/>
-        </mxCell>
-        <mxCell id="lbl_r_rc3" value="&lt;b style='color:#64748B'&gt;RC&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="180" y="240" width="70" height="30" as="geometry"/>
-        </mxCell>
-
-        <!-- BRIDGES SHOWING THEY ARE IN PARALLEL -->
-        <mxCell id="bridge_gnd" value="" style="endArrow=none;strokeColor=#475569;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_gnd" target="pin_r_gnd"/>
-        <mxCell id="bridge_rc0" value="" style="endArrow=none;strokeColor=#16A34A;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc0" target="pin_r_rc0"/>
-        <mxCell id="bridge_rc1" value="" style="endArrow=none;strokeColor=#94A3B8;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc1" target="pin_r_rc1"/>
-        <mxCell id="bridge_rc2" value="" style="endArrow=none;strokeColor=#2563EB;strokeWidth=1.5;dashed=1;" edge="1" parent="header_bg" source="pin_l_rc2" target="pin_r_rc2"/>
-
-        <mxCell id="parallel_lbl" value="&lt;span style='color:#10B981;font-size:8px;font-weight:bold;'&gt;PARALLEL BRIDGES&lt;br&gt;(Electrically Identical)&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" vertex="1" parent="header_bg">
-          <mxGeometry x="10" y="300" width="240" height="20" as="geometry"/>
-        </mxCell>
-
-        <!-- =================== WIRES =================== -->
-
-        <!-- 1. Jetson PWM0 (Terminal 32, BCM 12) Green Wire to Storm32 RC-0 (Pitch) -->
-        <mxCell id="wire_tx" value="" style="endArrow=block;endFill=1;strokeColor=#16A34A;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gpio" target="pin_l_rc0">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="300" y="205" as="sourcePoint"/>
-            <mxPoint x="670" y="255" as="targetPoint"/>
-            <Array as="points">
-              <mxPoint x="450" y="205"/>
-              <mxPoint x="450" y="255"/>
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="wire_tx_lbl" value="PWM0 → RC-0 (Pitch) [Green]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#16A34A;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_tx">
-          <mxGeometry x="-0.4" relative="1" as="geometry">
-            <mxPoint x="10" y="0" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-
-        <!-- 2. Jetson PWM2 (Terminal 33, BCM 13) Blue Wire to Storm32 RC-2 (Yaw) -->
-        <mxCell id="wire_rx" value="" style="endArrow=block;endFill=1;strokeColor=#2563EB;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gpio" target="pin_l_rc2">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="300" y="240" as="sourcePoint"/>
-            <mxPoint x="670" y="355" as="targetPoint"/>
-            <Array as="points">
-              <mxPoint x="430" y="240"/>
-              <mxPoint x="430" y="355"/>
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="wire_rx_lbl" value="PWM2 → RC-2 (Yaw) [Blue]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#2563EB;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_rx">
-          <mxGeometry x="-0.4" relative="1" as="geometry">
-            <mxPoint x="10" y="0" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-
-        <!-- 3. Jetson GND (Terminal 14) Black Wire to Storm32 GND -->
-        <mxCell id="wire_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#475569;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="gpio" target="pin_l_gnd">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="300" y="275" as="sourcePoint"/>
-            <mxPoint x="670" y="205" as="targetPoint"/>
-            <Array as="points">
-              <mxPoint x="470" y="275"/>
-              <mxPoint x="470" y="205"/>
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="wire_gnd_lbl" value="GND → GND [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#475569;fontSize=8;backgroundColor=#FFFFFF;" vertex="1" connectable="0" parent="wire_gnd">
-          <mxGeometry x="-0.4" relative="1" as="geometry">
-            <mxPoint x="10" y="0" as="offset"/>
-          </mxGeometry>
-        </mxCell>
-
-        <!-- Footnote note -->
-        <mxCell id="note" value="&lt;b&gt;Wiring Instructions:&lt;/b&gt; Move the &lt;b style='color:#16A34A'&gt;Green wire&lt;/b&gt; from IDC40P Terminal 8 to &lt;b&gt;Terminal 32&lt;/b&gt; (PWM0). Move the &lt;b style='color:#2563EB'&gt;Blue wire&lt;/b&gt; from Terminal 10 to &lt;b&gt;Terminal 33&lt;/b&gt; (PWM2). &lt;b&gt;Black wire&lt;/b&gt; stays on Terminal 14 (GND). On the Storm32 side, all three wires stay on the same RC header pins (outer row: GND, RC-0, RC-2)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontColor=#0F172A;fontSize=11;strokeWidth=1.5;" vertex="1" parent="1">
-          <mxGeometry x="60" y="550" width="1060" height="55" as="geometry"/>
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="Gimbal PWM" id="gimbal_pwm_v5">
+        <mxGraphModel dx="266" dy="375" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="700" background="#FFFFFF" math="1" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t1" value="&lt;b style='font-size:20px;color:#0F172A'&gt;WIRE 05: Gimbal PWM RC Control&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:12px'&gt;Hardware PWM output from Jetson Orin Nano to Storm32 BGC RC input pins (50 Hz, 1000–2000 μs)&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="15" width="850" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="eco" value="&lt;b style='color:#DC2626'&gt;⚠ ECO-2026-008:&lt;/b&gt; &lt;span style='color:#0F172A'&gt;Changed from UART serial (Terminals 8/10) to Hardware PWM (Terminals 32/33). UART pins (BCM 14/15) are NOT available as GPIO on Jetson Orin Nano.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF2F2;strokeColor=#DC2626;fontColor=#0F172A;fontSize=10;strokeWidth=1.5;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="65" width="850" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="gpio" value="" style="rounded=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=2;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="150" width="240" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="gpiot" value="&lt;b style='color:#065F46;font-size:12px'&gt;IDC40P Breakout Block&lt;/b&gt;&lt;br&gt;&lt;span style='color:#047857;font-size:9px'&gt;Hardware PWM output pins&lt;/span&gt;" style="text;html=1;align=center;" parent="gpio" vertex="1">
+                    <mxGeometry x="10" y="8" width="220" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="pintx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#16A34A'&gt;Terminal 32 (PWM0 / BCM 12)&lt;/b&gt; [Green]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" parent="gpio" vertex="1">
+                    <mxGeometry x="10" y="55" width="220" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="pinrx" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#2563EB'&gt;Terminal 33 (PWM2 / BCM 13)&lt;/b&gt; [Blue]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" parent="gpio" vertex="1">
+                    <mxGeometry x="10" y="90" width="220" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="pingnd2" value="&lt;span style='font-size:10px;color:#0F172A'&gt;• &lt;b style='color:#475569'&gt;Terminal 14 (GND)&lt;/b&gt; [Black]&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=8;" parent="gpio" vertex="1">
+                    <mxGeometry x="10" y="125" width="220" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="s32body" value="" style="rounded=1;fillColor=#F8FAFC;strokeColor=#475569;strokeWidth=2;shadow=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="500" y="100" width="620" height="420" as="geometry"/>
+                </mxCell>
+                <mxCell id="s32lbl" value="&lt;b style='color:#0F172A;font-size:14px'&gt;Storm32 BGC Board (v1.31) — RC Pins Detail&lt;/b&gt;&lt;br&gt;&lt;span style='color:#475569;font-size:10px'&gt;Dual-row 2x6 Header Configuration&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=top;spacingTop=5;" parent="s32body" vertex="1">
+                    <mxGeometry width="620" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="header_bg" value="" style="rounded=1;fillColor=#1E293B;strokeColor=#0F172A;strokeWidth=2;" parent="s32body" vertex="1">
+                    <mxGeometry x="180" y="60" width="260" height="330" as="geometry"/>
+                </mxCell>
+                <mxCell id="header_title" value="&lt;b style='color:#FFF;font-size:11px'&gt; Storm32 2x6 RC Input Pins&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="5" width="240" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_gnd" value="&lt;b style='color:#94A3B8'&gt;GND&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="40" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_gnd" value="" style="ellipse;fillColor=#FFF;strokeColor=#475569;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="45" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="90" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="95" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_rc1" value="&lt;b style='color:#64748B'&gt;RC-1&lt;/b&gt; &lt;span style='color:#64748B;font-size:8px'&gt;(Roll)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="140" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_rc1" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="145" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_rc2" value="&lt;b style='color:#FFF'&gt;RC-2&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Yaw)&lt;/span&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="190" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_rc2" value="" style="ellipse;fillColor=#FFF;strokeColor=#2563EB;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="195" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_rc3" value="&lt;b style='color:#64748B'&gt;RC-3&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="240" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_rc3" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="245" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_l_rc2_sub" value="&lt;b style='color:#64748B;font-size:9px'&gt;RC2&lt;/b&gt;" style="text;html=1;align=right;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="285" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_l_rc2_sub" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="90" y="290" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_r_gnd" value="" style="ellipse;fillColor=#FFF;strokeColor=#475569;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="150" y="45" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_r_gnd" value="&lt;b style='color:#94A3B8'&gt;GND&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="180" y="40" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_r_rc0" value="" style="ellipse;fillColor=#FFF;strokeColor=#16A34A;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="150" y="95" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_r_rc0" value="&lt;b style='color:#FFF'&gt;RC-0&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Pitch)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="180" y="90" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_r_rc1" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="150" y="145" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_r_rc1" value="&lt;b style='color:#64748B'&gt;RC-1&lt;/b&gt; &lt;span style='color:#64748B;font-size:8px'&gt;(Roll)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="180" y="140" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_r_rc2" value="" style="ellipse;fillColor=#FFF;strokeColor=#2563EB;strokeWidth=3;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="150" y="195" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_r_rc2" value="&lt;b style='color:#FFF'&gt;RC-2&lt;/b&gt; &lt;span style='color:#94A3B8;font-size:8px'&gt;(Yaw)&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="180" y="190" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="pin_r_rc3" value="" style="ellipse;fillColor=#FFF;strokeColor=#94A3B8;strokeWidth=2;aspect=fixed;" parent="header_bg" vertex="1">
+                    <mxGeometry x="150" y="245" width="20" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl_r_rc3" value="&lt;b style='color:#64748B'&gt;RC&lt;/b&gt;" style="text;html=1;align=left;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="180" y="240" width="70" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="bridge_gnd" value="" style="endArrow=none;strokeColor=#475569;strokeWidth=1.5;dashed=1;" parent="header_bg" source="pin_l_gnd" target="pin_r_gnd" edge="1"/>
+                <mxCell id="bridge_rc0" value="" style="endArrow=none;strokeColor=#16A34A;strokeWidth=1.5;dashed=1;" parent="header_bg" source="pin_l_rc0" target="pin_r_rc0" edge="1"/>
+                <mxCell id="bridge_rc1" value="" style="endArrow=none;strokeColor=#94A3B8;strokeWidth=1.5;dashed=1;" parent="header_bg" source="pin_l_rc1" target="pin_r_rc1" edge="1"/>
+                <mxCell id="bridge_rc2" value="" style="endArrow=none;strokeColor=#2563EB;strokeWidth=1.5;dashed=1;" parent="header_bg" source="pin_l_rc2" target="pin_r_rc2" edge="1"/>
+                <mxCell id="parallel_lbl" value="&lt;span style='color:#10B981;font-size:8px;font-weight:bold;'&gt;PARALLEL BRIDGES&lt;br&gt;(Electrically Identical)&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;" parent="header_bg" vertex="1">
+                    <mxGeometry x="10" y="300" width="240" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_tx" value="" style="endArrow=block;endFill=1;strokeColor=#16A34A;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="gpio" target="pin_l_rc0" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="300" y="205" as="sourcePoint"/>
+                        <mxPoint x="670" y="255" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="450" y="205"/>
+                            <mxPoint x="450" y="255"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_tx_lbl" value="PWM0 → RC-0 (Pitch) [Green]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#16A34A;fontSize=8;backgroundColor=#FFFFFF;" parent="wire_tx" vertex="1" connectable="0">
+                    <mxGeometry x="-0.4" relative="1" as="geometry">
+                        <mxPoint x="10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_rx" value="" style="endArrow=block;endFill=1;strokeColor=#2563EB;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="gpio" target="pin_l_rc2" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="300" y="240" as="sourcePoint"/>
+                        <mxPoint x="670" y="355" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="430" y="240"/>
+                            <mxPoint x="430" y="355"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_rx_lbl" value="PWM2 → RC-2 (Yaw) [Blue]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#2563EB;fontSize=8;backgroundColor=#FFFFFF;" parent="wire_rx" vertex="1" connectable="0">
+                    <mxGeometry x="-0.4" relative="1" as="geometry">
+                        <mxPoint x="10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#475569;strokeWidth=2.5;rounded=1;edgeStyle=orthogonalEdgeStyle;" parent="1" source="gpio" target="pin_l_gnd" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="300" y="275" as="sourcePoint"/>
+                        <mxPoint x="670" y="205" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="470" y="275"/>
+                            <mxPoint x="470" y="205"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_gnd_lbl" value="GND → GND [Black]" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#475569;fontSize=8;backgroundColor=#FFFFFF;" parent="wire_gnd" vertex="1" connectable="0">
+                    <mxGeometry x="-0.4" relative="1" as="geometry">
+                        <mxPoint x="10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="note" value="&lt;b&gt;Wiring Instructions:&lt;/b&gt; Move the &lt;b style='color:#16A34A'&gt;Green wire&lt;/b&gt; from IDC40P Terminal 8 to &lt;b&gt;Terminal 32&lt;/b&gt; (PWM0). Move the &lt;b style='color:#2563EB'&gt;Blue wire&lt;/b&gt; from Terminal 10 to &lt;b&gt;Terminal 33&lt;/b&gt; (PWM2). &lt;b&gt;Black wire&lt;/b&gt; stays on Terminal 14 (GND). On the Storm32 side, all three wires stay on the same RC header pins (outer row: GND, RC-0, RC-2)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;fontColor=#0F172A;fontSize=11;strokeWidth=1.5;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="550" width="1060" height="55" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>
