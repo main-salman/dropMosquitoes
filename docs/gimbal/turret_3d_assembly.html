@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Servo Turret 3D Assembly Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #ffffff; color: #1a1a2e; overflow: hidden; height: 100vh; }
+  
+  #canvas-container { width: 100vw; height: 100vh; position: relative; }
+  canvas { display: block; }
+
+  /* Step controls overlay */
+  #controls {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+    border: 1px solid rgba(0,0,0,0.12); border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    padding: 12px 24px; z-index: 10;
+  }
+  #controls button {
+    background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+    color: #1a1a2e; padding: 10px 20px; border-radius: 10px; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 500;
+    transition: all 0.2s;
+  }
+  #controls button:hover { background: rgba(99,102,241,0.3); border-color: rgba(99,102,241,0.5); }
+  #controls button:disabled { opacity: 0.3; cursor: not-allowed; }
+  #step-label {
+    font-size: 14px; font-weight: 600; color: #a5b4fc; min-width: 200px; text-align: center;
+  }
+
+  /* Info panel */
+  #info-panel {
+    position: fixed; top: 24px; left: 24px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+    border: 1px solid rgba(0,0,0,0.12); border-radius: 16px;
+    padding: 20px 24px; max-width: 360px; z-index: 10; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  #info-panel h2 { font-size: 18px; color: #a5b4fc; margin-bottom: 8px; }
+  #info-panel p { font-size: 13px; line-height: 1.6; color: #555; }
+
+  /* Legend */
+  #legend {
+    position: fixed; top: 24px; right: 24px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+    border: 1px solid rgba(0,0,0,0.12); border-radius: 16px;
+    padding: 16px 20px; z-index: 10; font-size: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  #legend h3 { font-size: 13px; color: #a5b4fc; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
+
+  /* Hint */
+  #hint {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    font-size: 12px; color: rgba(0,0,0,0.35); z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvas-container"></div>
+
+<div id="info-panel">
+  <h2 id="step-title">Step 1: Components</h2>
+  <p id="step-desc">All parts laid out. The kit includes two black anodized brackets (U-bracket + servo mount plate), screws, and a brass bearing.</p>
+</div>
+
+<div id="legend">
+  <h3>Color Key</h3>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1a1a2e"></div> Brackets (black anodized)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2563eb"></div> MG996R Servo (blue)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#c8a84e"></div> Brass bearing</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#0e7c26"></div> PCA9685 board</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#dc2626"></div> Power wires</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#f97316"></div> Signal wires</div>
+</div>
+
+<div id="controls">
+  <button id="btn-prev" disabled>← Prev</button>
+  <span id="step-label">Step 1 / 5</span>
+  <button id="btn-next">Next →</button>
+  <button id="btn-explode" style="margin-left:12px">Explode View</button>
+  <button id="btn-reset" style="margin-left:4px">Reset Camera</button>
+</div>
+
+<div id="hint">🖱 Drag to rotate · Scroll to zoom · Right-drag to pan</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ── Scene Setup ──
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf5f5f5);
+scene.fog = new THREE.FogExp2(0xf5f5f5, 0.006);
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 500);
+camera.position.set(12, 10, 16);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.target.set(0, 4, 0);
+
+// ── Lighting ──
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+scene.add(ambientLight);
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+keyLight.position.set(10, 20, 10);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.near = 0.5;
+keyLight.shadow.camera.far = 50;
+keyLight.shadow.camera.left = -15;
+keyLight.shadow.camera.right = 15;
+keyLight.shadow.camera.top = 15;
+keyLight.shadow.camera.bottom = -15;
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0x6366f1, 0.4);
+fillLight.position.set(-8, 5, -5);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xa78bfa, 0.3);
+rimLight.position.set(0, 2, -10);
+scene.add(rimLight);
+
+// ── Grid ──
+const gridHelper = new THREE.GridHelper(40, 40, 0xcccccc, 0xe0e0e0);
+scene.add(gridHelper);
+
+// ── Materials ──
+const matBracket = new THREE.MeshStandardMaterial({ color: 0x3a3a4a, roughness: 0.4, metalness: 0.7 });
+const edgeColor = 0x000000;
+const edgeMat = new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 1, transparent: true, opacity: 0.35 });
+const edgeMatStrong = new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 1, transparent: true, opacity: 0.6 });
+
+// Helper: add visible edge outlines to a mesh
+function addEdges(mesh, mat = edgeMat) {
+  const edges = new THREE.EdgesGeometry(mesh.geometry, 15);
+  const line = new THREE.LineSegments(edges, mat);
+  mesh.add(line);
+  return mesh;
+}
+const matServoBody = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5, metalness: 0.3 });
+const matServoLabel = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, roughness: 0.6, metalness: 0.2 });
+const matShaft = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.3, metalness: 0.9 });
+const matBrass = new THREE.MeshStandardMaterial({ color: 0xc8a84e, roughness: 0.3, metalness: 0.8 });
+const matPCB = new THREE.MeshStandardMaterial({ color: 0x0e7c26, roughness: 0.6, metalness: 0.2 });
+const matPCBBlue = new THREE.MeshStandardMaterial({ color: 0x1e40af, roughness: 0.5, metalness: 0.3 });
+const matScrew = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.9 });
+const matWireRed = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+const matWireBlack = new THREE.MeshBasicMaterial({ color: 0x222222 });
+const matWireOrange = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+const matWireGreen = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+const matBuck = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.7, metalness: 0.2 });
+const matBase = new THREE.MeshStandardMaterial({ color: 0x5c3a1e, roughness: 0.8, metalness: 0.05 });
+const matCamera = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.4, metalness: 0.5 });
+const matLens = new THREE.MeshStandardMaterial({ color: 0x111133, roughness: 0.1, metalness: 0.8 });
+const matNozzle = new THREE.MeshStandardMaterial({ color: 0xb8860b, roughness: 0.3, metalness: 0.9 });
+
+// ── Build Parts ──
+const allGroups = { base: null, panServo: null, uBracket: null, tiltServo: null, 
+                     bearing: null, payloadPlate: null, pca9685: null, buckConverter: null,
+                     wires: null, payload: null };
+
+// --- U-Bracket (matches black bracket from user photos) ---
+function createUBracket() {
+  const g = new THREE.Group();
+  const t = 0.2; // thickness
+  const w = 4.0; // width
+  const h = 3.5; // height of sides
+  const d = 5.0; // depth
+
+  // Bottom plate
+  const bottom = addEdges(new THREE.Mesh(new THREE.BoxGeometry(w, t, d), matBracket), edgeMatStrong);
+  bottom.position.y = 0;
+  bottom.castShadow = true;
+  g.add(bottom);
+
+  // Left wall
+  const left = addEdges(new THREE.Mesh(new THREE.BoxGeometry(t, h, d), matBracket), edgeMatStrong);
+  left.position.set(-w/2 + t/2, h/2, 0);
+  left.castShadow = true;
+  g.add(left);
+
+  // Right wall
+  const right = addEdges(new THREE.Mesh(new THREE.BoxGeometry(t, h, d), matBracket), edgeMatStrong);
+  right.position.set(w/2 - t/2, h/2, 0);
+  right.castShadow = true;
+  g.add(right);
+
+  // Center hole on each side (for servo shaft / bearing)
+  const holeGeo = new THREE.CylinderGeometry(0.5, 0.5, t+0.1, 16);
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a12, roughness: 1 });
+  const holeL = new THREE.Mesh(holeGeo, holeMat);
+  holeL.rotation.z = Math.PI / 2;
+  holeL.position.set(-w/2 + t/2, h * 0.6, 0);
+  g.add(holeL);
+  const holeR = holeL.clone();
+  holeR.position.set(w/2 - t/2, h * 0.6, 0);
+  g.add(holeR);
+
+  // Mounting holes (decorative dots)
+  const dotGeo = new THREE.CylinderGeometry(0.12, 0.12, t+0.05, 8);
+  const positions = [
+    [-1.2, 0, -1.5], [-1.2, 0, 1.5], [1.2, 0, -1.5], [1.2, 0, 1.5],
+    [-1.2, 0, -0.5], [-1.2, 0, 0.5], [1.2, 0, -0.5], [1.2, 0, 0.5],
+    [0, 0, -1.8], [0, 0, 1.8]
+  ];
+  positions.forEach(p => {
+    const dot = new THREE.Mesh(dotGeo, holeMat);
+    dot.position.set(p[0], p[1], p[2]);
+    g.add(dot);
+  });
+
+  return g;
+}
+
+// --- Servo Mount Plate (the smaller bracket with ears) ---
+function createServoMountPlate() {
+  const g = new THREE.Group();
+  const t = 0.2;
+
+  // Main plate
+  const plate = addEdges(new THREE.Mesh(new THREE.BoxGeometry(4.0, t, 3.0), matBracket), edgeMatStrong);
+  plate.castShadow = true;
+  g.add(plate);
+
+  // Side ears (folded down tabs for mounting)
+  const earL = addEdges(new THREE.Mesh(new THREE.BoxGeometry(t, 1.2, 3.0), matBracket), edgeMatStrong);
+  earL.position.set(-2.0 + t/2, -0.6, 0);
+  earL.castShadow = true;
+  g.add(earL);
+
+  const earR = addEdges(new THREE.Mesh(new THREE.BoxGeometry(t, 1.2, 3.0), matBracket), edgeMatStrong);
+  earR.position.set(2.0 - t/2, -0.6, 0);
+  earR.castShadow = true;
+  g.add(earR);
+
+  // Center hole
+  const holeGeo = new THREE.CylinderGeometry(0.5, 0.5, t+0.1, 16);
+  const holeMat = new THREE.MeshStandardMaterial({ color: 0x0a0a12, roughness: 1 });
+  const hole = new THREE.Mesh(holeGeo, holeMat);
+  hole.position.y = 0;
+  g.add(hole);
+
+  // Mounting holes
+  const dotGeo = new THREE.CylinderGeometry(0.1, 0.1, t+0.05, 8);
+  [[-1.2, 0, -0.8], [-1.2, 0, 0.8], [1.2, 0, -0.8], [1.2, 0, 0.8]].forEach(p => {
+    const dot = new THREE.Mesh(dotGeo, holeMat);
+    dot.position.set(p[0], p[1], p[2]);
+    g.add(dot);
+  });
+
+  return g;
+}
+
+// --- MG996R Servo ---
+function createServo() {
+  const g = new THREE.Group();
+
+  // Main body
+  const body = addEdges(new THREE.Mesh(new THREE.BoxGeometry(2.0, 3.6, 1.6), matServoBody));
+  body.castShadow = true;
+  g.add(body);
+
+  // Label stripe
+  const label = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.0, 1.62), matServoLabel);
+  label.position.y = 0.3;
+  g.add(label);
+
+  // Mounting ears
+  const earGeo = new THREE.BoxGeometry(2.6, 0.15, 1.6);
+  const earTop = new THREE.Mesh(earGeo, matServoBody);
+  earTop.position.y = 1.2;
+  earTop.castShadow = true;
+  g.add(earTop);
+  const earBot = new THREE.Mesh(earGeo, matServoBody);
+  earBot.position.y = -1.2;
+  earBot.castShadow = true;
+  g.add(earBot);
+
+  // Output shaft
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.6, 16), matShaft);
+  shaft.position.set(0.3, 1.8 + 0.3, 0);
+  g.add(shaft);
+
+  // Spline horn
+  const horn = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.15, 24), matShaft);
+  horn.position.set(0.3, 2.25, 0);
+  g.add(horn);
+
+  // Wire bundle
+  const wireBundle = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.3), matServoBody);
+  wireBundle.position.set(0, -1.8 - 0.1, 0.4);
+  g.add(wireBundle);
+
+  // Individual wires
+  const wirePath = [new THREE.Vector3(0, -1.9, 0.4), new THREE.Vector3(0, -2.8, 0.4), new THREE.Vector3(0, -3.2, 0.6)];
+  const curve = new THREE.CatmullRomCurve3(wirePath);
+  const tubeGeo = new THREE.TubeGeometry(curve, 8, 0.04, 6, false);
+  [-0.15, 0, 0.15].forEach((offset, i) => {
+    const mat = [matWireOrange, matWireRed, new THREE.MeshBasicMaterial({color: 0x654321})][i];
+    const wire = new THREE.Mesh(tubeGeo, mat);
+    wire.position.x = offset;
+    g.add(wire);
+  });
+
+  return g;
+}
+
+// --- Brass Bearing ---
+function createBearing() {
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.4, 24), matBrass);
+  outer.rotation.z = Math.PI / 2;
+  g.add(outer);
+  const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.45, 16), 
+    new THREE.MeshStandardMaterial({ color: 0x0a0a12, roughness: 1 }));
+  inner.rotation.z = Math.PI / 2;
+  g.add(inner);
+  return g;
+}
+
+// --- PCA9685 Board ---
+function createPCA9685() {
+  const g = new THREE.Group();
+  const pcb = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.2, 2.5), matPCBBlue);
+  pcb.castShadow = true;
+  g.add(pcb);
+
+  // Pin headers (16 channels, 3 pins each)
+  for (let i = 0; i < 16; i++) {
+    const header = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.8), 
+      new THREE.MeshStandardMaterial({ color: i < 8 ? 0x222222 : 0x333333, roughness: 0.5 }));
+    header.position.set(-2.8 + i * 0.36, 0.3, 0.6);
+    g.add(header);
+  }
+
+  // IC chip
+  const chip = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.15, 1.0), 
+    new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 }));
+  chip.position.set(0, 0.17, -0.3);
+  g.add(chip);
+
+  // Screw terminal (power input)
+  const terminal = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.8), matPCB);
+  terminal.position.set(2.6, 0.35, -0.5);
+  g.add(terminal);
+
+  // Label
+  const labelGeo = new THREE.BoxGeometry(2.0, 0.02, 0.4);
+  const labelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+  const lbl = new THREE.Mesh(labelGeo, labelMat);
+  lbl.position.set(-0.5, 0.12, -0.8);
+  g.add(lbl);
+
+  return g;
+}
+
+// --- Buck Converter ---
+function createBuckConverter() {
+  const g = new THREE.Group();
+  const body = addEdges(new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.2, 2.0), matBuck));
+  body.castShadow = true;
+  g.add(body);
+
+  // Input terminals
+  const termIn = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), matScrew);
+  termIn.position.set(-1.5, 0.3, 0);
+  g.add(termIn);
+
+  // Output terminals
+  const termOut = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), matScrew);
+  termOut.position.set(1.5, 0.3, 0);
+  g.add(termOut);
+
+  // Label area
+  const label = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.02, 0.8), 
+    new THREE.MeshStandardMaterial({ color: 0x333333 }));
+  label.position.set(0, 0.61, 0);
+  g.add(label);
+
+  return g;
+}
+
+// --- Wooden Base Post ---
+function createBase() {
+  const g = new THREE.Group();
+  const post = addEdges(new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.0, 3.5), matBase));
+  post.castShadow = true;
+  post.receiveShadow = true;
+  g.add(post);
+  return g;
+}
+
+// --- Camera + LiDAR + Nozzle payload ---
+function createPayload() {
+  const g = new THREE.Group();
+
+  // Camera module
+  const cam = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.3, 2.4), matCamera);
+  cam.castShadow = true;
+  g.add(cam);
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16), matLens);
+  lens.position.set(0, -0.3, 0);
+  g.add(lens);
+
+  // LiDAR
+  const lidar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 2.0), matCamera);
+  lidar.position.set(1.8, 0.25, 0);
+  lidar.castShadow = true;
+  g.add(lidar);
+  const lidarLens = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.15, 12), 
+    new THREE.MeshStandardMaterial({ color: 0x8b0000, roughness: 0.2 }));
+  lidarLens.position.set(1.8, -0.1, 0.5);
+  lidarLens.rotation.x = Math.PI / 2;
+  g.add(lidarLens);
+
+  // Water nozzle
+  const nozzleBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 1.5, 12), matNozzle);
+  nozzleBody.position.set(-1.5, -0.2, 0);
+  nozzleBody.rotation.x = Math.PI / 2;
+  g.add(nozzleBody);
+  const nozzleTip = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.2, 0.3, 12), matNozzle);
+  nozzleTip.position.set(-1.5, -0.2, 0.9);
+  nozzleTip.rotation.x = Math.PI / 2;
+  g.add(nozzleTip);
+
+  return g;
+}
+
+// --- Wire curves ---
+function createWire(points, material) {
+  const curve = new THREE.CatmullRomCurve3(points);
+  const geo = new THREE.TubeGeometry(curve, 20, 0.06, 6, false);
+  return new THREE.Mesh(geo, material);
+}
+
+// ── ASSEMBLY ──
+const assemblyGroup = new THREE.Group();
+scene.add(assemblyGroup);
+
+// Create all parts
+const base = createBase();
+base.position.y = 0.5;
+assemblyGroup.add(base);
+allGroups.base = base;
+
+const panServo = createServo();
+panServo.position.set(0, 3.3, 0);
+assemblyGroup.add(panServo);
+allGroups.panServo = panServo;
+
+const servoMountPlate = createServoMountPlate();
+servoMountPlate.position.set(0, 1.5, 0);
+assemblyGroup.add(servoMountPlate);
+
+const uBracket = createUBracket();
+uBracket.position.set(0, 5.8, 0);
+assemblyGroup.add(uBracket);
+allGroups.uBracket = uBracket;
+
+const tiltServo = createServo();
+tiltServo.position.set(-1.6, 8.0, 0);
+tiltServo.rotation.z = Math.PI / 2;
+assemblyGroup.add(tiltServo);
+allGroups.tiltServo = tiltServo;
+
+const bearing = createBearing();
+bearing.position.set(1.8, 7.9, 0);
+assemblyGroup.add(bearing);
+allGroups.bearing = bearing;
+
+const payloadPlate = createServoMountPlate();
+payloadPlate.position.set(0, 9.5, 0);
+payloadPlate.rotation.z = 0;
+assemblyGroup.add(payloadPlate);
+allGroups.payloadPlate = payloadPlate;
+
+const pca9685 = createPCA9685();
+pca9685.position.set(6, 2, 0);
+assemblyGroup.add(pca9685);
+allGroups.pca9685 = pca9685;
+
+const buckConverter = createBuckConverter();
+buckConverter.position.set(-6, 1.5, 0);
+assemblyGroup.add(buckConverter);
+allGroups.buckConverter = buckConverter;
+
+const payload = createPayload();
+payload.position.set(0, 10.5, 0);
+assemblyGroup.add(payload);
+allGroups.payload = payload;
+
+// Wires group
+const wiresGroup = new THREE.Group();
+// PCA9685 to yaw servo signal (orange)
+wiresGroup.add(createWire([
+  new THREE.Vector3(6, 2.4, 0.6),
+  new THREE.Vector3(4, 2.4, 1.5),
+  new THREE.Vector3(1, 2.0, 1),
+  new THREE.Vector3(0.15, 1.5, 0.4)
+], matWireOrange));
+// PCA9685 to tilt servo signal (orange)
+wiresGroup.add(createWire([
+  new THREE.Vector3(5.6, 2.4, 0.6),
+  new THREE.Vector3(4, 4, 2),
+  new THREE.Vector3(0, 6, 1.5),
+  new THREE.Vector3(-1.6, 6.8, 0.4)
+], matWireOrange));
+// Buck 5V to servo (red)
+wiresGroup.add(createWire([
+  new THREE.Vector3(-4.5, 1.8, 0),
+  new THREE.Vector3(-3, 1.5, -1),
+  new THREE.Vector3(0, 1.2, -0.8),
+  new THREE.Vector3(0, 1.5, -0.4)
+], matWireRed));
+// Buck GND (black)
+wiresGroup.add(createWire([
+  new THREE.Vector3(-4.5, 1.2, 0),
+  new THREE.Vector3(-3, 1.0, 1),
+  new THREE.Vector3(0, 1.0, 0.5)
+], matWireBlack));
+// I2C SDA (green)
+wiresGroup.add(createWire([
+  new THREE.Vector3(6, 2.4, -0.8),
+  new THREE.Vector3(8, 3, -2),
+  new THREE.Vector3(9, 4, -3)
+], matWireGreen));
+// I2C SCL (blue)
+wiresGroup.add(createWire([
+  new THREE.Vector3(6.2, 2.4, -0.8),
+  new THREE.Vector3(8.2, 3.2, -2.2),
+  new THREE.Vector3(9.2, 4.2, -3.2)
+], new THREE.MeshBasicMaterial({ color: 0x3b82f6 })));
+// Ground tie (thick black dashed)
+wiresGroup.add(createWire([
+  new THREE.Vector3(-4.5, 1.0, 0.5),
+  new THREE.Vector3(-2, 0.5, 2),
+  new THREE.Vector3(3, 0.5, 3),
+  new THREE.Vector3(6, 1.5, 2),
+  new THREE.Vector3(9, 3.5, -2.5)
+], new THREE.MeshBasicMaterial({ color: 0x666600 })));
+
+assemblyGroup.add(wiresGroup);
+allGroups.wires = wiresGroup;
+
+// ── STEP DEFINITIONS ──
+const steps = [
+  {
+    title: "Step 1: Components Overview",
+    desc: "All parts laid out. Your kit has two black anodized brackets: a large U-bracket (yoke) and a smaller servo mount plate with folded ears. Plus screws and a brass bearing.",
+    visibility: { base: false, panServo: true, uBracket: true, tiltServo: true, bearing: true, 
+                  payloadPlate: true, pca9685: true, buckConverter: true, wires: false, payload: true },
+    positions: { panServo: [3, 0.5, 6], uBracket: [-3, 0.5, 6], tiltServo: [3, 0.5, -5],
+                 bearing: [-3, 0.5, -3], payloadPlate: [0, 0.5, -6], pca9685: [6, 0.5, 3],
+                 buckConverter: [-6, 0.5, 3], payload: [0, 0.5, 3] },
+    camera: { pos: [0, 18, 20], target: [0, 1, 0] }
+  },
+  {
+    title: "Step 2: Mount Pan Servo to Base",
+    desc: "Bolt the mount plate to the base. Insert the first MG996R servo into the mount plate with shaft pointing UP. This is your yaw (horizontal pan) axis.",
+    visibility: { base: true, panServo: true, uBracket: false, tiltServo: false, bearing: false,
+                  payloadPlate: false, pca9685: false, buckConverter: false, wires: false, payload: false },
+    positions: { panServo: [0, 3.3, 0], base: [0, 0.5, 0] },
+    camera: { pos: [8, 8, 12], target: [0, 2.5, 0] }
+  },
+  {
+    title: "Step 3: Attach U-Bracket + Tilt Servo",
+    desc: "Bolt the U-bracket onto the pan servo horn. Mount the second MG996R sideways inside the U-bracket. Install the brass bearing on the opposite side for support.",
+    visibility: { base: true, panServo: true, uBracket: true, tiltServo: true, bearing: true,
+                  payloadPlate: true, pca9685: false, buckConverter: false, wires: false, payload: false },
+    positions: { panServo: [0, 3.3, 0], uBracket: [0, 5.8, 0], tiltServo: [-1.6, 8.0, 0],
+                 bearing: [1.8, 7.9, 0], payloadPlate: [0, 9.5, 0], base: [0, 0.5, 0] },
+    camera: { pos: [10, 12, 14], target: [0, 6, 0] }
+  },
+  {
+    title: "Step 4: Wire Electronics",
+    desc: "Connect the PCA9685 to servos (signal), buck converter to servos (power). Run I2C wires to Jetson. CRITICAL: ground tie jumper from buck GND to Jetson GND.",
+    visibility: { base: true, panServo: true, uBracket: true, tiltServo: true, bearing: true,
+                  payloadPlate: true, pca9685: true, buckConverter: true, wires: true, payload: false },
+    positions: { panServo: [0, 3.3, 0], uBracket: [0, 5.8, 0], tiltServo: [-1.6, 8.0, 0],
+                 bearing: [1.8, 7.9, 0], payloadPlate: [0, 9.5, 0], base: [0, 0.5, 0],
+                 pca9685: [6, 2, 0], buckConverter: [-6, 1.5, 0] },
+    camera: { pos: [0, 14, 20], target: [0, 4, 0] }
+  },
+  {
+    title: "Step 5: Mount Payload",
+    desc: "Attach camera (IMX219), TF-Luna LiDAR, and water nozzle to the payload plate. Route the water hose with a service loop for rotation clearance.",
+    visibility: { base: true, panServo: true, uBracket: true, tiltServo: true, bearing: true,
+                  payloadPlate: true, pca9685: true, buckConverter: true, wires: true, payload: true },
+    positions: { panServo: [0, 3.3, 0], uBracket: [0, 5.8, 0], tiltServo: [-1.6, 8.0, 0],
+                 bearing: [1.8, 7.9, 0], payloadPlate: [0, 9.5, 0], base: [0, 0.5, 0],
+                 pca9685: [6, 2, 0], buckConverter: [-6, 1.5, 0], payload: [0, 10.5, 0] },
+    camera: { pos: [12, 14, 16], target: [0, 6, 0] }
+  }
+];
+
+let currentStep = 0;
+let isExploded = false;
+
+function applyStep(stepIndex, animate = true) {
+  const step = steps[stepIndex];
+  document.getElementById('step-title').textContent = step.title;
+  document.getElementById('step-desc').textContent = step.desc;
+  document.getElementById('step-label').textContent = `Step ${stepIndex + 1} / ${steps.length}`;
+  document.getElementById('btn-prev').disabled = stepIndex === 0;
+  document.getElementById('btn-next').disabled = stepIndex === steps.length - 1;
+
+  // Visibility
+  Object.entries(step.visibility).forEach(([key, visible]) => {
+    const obj = allGroups[key];
+    if (obj) obj.visible = visible;
+  });
+  // Also handle servoMountPlate and base
+  servoMountPlate.visible = step.visibility.base || false;
+
+  // Positions (animate)
+  if (step.positions) {
+    Object.entries(step.positions).forEach(([key, pos]) => {
+      const obj = allGroups[key];
+      if (obj && pos) {
+        if (animate) {
+          animatePosition(obj, pos);
+        } else {
+          obj.position.set(pos[0], pos[1], pos[2]);
+        }
+      }
+    });
+  }
+
+  // Camera
+  if (step.camera && animate) {
+    animateCamera(step.camera.pos, step.camera.target);
+  }
+}
+
+function animatePosition(obj, target, duration = 800) {
+  const start = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+  const startTime = Date.now();
+  function update() {
+    const elapsed = Date.now() - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    obj.position.set(
+      start.x + (target[0] - start.x) * ease,
+      start.y + (target[1] - start.y) * ease,
+      start.z + (target[2] - start.z) * ease
+    );
+    if (t < 1) requestAnimationFrame(update);
+  }
+  update();
+}
+
+function animateCamera(pos, target, duration = 1000) {
+  const startPos = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+  const startTarget = { x: controls.target.x, y: controls.target.y, z: controls.target.z };
+  const startTime = Date.now();
+  function update() {
+    const elapsed = Date.now() - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    camera.position.set(
+      startPos.x + (pos[0] - startPos.x) * ease,
+      startPos.y + (pos[1] - startPos.y) * ease,
+      startPos.z + (pos[2] - startPos.z) * ease
+    );
+    controls.target.set(
+      startTarget.x + (target[0] - startTarget.x) * ease,
+      startTarget.y + (target[1] - startTarget.y) * ease,
+      startTarget.z + (target[2] - startTarget.z) * ease
+    );
+    if (t < 1) requestAnimationFrame(update);
+  }
+  update();
+}
+
+// ── Controls ──
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (currentStep < steps.length - 1) { currentStep++; applyStep(currentStep); }
+});
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (currentStep > 0) { currentStep--; applyStep(currentStep); }
+});
+document.getElementById('btn-explode').addEventListener('click', () => {
+  isExploded = !isExploded;
+  document.getElementById('btn-explode').textContent = isExploded ? 'Collapse' : 'Explode View';
+  const offset = isExploded ? 2.5 : 0;
+  if (allGroups.uBracket.visible) animatePosition(allGroups.uBracket, [0, 5.8 + offset * 1.5, 0]);
+  if (allGroups.tiltServo.visible) animatePosition(allGroups.tiltServo, [-1.6 - offset, 8.0 + offset, 0]);
+  if (allGroups.bearing.visible) animatePosition(allGroups.bearing, [1.8 + offset, 7.9 + offset, 0]);
+  if (allGroups.payloadPlate.visible) animatePosition(allGroups.payloadPlate, [0, 9.5 + offset * 2, 0]);
+  if (allGroups.payload.visible) animatePosition(allGroups.payload, [0, 10.5 + offset * 3, 0]);
+});
+document.getElementById('btn-reset').addEventListener('click', () => {
+  const step = steps[currentStep];
+  if (step.camera) animateCamera(step.camera.pos, step.camera.target);
+});
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'd') document.getElementById('btn-next').click();
+  if (e.key === 'ArrowLeft' || e.key === 'a') document.getElementById('btn-prev').click();
+});
+
+// ── Init ──
+applyStep(0, false);
+
+// ── Animate ──
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+
+  // Slow rotation on step 1 (components view)
+  if (currentStep === 0) {
+    assemblyGroup.rotation.y += 0.001;
+  }
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
