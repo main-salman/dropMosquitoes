@@ -1,0 +1,333 @@
+<mxfile host="app.diagrams.net" modified="2026-06-06T21:03:00.000Z" agent="Antigravity" version="24.0.0" type="device">
+  <diagram name="Servo Turret Wiring" id="turret-wiring">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- ====== TITLE ====== -->
+        <mxCell id="title" value="&lt;b&gt;Servo Turret Wiring Diagram&lt;/b&gt;&lt;br&gt;Jetson Orin Nano → PCA9685 → MG996R Servos" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="420" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== 12V PSU + WAGO ====== -->
+        <mxCell id="psu" value="&lt;b&gt;12V 10A PSU&lt;/b&gt;&lt;br&gt;AC → DC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="350" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="wago" value="&lt;b&gt;Wago 221&lt;/b&gt;&lt;br&gt;5-Way Lever Nut&lt;br&gt;12V Distribution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontColor=#333333;fontSize=10;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="240" y="330" width="140" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="wago_gnd" value="&lt;b&gt;Wago 221&lt;/b&gt;&lt;br&gt;GND Distribution" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e6e6e6;strokeColor=#999999;fontColor=#333333;fontSize=10;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="240" y="430" width="140" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- PSU to Wago wires -->
+        <mxCell id="psu_12v" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc0000;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="psu" target="wago">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="psu_12v_label" value="&lt;font color=&quot;#cc0000&quot;&gt;&lt;b&gt;+12V (Red)&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="psu_12v">
+          <mxGeometry x="-0.1" relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="psu_gnd" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="psu" target="wago_gnd">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="psu_gnd_label" value="&lt;b&gt;GND (Black)&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="psu_gnd">
+          <mxGeometry x="-0.1" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== JETSON ORIN NANO ====== -->
+        <mxCell id="jetson" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1a2e;strokeColor=#333366;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="460" y="100" width="360" height="280" as="geometry"/>
+        </mxCell>
+        <mxCell id="jetson_title" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;(Yahboom Carrier Board)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="530" y="110" width="180" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- IDC40P Header -->
+        <mxCell id="idc40p" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d2d44;strokeColor=#555588;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="490" y="160" width="300" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="idc40p_title" value="&lt;font color=&quot;#aaaacc&quot;&gt;&lt;b&gt;IDC40P Header&lt;/b&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="590" y="165" width="100" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 1: 3.3V -->
+        <mxCell id="pin1" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 1&lt;/b&gt; — 3.3V&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cc0000;strokeColor=#990000;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="510" y="190" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 3: I2C SDA (Bus 1) -->
+        <mxCell id="pin3" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 3&lt;/b&gt; — I2C SDA&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563eb;strokeColor=#1d4ed8;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="510" y="230" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 5: I2C SCL (Bus 1) -->
+        <mxCell id="pin5" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 5&lt;/b&gt; — I2C SCL&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16a34a;strokeColor=#15803d;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="510" y="270" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 6: GND -->
+        <mxCell id="pin6" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 6&lt;/b&gt; — GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="190" width="110" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 9: GND (Ground Tie) -->
+        <mxCell id="pin9" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 9&lt;/b&gt; — GND&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#ffcc00&quot; style=&quot;font-size:8px&quot;&gt;⚡ GROUND TIE&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b45309;strokeColor=#92400e;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="230" width="110" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Other pins note -->
+        <mxCell id="other_pins" value="&lt;font color=&quot;#888888&quot; style=&quot;font-size:9px&quot;&gt;Pin 11 (BCM17) → Relay/Pump&lt;br&gt;Pin 7 (BCM4) → Buzzer&lt;br&gt;Other pins unused&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="650" y="290" width="140" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== PCA9685 ====== -->
+        <mxCell id="pca9685" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e3a5f;strokeColor=#1e40af;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="460" y="500" width="360" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="pca9685_title" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;SunFounder PCA9685&lt;/b&gt;&lt;br&gt;16-Channel I2C PWM Servo Driver&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;I2C Address: 0x40&lt;/font&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="508" width="220" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- PCA9685 I2C Input pins -->
+        <mxCell id="pca_vcc" value="&lt;font color=&quot;#ffffff&quot;&gt;VCC (3.3V)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cc0000;strokeColor=#990000;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="480" y="570" width="90" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="pca_sda" value="&lt;font color=&quot;#ffffff&quot;&gt;SDA&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563eb;strokeColor=#1d4ed8;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="480" y="600" width="90" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="pca_scl" value="&lt;font color=&quot;#ffffff&quot;&gt;SCL&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16a34a;strokeColor=#15803d;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="480" y="630" width="90" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="pca_gnd" value="&lt;font color=&quot;#ffffff&quot;&gt;GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="480" y="660" width="90" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- PCA9685 Servo Output channels -->
+        <mxCell id="ch0" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;CH0&lt;/b&gt; — Yaw Signal&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ea580c;strokeColor=#c2410c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="570" width="140" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="ch1" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;CH1&lt;/b&gt; — Pitch Signal&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ea580c;strokeColor=#c2410c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="608" width="140" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="ch_unused" value="&lt;font color=&quot;#888888&quot; style=&quot;font-size:9px&quot;&gt;CH2–CH15: unused&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="680" y="645" width="110" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- PCA9685 V+ terminal -->
+        <mxCell id="pca_vplus" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;V+&lt;/b&gt; (Servo Power)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#059669;strokeColor=#047857;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="670" width="140" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== BUCK CONVERTER ====== -->
+        <mxCell id="buck" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#292929;strokeColor=#555555;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="530" width="200" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="buck_title" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;DWEII Buck Converter&lt;/b&gt;&lt;br&gt;12V → 5V @ 10A (50W)&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Potted / Waterproof / OCP&lt;/font&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="55" y="540" width="170" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Buck terminals -->
+        <mxCell id="buck_12v_in" value="&lt;font color=&quot;#ffffff&quot;&gt;IN+ (12V)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cc0000;strokeColor=#990000;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="600" width="80" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="buck_gnd_in" value="&lt;font color=&quot;#ffffff&quot;&gt;IN− (GND)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="60" y="630" width="80" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="buck_5v_out" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;OUT+ (5V)&lt;/b&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dc2626;strokeColor=#b91c1c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="150" y="600" width="80" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="buck_gnd_out" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;OUT− (GND)&lt;/b&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="150" y="630" width="80" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== MG996R SERVOS ====== -->
+        <!-- Yaw Servo -->
+        <mxCell id="yaw_servo" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e40af;strokeColor=#1d4ed8;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="490" width="220" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="yaw_title" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;MG996R — YAW&lt;/b&gt;&lt;br&gt;(Pan / Horizontal)&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;10-13 kg·cm torque&lt;/font&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="498" width="140" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="yaw_signal" value="&lt;font color=&quot;#ffffff&quot;&gt;Signal (Orange)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ea580c;strokeColor=#c2410c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="555" width="110" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="yaw_vcc" value="&lt;font color=&quot;#ffffff&quot;&gt;VCC (Red)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dc2626;strokeColor=#b91c1c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="583" width="110" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="yaw_gnd" value="GND (Brown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#78350f;strokeColor=#92400e;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="555" width="65" height="53" as="geometry"/>
+        </mxCell>
+
+        <!-- Pitch Servo -->
+        <mxCell id="pitch_servo" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e40af;strokeColor=#1d4ed8;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="660" width="220" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="pitch_title" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;MG996R — PITCH&lt;/b&gt;&lt;br&gt;(Tilt / Vertical)&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;10-13 kg·cm torque&lt;/font&gt;&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="668" width="140" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="pitch_signal" value="&lt;font color=&quot;#ffffff&quot;&gt;Signal (Orange)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ea580c;strokeColor=#c2410c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="725" width="110" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="pitch_vcc" value="&lt;font color=&quot;#ffffff&quot;&gt;VCC (Red)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dc2626;strokeColor=#b91c1c;fontSize=10;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="753" width="110" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="pitch_gnd" value="GND (Brown)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#78350f;strokeColor=#92400e;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="725" width="65" height="53" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== WIRING: Jetson → PCA9685 (I2C) ====== -->
+        <!-- Pin 1 (3.3V) → PCA VCC -->
+        <mxCell id="w_vcc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc0000;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pin1" target="pca_vcc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="570" y="460"/><mxPoint x="440" y="460"/><mxPoint x="440" y="582"/><mxPoint x="525" y="582"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_vcc_l" value="&lt;font color=&quot;#cc0000&quot; style=&quot;font-size:9px&quot;&gt;3.3V (Red)&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_vcc">
+          <mxGeometry x="-0.3" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 3 (SDA) → PCA SDA -->
+        <mxCell id="w_sda" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#2563eb;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pin3" target="pca_sda">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="570" y="475"/><mxPoint x="450" y="475"/><mxPoint x="450" y="612"/><mxPoint x="525" y="612"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_sda_l" value="&lt;font color=&quot;#2563eb&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;I2C SDA (Blue)&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_sda">
+          <mxGeometry x="-0.2" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 5 (SCL) → PCA SCL -->
+        <mxCell id="w_scl" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#16a34a;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pin5" target="pca_scl">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="570" y="490"/><mxPoint x="460" y="490"/><mxPoint x="460" y="642"/><mxPoint x="525" y="642"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_scl_l" value="&lt;font color=&quot;#16a34a&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;I2C SCL (Green)&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_scl">
+          <mxGeometry x="-0.2" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Pin 6 (GND) → PCA GND -->
+        <mxCell id="w_gnd" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=2;endArrow=block;endFill=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="pin6" target="pca_gnd">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="715" y="440"/><mxPoint x="430" y="440"/><mxPoint x="430" y="672"/><mxPoint x="525" y="672"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_gnd_l" value="&lt;font style=&quot;font-size:9px&quot;&gt;GND (Black)&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_gnd">
+          <mxGeometry x="-0.3" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== WIRING: PCA9685 → Servos (Signal) ====== -->
+        <!-- CH0 → Yaw Signal -->
+        <mxCell id="w_ch0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#ea580c;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="ch0" target="yaw_signal">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="900" y="584"/><mxPoint x="900" y="567"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_ch0_l" value="&lt;font color=&quot;#ea580c&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;PWM Signal&lt;/b&gt;&lt;br&gt;500–2500μs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch0">
+          <mxGeometry x="-0.2" y="-15" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- CH1 → Pitch Signal -->
+        <mxCell id="w_ch1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#ea580c;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="ch1" target="pitch_signal">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="920" y="622"/><mxPoint x="920" y="737"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_ch1_l" value="&lt;font color=&quot;#ea580c&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;PWM Signal&lt;/b&gt;&lt;br&gt;500–2500μs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch1">
+          <mxGeometry x="-0.2" y="-15" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== WIRING: Buck → Servos (Power) ====== -->
+        <!-- Buck 5V → Yaw VCC -->
+        <mxCell id="w_5v_yaw" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#dc2626;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_5v_out" target="yaw_vcc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="310" y="612"/><mxPoint x="310" y="830"/><mxPoint x="960" y="830"/><mxPoint x="960" y="595"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_5v_yaw_l" value="&lt;font color=&quot;#dc2626&quot;&gt;&lt;b&gt;+5V Power (Red) — 10A max&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_5v_yaw">
+          <mxGeometry x="0.2" y="15" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Buck 5V → Pitch VCC -->
+        <mxCell id="w_5v_pitch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#dc2626;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_5v_out" target="pitch_vcc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="310" y="612"/><mxPoint x="310" y="850"/><mxPoint x="970" y="850"/><mxPoint x="970" y="765"/></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Buck 5V → PCA V+ -->
+        <mxCell id="w_5v_pca" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#059669;strokeWidth=2;endArrow=block;endFill=1;dashed=1;" edge="1" parent="1" source="buck_5v_out" target="pca_vplus">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="320" y="612"/><mxPoint x="320" y="710"/><mxPoint x="660" y="710"/><mxPoint x="660" y="684"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_5v_pca_l" value="&lt;font color=&quot;#059669&quot; style=&quot;font-size:9px&quot;&gt;5V to V+ screw terminal&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_5v_pca">
+          <mxGeometry x="0.3" y="12" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Buck GND → Servo GNDs -->
+        <mxCell id="w_gnd_servos" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_gnd_out" target="yaw_gnd">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="300" y="642"/><mxPoint x="300" y="860"/><mxPoint x="1172" y="860"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_gnd_servos_l" value="&lt;b&gt;GND (Black) — shared servo ground&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_gnd_servos">
+          <mxGeometry x="0.3" y="15" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- GND to pitch -->
+        <mxCell id="w_gnd_pitch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="yaw_gnd" target="pitch_gnd">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== GROUND TIE (Critical!) ====== -->
+        <mxCell id="w_ground_tie" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#b45309;strokeWidth=3;endArrow=block;endFill=1;dashed=1;dashPattern=8 4;" edge="1" parent="1" source="buck_gnd_out" target="pin9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="280" y="642"/><mxPoint x="280" y="250"/><mxPoint x="660" y="250"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_gt_label" value="&lt;font color=&quot;#b45309&quot;&gt;&lt;b&gt;⚡ GROUND TIE&lt;/b&gt;&lt;br&gt;Jumper wire — mandatory&lt;br&gt;for PWM signal return path&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_ground_tie">
+          <mxGeometry x="-0.4" y="-30" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== WIRING: Wago → Buck (12V Input) ====== -->
+        <mxCell id="w_wago_buck12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc0000;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="wago" target="buck_12v_in">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="310" y="410"/><mxPoint x="100" y="410"/><mxPoint x="100" y="600"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_wago_buck12_l" value="&lt;font color=&quot;#cc0000&quot; style=&quot;font-size:9px&quot;&gt;+12V&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_wago_buck12">
+          <mxGeometry x="-0.3" relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="w_wago_buckgnd" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="wago_gnd" target="buck_gnd_in">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="310" y="490"/><mxPoint x="90" y="490"/><mxPoint x="90" y="642"/><mxPoint x="100" y="642"/></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ====== Wago → Jetson barrel jack ====== -->
+        <mxCell id="w_wago_jetson" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#cc0000;strokeWidth=2;endArrow=block;endFill=1;dashed=1;dashPattern=5 3;" edge="1" parent="1" source="wago" target="jetson">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="380" y="340"/><mxPoint x="380" y="200"/><mxPoint x="460" y="200"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_wago_jetson_l" value="&lt;font color=&quot;#cc0000&quot; style=&quot;font-size:9px&quot;&gt;12V via barrel jack&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_wago_jetson">
+          <mxGeometry x="-0.2" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ====== SAFETY NOTE ====== -->
+        <mxCell id="safety_note" value="&lt;b&gt;⚠️ SAFETY NOTES&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. Servo power (5V/10A) is &lt;b&gt;fully isolated&lt;/b&gt;&lt;br&gt;   from Jetson 5V rail — no brownout risk&lt;br&gt;&lt;br&gt;2. Ground tie jumper is &lt;b&gt;mandatory&lt;/b&gt; for&lt;br&gt;   PWM signal to have a return path&lt;br&gt;&lt;br&gt;3. TF-Luna LiDAR shares I2C Bus 1&lt;br&gt;   at address 0x10 — no conflict with&lt;br&gt;   PCA9685 at 0x40" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff3cd;strokeColor=#d6b656;fontColor=#333333;fontSize=10;align=left;spacingLeft=10;spacingRight=10;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="100" width="260" height="220" as="geometry"/>
+        </mxCell>
+
+        <!-- Wire legend -->
+        <mxCell id="legend_box" value="&lt;b&gt;Wire Color Legend&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#cc0000&quot;&gt;━━ Red: +12V / +3.3V power&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#dc2626&quot;&gt;━━ Red (thick): +5V servo power&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#333333&quot;&gt;━━ Black: GND&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#b45309&quot;&gt;╍╍ Amber dashed: Ground tie&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#2563eb&quot;&gt;━━ Blue: I2C SDA&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#16a34a&quot;&gt;━━ Green: I2C SCL&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#ea580c&quot;&gt;━━ Orange: PWM signal&lt;/font&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#f0f0f0;strokeColor=#cccccc;fontColor=#333333;fontSize=10;align=left;spacingLeft=10;spacingRight=10;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="360" width="260" height="170" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
