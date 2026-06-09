@@ -23,9 +23,10 @@ import time
 from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
-    RelayController, GimbalController, LiDARController,
+    RelayController, LiDARController, create_turret_controller,
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
-    YAW_LIMIT, PITCH_LIMIT, PITCH_HOME
+    YAW_LIMIT, PITCH_LIMIT, PITCH_HOME,
+    SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
 
@@ -37,7 +38,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
-gimbal = GimbalController()
+gimbal = create_turret_controller()
 lidar = LiDARController()
 
 # Velocity tracker for predictive lead — SW-001 §2.7.1
@@ -135,10 +136,17 @@ def stream_sniper():
 @app.route('/')
 def index():
     """Serve the main control dashboard."""
+    # Detect controller type for dashboard display
+    from hardware import ServoTurretController
+    is_servo = isinstance(gimbal, ServoTurretController)
+    ctrl_type = "servo" if is_servo else "storm32"
+    eff_yaw = SERVO_YAW_LIMIT if is_servo else YAW_LIMIT
+    eff_pitch = SERVO_PITCH_LIMIT if is_servo else PITCH_LIMIT
     return render_template('index.html',
-                           yaw_limit=YAW_LIMIT,
-                           pitch_limit=PITCH_LIMIT,
-                           pitch_home=PITCH_HOME)
+                           yaw_limit=eff_yaw,
+                           pitch_limit=eff_pitch,
+                           pitch_home=PITCH_HOME,
+                           ctrl_type=ctrl_type)
 
 
 # ============================================================================
@@ -532,8 +540,11 @@ def api_cal_clear():
 @app.route('/api/status')
 def api_status():
     """Return full system status as JSON — gimbal, relay, LiDAR, AI."""
+    from hardware import ServoTurretController
+    status = gimbal.get_status()
+    status["controller"] = "servo" if isinstance(gimbal, ServoTurretController) else "storm32"
     return jsonify({
-        "gimbal": gimbal.get_status(),
+        "gimbal": status,
         "relay": relay.get_status(),
         "lidar": lidar.get_status(),
         "ai": {
@@ -603,6 +614,13 @@ TEST_SUITES = {
         "name": "PWM Gimbal Sweep (Layer 1)",
         "description": "Hardware PWM → Storm32 RC pins: yaw ±30° sweep, pitch ±20° sweep, combined",
         "script": "tests/test_pwm_gimbal.py",
+        "args": [],
+        "layer": 1,
+    },
+    "servo_turret": {
+        "name": "Servo Turret Tests (Layer 1)",
+        "description": "PCA9685 I2C scan, MG996R servo sweep, LiDAR I2C coexistence",
+        "script": "tests/test_servo_turret.py",
         "args": [],
         "layer": 1,
     },
