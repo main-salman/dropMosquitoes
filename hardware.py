@@ -430,16 +430,18 @@ SERVO_RANGE_DEG = 180.0  # Total mechanical range
 SERVO_YAW_LIMIT = 80.0    # ±80° yaw (same as Storm32 for software compatibility)
 SERVO_PITCH_LIMIT = 90.0  # ±90° pitch (full servo range)
 
-try:
-    from adafruit_servokit import ServoKit
-    SERVOKIT_AVAILABLE = True
-except ImportError:
-    SERVOKIT_AVAILABLE = False
+# PCA9685 register map (NXP datasheet §7.3)
+_PCA9685_MODE1     = 0x00
+_PCA9685_PRESCALE  = 0xFE
+_PCA9685_LED0_ON_L = 0x06  # Each channel is 4 registers: ON_L, ON_H, OFF_L, OFF_H
 
 
 class ServoTurretController:
     """
     Controls a 2-axis geared pan/tilt turret via PCA9685 I2C servo driver.
+
+    Uses smbus2 for direct I2C register access, bypassing Adafruit Blinka
+    which maps to the wrong I2C bus on the Yahboom carrier board.
 
     Provides the SAME API as GimbalController so the rest of the system
     (app.py, dashboard, AI pipeline, tests) requires ZERO changes.
@@ -456,50 +458,85 @@ class ServoTurretController:
 
     PCA9685_ADDRESS = 0x40
     I2C_BUS = 1
+    PWM_FREQ = 50  # 50 Hz standard servo frequency
 
     def __init__(self):
         self._yaw = 0.0          # Current yaw angle (degrees, -80..+80)
         self._pitch = PITCH_HOME # Current pitch angle (degrees, -90..+90)
         self._lock = threading.Lock()
-        self._kit = None
+        self._bus = None
 
-        if SERVOKIT_AVAILABLE:
+        if I2C_AVAILABLE:
             try:
-                import board
-                import busio
-                # Initialize PCA9685 on I2C bus 1
-                i2c = busio.I2C(board.SCL, board.SDA)
-                self._kit = ServoKit(
-                    channels=16,
-                    i2c=i2c,
-                    address=self.PCA9685_ADDRESS
-                )
-                # Configure pulse range for MG996R servos
-                self._kit.servo[SERVO_CH_YAW].set_pulse_width_range(
-                    SERVO_MIN_PULSE, SERVO_MAX_PULSE)
-                self._kit.servo[SERVO_CH_PITCH].set_pulse_width_range(
-                    SERVO_MIN_PULSE, SERVO_MAX_PULSE)
+                self._bus = smbus2.SMBus(self.I2C_BUS)
+                # Verify PCA9685 is present
+                self._bus.read_byte_data(self.PCA9685_ADDRESS, _PCA9685_MODE1)
+
+                # Initialize PCA9685
+                self._init_pca9685()
                 print(f"[ServoTurret] PCA9685 initialized on I2C bus {self.I2C_BUS}, "
-                      f"address 0x{self.PCA9685_ADDRESS:02X}")
+                      f"address 0x{self.PCA9685_ADDRESS:02X} via smbus2")
+
                 # Center servos on startup
                 self.center()
             except Exception as e:
                 print(f"[ServoTurret] PCA9685 init FAILED: {e}")
                 print("[ServoTurret] Running in STUB mode.")
-                self._kit = None
+                self._bus = None
         else:
-            print("[ServoTurret] STUB MODE — adafruit-servokit not installed.")
-            print("[ServoTurret] Install: pip install adafruit-circuitpython-servokit")
+            print("[ServoTurret] STUB MODE — smbus2 not available.")
 
-    def _deg_to_servo(self, angle_deg: float) -> float:
-        """
-        Convert turret angle (-90..+90) to servo angle (0..180).
+    def _init_pca9685(self):
+        """Initialize PCA9685: reset, set 50Hz PWM frequency, wake up."""
+        addr = self.PCA9685_ADDRESS
 
-        Turret angle 0° = center = servo 90°.
-        Turret angle -90° = servo 0°.
-        Turret angle +90° = servo 180°.
-        """
-        return max(0.0, min(180.0, angle_deg + 90.0))
+        # Put to sleep (bit 4 = SLEEP) before setting prescaler
+        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x10)
+        time.sleep(0.005)
+
+        # Set prescaler for 50 Hz: prescale = round(25MHz / (4096 × freq)) - 1
+        # 50 Hz → prescale = round(25000000 / (4096 × 50)) - 1 = 121
+        prescale = round(25000000.0 / (4096 * self.PWM_FREQ)) - 1
+        self._bus.write_byte_data(addr, _PCA9685_PRESCALE, prescale)
+
+        # Wake up (clear SLEEP bit), enable auto-increment (bit 5)
+        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x20)
+        time.sleep(0.005)
+
+        # Restart (bit 7) — clears any pending PWM state
+        mode1 = self._bus.read_byte_data(addr, _PCA9685_MODE1)
+        self._bus.write_byte_data(addr, _PCA9685_MODE1, mode1 | 0x80)
+        time.sleep(0.005)
+
+        print(f"[ServoTurret] PCA9685 prescaler={prescale} ({self.PWM_FREQ}Hz)")
+
+    def _set_pwm(self, channel: int, on: int, off: int):
+        """Set raw PWM on/off ticks (0-4095) for a channel."""
+        reg = _PCA9685_LED0_ON_L + 4 * channel
+        self._bus.write_byte_data(self.PCA9685_ADDRESS, reg, on & 0xFF)
+        self._bus.write_byte_data(self.PCA9685_ADDRESS, reg + 1, on >> 8)
+        self._bus.write_byte_data(self.PCA9685_ADDRESS, reg + 2, off & 0xFF)
+        self._bus.write_byte_data(self.PCA9685_ADDRESS, reg + 3, off >> 8)
+
+    def _pulse_to_ticks(self, pulse_us: float) -> int:
+        """Convert pulse width (microseconds) to PCA9685 tick count (0-4095).
+        At 50Hz, one period = 20000μs, so 4096 ticks = 20000μs."""
+        period_us = 1000000.0 / self.PWM_FREQ  # 20000μs at 50Hz
+        return int(pulse_us / period_us * 4096)
+
+    def _deg_to_pulse(self, angle_deg: float) -> float:
+        """Convert turret angle (-90..+90) to servo pulse width (μs).
+        Turret 0° = servo 90° = center pulse.
+        Maps linearly across SERVO_MIN_PULSE..SERVO_MAX_PULSE."""
+        servo_angle = max(0.0, min(180.0, angle_deg + 90.0))
+        fraction = servo_angle / 180.0
+        return SERVO_MIN_PULSE + fraction * (SERVO_MAX_PULSE - SERVO_MIN_PULSE)
+
+    def _set_servo_angle(self, channel: int, turret_deg: float):
+        """Set a servo channel to a turret angle (degrees from center)."""
+        pulse_us = self._deg_to_pulse(turret_deg)
+        ticks = self._pulse_to_ticks(pulse_us)
+        self._set_pwm(channel, 0, ticks)
 
     def set_angles(self, pitch: float, yaw: float):
         """
@@ -517,10 +554,10 @@ class ServoTurretController:
             self._pitch = max(-SERVO_PITCH_LIMIT, min(SERVO_PITCH_LIMIT, pitch))
             self._yaw = max(-SERVO_YAW_LIMIT, min(SERVO_YAW_LIMIT, yaw))
 
-            if self._kit:
+            if self._bus:
                 try:
-                    self._kit.servo[SERVO_CH_YAW].angle = self._deg_to_servo(self._yaw)
-                    self._kit.servo[SERVO_CH_PITCH].angle = self._deg_to_servo(self._pitch)
+                    self._set_servo_angle(SERVO_CH_YAW, self._yaw)
+                    self._set_servo_angle(SERVO_CH_PITCH, self._pitch)
                     print(f"[ServoTurret] Set yaw={self._yaw:.1f}° pitch={self._pitch:.1f}°")
                 except Exception as e:
                     print(f"[ServoTurret] Servo write error: {e}")
@@ -545,15 +582,17 @@ class ServoTurretController:
             "pitch": round(self._pitch, 1),
             "yaw": round(self._yaw, 1),
             "pitch_home": PITCH_HOME,
-            "connected": self._kit is not None
+            "connected": self._bus is not None
         }
 
     def cleanup(self):
-        """Center turret on shutdown."""
+        """Center turret and close I2C bus on shutdown."""
         print("[ServoTurret] Centering turret on shutdown...")
         try:
             self.center()
             time.sleep(0.3)
+            if self._bus:
+                self._bus.close()
         except Exception as e:
             print(f"[ServoTurret] Cleanup error: {e}")
 
@@ -563,7 +602,7 @@ def create_turret_controller():
     Factory function: auto-detect available turret hardware.
 
     Priority:
-      1. PCA9685 I2C servo driver (new geared turret)
+      1. PCA9685 I2C servo driver on smbus2 Bus 1 (new geared turret)
       2. Storm32 BGC USB serial (legacy brushless gimbal)
       3. Stub mode (no hardware)
 
@@ -571,28 +610,58 @@ def create_turret_controller():
         set_angles(pitch, yaw), nudge(d_pitch, d_yaw),
         center(), get_status(), cleanup()
     """
-    # Try PCA9685 first (new geared turret)
-    if SERVOKIT_AVAILABLE:
+    # Try PCA9685 first via smbus2 (proven on Yahboom carrier board)
+    if I2C_AVAILABLE:
+        # Yahboom carrier board has INA3221 power monitor at 0x40 — same as
+        # PCA9685 default address. The kernel driver blocks userspace access.
+        # Unbind it first so smbus2 can talk to the PCA9685.
+        _unbind_ina3221()
+
         try:
-            import board
-            import busio
-            i2c = busio.I2C(board.SCL, board.SDA)
-            # Probe: check if PCA9685 responds on 0x40
-            while not i2c.try_lock():
-                pass
-            addrs = i2c.scan()
-            i2c.unlock()
-            if 0x40 in addrs:
-                print("[TurretFactory] PCA9685 detected at 0x40 — using ServoTurretController")
-                return ServoTurretController()
-            else:
-                print(f"[TurretFactory] PCA9685 not found (scanned: {[hex(a) for a in addrs]})")
+            bus = smbus2.SMBus(1)
+            bus.read_byte_data(0x40, _PCA9685_MODE1)
+            bus.close()
+            print("[TurretFactory] PCA9685 detected at 0x40 via smbus2 — using ServoTurretController")
+            return ServoTurretController()
         except Exception as e:
             print(f"[TurretFactory] PCA9685 probe failed: {e}")
 
     # Fall back to Storm32 BGC (legacy)
     print("[TurretFactory] Falling back to GimbalController (Storm32 BGC)")
     return GimbalController()
+
+
+def _unbind_ina3221():
+    """Unbind INA3221 kernel driver from I2C address 0x40 if present.
+    The Yahboom carrier board has an INA3221 power monitor chip at 0x40
+    which conflicts with the PCA9685 servo driver's default address."""
+    import subprocess
+    driver_path = "/sys/bus/i2c/devices/1-0040/driver"
+    if not os.path.exists(driver_path):
+        return  # No driver bound — 0x40 is free
+
+    try:
+        driver_name = os.readlink(driver_path).split("/")[-1]
+        print(f"[TurretFactory] Kernel driver '{driver_name}' is claiming 0x40 — unbinding...")
+        result = subprocess.run(
+            ["sudo", "-n", "sh", "-c", f"echo 1-0040 > /sys/bus/i2c/drivers/{driver_name}/unbind"],
+            capture_output=True, timeout=5
+        )
+        if result.returncode == 0:
+            print("[TurretFactory] INA3221 unbound successfully — 0x40 is now free")
+        else:
+            # Try with password via stdin as fallback
+            result = subprocess.run(
+                ["sudo", "-S", "sh", "-c", f"echo 1-0040 > /sys/bus/i2c/drivers/{driver_name}/unbind"],
+                input=b"yahboom\n", capture_output=True, timeout=5
+            )
+            if result.returncode == 0:
+                print("[TurretFactory] INA3221 unbound (via password) — 0x40 is now free")
+            else:
+                print(f"[TurretFactory] WARNING: Could not unbind {driver_name} from 0x40")
+                print(f"[TurretFactory] Run manually: sudo sh -c 'echo 1-0040 > /sys/bus/i2c/drivers/{driver_name}/unbind'")
+    except Exception as e:
+        print(f"[TurretFactory] INA3221 unbind error: {e}")
 
 
 # ============================================================================

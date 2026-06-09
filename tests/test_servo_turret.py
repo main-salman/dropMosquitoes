@@ -3,14 +3,17 @@
 """
 test_servo_turret.py — PCA9685 + MG996R Servo Turret Connectivity Tests
 
+Uses smbus2 for I2C access (Adafruit Blinka maps to wrong bus on Yahboom).
+
 Verifies:
   1. I2C bus scan — PCA9685 responds at 0x40
-  2. Center command — both servos reach center (0°/0°)
-  3. Yaw sweep — CH0 sweeps ±30° in 10° steps
-  4. Pitch sweep — CH1 sweeps ±20° in 10° steps
-  5. Combined move — simultaneous pitch+yaw
-  6. I2C coexistence — LiDAR (0x10) still reads while servos move
-  7. Return to center — park servos at 0°/0°
+  2. INA3221 conflict check — unbind kernel driver if needed
+  3. Center command — both servos reach center (0°/0°)
+  4. Yaw sweep — CH0 sweeps ±30° in 10° steps
+  5. Pitch sweep — CH1 sweeps ±20° in 10° steps
+  6. Combined move — simultaneous pitch+yaw
+  7. I2C coexistence — LiDAR (0x10) still reads while servos move
+  8. Return to center — park servos at 0°/0°
 
 Usage:
   python tests/test_servo_turret.py
@@ -19,6 +22,7 @@ Usage:
 import sys
 import os
 import time
+import subprocess
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,50 +42,89 @@ def report(name, ok, detail=""):
 
 
 def test_i2c_scan():
-    """Test 1: Scan I2C bus 1 for PCA9685 at address 0x40."""
-    print("\n=== Test 1: I2C Bus Scan ===")
+    """Test 1: Scan I2C bus 1 for PCA9685 at address 0x40 using smbus2."""
+    print("\n=== Test 1: I2C Bus Scan (smbus2) ===")
     try:
-        import board
-        import busio
-        i2c = busio.I2C(board.SCL, board.SDA)
-        while not i2c.try_lock():
-            pass
-        addrs = i2c.scan()
-        i2c.unlock()
+        import smbus2
+        bus = smbus2.SMBus(1)
+        found = []
+        for addr in range(0x03, 0x78):
+            try:
+                bus.read_byte(addr)
+                found.append(addr)
+            except:
+                pass
+        bus.close()
 
-        addr_hex = [f"0x{a:02X}" for a in addrs]
+        addr_hex = [f"0x{a:02X}" for a in found]
         print(f"  Devices found: {addr_hex}")
 
-        has_pca = 0x40 in addrs
-        has_lidar = 0x10 in addrs
+        has_pca = 0x40 in found
+        has_lidar = 0x10 in found
 
         report("PCA9685 at 0x40", has_pca,
-               "detected" if has_pca else "NOT FOUND — check wiring")
+               "detected via smbus2" if has_pca else "NOT FOUND — check wiring")
         report("TF-Luna LiDAR at 0x10 (coexistence)", has_lidar,
                "detected" if has_lidar else "not found (optional)")
 
         return has_pca
     except ImportError:
-        report("I2C bus scan", False, "board/busio not installed (pip install adafruit-blinka)")
+        report("I2C bus scan", False, "smbus2 not installed (pip install smbus2)")
         return False
     except Exception as e:
         report("I2C bus scan", False, str(e))
         return False
 
 
+def test_ina3221_conflict():
+    """Test 2: Check if INA3221 kernel driver is blocking 0x40."""
+    print("\n=== Test 2: INA3221 Conflict Check ===")
+    ina_path = "/sys/bus/i2c/devices/1-0040/driver"
+
+    if not os.path.exists(ina_path):
+        report("INA3221 conflict", True, "no kernel driver claiming 0x40")
+        return True
+
+    # Read what driver is bound
+    try:
+        driver = os.readlink(ina_path).split("/")[-1]
+        print(f"  ⚠️  Kernel driver '{driver}' is claiming 0x40!")
+        print(f"  Attempting to unbind...")
+
+        # Try to unbind
+        result = subprocess.run(
+            ["sudo", "-S", "sh", "-c",
+             "echo 1-0040 > /sys/bus/i2c/drivers/ina3221/unbind"],
+            input=b"yahboom\n", capture_output=True, timeout=5
+        )
+
+        if result.returncode == 0:
+            report("INA3221 unbind", True,
+                   "driver unbound — 0x40 now available for PCA9685")
+            return True
+        else:
+            err = result.stderr.decode().strip()
+            report("INA3221 unbind", False,
+                   f"unbind failed: {err}")
+            return False
+    except Exception as e:
+        report("INA3221 conflict check", False, str(e))
+        return False
+
+
 def test_center():
-    """Test 2: Command both servos to center (0°/0°)."""
-    print("\n=== Test 2: Center Command ===")
+    """Test 3: Command both servos to center (0°/0°)."""
+    print("\n=== Test 3: Center Command ===")
     try:
         from hardware import ServoTurretController
         ctrl = ServoTurretController()
 
-        if ctrl._kit is None:
+        if ctrl._bus is None:
             report("ServoTurretController init", False, "running in STUB mode — no PCA9685")
             return ctrl
 
         report("ServoTurretController init", True,
-               f"PCA9685 at 0x{ctrl.PCA9685_ADDRESS:02X}")
+               f"PCA9685 at 0x{ctrl.PCA9685_ADDRESS:02X} via smbus2")
 
         ctrl.center()
         time.sleep(0.5)
@@ -95,9 +138,9 @@ def test_center():
 
 
 def test_yaw_sweep(ctrl):
-    """Test 3: Sweep yaw (CH0) from -30° to +30° in 10° steps."""
-    print("\n=== Test 3: Yaw Sweep (CH0) ===")
-    if ctrl is None or ctrl._kit is None:
+    """Test 4: Sweep yaw (CH0) from -30° to +30° in 10° steps."""
+    print("\n=== Test 4: Yaw Sweep (CH0) ===")
+    if ctrl is None or ctrl._bus is None:
         report("Yaw sweep", False, "no controller available")
         return
 
@@ -116,9 +159,9 @@ def test_yaw_sweep(ctrl):
 
 
 def test_pitch_sweep(ctrl):
-    """Test 4: Sweep pitch (CH1) from -20° to +20° in 10° steps."""
-    print("\n=== Test 4: Pitch Sweep (CH1) ===")
-    if ctrl is None or ctrl._kit is None:
+    """Test 5: Sweep pitch (CH1) from -20° to +20° in 10° steps."""
+    print("\n=== Test 5: Pitch Sweep (CH1) ===")
+    if ctrl is None or ctrl._bus is None:
         report("Pitch sweep", False, "no controller available")
         return
 
@@ -137,9 +180,9 @@ def test_pitch_sweep(ctrl):
 
 
 def test_combined_move(ctrl):
-    """Test 5: Simultaneous pitch+yaw to confirm no I2C bus contention."""
-    print("\n=== Test 5: Combined Move ===")
-    if ctrl is None or ctrl._kit is None:
+    """Test 6: Simultaneous pitch+yaw to confirm no I2C bus contention."""
+    print("\n=== Test 6: Combined Move ===")
+    if ctrl is None or ctrl._bus is None:
         report("Combined move", False, "no controller available")
         return
 
@@ -164,9 +207,9 @@ def test_combined_move(ctrl):
 
 
 def test_i2c_coexistence(ctrl):
-    """Test 6: LiDAR still reads while servos are active (shared I2C bus)."""
-    print("\n=== Test 6: I2C Coexistence (LiDAR + PCA9685) ===")
-    if ctrl is None or ctrl._kit is None:
+    """Test 7: LiDAR still reads while servos are active (shared I2C bus)."""
+    print("\n=== Test 7: I2C Coexistence (LiDAR + PCA9685) ===")
+    if ctrl is None or ctrl._bus is None:
         report("I2C coexistence", False, "no controller available")
         return
 
@@ -201,9 +244,9 @@ def test_i2c_coexistence(ctrl):
 
 
 def test_return_center(ctrl):
-    """Test 7: Park servos at center on exit."""
-    print("\n=== Test 7: Return to Center ===")
-    if ctrl is None or ctrl._kit is None:
+    """Test 8: Park servos at center on exit."""
+    print("\n=== Test 8: Return to Center ===")
+    if ctrl is None or ctrl._bus is None:
         report("Return to center", False, "no controller available")
         return
 
@@ -220,17 +263,21 @@ def test_return_center(ctrl):
 
 def main():
     print("=" * 60)
-    print("  SERVO TURRET TEST — PCA9685 + MG996R")
+    print("  SERVO TURRET TEST — PCA9685 + MG996R (smbus2)")
     print("=" * 60)
 
-    # Test 1: I2C scan
+    # Step 1: Always check/fix INA3221 conflict first
+    # The Yahboom carrier board has an INA3221 at 0x40 that blocks PCA9685
+    test_ina3221_conflict()
+
+    # Step 2: I2C scan via smbus2 (after unbind)
     pca_found = test_i2c_scan()
 
-    # Test 2: Initialize and center
+    # Step 3: Initialize and center
     ctrl = test_center()
 
-    if ctrl and ctrl._kit:
-        # Test 3-7: Only run if real hardware is present
+    if ctrl and ctrl._bus:
+        # Steps 4-8: Only run if real hardware is present
         test_yaw_sweep(ctrl)
         test_pitch_sweep(ctrl)
         test_combined_move(ctrl)
