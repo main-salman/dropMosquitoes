@@ -140,6 +140,7 @@
   <button class="tab-btn active" onclick="tab('ctrl')">🕹️ Control</button>
   <button class="tab-btn" onclick="tab('cal')">🔧 Calibration</button>
   <button class="tab-btn" onclick="tab('tests')">🧪 Tests</button>
+  <button class="tab-btn" onclick="tab('settings')">⚙️ Settings</button>
 </div>
 
 <!-- ===================== CONTROL TAB ===================== -->
@@ -202,11 +203,11 @@
       <div class="card-title">🕹️ {% if ctrl_type == 'servo' %}Servo Turret{% else %}Gimbal{% endif %} — WASD</div>
       <div class="card-body" style="text-align:center">
         <div class="wasd">
-          <button class="btn" data-k="w" onclick="nd(-2,0)">▲</button>
-          <button class="btn" data-k="a" onclick="nd(0,-2)">◀</button>
+          <button class="btn" data-k="w" onclick="nd(-1,0)">▲</button>
+          <button class="btn" data-k="a" onclick="nd(0,-1)">◀</button>
           <button class="btn btn-blue" data-k="c" onclick="api('/api/gimbal/center')">⊙</button>
-          <button class="btn" data-k="d" onclick="nd(0,2)">▶</button>
-          <button class="btn" data-k="s" onclick="nd(2,0)">▼</button>
+          <button class="btn" data-k="d" onclick="nd(0,1)">▶</button>
+          <button class="btn" data-k="s" onclick="nd(1,0)">▼</button>
         </div>
         <div class="pos-readout">Pitch <b id="pp">0.0°</b> &nbsp;·&nbsp; Yaw <b id="py">0.0°</b></div>
         <p class="endstop-note">Endstops: Yaw ±{{ yaw_limit }}° · Pitch ±{{ pitch_limit }}°</p>
@@ -331,6 +332,78 @@
   <div class="test-grid" id="test-grid"></div>
 </div>
 
+<!-- ===================== SETTINGS TAB ===================== -->
+<div class="tab-pane" id="p-settings">
+  <div style="padding:14px 14px 6px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:15px;font-weight:600">⚙️ Servo Turret Settings</span>
+    <span style="flex:1"></span>
+    <span class="cal-stat" id="set-status">Loading…</span>
+  </div>
+  <div class="cal-section"><div class="cal-grid">
+    <!-- Smoothness / Speed -->
+    <div class="card">
+      <div class="card-title">🎚️ Motion Smoothness</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Control how fast and smooth the servos move. Lower speed = smoother, higher = snappier.</p>
+        <div class="sl">
+          <label>Travel Speed (°/sec)</label>
+          <input type="range" id="set-speed" min="10" max="500" step="5" value="120" oninput="$('set-speed-v').textContent=this.value+'°/s'">
+          <div class="v" id="set-speed-v">120°/s</div>
+        </div>
+        <div class="sl">
+          <label>Update Rate (Hz)</label>
+          <input type="range" id="set-rate" min="20" max="200" step="5" value="100" oninput="$('set-rate-v').textContent=this.value+'Hz'">
+          <div class="v" id="set-rate-v">100Hz</div>
+        </div>
+        <div class="sl">
+          <label>WASD Nudge Step (°)</label>
+          <input type="range" id="set-nudge" min="0.5" max="20" step="0.5" value="2" oninput="$('set-nudge-v').textContent=this.value+'°'">
+          <div class="v" id="set-nudge-v">2°</div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Motion Settings</button>
+      </div>
+    </div>
+    <!-- Endstops -->
+    <div class="card">
+      <div class="card-title">🛡️ Software Endstops</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Maximum allowed servo travel. Safety limits per SAFE-001.</p>
+        <div class="sl">
+          <label>Yaw Limit (±°)</label>
+          <input type="range" id="set-yaw-lim" min="10" max="90" step="5" value="80" oninput="$('set-yaw-lim-v').textContent='±'+this.value+'°'">
+          <div class="v" id="set-yaw-lim-v">±80°</div>
+        </div>
+        <div class="sl">
+          <label>Pitch Limit (±°)</label>
+          <input type="range" id="set-pitch-lim" min="10" max="90" step="5" value="90" oninput="$('set-pitch-lim-v').textContent='±'+this.value+'°'">
+          <div class="v" id="set-pitch-lim-v">±90°</div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Endstop Limits</button>
+      </div>
+    </div>
+    <!-- Quick Presets -->
+    <div class="card">
+      <div class="card-title">⚡ Motion Presets</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Quick presets for common use cases.</p>
+        <button class="btn" style="width:100%;margin-bottom:8px" onclick="setPreset(60,100,1)">🧈 Ultra Smooth — 60°/s, 1° step</button>
+        <button class="btn" style="width:100%;margin-bottom:8px" onclick="setPreset(120,100,2)">⚖️ Balanced — 120°/s, 2° step</button>
+        <button class="btn" style="width:100%;margin-bottom:8px" onclick="setPreset(250,150,4)">⚡ Fast — 250°/s, 4° step</button>
+        <button class="btn" style="width:100%;margin-bottom:8px" onclick="setPreset(500,200,8)">🏎️ Max Speed — 500°/s, 8° step</button>
+        <p style="font-size:10px;color:var(--dim);margin-top:6px">Presets auto-apply immediately.</p>
+      </div>
+    </div>
+    <!-- Live Info -->
+    <div class="card">
+      <div class="card-title">📊 Current Config</div>
+      <div class="card-body">
+        <pre class="cal-result" id="set-live" style="font-size:12px;line-height:1.8">Loading…</pre>
+        <button class="btn" style="width:100%;margin-top:10px" onclick="loadSettings()">🔄 Refresh</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
 <!-- Toast notification for click-to-aim -->
 <div class="toast" id="toast">
   <div class="tl" id="toast-title"></div>
@@ -342,13 +415,13 @@ const $=id=>document.getElementById(id);
 const SUITES=['smoke','camera','relay','yolo','safety','accuracy','servo_turret'];
 const ICONS={0:'🌐',1:'🔩',3:'🛡️',4:'🎯'};
 const ST={};
-let tl=false, lastOffset=0;
+let tl=false, lastOffset=0, nudgeStep=2.0;
 
 // ---- API ----
 async function api(u,b={}){try{const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const d=await r.json();if(d.pitch!==undefined){$('pp').textContent=d.pitch.toFixed(1)+'°';$('py').textContent=d.yaw.toFixed(1)+'°';$('tv-pitch').textContent=d.pitch.toFixed(1)+'°';$('tv-yaw').textContent=d.yaw.toFixed(1)+'°'}return d}catch(e){console.error(e)}}
 
 // ---- Gimbal ----
-function nd(p,y){api('/api/gimbal/nudge',{d_pitch:p,d_yaw:y})}
+function nd(p,y){api('/api/gimbal/nudge',{d_pitch:p*nudgeStep/2,d_yaw:y*nudgeStep/2})}
 async function aim(e,c,fw,fh){
   const r=c.getBoundingClientRect();
   const px=Math.round((e.clientX-r.left)*fw/r.width);
@@ -363,7 +436,7 @@ async function aim(e,c,fw,fh){
       `Gimbal → P:${d.pitch}° Y:${d.yaw}°`);
   }
 }
-document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:[-2,0],s:[2,0],a:[0,-2],d:[0,2]};if(m[e.key])nd(...m[e.key]);if(e.key===' '){e.preventDefault();fire()}});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:[-1,0],s:[1,0],a:[0,-1],d:[0,1]};if(m[e.key])nd(...m[e.key]);if(e.key===' '){e.preventDefault();fire()}});
 
 // ---- Fire ----
 function fire(){api('/api/relay/fire',{duration:+$('fd').value})}
@@ -372,7 +445,7 @@ function fire(){api('/api/relay/fire',{duration:+$('fd').value})}
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,cal:1,tests:2};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh()}
+function tab(t){const ti={ctrl:0,cal:1,tests:2,settings:3};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings()}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -453,6 +526,49 @@ function toggleCrosshair(){
     btn.style.background='';btn.style.color='';btn.style.borderColor='';
     btn.textContent='🎯 Crosshair';
   }
+}
+
+// ---- Settings ----
+async function loadSettings(){
+  try{
+    const d=await fetch('/api/servo/settings').then(r=>r.json());
+    if(d.error){$('set-status').textContent='⚠ '+d.error;return}
+    $('set-speed').value=d.speed;$('set-speed-v').textContent=d.speed+'°/s';
+    $('set-rate').value=d.rate_hz;$('set-rate-v').textContent=d.rate_hz+'Hz';
+    $('set-nudge').value=d.nudge_step;$('set-nudge-v').textContent=d.nudge_step+'°';
+    $('set-yaw-lim').value=d.yaw_limit;$('set-yaw-lim-v').textContent='±'+d.yaw_limit+'°';
+    $('set-pitch-lim').value=d.pitch_limit;$('set-pitch-lim-v').textContent='±'+d.pitch_limit+'°';
+    nudgeStep=d.nudge_step;
+    $('set-status').textContent='✅ Loaded';
+    $('set-live').textContent=
+      `Travel Speed:  ${d.speed}°/sec\n`+
+      `Update Rate:   ${d.rate_hz} Hz\n`+
+      `Nudge Step:    ${d.nudge_step}°\n`+
+      `Yaw Limit:     ±${d.yaw_limit}°\n`+
+      `Pitch Limit:   ±${d.pitch_limit}°\n`+
+      `\nMax Step/Tick:  ${(d.speed/d.rate_hz).toFixed(2)}°\n`+
+      `Settle Time:   ${(90/d.speed*1000).toFixed(0)}ms for 90°`;
+  }catch(e){$('set-status').textContent='❌ Error';console.error(e)}
+}
+async function applySettings(){
+  const body={
+    speed:+$('set-speed').value,
+    rate_hz:+$('set-rate').value,
+    nudge_step:+$('set-nudge').value,
+    yaw_limit:+$('set-yaw-lim').value,
+    pitch_limit:+$('set-pitch-lim').value
+  };
+  const d=await fetch('/api/servo/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json());
+  nudgeStep=d.nudge_step;
+  $('set-status').textContent='✅ Applied';
+  showToast('⚙️ Settings Applied',`Speed: ${d.speed}°/s · Rate: ${d.rate_hz}Hz · Nudge: ${d.nudge_step}°`);
+  loadSettings();
+}
+function setPreset(speed,rate,nudge){
+  $('set-speed').value=speed;$('set-speed-v').textContent=speed+'°/s';
+  $('set-rate').value=rate;$('set-rate-v').textContent=rate+'Hz';
+  $('set-nudge').value=nudge;$('set-nudge-v').textContent=nudge+'°';
+  applySettings();
 }
 </script>
 </body>

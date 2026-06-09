@@ -149,10 +149,6 @@ def index():
                            ctrl_type=ctrl_type)
 
 
-# ============================================================================
-# GIMBAL API
-# ============================================================================
-
 @app.route('/api/gimbal/set', methods=['POST'])
 def api_gimbal_set():
     """Set absolute gimbal angles. Body: {"pitch": float, "yaw": float}"""
@@ -161,6 +157,62 @@ def api_gimbal_set():
     yaw = float(data.get('yaw', 0))
     gimbal.set_angles(pitch, yaw)
     return jsonify(gimbal.get_status())
+
+
+@app.route('/api/servo/settings', methods=['GET'])
+def api_servo_settings_get():
+    """Get current servo interpolation parameters."""
+    from hardware import ServoTurretController, SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
+    if isinstance(gimbal, ServoTurretController):
+        return jsonify({
+            "speed": gimbal.INTERP_SPEED,
+            "rate_hz": gimbal.INTERP_RATE_HZ,
+            "nudge_step": getattr(gimbal, '_nudge_step', 2.0),
+            "yaw_limit": SERVO_YAW_LIMIT,
+            "pitch_limit": SERVO_PITCH_LIMIT,
+        })
+    return jsonify({"error": "Not a servo controller"}), 400
+
+
+@app.route('/api/servo/settings', methods=['POST'])
+def api_servo_settings_set():
+    """Update servo interpolation parameters at runtime.
+    Body: {"speed": float, "rate_hz": int, "nudge_step": float,
+           "yaw_limit": float, "pitch_limit": float}
+    """
+    from hardware import ServoTurretController
+    import hardware
+    if not isinstance(gimbal, ServoTurretController):
+        return jsonify({"error": "Not a servo controller"}), 400
+
+    data = request.get_json(force=True)
+
+    if 'speed' in data:
+        val = max(10.0, min(500.0, float(data['speed'])))
+        gimbal.INTERP_SPEED = val
+    if 'rate_hz' in data:
+        val = max(20, min(200, int(data['rate_hz'])))
+        gimbal.INTERP_RATE_HZ = val
+    if 'nudge_step' in data:
+        gimbal._nudge_step = max(0.5, min(20.0, float(data['nudge_step'])))
+    if 'yaw_limit' in data:
+        hardware.SERVO_YAW_LIMIT = max(10.0, min(90.0, float(data['yaw_limit'])))
+    if 'pitch_limit' in data:
+        hardware.SERVO_PITCH_LIMIT = max(10.0, min(90.0, float(data['pitch_limit'])))
+
+    print(f"[Settings] Servo: speed={gimbal.INTERP_SPEED}°/s "
+          f"rate={gimbal.INTERP_RATE_HZ}Hz "
+          f"nudge={getattr(gimbal, '_nudge_step', 2.0)}° "
+          f"yaw_limit=±{hardware.SERVO_YAW_LIMIT}° "
+          f"pitch_limit=±{hardware.SERVO_PITCH_LIMIT}°")
+
+    return jsonify({
+        "speed": gimbal.INTERP_SPEED,
+        "rate_hz": gimbal.INTERP_RATE_HZ,
+        "nudge_step": getattr(gimbal, '_nudge_step', 2.0),
+        "yaw_limit": hardware.SERVO_YAW_LIMIT,
+        "pitch_limit": hardware.SERVO_PITCH_LIMIT,
+    })
 
 
 @app.route('/api/gimbal/nudge', methods=['POST'])
