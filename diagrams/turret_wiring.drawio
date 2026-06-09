@@ -295,45 +295,63 @@
           <mxGeometry x="-0.3" relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ====== WIRING: PCA9685 CH0 → Yaw Servo (3-pin cable) ====== -->
-        <mxCell id="w_ch0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3b82f6;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="ch0_box" target="yaw_servo">
+        <!-- ====== WIRING: PCA9685 → Servos (Signal ONLY) ====== -->
+        <!-- CH0 PWM → Yaw Servo Signal (Orange wire only) -->
+        <mxCell id="w_ch0" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#ea580c;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="ch0" target="yaw_signal">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="930" y="692"/><mxPoint x="930" y="555"/></Array>
+            <Array as="points"><mxPoint x="930" y="691"/><mxPoint x="930" y="567"/></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_ch0_l" value="&lt;font color=&quot;#3b82f6&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;3-pin servo cable&lt;/b&gt;&lt;br&gt;(Orange=PWM / Red=V+ / Brown=GND)&lt;br&gt;Plugs directly into CH0 header&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch0">
-          <mxGeometry x="-0.2" y="-20" relative="1" as="geometry"/>
+        <mxCell id="w_ch0_l" value="&lt;font color=&quot;#ea580c&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;Signal only (Orange wire)&lt;/b&gt;&lt;br&gt;PWM 500–2500μs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch0">
+          <mxGeometry x="-0.2" y="-18" relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- PCA9685 CH1 → Pitch Servo (3-pin cable) -->
-        <mxCell id="w_ch1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#3b82f6;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="ch1_box" target="pitch_servo">
+        <!-- CH1 PWM → Pitch Servo Signal (Orange wire only) -->
+        <mxCell id="w_ch1" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#ea580c;strokeWidth=2;endArrow=block;endFill=1;" edge="1" parent="1" source="ch1" target="pitch_signal">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="940" y="752"/><mxPoint x="940" y="725"/></Array>
+            <Array as="points"><mxPoint x="940" y="751"/><mxPoint x="940" y="737"/></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_ch1_l" value="&lt;font color=&quot;#3b82f6&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;3-pin servo cable&lt;/b&gt;&lt;br&gt;Plugs directly into CH1 header&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch1">
+        <mxCell id="w_ch1_l" value="&lt;font color=&quot;#ea580c&quot; style=&quot;font-size:9px&quot;&gt;&lt;b&gt;Signal only (Orange wire)&lt;/b&gt;&lt;br&gt;PWM 500–2500μs&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="w_ch1">
           <mxGeometry x="-0.2" y="-15" relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- ====== WIRING: Buck → PCA9685 Screw Terminal (Power) ====== -->
-        <!-- Buck 5V → PCA Screw Terminal V+ -->
-        <mxCell id="w_5v_pca" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#dc2626;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_5v_out" target="pca_vplus">
+        <!-- ====== WIRING: Buck → Servos DIRECTLY (Power) ====== -->
+        <!-- Buck 5V → Yaw VCC -->
+        <mxCell id="w_5v_yaw" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#dc2626;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_5v_out" target="yaw_vcc">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="310" y="612"/><mxPoint x="310" y="589"/><mxPoint x="552" y="589"/></Array>
+            <Array as="points"><mxPoint x="310" y="612"/><mxPoint x="310" y="830"/><mxPoint x="960" y="830"/><mxPoint x="960" y="595"/></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_5v_pca_l" value="&lt;font color=&quot;#dc2626&quot;&gt;&lt;b&gt;+5V Power (Red)&lt;/b&gt;&lt;br&gt;10A max → screw terminal&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_5v_pca">
-          <mxGeometry x="0.2" y="18" relative="1" as="geometry"/>
+        <mxCell id="w_5v_yaw_l" value="&lt;font color=&quot;#dc2626&quot;&gt;&lt;b&gt;+5V Power (Red) — direct to servo&lt;/b&gt;&lt;/font&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_5v_yaw">
+          <mxGeometry x="0.2" y="15" relative="1" as="geometry"/>
         </mxCell>
 
-        <!-- Buck GND → PCA Screw Terminal GND -->
-        <mxCell id="w_gnd_pca" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_gnd_out" target="pca_screw_gnd">
+        <!-- Buck 5V → Pitch VCC -->
+        <mxCell id="w_5v_pitch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#dc2626;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_5v_out" target="pitch_vcc">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="300" y="642"/><mxPoint x="300" y="589"/><mxPoint x="608" y="589"/></Array>
+            <Array as="points"><mxPoint x="310" y="612"/><mxPoint x="310" y="850"/><mxPoint x="970" y="850"/><mxPoint x="970" y="765"/></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_gnd_pca_l" value="&lt;b&gt;GND (Black) → screw terminal&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_gnd_pca">
-          <mxGeometry x="0.1" y="-15" relative="1" as="geometry"/>
+
+        <!-- Buck GND → Yaw GND -->
+        <mxCell id="w_gnd_servos" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="buck_gnd_out" target="yaw_gnd">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="300" y="642"/><mxPoint x="300" y="860"/><mxPoint x="1172" y="860"/></Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="w_gnd_servos_l" value="&lt;b&gt;GND (Black) — direct to servos&lt;/b&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=9;" vertex="1" connectable="0" parent="w_gnd_servos">
+          <mxGeometry x="0.3" y="15" relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- GND daisy chain to pitch -->
+        <mxCell id="w_gnd_pitch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#333333;strokeWidth=3;endArrow=block;endFill=1;" edge="1" parent="1" source="yaw_gnd" target="pitch_gnd">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Screw terminal note -->
+        <mxCell id="screw_unused" value="&lt;font color=&quot;#888888&quot; style=&quot;font-size:8px&quot;&gt;Screw terminal UNUSED&lt;br&gt;(power goes direct to servos)&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=top;resizable=0;points=[];strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="545" y="608" width="120" height="25" as="geometry"/>
         </mxCell>
 
         <!-- ====== GROUND TIE (Critical!) ====== -->
