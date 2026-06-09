@@ -56,29 +56,29 @@
           <mxGeometry x="510" y="190" width="120" height="30" as="geometry"/>
         </mxCell>
 
-        <!-- Pin 3: I2C SDA (Bus 1) -->
-        <mxCell id="pin3" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 3&lt;/b&gt; — I2C SDA&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563eb;strokeColor=#1d4ed8;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
-          <mxGeometry x="510" y="230" width="120" height="30" as="geometry"/>
+        <!-- Pin 3: I2C SDA (Bus 1) — SHARED BUS -->
+        <mxCell id="pin3" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 3&lt;/b&gt; — I2C SDA&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#bfdbfe&quot; style=&quot;font-size:7px&quot;&gt;🔗 SHARED: LiDAR + PCA9685&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2563eb;strokeColor=#1d4ed8;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="510" y="228" width="120" height="38" as="geometry"/>
         </mxCell>
 
-        <!-- Pin 5: I2C SCL (Bus 1) -->
-        <mxCell id="pin5" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 5&lt;/b&gt; — I2C SCL&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16a34a;strokeColor=#15803d;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
-          <mxGeometry x="510" y="270" width="120" height="30" as="geometry"/>
+        <!-- Pin 5: I2C SCL (Bus 1) — SHARED BUS -->
+        <mxCell id="pin5" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 5&lt;/b&gt; — I2C SCL&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#bbf7d0&quot; style=&quot;font-size:7px&quot;&gt;🔗 SHARED: LiDAR + PCA9685&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#16a34a;strokeColor=#15803d;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="510" y="272" width="120" height="38" as="geometry"/>
         </mxCell>
 
-        <!-- Pin 6: GND -->
-        <mxCell id="pin6" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 6&lt;/b&gt; — GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
-          <mxGeometry x="660" y="190" width="110" height="30" as="geometry"/>
+        <!-- Pin 6: GND — SHARED -->
+        <mxCell id="pin6" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 6&lt;/b&gt; — GND&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#bbbbbb&quot; style=&quot;font-size:7px&quot;&gt;🔗 SHARED: LiDAR + PCA9685&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#444444;strokeColor=#333333;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="190" width="110" height="38" as="geometry"/>
         </mxCell>
 
-        <!-- Pin 9: GND (Ground Tie) -->
-        <mxCell id="pin9" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 9&lt;/b&gt; — GND&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#ffcc00&quot; style=&quot;font-size:8px&quot;&gt;⚡ GROUND TIE&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b45309;strokeColor=#92400e;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
-          <mxGeometry x="660" y="230" width="110" height="40" as="geometry"/>
+        <!-- Pin 9: GND — SHARED (Ground Tie) -->
+        <mxCell id="pin9" value="&lt;font color=&quot;#ffffff&quot;&gt;&lt;b&gt;Pin 9&lt;/b&gt; — GND&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#ffcc00&quot; style=&quot;font-size:7px&quot;&gt;⚡ SHARED: Relay + LiDAR CFG&lt;br&gt;+ Buck GND TIE&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b45309;strokeColor=#92400e;fontSize=10;fontColor=#ffffff;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="660" y="235" width="110" height="50" as="geometry"/>
         </mxCell>
 
         <!-- Other pins note -->
-        <mxCell id="other_pins" value="&lt;font color=&quot;#888888&quot; style=&quot;font-size:9px&quot;&gt;Pin 11 (BCM17) → Relay/Pump&lt;br&gt;Pin 7 (BCM4) → Buzzer&lt;br&gt;Other pins unused&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
-          <mxGeometry x="650" y="290" width="140" height="60" as="geometry"/>
+        <mxCell id="other_pins" value="&lt;font color=&quot;#888888&quot; style=&quot;font-size:9px&quot;&gt;Pin 2 → Relay 5V power&lt;br&gt;Pin 4 → LiDAR 5V power&lt;br&gt;Pin 7 (BCM4) → Buzzer&lt;br&gt;Pin 8 (BCM14) → UART TX (Storm32)&lt;br&gt;Pin 10 (BCM15) → UART RX (Storm32)&lt;br&gt;Pin 11 (BCM17) → Relay CH1 / Pump&lt;br&gt;Pin 13 (BCM27) → Relay CH2 (reserved)&lt;br&gt;Pin 14 → UART GND (Storm32)&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="640" y="295" width="160" height="110" as="geometry"/>
         </mxCell>
 
         <!-- ====== PCA9685 ====== -->
@@ -318,8 +318,8 @@
         </mxCell>
 
         <!-- ====== SAFETY NOTE ====== -->
-        <mxCell id="safety_note" value="&lt;b&gt;⚠️ SAFETY NOTES&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. Servo power (5V/10A) is &lt;b&gt;fully isolated&lt;/b&gt;&lt;br&gt;   from Jetson 5V rail — no brownout risk&lt;br&gt;&lt;br&gt;2. Ground tie jumper is &lt;b&gt;mandatory&lt;/b&gt; for&lt;br&gt;   PWM signal to have a return path&lt;br&gt;&lt;br&gt;3. TF-Luna LiDAR shares I2C Bus 1&lt;br&gt;   at address 0x10 — no conflict with&lt;br&gt;   PCA9685 at 0x40" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff3cd;strokeColor=#d6b656;fontColor=#333333;fontSize=10;align=left;spacingLeft=10;spacingRight=10;rounded=0;" vertex="1" parent="1">
-          <mxGeometry x="1280" y="100" width="260" height="220" as="geometry"/>
+        <mxCell id="safety_note" value="&lt;b&gt;⚠️ SAFETY NOTES&lt;/b&gt;&lt;br&gt;&lt;br&gt;1. Servo power (5V/10A) is &lt;b&gt;fully isolated&lt;/b&gt;&lt;br&gt;   from Jetson 5V rail — no brownout risk&lt;br&gt;&lt;br&gt;2. Ground tie jumper is &lt;b&gt;mandatory&lt;/b&gt; for&lt;br&gt;   PWM signal to have a return path&lt;br&gt;&lt;br&gt;&lt;b&gt;🔗 SHARED PIN SAFETY&lt;/b&gt;&lt;br&gt;&lt;br&gt;3. &lt;b&gt;I2C is a bus&lt;/b&gt; — Pin 3 (SDA) and Pin 5 (SCL)&lt;br&gt;   are shared with TF-Luna LiDAR. This is correct:&lt;br&gt;   LiDAR=0x10, PCA9685=0x40 (no address conflict)&lt;br&gt;&lt;br&gt;4. &lt;b&gt;GND pins are a common rail&lt;/b&gt; — Pin 6 and Pin 9&lt;br&gt;   are shared with LiDAR GND and Relay GND.&lt;br&gt;   All devices MUST share ground. Safe to tap.&lt;br&gt;&lt;br&gt;5. No new pins are consumed — PCA9685 only&lt;br&gt;   needs existing I2C bus + existing GND." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff3cd;strokeColor=#d6b656;fontColor=#333333;fontSize=10;align=left;spacingLeft=10;spacingRight=10;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="80" width="280" height="340" as="geometry"/>
         </mxCell>
 
         <!-- Wire legend -->
