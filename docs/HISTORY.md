@@ -544,4 +544,7 @@
 - **[UI]** Updated dashboard to display controller type: header shows "Servo Turret" or "Storm32 Gimbal", WASD card title adapts dynamically, endstop limits reflect actual controller limits (servo: ±80° yaw / ±90° pitch vs storm32: ±80° yaw / ±20° pitch).
 - **[UI]** Status API (`/api/status`) now includes `gimbal.controller` field ("servo" or "storm32") for runtime detection.
 - **[DOCS]** Updated wiring diagram with detailed PCA9685 board layout (6-pin left header, screw terminal, 3-pin channel headers) and signal-only wiring to match as-built configuration.
-
+- **[BUG FIX]** Adafruit Blinka maps `board.SCL`/`board.SDA` to I2C buses 8/9 on Yahboom carrier board instead of bus 1. Rewrote `ServoTurretController` to use raw PCA9685 register writes via `smbus2.SMBus(1)` — same proven I2C path as TF-Luna LiDAR.
+- **[BUG FIX]** Yahboom carrier board has onboard INA3221 power monitor at I2C address `0x40` — same default address as PCA9685. Kernel driver blocks userspace access. Added `_unbind_ina3221()` to auto-unbind at startup.
+- **[FLAG]** ECO-2026-009: Yahboom carrier board INA3221 at 0x40 conflicts with PCA9685 default address. Auto-unbind workaround added but a permanent fix would be to bridge the PCA9685 A0 jumper to change its address to 0x41.
+- **[TEST]** Servo turret test results on Jetson: 9 passed, 1 failed (LiDAR at 0x10 blocked by Yahboom onboard chip — separate issue). Yaw sweep ±30°, pitch sweep ±20°, combined moves, and I2C coexistence all pass.
