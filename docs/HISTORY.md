@@ -535,3 +535,13 @@
 
 - **[DOCS]** Created interactive 3D assembly guide (`docs/gimbal/turret_3d_assembly.html`) using Three.js with OrbitControls. 5-step walkthrough: component layout → pan servo mount → U-bracket + tilt servo → electronics wiring → payload mounting. Features explode view, animated camera transitions, and keyboard nav. Models match actual Bolsen black anodized bracket kit from user photos.
 - **[DOCS]** Created draw.io wiring diagram (`docs/gimbal/turret_wiring.drawio`) showing complete cabling between Jetson Orin Nano IDC40P header, SunFounder PCA9685 I2C servo driver, DWEII 12V→5V 10A buck converter, and two MG996R servos. Color-coded wire routing with safety notes (ground tie jumper, power isolation, TF-Luna I2C coexistence).
+
+## 2026-06-09 — SERVO TURRET: APP INTEGRATION + CONNECTIVITY TEST
+
+- **[CODE]** Modified `app.py` to use `create_turret_controller()` factory instead of hardcoded `GimbalController()`. System now auto-detects PCA9685 (servo turret) vs Storm32 (legacy gimbal) at startup. Zero API changes — all gimbal endpoints (`/api/gimbal/set`, `/api/gimbal/nudge`, `/api/gimbal/center`) work with both controllers.
+- **[CODE]** Created `tests/test_servo_turret.py` — hardware connectivity test for PCA9685 + MG996R servos. 7 tests: I2C bus scan (0x40), center command, yaw sweep ±30°, pitch sweep ±20°, combined move, LiDAR I2C coexistence, return-to-center. Follows ✅/❌ output format for dashboard integration.
+- **[CODE]** Added `servo_turret` to `TEST_SUITES` registry in `app.py` — appears in dashboard test runner alongside other test suites.
+- **[UI]** Updated dashboard to display controller type: header shows "Servo Turret" or "Storm32 Gimbal", WASD card title adapts dynamically, endstop limits reflect actual controller limits (servo: ±80° yaw / ±90° pitch vs storm32: ±80° yaw / ±20° pitch).
+- **[UI]** Status API (`/api/status`) now includes `gimbal.controller` field ("servo" or "storm32") for runtime detection.
+- **[DOCS]** Updated wiring diagram with detailed PCA9685 board layout (6-pin left header, screw terminal, 3-pin channel headers) and signal-only wiring to match as-built configuration.
+
