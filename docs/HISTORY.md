@@ -548,3 +548,17 @@
 - **[BUG FIX]** Yahboom carrier board has onboard INA3221 power monitor at I2C address `0x40` — same default address as PCA9685. Kernel driver blocks userspace access. Added `_unbind_ina3221()` to auto-unbind at startup.
 - **[FLAG]** ECO-2026-009: Yahboom carrier board INA3221 at 0x40 conflicts with PCA9685 default address. Auto-unbind workaround added but a permanent fix would be to bridge the PCA9685 A0 jumper to change its address to 0x41.
 - **[TEST]** Servo turret test results on Jetson: 9 passed, 1 failed (LiDAR at 0x10 blocked by Yahboom onboard chip — separate issue). Yaw sweep ±30°, pitch sweep ±20°, combined moves, and I2C coexistence all pass.
+
+## 2026-06-09 — I2C BUS DISCOVERY & SERVO FIX
+
+- **[BUG FIX]** **Root cause found:** PCA9685 was never communicating because pins 3/5 on Yahboom board map to I2C Gen8 controller which is **disabled** in the Yahboom DTB (`status = "disabled"` at `i2c@31e0000`). All previous I2C writes at Bus 7 (c250000.i2c) were going nowhere. Bus 1 device at 0x40 was the onboard INA3221, not the PCA9685.
+- **[HARDWARE]** Chip identity diagnostic confirmed: Register 0xFE at Bus 1 0x40 returns `0x54` (TI Manufacturer ID) and 0xFF returns `0x32` (INA3221 Die ID). The PCA9685 was invisible on all 9 I2C buses.
+- **[HARDWARE]** Decompiled hdr40 device tree overlay revealed: Pin 3 = `gen8_i2c_sda_pdd2`, Pin 5 = `gen8_i2c_scl_pdd1` → I2C Gen8 (disabled). Pin 27 = `gen2_i2c_sda_pdd0` → Bus 1 (enabled).
+- **[HARDWARE]** **Wiring change:** PCA9685 SDA/SCL moved from Pin 3/5 to Pin 27/28. PCA9685 now appears on Bus 1 alongside onboard INA3221 (address collision at 0x40).
+- **[BUG FIX]** **Dual-address pattern:** Write via 0x40 (both INA3221 + PCA9685 receive), verify via 0x71 (PCA9685 Sub Address 1 — only PCA9685 responds). Enables collision-free reads without hardware modifications.
+- **[BUG FIX]** **EXTCLK fix:** Previous address-collision writes set the EXTCLK bit in PCA9685 MODE1 register (disabling the internal 25MHz oscillator, killing all PWM output). Software reset via General Call (`write_byte(0x00, 0x06)`) at startup clears this sticky bit.
+- **[CODE]** `ServoTurretController`: `I2C_BUS = 1`, `PCA9685_READ = 0x71`, software reset in `_init_pca9685()`, MODE1 keeps SUB1+SUB2+SUB3 enabled (0x2E when awake, 0x1E when sleeping).
+- **[CODE]** Factory `create_turret_controller()`: Probes PCA9685 via sub-address 0x71 after software reset — eliminates false positives from INA3221.
+- **[CODE]** Removed Storm32 test suites from dashboard (serial, pwm_gimbal, sysfs_pwm) — hardware retired.
+- **[TEST]** 9/9 hardware tests pass. Both yaw and pitch servos physically confirmed moving.
+- **[FLAG]** DTB overlay attempts (`tegra234-p3767-0000+p3509-a02-hdr40.dtbo` and custom `i2c8-enable.dtbo`) both caused boot failures on Yahboom Super board. Reverted. Pin 27/28 solution requires no DTB changes.
