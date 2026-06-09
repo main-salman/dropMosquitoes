@@ -75,7 +75,7 @@ fi
 # Only a full reboot guarantees clean video on both sensors (especially sensor-1/Sniper).
 echo ""
 echo "🔄 Step 2/3: Rebooting Jetson for clean camera state..."
-ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
+ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH || true
     cd /home/jetson/dropMosquitoes 2>/dev/null || true
 
     # Stop the systemd sentry service first for clean shutdown
