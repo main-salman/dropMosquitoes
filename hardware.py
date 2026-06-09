@@ -470,11 +470,22 @@ class ServoTurretController:
     I2C_BUS = 1              # Bus 1 = c240000.i2c (Pin 27/28 on Yahboom)
     PWM_FREQ = 50            # 50 Hz standard servo frequency
 
+    # Smooth interpolation parameters
+    INTERP_RATE_HZ = 100     # PWM update rate for smooth motion
+    INTERP_SPEED   = 120.0   # Max degrees/second travel speed
+    INTERP_EPSILON = 0.15    # Degrees — close enough to stop interpolating
+
     def __init__(self):
-        self._yaw = 0.0          # Current yaw angle (degrees, -80..+80)
-        self._pitch = PITCH_HOME # Current pitch angle (degrees, -90..+90)
+        self._target_yaw = 0.0      # Where we WANT to be (set by API)
+        self._target_pitch = PITCH_HOME
+        self._current_yaw = 0.0     # Where we ARE (actual PWM output)
+        self._current_pitch = PITCH_HOME
+        self._yaw = 0.0             # Public state (matches target for API compat)
+        self._pitch = PITCH_HOME
         self._lock = threading.Lock()
         self._bus = None
+        self._interp_thread = None
+        self._interp_stop = threading.Event()
 
         if I2C_AVAILABLE:
             try:
@@ -487,14 +498,69 @@ class ServoTurretController:
                 print(f"[ServoTurret] PCA9685 initialized on I2C bus {self.I2C_BUS}, "
                       f"address 0x{self.PCA9685_ADDRESS:02X} via smbus2")
 
-                # Center servos on startup
-                self.center()
+                # Start smooth interpolation thread
+                self._interp_thread = threading.Thread(
+                    target=self._interpolation_loop, daemon=True,
+                    name="servo-interp")
+                self._interp_thread.start()
+
+                # Center servos on startup (instant — no interpolation needed)
+                self._set_servo_angle(SERVO_CH_YAW, 0.0)
+                self._set_servo_angle(SERVO_CH_PITCH, PITCH_HOME)
+                print(f"[ServoTurret] Centered. Smooth interpolation "
+                      f"at {self.INTERP_RATE_HZ}Hz, {self.INTERP_SPEED}°/s")
             except Exception as e:
                 print(f"[ServoTurret] PCA9685 init FAILED: {e}")
                 print("[ServoTurret] Running in STUB mode.")
                 self._bus = None
         else:
             print("[ServoTurret] STUB MODE — smbus2 not available.")
+
+    def _interpolation_loop(self):
+        """Background thread: smoothly moves servos toward target angles.
+
+        Runs at INTERP_RATE_HZ, moving at most INTERP_SPEED degrees/second.
+        Sleeps when current == target to avoid wasting CPU.
+        """
+        dt = 1.0 / self.INTERP_RATE_HZ
+        max_step = self.INTERP_SPEED * dt  # Max degrees per tick
+
+        while not self._interp_stop.is_set():
+            with self._lock:
+                ty, tp = self._target_yaw, self._target_pitch
+                cy, cp = self._current_yaw, self._current_pitch
+
+            dy = ty - cy
+            dp = tp - cp
+
+            # If already at target, sleep longer to save CPU
+            if abs(dy) < self.INTERP_EPSILON and abs(dp) < self.INTERP_EPSILON:
+                self._interp_stop.wait(timeout=0.05)
+                continue
+
+            # Move toward target, clamping step size for smooth motion
+            if abs(dy) <= max_step:
+                ny = ty
+            else:
+                ny = cy + max_step * (1 if dy > 0 else -1)
+
+            if abs(dp) <= max_step:
+                np_ = tp
+            else:
+                np_ = cp + max_step * (1 if dp > 0 else -1)
+
+            # Write to hardware
+            try:
+                self._set_servo_angle(SERVO_CH_YAW, ny)
+                self._set_servo_angle(SERVO_CH_PITCH, np_)
+            except Exception:
+                pass  # I2C errors handled silently in interpolation
+
+            with self._lock:
+                self._current_yaw = ny
+                self._current_pitch = np_
+
+            self._interp_stop.wait(timeout=dt)
 
     def _init_pca9685(self):
         """Initialize PCA9685: software reset, set 50Hz PWM, wake up.
@@ -574,8 +640,8 @@ class ServoTurretController:
         """
         Command the turret to absolute pitch/yaw angles (in degrees).
 
-        Applies software endstops before sending. Values are clamped.
-        API-compatible with GimbalController.set_angles().
+        Sets the TARGET position — the interpolation thread smoothly moves
+        the servos there at INTERP_SPEED degrees/second.
 
         Args:
             pitch: Target pitch angle (clamped to ±SERVO_PITCH_LIMIT).
@@ -585,24 +651,22 @@ class ServoTurretController:
             # Clamp to software endstops (SAFE-001 §2)
             self._pitch = max(-SERVO_PITCH_LIMIT, min(SERVO_PITCH_LIMIT, pitch))
             self._yaw = max(-SERVO_YAW_LIMIT, min(SERVO_YAW_LIMIT, yaw))
+            self._target_yaw = self._yaw
+            self._target_pitch = self._pitch
 
-            if self._bus:
-                try:
-                    self._set_servo_angle(SERVO_CH_YAW, self._yaw)
-                    self._set_servo_angle(SERVO_CH_PITCH, self._pitch)
-                    print(f"[ServoTurret] Set yaw={self._yaw:.1f}° pitch={self._pitch:.1f}°")
-                except Exception as e:
-                    print(f"[ServoTurret] Servo write error: {e}")
-            else:
-                print(f"[ServoTurret] STUB: pitch={self._pitch:.1f}° yaw={self._yaw:.1f}°")
+        if not self._bus:
+            print(f"[ServoTurret] STUB: pitch={self._pitch:.1f}° yaw={self._yaw:.1f}°")
 
     def nudge(self, d_pitch: float = 0.0, d_yaw: float = 0.0):
         """
         Relative movement (for WASD manual control).
-        Adds delta to current position and re-clamps.
+        Adds delta to current TARGET position and re-clamps.
         API-compatible with GimbalController.nudge().
         """
-        self.set_angles(self._pitch + d_pitch, self._yaw + d_yaw)
+        with self._lock:
+            new_pitch = self._target_pitch + d_pitch
+            new_yaw = self._target_yaw + d_yaw
+        self.set_angles(new_pitch, new_yaw)
 
     def center(self):
         """Return turret to home position (PITCH_HOME, 0).
@@ -610,20 +674,26 @@ class ServoTurretController:
         self.set_angles(PITCH_HOME, 0.0)
 
     def get_status(self) -> dict:
-        return {
-            "pitch": round(self._pitch, 1),
-            "yaw": round(self._yaw, 1),
-            "pitch_home": PITCH_HOME,
-            "connected": self._bus is not None
-        }
+        with self._lock:
+            return {
+                "pitch": round(self._pitch, 1),
+                "yaw": round(self._yaw, 1),
+                "pitch_home": PITCH_HOME,
+                "connected": self._bus is not None
+            }
 
     def cleanup(self):
-        """Center turret and close I2C bus on shutdown."""
-        print("[ServoTurret] Centering turret on shutdown...")
+        """Stop interpolation thread, center turret, and close I2C bus."""
+        print("[ServoTurret] Shutting down...")
+        self._interp_stop.set()
+        if self._interp_thread:
+            self._interp_thread.join(timeout=1.0)
         try:
-            self.center()
-            time.sleep(0.3)
             if self._bus:
+                # Direct center (no interpolation — thread is stopped)
+                self._set_servo_angle(SERVO_CH_YAW, 0.0)
+                self._set_servo_angle(SERVO_CH_PITCH, PITCH_HOME)
+                time.sleep(0.3)
                 self._bus.close()
         except Exception as e:
             print(f"[ServoTurret] Cleanup error: {e}")
