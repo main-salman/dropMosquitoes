@@ -413,9 +413,14 @@ class GimbalController:
 # Replaces the Storm32 brushless gimbal for applications requiring
 # mechanical holding torque (e.g., fighting water hose spring tension).
 #
-# I2C Bus 7 (c250000.i2c), PCA9685 default address 0x40.
-# NOTE: Yahboom carrier board routes 40-pin header Pin 3/5 to Bus 7,
-#       NOT Bus 1 (which is the carrier board's internal bus with INA3221).
+# I2C Bus 1 (c240000.i2c), PCA9685 at address 0x40.
+# IMPORTANT: Yahboom carrier board has an onboard INA3221 power monitor
+#   ALSO at 0x40 on Bus 1. This creates an address collision.
+#   Solution: Write via 0x40 (both chips receive), verify via 0x71
+#   (PCA9685 Sub Address 1 — only PCA9685 responds).
+#   Software reset (General Call 0x06) required at startup to clear
+#   stuck EXTCLK bit from previous address-collision writes.
+# Wiring: PCA9685 SDA/SCL on Jetson IDC40P Pin 27/28 (Bus 1).
 # Power: Dedicated 12V→5V 10A buck converter (isolated from Jetson 5V rail).
 # ============================================================================
 
@@ -452,15 +457,18 @@ class ServoTurretController:
     Safety: SAFE-001 §2 (software endstops)
 
     Hardware:
-        - PCA9685 on I2C Bus 7, address 0x40
+        - PCA9685 on I2C Bus 1, address 0x40 (shared with INA3221)
+        - Verify address: 0x71 (PCA9685 Sub Address 1, no collision)
+        - Wiring: Jetson Pin 27 (SDA) / Pin 28 (SCL)
         - Channel 0: MG996R yaw servo (pan)
         - Channel 1: MG996R pitch servo (tilt)
         - Power: 12V→5V 10A buck converter (isolated from Jetson)
     """
 
-    PCA9685_ADDRESS = 0x40
-    I2C_BUS = 7  # Yahboom 40-pin header Pin 3/5 = Bus 7 (c250000.i2c)
-    PWM_FREQ = 50  # 50 Hz standard servo frequency
+    PCA9685_ADDRESS = 0x40   # Write address (INA3221 also here — collision)
+    PCA9685_READ    = 0x71   # PCA9685 Sub Address 1 (read without INA3221)
+    I2C_BUS = 1              # Bus 1 = c240000.i2c (Pin 27/28 on Yahboom)
+    PWM_FREQ = 50            # 50 Hz standard servo frequency
 
     def __init__(self):
         self._yaw = 0.0          # Current yaw angle (degrees, -80..+80)
@@ -489,28 +497,50 @@ class ServoTurretController:
             print("[ServoTurret] STUB MODE — smbus2 not available.")
 
     def _init_pca9685(self):
-        """Initialize PCA9685: reset, set 50Hz PWM frequency, wake up."""
+        """Initialize PCA9685: software reset, set 50Hz PWM, wake up.
+        
+        Uses dual-address pattern to handle INA3221 collision at 0x40:
+        - Write via 0x40 (both PCA9685 and INA3221 receive)
+        - Verify via 0x71 (PCA9685 Sub Address 1, no collision)
+        
+        Software reset clears EXTCLK bit that may be stuck from
+        previous writes through the colliding address.
+        """
         addr = self.PCA9685_ADDRESS
+        read = self.PCA9685_READ
 
-        # Put to sleep (bit 4 = SLEEP) before setting prescaler
-        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x10)
+        # Software reset via General Call — clears stuck EXTCLK bit
+        try:
+            self._bus.write_byte(0x00, 0x06)
+        except Exception:
+            pass  # General call may NAK, that's OK
+        time.sleep(0.05)
+
+        # Sleep mode + enable sub-addresses for verification reads
+        # MODE1: SLEEP=1, SUB1=1, SUB2=1, SUB3=1 = 0x1E
+        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x1E)
         time.sleep(0.005)
 
         # Set prescaler for 50 Hz: prescale = round(25MHz / (4096 × freq)) - 1
-        # 50 Hz → prescale = round(25000000 / (4096 × 50)) - 1 = 121
         prescale = round(25000000.0 / (4096 * self.PWM_FREQ)) - 1
         self._bus.write_byte_data(addr, _PCA9685_PRESCALE, prescale)
-
-        # Wake up (clear SLEEP bit), enable auto-increment (bit 5)
-        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x20)
         time.sleep(0.005)
 
-        # Restart (bit 7) — clears any pending PWM state
-        mode1 = self._bus.read_byte_data(addr, _PCA9685_MODE1)
-        self._bus.write_byte_data(addr, _PCA9685_MODE1, mode1 | 0x80)
+        # Verify prescaler via sub-address (collision-free read)
+        ps_verify = self._bus.read_byte_data(read, _PCA9685_PRESCALE)
+
+        # Wake up: AI=1, SUB1=1, SUB2=1, SUB3=1 = 0x2E
+        self._bus.write_byte_data(addr, _PCA9685_MODE1, 0x2E)
         time.sleep(0.005)
 
-        print(f"[ServoTurret] PCA9685 prescaler={prescale} ({self.PWM_FREQ}Hz)")
+        # Verify EXTCLK is clear
+        mode1 = self._bus.read_byte_data(read, _PCA9685_MODE1)
+        extclk = (mode1 >> 6) & 1
+        if extclk:
+            print(f"[ServoTurret] WARNING: EXTCLK stuck! Power-cycle PCA9685.")
+
+        print(f"[ServoTurret] PCA9685 prescaler={ps_verify} ({self.PWM_FREQ}Hz) "
+              f"MODE1=0x{mode1:02X} EXTCLK={extclk}")
 
     def _set_pwm(self, channel: int, on: int, off: int):
         """Set raw PWM on/off ticks (0-4095) for a channel."""
@@ -620,15 +650,24 @@ def create_turret_controller():
         _unbind_ina3221()
 
         try:
-            bus = smbus2.SMBus(7)  # Bus 7 = 40-pin header Pin 3/5
-            bus.read_byte_data(0x40, _PCA9685_MODE1)
-            # Verify it's actually a PCA9685, not INA3221
-            mfr_id = bus.read_byte_data(0x40, 0xFE)
+            bus = smbus2.SMBus(1)  # Bus 1 = Pin 27/28 on Yahboom
+            # Software reset to clear any stuck state
+            try:
+                bus.write_byte(0x00, 0x06)
+            except Exception:
+                pass
+            time.sleep(0.05)
+            # Enable sub-addresses so we can verify via 0x71
+            bus.write_byte_data(0x40, _PCA9685_MODE1, 0x1F)
+            time.sleep(0.01)
+            # Verify PCA9685 via sub-address 0x71 (no INA3221 collision)
+            prescale = bus.read_byte_data(0x71, _PCA9685_PRESCALE)
             bus.close()
-            if mfr_id == 0x54:  # TI Manufacturer ID = INA3221
-                print("[TurretFactory] 0x40 on bus 7 is INA3221 (not PCA9685) — skipping")
+            if prescale == 0x54:  # TI Manufacturer ID = INA3221 leaked
+                print("[TurretFactory] 0x71 reads as INA3221 — no PCA9685")
             else:
-                print(f"[TurretFactory] PCA9685 detected at 0x40 on bus 7 (prescale=0x{mfr_id:02X}) — using ServoTurretController")
+                print(f"[TurretFactory] PCA9685 confirmed via sub-addr 0x71 "
+                      f"(prescale=0x{prescale:02X}) — using ServoTurretController")
                 return ServoTurretController()
         except Exception as e:
             print(f"[TurretFactory] PCA9685 probe failed: {e}")

@@ -42,11 +42,20 @@ def report(name, ok, detail=""):
 
 
 def test_i2c_scan():
-    """Scan I2C bus 7 (40-pin header) for PCA9685 at address 0x40."""
-    print("\n=== I2C Bus Scan (Bus 7 — 40-pin header) ===")
+    """Scan I2C bus 1 for PCA9685 using sub-address 0x71 (avoids INA3221 collision)."""
+    print("\n=== I2C Bus Scan (Bus 1 — Pin 27/28) ===")
     try:
         import smbus2
-        bus = smbus2.SMBus(7)
+        bus = smbus2.SMBus(1)
+        # Software reset to enable sub-addresses
+        try:
+            bus.write_byte(0x00, 0x06)
+        except Exception:
+            pass
+        import time; time.sleep(0.05)
+        # Enable sub-addresses
+        bus.write_byte_data(0x40, 0x00, 0x1F)
+        time.sleep(0.01)
         found = []
         for addr in range(0x03, 0x78):
             try:
@@ -59,22 +68,30 @@ def test_i2c_scan():
         addr_hex = [f"0x{a:02X}" for a in found]
         print(f"  Devices found: {addr_hex}")
 
-        # Verify 0x40 is actually a PCA9685 (not INA3221)
-        if has_pca:
-            mfr = bus.read_byte_data(0x40, 0xFE)
-            if mfr == 0x54:  # TI Manufacturer ID
-                report("PCA9685 identity", False,
-                       "0x40 is INA3221 (TI power monitor), NOT PCA9685")
-                has_pca = False
+        has_pca = 0x40 in found
+        has_lidar = 0x10 in found
+
+        report("Device at 0x40", has_pca,
+               "detected (INA3221 + PCA9685 collision expected)" if has_pca else "NOT FOUND")
+
+        # Verify PCA9685 via sub-address 0x71 (no INA3221 interference)
+        has_pca_verified = 0x71 in found
+        if has_pca_verified:
+            ps = bus.read_byte_data(0x71, 0xFE)
+            if ps == 0x54:  # TI Manufacturer ID leaked
+                report("PCA9685 via 0x71", False, "reads as INA3221, not PCA9685")
+                has_pca_verified = False
             else:
-                report("PCA9685 identity", True,
-                       f"confirmed (reg 0xFE = 0x{mfr:02X}, not TI 0x54)")
+                report("PCA9685 via 0x71", True,
+                       f"confirmed (prescale=0x{ps:02X}, not INA3221)")
+        else:
+            report("PCA9685 via 0x71", False, "sub-address not responding")
 
         report("TF-Luna LiDAR at 0x10", has_lidar,
                "detected" if has_lidar else "not found (optional)")
 
         bus.close()
-        return has_pca
+        return has_pca_verified
     except ImportError:
         report("I2C bus scan", False, "smbus2 not installed (pip install smbus2)")
         return False
@@ -292,14 +309,14 @@ def main():
         test_return_center(ctrl)
         ctrl.cleanup()
     else:
-        print("\n  ⚠️  Skipping hardware tests — PCA9685 not detected on Bus 7.")
-        print("     Bus 7 = 40-pin header Pin 3 (SDA) / Pin 5 (SCL)")
+        print("\n  ⚠️  Skipping hardware tests — PCA9685 not detected on Bus 1.")
+        print("     Bus 1 = Pin 27 (SDA) / Pin 28 (SCL) on Yahboom board")
         print("")
         print("     Verify PCA9685 LEFT HEADER wiring:")
         print("       PCA9685 VCC → Jetson Pin 1 (3.3V) ← REQUIRED for I2C logic!")
         print("       PCA9685 GND → Jetson Pin 6 (GND)")
-        print("       PCA9685 SDA → Jetson Pin 3")
-        print("       PCA9685 SCL → Jetson Pin 5")
+        print("       PCA9685 SDA → Jetson Pin 27")
+        print("       PCA9685 SCL → Jetson Pin 28")
 
     # Summary
     print(f"\n{'=' * 60}")
