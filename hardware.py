@@ -413,7 +413,9 @@ class GimbalController:
 # Replaces the Storm32 brushless gimbal for applications requiring
 # mechanical holding torque (e.g., fighting water hose spring tension).
 #
-# I2C Bus 1, PCA9685 default address 0x40 (TF-Luna is 0x10, no conflict).
+# I2C Bus 7 (c250000.i2c), PCA9685 default address 0x40.
+# NOTE: Yahboom carrier board routes 40-pin header Pin 3/5 to Bus 7,
+#       NOT Bus 1 (which is the carrier board's internal bus with INA3221).
 # Power: Dedicated 12V→5V 10A buck converter (isolated from Jetson 5V rail).
 # ============================================================================
 
@@ -450,14 +452,14 @@ class ServoTurretController:
     Safety: SAFE-001 §2 (software endstops)
 
     Hardware:
-        - PCA9685 on I2C Bus 1, address 0x40
+        - PCA9685 on I2C Bus 7, address 0x40
         - Channel 0: MG996R yaw servo (pan)
         - Channel 1: MG996R pitch servo (tilt)
         - Power: 12V→5V 10A buck converter (isolated from Jetson)
     """
 
     PCA9685_ADDRESS = 0x40
-    I2C_BUS = 1
+    I2C_BUS = 7  # Yahboom 40-pin header Pin 3/5 = Bus 7 (c250000.i2c)
     PWM_FREQ = 50  # 50 Hz standard servo frequency
 
     def __init__(self):
@@ -618,11 +620,16 @@ def create_turret_controller():
         _unbind_ina3221()
 
         try:
-            bus = smbus2.SMBus(1)
+            bus = smbus2.SMBus(7)  # Bus 7 = 40-pin header Pin 3/5
             bus.read_byte_data(0x40, _PCA9685_MODE1)
+            # Verify it's actually a PCA9685, not INA3221
+            mfr_id = bus.read_byte_data(0x40, 0xFE)
             bus.close()
-            print("[TurretFactory] PCA9685 detected at 0x40 via smbus2 — using ServoTurretController")
-            return ServoTurretController()
+            if mfr_id == 0x54:  # TI Manufacturer ID = INA3221
+                print("[TurretFactory] 0x40 on bus 7 is INA3221 (not PCA9685) — skipping")
+            else:
+                print(f"[TurretFactory] PCA9685 detected at 0x40 on bus 7 (prescale=0x{mfr_id:02X}) — using ServoTurretController")
+                return ServoTurretController()
         except Exception as e:
             print(f"[TurretFactory] PCA9685 probe failed: {e}")
 
@@ -672,7 +679,7 @@ def _unbind_ina3221():
 # Mounted co-axial with Sniper camera on gimbal payload plate.
 # ============================================================================
 
-LIDAR_I2C_BUS = 1
+LIDAR_I2C_BUS = 7  # Yahboom 40-pin header Pin 3/5 = Bus 7 (c250000.i2c)
 LIDAR_I2C_ADDR = 0x10
 LIDAR_REG_DIST_LO = 0x00   # Distance low byte
 LIDAR_REG_DIST_HI = 0x01   # Distance high byte

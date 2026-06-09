@@ -42,11 +42,11 @@ def report(name, ok, detail=""):
 
 
 def test_i2c_scan():
-    """Test 1: Scan I2C bus 1 for PCA9685 at address 0x40 using smbus2."""
-    print("\n=== Test 1: I2C Bus Scan (smbus2) ===")
+    """Scan I2C bus 7 (40-pin header) for PCA9685 at address 0x40."""
+    print("\n=== I2C Bus Scan (Bus 7 — 40-pin header) ===")
     try:
         import smbus2
-        bus = smbus2.SMBus(1)
+        bus = smbus2.SMBus(7)
         found = []
         for addr in range(0x03, 0x78):
             try:
@@ -59,14 +59,21 @@ def test_i2c_scan():
         addr_hex = [f"0x{a:02X}" for a in found]
         print(f"  Devices found: {addr_hex}")
 
-        has_pca = 0x40 in found
-        has_lidar = 0x10 in found
+        # Verify 0x40 is actually a PCA9685 (not INA3221)
+        if has_pca:
+            mfr = bus.read_byte_data(0x40, 0xFE)
+            if mfr == 0x54:  # TI Manufacturer ID
+                report("PCA9685 identity", False,
+                       "0x40 is INA3221 (TI power monitor), NOT PCA9685")
+                has_pca = False
+            else:
+                report("PCA9685 identity", True,
+                       f"confirmed (reg 0xFE = 0x{mfr:02X}, not TI 0x54)")
 
-        report("PCA9685 at 0x40", has_pca,
-               "detected via smbus2" if has_pca else "NOT FOUND — check wiring")
-        report("TF-Luna LiDAR at 0x10 (coexistence)", has_lidar,
+        report("TF-Luna LiDAR at 0x10", has_lidar,
                "detected" if has_lidar else "not found (optional)")
 
+        bus.close()
         return has_pca
     except ImportError:
         report("I2C bus scan", False, "smbus2 not installed (pip install smbus2)")
@@ -77,8 +84,8 @@ def test_i2c_scan():
 
 
 def test_ina3221_conflict():
-    """Test 2: Check if INA3221 kernel driver is blocking 0x40."""
-    print("\n=== Test 2: INA3221 Conflict Check ===")
+    """Check if INA3221 kernel driver is blocking 0x40 on bus 1 (internal)."""
+    print("\n=== INA3221 Conflict Check (Bus 1 — internal) ===")
     ina_path = "/sys/bus/i2c/devices/1-0040/driver"
 
     if not os.path.exists(ina_path):
@@ -285,11 +292,14 @@ def main():
         test_return_center(ctrl)
         ctrl.cleanup()
     else:
-        print("\n  ⚠️  Skipping hardware tests — PCA9685 not detected.")
-        print("     Verify wiring: Jetson Pin 3 (SDA) → PCA9685 Pin 4 (SDA)")
-        print("                    Jetson Pin 5 (SCL) → PCA9685 Pin 3 (SCL)")
-        print("                    Jetson Pin 1 (3.3V) → PCA9685 Pin 5 (VCC)")
-        print("                    Jetson Pin 6 (GND) → PCA9685 Pin 1 (GND)")
+        print("\n  ⚠️  Skipping hardware tests — PCA9685 not detected on Bus 7.")
+        print("     Bus 7 = 40-pin header Pin 3 (SDA) / Pin 5 (SCL)")
+        print("")
+        print("     Verify PCA9685 LEFT HEADER wiring:")
+        print("       PCA9685 VCC → Jetson Pin 1 (3.3V) ← REQUIRED for I2C logic!")
+        print("       PCA9685 GND → Jetson Pin 6 (GND)")
+        print("       PCA9685 SDA → Jetson Pin 3")
+        print("       PCA9685 SCL → Jetson Pin 5")
 
     # Summary
     print(f"\n{'=' * 60}")

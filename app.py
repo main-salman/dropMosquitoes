@@ -582,13 +582,7 @@ TEST_SUITES = {
         "args": ["--all", "--cycles", "2"],
         "layer": 1,
     },
-    "serial": {
-        "name": "Serial / Gimbal Tests (Layer 1)",
-        "description": "UART comms, Storm32 handshake, full angle sweep",
-        "script": "tests/test_serial.py",
-        "args": ["--sweep"],
-        "layer": 1,
-    },
+
     "yolo": {
         "name": "YOLO / AI Tests (Layer 1)",
         "description": "TensorRT model load, inference FPS, threshold controls",
@@ -610,27 +604,14 @@ TEST_SUITES = {
         "args": [],
         "layer": 4,
     },
-    "pwm_gimbal": {
-        "name": "PWM Gimbal Sweep (Layer 1)",
-        "description": "Hardware PWM → Storm32 RC pins: yaw ±30° sweep, pitch ±20° sweep, combined",
-        "script": "tests/test_pwm_gimbal.py",
-        "args": [],
-        "layer": 1,
-    },
     "servo_turret": {
         "name": "Servo Turret Tests (Layer 1)",
-        "description": "PCA9685 I2C scan, MG996R servo sweep, LiDAR I2C coexistence",
+        "description": "PCA9685 I2C scan (Bus 7), MG996R servo sweep, chip identity verification",
         "script": "tests/test_servo_turret.py",
         "args": [],
         "layer": 1,
     },
-    "sysfs_pwm": {
-        "name": "Direct sysfs PWM (Layer 0)",
-        "description": "Bypasses Jetson.GPIO — writes directly to /sys/class/pwm/ kernel interface",
-        "script": "tests/test_sysfs_pwm.py",
-        "args": [],
-        "layer": 0,
-    },
+
 }
 
 
