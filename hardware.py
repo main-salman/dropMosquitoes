@@ -636,12 +636,13 @@ def _unbind_ina3221():
     The Yahboom carrier board has an INA3221 power monitor chip at 0x40
     which conflicts with the PCA9685 servo driver's default address."""
     import subprocess
+    import os as _os
     driver_path = "/sys/bus/i2c/devices/1-0040/driver"
-    if not os.path.exists(driver_path):
+    if not _os.path.exists(driver_path):
         return  # No driver bound — 0x40 is free
 
     try:
-        driver_name = os.readlink(driver_path).split("/")[-1]
+        driver_name = _os.readlink(driver_path).split("/")[-1]
         print(f"[TurretFactory] Kernel driver '{driver_name}' is claiming 0x40 — unbinding...")
         result = subprocess.run(
             ["sudo", "-n", "sh", "-c", f"echo 1-0040 > /sys/bus/i2c/drivers/{driver_name}/unbind"],
