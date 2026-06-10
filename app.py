@@ -29,6 +29,7 @@ from hardware import (
     SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
+from calibration_engine import CalibrationTable, HitDetector, CalibrationWizard
 
 # ============================================================================
 # FLASK APP INITIALIZATION
@@ -56,6 +57,12 @@ detector = None
 
 # Arc Compensation — pitch offset to compensate for stream trajectory drop over distance
 ARC_COMPENSATION_DEG = 12.0
+
+# Visual Calibration System — SW-001 §2.8
+cal_table = CalibrationTable(filepath=os.path.join(APP_DIR, "calibration_visual.json"))
+cal_table.load()  # Load previous calibration if exists
+hit_detector = HitDetector()
+cal_wizard = CalibrationWizard(cal_table, hit_detector)
 
 
 # ============================================================================
@@ -252,6 +259,12 @@ def api_gimbal_click():
 
     # Stage 1: Pixel → raw angles (§2.7 step 1)
     raw_pitch, raw_yaw = pixel_to_angle(px, py, fw, fh)
+
+    # Stage 1.5: Apply visual calibration offset (camera-nozzle correction)
+    cal_d_pitch, cal_d_yaw = cal_table.get_correction(
+        distance_m=lidar.read_distance(), pitch=raw_pitch, yaw=raw_yaw)
+    raw_pitch += cal_d_pitch
+    raw_yaw += cal_d_yaw
 
     # Get LiDAR distance for ToF calculation
     distance_m = lidar.read_distance()
@@ -586,8 +599,195 @@ def api_cal_clear():
 
 
 # ============================================================================
-# STATUS API
+# VISUAL CALIBRATION WIZARD API — SW-001 §2.8
 # ============================================================================
+
+@app.route('/api/calibration/wizard/start', methods=['POST'])
+def api_cal_wizard_start():
+    """Start the calibration wizard. Resets all previous calibration data."""
+    cal_wizard.start()
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/step', methods=['GET'])
+def api_cal_wizard_step():
+    """Get current wizard step, instructions, and state."""
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/next', methods=['POST'])
+def api_cal_wizard_next():
+    """Advance from CENTER step: move servos to pattern position, go to AIM."""
+    state = cal_wizard.get_state()
+    if state['step'] == 'center':
+        # Move servos to the calibration pattern position
+        gimbal.set_angles(state['pattern_pitch'], state['pattern_yaw'])
+        time.sleep(1.0)  # Let servos settle
+        cal_wizard.advance_to_aim()
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/aim', methods=['POST'])
+def api_cal_wizard_aim():
+    """User clicked on a target in the sniper feed.
+    Body: {"px": int, "py": int}"""
+    data = request.get_json(force=True)
+    px = int(data.get('px', 0))
+    py = int(data.get('py', 0))
+    cal_wizard.record_aim(px, py)
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/fire', methods=['POST'])
+def api_cal_wizard_fire():
+    """Fire water and detect where it hits.
+    Body: {"duration": float (optional, default 0.4)}"""
+    data = request.get_json(force=True) if request.data else {}
+    duration = float(data.get('duration', 0.4))
+    distance = lidar.read_distance()
+    result = cal_wizard.fire_and_detect(
+        camera=sniper_cam, relay=relay,
+        fire_duration=duration, distance_m=distance)
+    return jsonify({**cal_wizard.get_state(), "detection": result})
+
+
+@app.route('/api/calibration/wizard/verify', methods=['POST'])
+def api_cal_wizard_verify():
+    """Confirm or correct the detected hit location.
+    Body: {"confirmed": bool, "corrected_px": int, "corrected_py": int}"""
+    data = request.get_json(force=True)
+    confirmed = bool(data.get('confirmed', True))
+    cpx = data.get('corrected_px')
+    cpy = data.get('corrected_py')
+    cal_wizard.verify_hit(
+        confirmed=confirmed,
+        corrected_px=int(cpx) if cpx is not None else None,
+        corrected_py=int(cpy) if cpy is not None else None)
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/skip', methods=['POST'])
+def api_cal_wizard_skip():
+    """Skip the current calibration point."""
+    cal_wizard.skip_point()
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/wizard/reset', methods=['POST'])
+def api_cal_wizard_reset():
+    """Reset wizard to idle and clear calibration data."""
+    cal_wizard.reset()
+    cal_table.clear()
+    return jsonify(cal_wizard.get_state())
+
+
+@app.route('/api/calibration/offset', methods=['GET'])
+def api_cal_offset_get():
+    """Get current calibration offset."""
+    return jsonify(cal_table.to_dict())
+
+
+@app.route('/api/calibration/offset', methods=['POST'])
+def api_cal_offset_set():
+    """Manually set calibration offset.
+    Body: {"offset_pitch": float, "offset_yaw": float}"""
+    data = request.get_json(force=True)
+    if 'offset_pitch' in data:
+        cal_table.offset_pitch = float(data['offset_pitch'])
+    if 'offset_yaw' in data:
+        cal_table.offset_yaw = float(data['offset_yaw'])
+    cal_table.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[Calibration] Manual offset: pitch={cal_table.offset_pitch:.2f}° "
+          f"yaw={cal_table.offset_yaw:.2f}°")
+    return jsonify(cal_table.to_dict())
+
+
+@app.route('/api/calibration/offset/save', methods=['POST'])
+def api_cal_offset_save():
+    """Save visual calibration data to JSON."""
+    cal_table.save()
+    return jsonify({"saved": True, **cal_table.to_dict()})
+
+
+@app.route('/api/calibration/snapshot')
+def api_cal_snapshot():
+    """Get annotated sniper frame with hit detection overlay as JPEG."""
+    frame = hit_detector.get_annotated_frame()
+    if frame is None:
+        # Return current sniper frame with crosshair
+        frame = sniper_cam.get_frame()
+        if frame is None:
+            return jsonify({"error": "No frame available"}), 503
+    import cv2
+    _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    return Response(jpeg.tobytes(), mimetype='image/jpeg')
+
+
+@app.route('/api/calibration/snapshot/before')
+def api_cal_snapshot_before():
+    """Get the 'before' frame as JPEG."""
+    frame = hit_detector.get_before_frame()
+    if frame is None:
+        return jsonify({"error": "No before frame"}), 404
+    import cv2
+    _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    return Response(jpeg.tobytes(), mimetype='image/jpeg')
+
+
+@app.route('/api/calibration/freefire', methods=['POST'])
+def api_cal_freefire():
+    """Free-form calibration: aim → fire → detect hit → return offset.
+    Body: {"pitch": float, "yaw": float, "duration": float,
+           "aim_px": int, "aim_py": int}"""
+    data = request.get_json(force=True)
+    pitch = float(data.get('pitch', 0))
+    yaw = float(data.get('yaw', 0))
+    duration = float(data.get('duration', 0.4))
+    aim_px = int(data.get('aim_px', 640))
+    aim_py = int(data.get('aim_py', 360))
+
+    # Move to position
+    gimbal.set_angles(pitch, yaw)
+    time.sleep(1.0)
+
+    # Capture before
+    hit_detector.capture_before(sniper_cam)
+
+    # Fire
+    relay.fire_pump(duration)
+    time.sleep(duration + 0.2)
+
+    # Capture after frames
+    for delay in [0.3, 0.6, 1.0]:
+        time.sleep(delay)
+        hit_detector.capture_after(sniper_cam)
+
+    # Detect hit
+    hit = hit_detector.detect()
+    distance = lidar.read_distance()
+
+    result = {
+        "aimed": {"pitch": pitch, "yaw": yaw, "px": aim_px, "py": aim_py},
+        "distance_m": round(distance, 2),
+        "detection": hit_detector.get_state(),
+    }
+
+    if hit:
+        from calibration_engine import CalibrationPoint
+        point = CalibrationPoint(
+            aim_pitch=pitch, aim_yaw=yaw,
+            aim_px=aim_px, aim_py=aim_py,
+            hit_px=hit[0], hit_py=hit[1],
+            distance_m=distance, hit_confirmed=False)
+        point.compute_offset()
+        result["offset"] = {
+            "pitch": round(point.offset_pitch, 3),
+            "yaw": round(point.offset_yaw, 3),
+            "px": point.offset_px,
+            "py": point.offset_py,
+        }
+
+    return jsonify(result)
 
 @app.route('/api/status')
 def api_status():
