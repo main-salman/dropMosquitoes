@@ -580,3 +580,13 @@
 - **[CODE]** `AutoCalibrator`: Adaptive offset (running average applied to next shot for progressive accuracy). 3-tier retry on miss: longer burst (0.8s) → lower threshold (15px) → skip point. Fallback grid pattern when feature detection fails.
 - **[CODE]** `app.py`: Replaced wizard endpoints with 3 auto-cal endpoints: `POST /api/calibration/auto/start`, `GET /api/calibration/auto/status`, `POST /api/calibration/auto/stop`. Background thread + UI polling at 500ms.
 - **[UI]** `index.html`: One-button "🎯 Auto-Calibrate" interface with animated progress bar, live stats (hits/misses/skips), rolling activity log, before/after comparison, and manual fine-tuning sliders.
+
+## 2026-06-10 — WATER LINE PRIMING SYSTEM
+
+- **[DESIGN]** Silicone tube from reservoir to nozzle fills with air when idle. First shot fires air, not water. Solution: auto-prime before every fire command.
+- **[CODE]** `hardware.py`: Added `PrimingSystem` class. Aims nozzle straight down (90° pitch), pumps for configurable duration (default 3000ms), auto-detects water flow via frame differencing on sniper camera (>0.5% pixel change = water flowing).
+- **[CODE]** `PrimingSystem`: Keep-alive background thread pulses pump every N minutes (default 5 min, 200ms pulse) to prevent air from creeping back into the line during idle periods.
+- **[CODE]** `calibration_engine.py`: Added `_phase_prime()` to `AutoCalibrator` — primes water line before first calibration shot. `AutoCalibrator.start()` now accepts `primer=` parameter.
+- **[CODE]** `app.py`: Auto-prime check in `/api/relay/fire` endpoint. New endpoints: `GET /api/prime/status`, `POST /api/prime/now`, `GET|POST /api/prime/settings`. `PrimingSystem` initialized at startup with keep-alive thread.
+- **[UI]** `index.html`: Settings tab — "💧 Water Line Priming" card with sliders for prime duration (500-10000ms), keep-alive interval (1-30 min), keep-alive pulse (50-1000ms), auto-detect toggle, keep-alive toggle, and "Prime Now" button.
+- **[HW]** Nozzle leak identified at silicone-tube-to-nozzle barb junction. Recommendation: replace barb with 1/4" NPT threaded connection + brass adjustable jet nozzle + PTFE tape for permanent seal.
