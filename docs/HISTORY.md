@@ -562,3 +562,13 @@
 - **[CODE]** Removed Storm32 test suites from dashboard (serial, pwm_gimbal, sysfs_pwm) — hardware retired.
 - **[TEST]** 9/9 hardware tests pass. Both yaw and pitch servos physically confirmed moving.
 - **[FLAG]** DTB overlay attempts (`tegra234-p3767-0000+p3509-a02-hdr40.dtbo` and custom `i2c8-enable.dtbo`) both caused boot failures on Yahboom Super board. Reverted. Pin 27/28 solution requires no DTB changes.
+
+## 2026-06-09 — SERVO SMOOTHNESS & VISUAL CALIBRATION SYSTEM
+
+- **[CODE]** `hardware.py`: Implemented smooth servo interpolation via background daemon thread at 100Hz, replacing jerky discrete steps with configurable speed (default 120°/s).
+- **[CODE]** `app.py`: Added `/api/servo/settings` GET/POST endpoints for runtime servo parameter tuning (speed, update rate, nudge step, endstop limits).
+- **[UI]** `index.html`: Added ⚙️ Settings tab with sliders for Travel Speed, Update Rate, Nudge Step, Yaw/Pitch Limits, and 4 motion presets (Ultra Smooth, Balanced, Fast, Max Speed).
+- **[CODE]** `calibration_engine.py` [NEW]: Visual calibration system — SW-001 §2.8. `CalibrationTable` for offset storage + JSON persistence, `HitDetector` for frame differencing water splash detection, `CalibrationWizard` 5-step guided state machine.
+- **[CODE]** `app.py`: Added visual calibration wizard API (`/api/calibration/wizard/*`), offset management (`/api/calibration/offset`), free-form fire-and-detect (`/api/calibration/freefire`), annotated snapshot endpoints.
+- **[CODE]** `app.py`: Click-to-aim pipeline (`api_gimbal_click`) now applies visual calibration offsets before ballistic/lead corrections.
+- **[UI]** `index.html`: Replaced basic calibration tab with full wizard-based interface — progress dots, sniper feed click-to-aim, before/after image comparison, manual offset sliders, free-form fire-and-detect.
