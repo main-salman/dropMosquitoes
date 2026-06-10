@@ -220,6 +220,264 @@ class RelayController:
 
 
 # ============================================================================
+# PRIMING SYSTEM — Ensures water line is filled before firing
+# ============================================================================
+
+class PrimingSystem:
+    """
+    Manages water line priming to ensure water reaches the nozzle before
+    the first shot.
+
+    Features:
+    - Pre-fire priming: Before any fire command, checks if primed.
+      If not, aims nozzle straight down, pumps for configured duration,
+      optionally auto-detects water flow via camera frame differencing.
+    - Keep-alive: Background thread periodically pulses the pump to
+      prevent air from creeping back into the line during idle periods.
+
+    Settings (configurable via GUI):
+    - prime_duration_ms: How long to pump for priming (default 3000ms)
+    - keepalive_interval_min: Minutes between keep-alive pulses (default 5)
+    - keepalive_pulse_ms: Keep-alive pump pulse duration (default 200ms)
+    - auto_detect: Whether to use camera to confirm water flow
+    """
+
+    # Pitch angle that points the nozzle straight down
+    PRIME_PITCH = 90.0  # Max downward pitch
+    PRIME_YAW = 0.0     # Center yaw
+
+    def __init__(self, relay: RelayController):
+        self._relay = relay
+        self._lock = threading.Lock()
+
+        # State
+        self._primed = False
+        self._priming_in_progress = False
+        self._last_prime_time = 0.0
+        self._last_fire_time = 0.0
+
+        # Settings (defaults)
+        self.prime_duration_ms = 3000      # 3 seconds default
+        self.keepalive_interval_min = 5    # 5 minutes
+        self.keepalive_pulse_ms = 200      # 200ms pulse
+        self.auto_detect = True            # Use camera to confirm
+        self.keepalive_enabled = True
+
+        # Keep-alive thread
+        self._keepalive_thread = None
+        self._keepalive_running = False
+
+    def start_keepalive(self, gimbal=None):
+        """Start the keep-alive background thread."""
+        if self._keepalive_running:
+            return
+        self._keepalive_running = True
+        self._gimbal_ref = gimbal
+        self._keepalive_thread = threading.Thread(
+            target=self._keepalive_loop, daemon=True, name="prime-keepalive")
+        self._keepalive_thread.start()
+        print(f"[Priming] Keep-alive started: every {self.keepalive_interval_min} min, "
+              f"{self.keepalive_pulse_ms}ms pulse")
+
+    def stop_keepalive(self):
+        """Stop the keep-alive thread."""
+        self._keepalive_running = False
+        if self._keepalive_thread:
+            self._keepalive_thread.join(timeout=2)
+        print("[Priming] Keep-alive stopped")
+
+    def _keepalive_loop(self):
+        """Background thread: periodically pulse the pump."""
+        while self._keepalive_running:
+            interval_sec = self.keepalive_interval_min * 60
+            time.sleep(interval_sec)
+
+            if not self._keepalive_running or not self.keepalive_enabled:
+                continue
+
+            # Only pulse if we haven't fired recently
+            since_last_fire = time.time() - self._last_fire_time
+            if since_last_fire > interval_sec * 0.8:
+                print(f"[Priming] Keep-alive pulse: {self.keepalive_pulse_ms}ms")
+                self._relay.fire_pump(self.keepalive_pulse_ms / 1000.0)
+                # Keep-alive doesn't count as "primed" because it's a tiny pulse
+
+    def needs_priming(self) -> bool:
+        """Check if the system needs priming before firing."""
+        with self._lock:
+            if not self._primed:
+                return True
+            # Re-prime if it's been too long since last fire
+            since_last = time.time() - self._last_fire_time
+            idle_threshold = self.keepalive_interval_min * 60 * 2
+            if since_last > idle_threshold:
+                self._primed = False
+                return True
+            return False
+
+    def prime(self, gimbal=None, camera=None) -> dict:
+        """
+        Run the priming sequence:
+        1. Aim nozzle straight down
+        2. Pump for configured duration
+        3. (Optional) Auto-detect water via camera
+        4. Mark as primed
+
+        Args:
+            gimbal: ServoTurretController to aim the nozzle down
+            camera: Sniper CameraStream for auto-detection (optional)
+
+        Returns:
+            dict with priming results
+        """
+        with self._lock:
+            if self._priming_in_progress:
+                return {"status": "already_priming"}
+            self._priming_in_progress = True
+
+        result = {"status": "priming", "duration_ms": self.prime_duration_ms}
+
+        try:
+            # Step 1: Aim straight down
+            if gimbal:
+                print(f"[Priming] Aiming nozzle down ({self.PRIME_PITCH}°, {self.PRIME_YAW}°)")
+                # Save current position to restore later
+                current_status = gimbal.get_status()
+                restore_pitch = current_status.get("pitch", 0)
+                restore_yaw = current_status.get("yaw", 0)
+
+                gimbal.set_angles(self.PRIME_PITCH, self.PRIME_YAW)
+                time.sleep(1.5)  # Let servo settle
+                result["aimed_down"] = True
+
+            # Step 2: Capture 'before' frame for auto-detection
+            before_frame = None
+            if self.auto_detect and camera:
+                before_frame = camera.get_frame()
+                if before_frame is not None:
+                    before_frame = before_frame.copy()
+
+            # Step 3: Pump for the configured duration
+            duration_sec = self.prime_duration_ms / 1000.0
+            print(f"[Priming] Pumping for {self.prime_duration_ms}ms...")
+            self._relay.set_pump(True)
+            time.sleep(duration_sec)
+            self._relay.set_pump(False)
+            result["pumped_sec"] = duration_sec
+
+            # Step 4: Auto-detect water flow
+            water_detected = False
+            if self.auto_detect and camera and before_frame is not None:
+                time.sleep(0.3)  # Brief settle
+                after_frame = camera.get_frame()
+                if after_frame is not None:
+                    water_detected = self._detect_water_flow(before_frame, after_frame)
+                    result["water_detected"] = water_detected
+
+            if not self.auto_detect:
+                water_detected = True  # Assume success without detection
+                result["water_detected"] = "assumed"
+
+            # Step 5: Restore gimbal position
+            if gimbal:
+                print(f"[Priming] Restoring gimbal to ({restore_pitch}°, {restore_yaw}°)")
+                gimbal.set_angles(restore_pitch, restore_yaw)
+                time.sleep(1.0)
+
+            # Mark as primed
+            with self._lock:
+                self._primed = water_detected
+                self._last_prime_time = time.time()
+                self._last_fire_time = time.time()
+
+            result["status"] = "primed" if water_detected else "prime_uncertain"
+            result["timestamp"] = time.strftime("%H:%M:%S")
+            print(f"[Priming] Complete: {'✅ Water detected' if water_detected else '⚠️ Uncertain'}")
+
+        except Exception as e:
+            result["status"] = "error"
+            result["error"] = str(e)
+            print(f"[Priming] Error: {e}")
+        finally:
+            with self._lock:
+                self._priming_in_progress = False
+
+        return result
+
+    def _detect_water_flow(self, before: 'np.ndarray', after: 'np.ndarray') -> bool:
+        """
+        Detect water flow by comparing before/after frames.
+        Water exiting the nozzle creates a visible change in the camera feed.
+        """
+        try:
+            import cv2
+            import numpy as np
+
+            before_gray = cv2.cvtColor(before, cv2.COLOR_BGR2GRAY)
+            after_gray = cv2.cvtColor(after, cv2.COLOR_BGR2GRAY)
+
+            before_gray = cv2.GaussianBlur(before_gray, (5, 5), 0)
+            after_gray = cv2.GaussianBlur(after_gray, (5, 5), 0)
+
+            diff = cv2.absdiff(before_gray, after_gray)
+            _, thresh = cv2.threshold(diff, 20, 255, cv2.THRESH_BINARY)
+
+            # Count changed pixels
+            changed_pixels = cv2.countNonZero(thresh)
+            total_pixels = thresh.shape[0] * thresh.shape[1]
+            change_pct = changed_pixels / total_pixels * 100
+
+            print(f"[Priming] Frame diff: {changed_pixels} pixels changed ({change_pct:.1f}%)")
+
+            # If more than 0.5% of frame changed, water is flowing
+            return change_pct > 0.5
+
+        except Exception as e:
+            print(f"[Priming] Detection error: {e}")
+            return False
+
+    def mark_fired(self):
+        """Call this after every fire command to track last fire time."""
+        with self._lock:
+            self._last_fire_time = time.time()
+
+    def get_status(self) -> dict:
+        """Return priming status for the API."""
+        with self._lock:
+            since_prime = time.time() - self._last_prime_time if self._last_prime_time else None
+            since_fire = time.time() - self._last_fire_time if self._last_fire_time else None
+            return {
+                "primed": self._primed,
+                "priming_in_progress": self._priming_in_progress,
+                "since_prime_sec": round(since_prime, 1) if since_prime else None,
+                "since_fire_sec": round(since_fire, 1) if since_fire else None,
+                "settings": {
+                    "prime_duration_ms": self.prime_duration_ms,
+                    "keepalive_interval_min": self.keepalive_interval_min,
+                    "keepalive_pulse_ms": self.keepalive_pulse_ms,
+                    "auto_detect": self.auto_detect,
+                    "keepalive_enabled": self.keepalive_enabled,
+                }
+            }
+
+    def update_settings(self, settings: dict):
+        """Update priming settings from the API."""
+        if "prime_duration_ms" in settings:
+            self.prime_duration_ms = max(500, min(int(settings["prime_duration_ms"]), 10000))
+        if "keepalive_interval_min" in settings:
+            self.keepalive_interval_min = max(1, min(int(settings["keepalive_interval_min"]), 60))
+        if "keepalive_pulse_ms" in settings:
+            self.keepalive_pulse_ms = max(50, min(int(settings["keepalive_pulse_ms"]), 1000))
+        if "auto_detect" in settings:
+            self.auto_detect = bool(settings["auto_detect"])
+        if "keepalive_enabled" in settings:
+            self.keepalive_enabled = bool(settings["keepalive_enabled"])
+        print(f"[Priming] Settings updated: {self.prime_duration_ms}ms prime, "
+              f"{self.keepalive_interval_min}min keepalive, auto_detect={self.auto_detect}")
+
+
+
+# ============================================================================
 # SOFTWARE ENDSTOPS (SAFE-001 §2, User Spec §4)
 # Hardware mechanical limits are wider (±130° yaw, ±45° pitch), but software
 # clamps to the values below to protect wiring through cable glands/service loops.

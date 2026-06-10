@@ -24,6 +24,7 @@ from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
     RelayController, LiDARController, create_turret_controller,
+    PrimingSystem,
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
     YAW_LIMIT, PITCH_LIMIT, PITCH_HOME,
     SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
@@ -63,6 +64,10 @@ cal_table = CalibrationTable(filepath=os.path.join(APP_DIR, "calibration_visual.
 cal_table.load()  # Load previous calibration if exists
 hit_detector = HitDetector()
 auto_cal = AutoCalibrator(cal_table, hit_detector)
+
+# Water Line Priming System
+primer = PrimingSystem(relay)
+primer.start_keepalive(gimbal=gimbal)
 
 
 # ============================================================================
@@ -340,12 +345,20 @@ def api_velocity_reset():
 def api_relay_fire():
     """
     Fire the water pump for a specified duration.
+    Auto-primes the line if needed (first shot fills the pipe).
     Body: {"duration": float}  (seconds, 0.05–2.0)
     """
     data = request.get_json(force=True)
     duration = float(data.get('duration', 0.4))
+
+    # Check if we need to prime first
+    if primer.needs_priming():
+        print("[app] Line needs priming — running prime sequence first")
+        primer.prime(gimbal=gimbal, camera=sniper_cam)
+
     relay.fire_pump(duration)
-    return jsonify({"fired": True, "duration": duration})
+    primer.mark_fired()
+    return jsonify({"fired": True, "duration": duration, "primed": True})
 
 
 @app.route('/api/relay/pump', methods=['POST'])
@@ -364,6 +377,39 @@ def api_relay_gimbal_power():
     state = bool(data.get('state', False))
     relay.set_gimbal_power(state)
     return jsonify(relay.get_status())
+
+
+# ============================================================================
+# PRIMING API
+# ============================================================================
+
+@app.route('/api/prime/status', methods=['GET'])
+def api_prime_status():
+    """Get priming system status."""
+    return jsonify(primer.get_status())
+
+
+@app.route('/api/prime/now', methods=['POST'])
+def api_prime_now():
+    """Manually trigger a prime sequence."""
+    result = primer.prime(gimbal=gimbal, camera=sniper_cam)
+    return jsonify(result)
+
+
+@app.route('/api/prime/settings', methods=['GET'])
+def api_prime_settings_get():
+    """Get priming settings."""
+    return jsonify(primer.get_status()["settings"])
+
+
+@app.route('/api/prime/settings', methods=['POST'])
+def api_prime_settings_set():
+    """Update priming settings.
+    Body: {"prime_duration_ms": int, "keepalive_interval_min": int,
+           "keepalive_pulse_ms": int, "auto_detect": bool, "keepalive_enabled": bool}"""
+    data = request.get_json(force=True)
+    primer.update_settings(data)
+    return jsonify(primer.get_status()["settings"])
 
 
 # ============================================================================
@@ -610,7 +656,8 @@ def api_cal_auto_start():
         scout_cam=scout_cam,
         sniper_cam=sniper_cam,
         relay=relay,
-        lidar=lidar
+        lidar=lidar,
+        primer=primer
     )
     return jsonify(result)
 

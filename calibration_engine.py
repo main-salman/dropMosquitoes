@@ -549,8 +549,9 @@ class AutoCalibrator:
         self._sniper_cam = None
         self._relay = None
         self._lidar = None
+        self._primer = None
 
-    def start(self, gimbal, scout_cam, sniper_cam, relay, lidar):
+    def start(self, gimbal, scout_cam, sniper_cam, relay, lidar, primer=None):
         """
         Start autonomous calibration in a background thread.
 
@@ -560,6 +561,7 @@ class AutoCalibrator:
             sniper_cam: Sniper CameraStream (on gimbal)
             relay: RelayController instance
             lidar: LiDARController instance
+            primer: PrimingSystem instance (optional, for auto-priming)
         """
         with self._lock:
             if self._running:
@@ -570,6 +572,7 @@ class AutoCalibrator:
             self._sniper_cam = sniper_cam
             self._relay = relay
             self._lidar = lidar
+            self._primer = primer
 
             self.table.clear()
             self._phase = "scanning"
@@ -638,6 +641,12 @@ class AutoCalibrator:
             if not self._running:
                 return
 
+            # Phase 1.5: Prime the water line before first shot
+            self._phase_prime()
+
+            if not self._running:
+                return
+
             # Phase 2: Calibrate each target
             self._phase_calibrate()
 
@@ -683,6 +692,35 @@ class AutoCalibrator:
             "message": f"Found {len(targets)} calibration targets",
             "targets": [(t["pitch"], t["yaw"]) for t in targets]
         })
+
+    def _phase_prime(self):
+        """Phase 1.5: Prime the water line if needed."""
+        if self._primer and self._primer.needs_priming():
+            self._update("Priming water line — aiming down & pumping...", phase="priming")
+            self._add_log({
+                "type": "priming",
+                "message": f"💧 Priming water line ({self._primer.prime_duration_ms}ms)..."
+            })
+
+            result = self._primer.prime(
+                gimbal=self._gimbal,
+                camera=self._sniper_cam
+            )
+
+            status = "✅ Water detected" if result.get("water_detected") == True else \
+                     "⚠️ Primed (uncertain)" if result.get("status") == "prime_uncertain" else \
+                     "✅ Primed"
+
+            self._add_log({
+                "type": "prime_complete",
+                "message": f"💧 Priming complete: {status}",
+                "result": result
+            })
+        else:
+            self._add_log({
+                "type": "prime_skip",
+                "message": "💧 Water line already primed — skipping"
+            })
 
     def _phase_calibrate(self):
         """Phase 2: Fire at each target, detect hits, adapt offset."""
