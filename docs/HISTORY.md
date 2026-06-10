@@ -572,3 +572,11 @@
 - **[CODE]** `app.py`: Added visual calibration wizard API (`/api/calibration/wizard/*`), offset management (`/api/calibration/offset`), free-form fire-and-detect (`/api/calibration/freefire`), annotated snapshot endpoints.
 - **[CODE]** `app.py`: Click-to-aim pipeline (`api_gimbal_click`) now applies visual calibration offsets before ballistic/lead corrections.
 - **[UI]** `index.html`: Replaced basic calibration tab with full wizard-based interface — progress dots, sniper feed click-to-aim, before/after image comparison, manual offset sliders, free-form fire-and-detect.
+
+## 2026-06-10 — ONE-BUTTON AUTO-CALIBRATION (COMMERCIAL UX)
+
+- **[DESIGN]** User requirement: "dead easy, one button, system calibrates itself" for commercial product.
+- **[CODE]** `calibration_engine.py`: Replaced `CalibrationWizard` with `AutoCalibrator` — fully autonomous background thread calibration. `TargetSelector` uses Shi-Tomasi corner detection (`cv2.goodFeaturesToTrack`) on Scout camera with greedy farthest-point sampling for spatial spread.
+- **[CODE]** `AutoCalibrator`: Adaptive offset (running average applied to next shot for progressive accuracy). 3-tier retry on miss: longer burst (0.8s) → lower threshold (15px) → skip point. Fallback grid pattern when feature detection fails.
+- **[CODE]** `app.py`: Replaced wizard endpoints with 3 auto-cal endpoints: `POST /api/calibration/auto/start`, `GET /api/calibration/auto/status`, `POST /api/calibration/auto/stop`. Background thread + UI polling at 500ms.
+- **[UI]** `index.html`: One-button "🎯 Auto-Calibrate" interface with animated progress bar, live stats (hits/misses/skips), rolling activity log, before/after comparison, and manual fine-tuning sliders.

@@ -267,55 +267,55 @@
 <!-- ===================== CALIBRATION TAB ===================== -->
 <div class="tab-pane" id="p-cal">
   <div class="cal-actions">
-    <span style="font-size:15px;font-weight:600">🎯 Visual Calibration</span>
+    <span style="font-size:15px;font-weight:600">🎯 Auto-Calibration</span>
     <span style="flex:1"></span>
-    <span class="cal-stat" id="wiz-status">Idle</span>
+    <span class="cal-stat" id="ac-phase">Idle</span>
   </div>
   <div class="cal-section"><div class="cal-grid">
 
-    <!-- Wizard Panel -->
+    <!-- Auto-Calibrate Panel -->
     <div class="card" style="grid-column:1/-1">
-      <div class="card-title">🧙 Calibration Wizard</div>
+      <div class="card-title">🚀 One-Button Calibration</div>
       <div class="card-body">
-        <!-- Progress dots -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px" id="wiz-progress">
-          <span class="wiz-dot active" id="wd-0">1</span>
-          <span style="color:var(--dim);font-size:10px">→</span>
-          <span class="wiz-dot" id="wd-1">2</span>
-          <span style="color:var(--dim);font-size:10px">→</span>
-          <span class="wiz-dot" id="wd-2">3</span>
-          <span style="color:var(--dim);font-size:10px">→</span>
-          <span class="wiz-dot" id="wd-3">4</span>
-          <span style="color:var(--dim);font-size:10px">→</span>
-          <span class="wiz-dot" id="wd-4">5</span>
+        <p style="font-size:12px;color:var(--dim);margin-bottom:14px">Press the button below. The system will automatically scan the scene, pick 10 targets, fire water at each, verify hits, and calibrate itself.</p>
+
+        <!-- Progress bar -->
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;height:32px;overflow:hidden;margin-bottom:10px;position:relative">
+          <div id="ac-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:8px;transition:width 0.5s ease"></div>
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff" id="ac-bar-text">Ready to calibrate</div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px">
+          <span style="color:var(--dim)">Point: <b id="ac-point" style="color:var(--fg)">0/10</b></span>
+          <span style="color:var(--green)">✅ Hits: <b id="ac-hits">0</b></span>
+          <span style="color:var(--red)">❌ Missed: <b id="ac-fails">0</b></span>
+          <span style="color:var(--dim)">⏭ Skipped: <b id="ac-skips">0</b></span>
           <span style="flex:1"></span>
-          <span style="font-size:12px;color:var(--dim)" id="wiz-point">Point 0/5</span>
+          <span style="color:var(--accent)" id="ac-offset">Offset: —</span>
         </div>
-        <!-- Instructions -->
-        <div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.2);border-radius:10px;padding:14px;margin-bottom:14px">
-          <p style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px" id="wiz-step-name">Ready</p>
-          <p style="font-size:12px;color:var(--dim)" id="wiz-instructions">Click 'Start Calibration' to begin the guided wizard.</p>
+
+        <!-- Status line -->
+        <div style="background:rgba(10,132,255,0.08);border:1px solid rgba(10,132,255,0.2);border-radius:10px;padding:12px;margin-bottom:14px;min-height:40px">
+          <p style="font-size:12px;color:var(--dim);margin:0" id="ac-status">Click 'Auto-Calibrate' to begin. The system will do everything automatically.</p>
         </div>
-        <!-- Wizard action buttons -->
+
+        <!-- Action buttons -->
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-green" id="wiz-start-btn" onclick="wizStart()">🚀 Start Calibration</button>
-          <button class="btn btn-blue" id="wiz-next-btn" onclick="wizNext()" style="display:none">➡️ Next</button>
-          <button class="btn btn-red" id="wiz-fire-btn" onclick="wizFire()" style="display:none">💧 Fire & Detect</button>
-          <button class="btn btn-green" id="wiz-confirm-btn" onclick="wizVerify(true)" style="display:none">✅ Confirm Hit</button>
-          <button class="btn" id="wiz-skip-btn" onclick="wizSkip()" style="display:none">⏭ Skip Point</button>
-          <button class="btn" id="wiz-reset-btn" onclick="wizReset()" style="display:none">🔄 Reset</button>
+          <button class="btn btn-green" id="ac-start-btn" onclick="acStart()" style="font-size:14px;padding:10px 24px">🎯 Auto-Calibrate</button>
+          <button class="btn btn-red" id="ac-stop-btn" onclick="acStop()" style="display:none">⏹ Stop</button>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="calSaveOffset()">💾 Save</button>
+          <button class="btn" onclick="calLoadOffset()">🔄 Load</button>
         </div>
       </div>
     </div>
 
-    <!-- Sniper Feed for Calibration -->
+    <!-- Live Sniper Feed -->
     <div class="card">
-      <div class="card-title">🔭 Sniper Feed — Click to Mark Target</div>
+      <div class="card-title">🔭 Live Sniper Feed</div>
       <div class="card-body" style="padding:0;position:relative">
-        <img id="cal-sniper-feed" src="/stream/sniper" style="width:100%;border-radius:0 0 12px 12px;cursor:crosshair;display:block" onclick="wizAimClick(event)">
-        <!-- Aim marker overlay -->
-        <div id="cal-aim-marker" style="display:none;position:absolute;width:20px;height:20px;border:2px solid #ff3b30;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)"></div>
-        <!-- Hit marker overlay -->
+        <img id="cal-sniper-feed" src="/stream/sniper" style="width:100%;border-radius:0 0 12px 12px;display:block">
         <div id="cal-hit-marker" style="display:none;position:absolute;width:24px;height:24px;border:2px solid #30d158;border-radius:50%;pointer-events:none;transform:translate(-50%,-50%)">
           <div style="position:absolute;top:50%;left:50%;width:6px;height:6px;background:#30d158;border-radius:50%;transform:translate(-50%,-50%)"></div>
         </div>
@@ -340,11 +340,20 @@
       </div>
     </div>
 
+    <!-- Activity Log -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">📋 Activity Log</div>
+      <div class="card-body">
+        <div class="cal-log" id="ac-log" style="max-height:250px">Waiting for calibration to start...
+</div>
+      </div>
+    </div>
+
     <!-- Manual Offset Adjustment -->
     <div class="card">
-      <div class="card-title">🎛️ Manual Offset Adjustment</div>
+      <div class="card-title">🎛️ Manual Fine-Tuning</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Fine-tune the camera-nozzle offset manually. These values are added to every aim command.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Fine-tune the offset after auto-calibration if needed.</p>
         <div class="sl">
           <label>Pitch Offset (°)</label>
           <input type="range" id="cal-off-pitch" min="-15" max="15" step="0.1" value="0" oninput="$('cal-off-pitch-v').textContent=this.value+'°'">
@@ -356,9 +365,8 @@
           <div class="v" id="cal-off-yaw-v">0°</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-blue" style="flex:1" onclick="calApplyOffset()">✅ Apply Offset</button>
+          <button class="btn btn-blue" style="flex:1" onclick="calApplyOffset()">✅ Apply</button>
           <button class="btn btn-green" style="flex:1" onclick="calSaveOffset()">💾 Save</button>
-          <button class="btn" style="flex:1" onclick="calLoadOffset()">🔄 Load</button>
         </div>
       </div>
     </div>
@@ -367,24 +375,11 @@
     <div class="card">
       <div class="card-title">🔥 Free-Form Fire & Detect</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Manual fire-and-detect: aim at any angle, fire, see where it hits.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Manual fire-and-detect for testing specific angles.</p>
         <div class="cal-row"><label>Pitch (°)</label><input type="number" id="ff-pitch" value="0" step="1"><label>Yaw (°)</label><input type="number" id="ff-yaw" value="0" step="1"></div>
         <div class="cal-row"><label>Pulse (s)</label><input type="number" id="ff-dur" value="0.4" step="0.05" min="0.05" max="2.0"></div>
         <button class="btn btn-red" style="width:100%;margin-top:8px" onclick="calFreeFire()">🔥 Aim → Fire → Detect</button>
         <div class="cal-result" id="ff-log">Ready.</div>
-      </div>
-    </div>
-
-    <!-- Calibration Data -->
-    <div class="card">
-      <div class="card-title">📊 Calibration Data</div>
-      <div class="card-body">
-        <pre class="cal-result" id="cal-data-log" style="font-size:11px;line-height:1.6;max-height:250px;overflow-y:auto">No calibration data. Run the wizard or free-form calibration.</pre>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-green btn-sm" onclick="calSaveOffset()">💾 Save</button>
-          <button class="btn btn-sm" onclick="calLoadOffset()">🔄 Reload</button>
-          <button class="btn btn-sm" style="background:var(--red);color:#fff" onclick="wizReset()">🗑 Clear All</button>
-        </div>
       </div>
     </div>
 
@@ -540,152 +535,144 @@ async function runAll(){$('bra').disabled=true;$('ras').innerHTML='<span class="
 
 function updTotal(){let p=0,f=0;SUITES.forEach(id=>{if(ST[id]){p+=ST[id].p||0;f+=ST[id].f||0}});if(p+f)$('ts').innerHTML=`<b style="color:var(--green)">${p} passed</b> · <b style="color:${f?'var(--red)':'var(--green)'}">${f} failed</b>`}
 
-// ---- Visual Calibration Wizard ----
-let wizState = null;
-const STEP_NAMES = {idle:'Ready',center:'Position Servos',aim:'Mark Target',fire:'Fire & Detect',verify:'Verify Hit',complete:'Complete'};
+// ---- Auto-Calibration ----
+let acPolling = null;
 
-async function wizFetch(url, body=null) {
-  const opts = body ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)} : (url.includes('step')?{}:{method:'POST'});
-  const d = await fetch(url, opts).then(r=>r.json());
-  wizState = d;
-  wizUpdateUI(d);
-  return d;
+async function acStart() {
+  $('ac-start-btn').style.display = 'none';
+  $('ac-stop-btn').style.display = '';
+  $('ac-log').innerHTML = '';
+  $('ac-bar').style.width = '0%';
+  $('ac-bar-text').textContent = 'Starting...';
+
+  await fetch('/api/calibration/auto/start', {method:'POST'});
+
+  // Start polling status every 500ms
+  acPolling = setInterval(acPoll, 500);
+  acPoll();
 }
 
-function wizUpdateUI(d) {
-  // Update status badge
-  $('wiz-status').textContent = STEP_NAMES[d.step] || d.step;
-  // Update progress dots
-  for(let i=0;i<5;i++){
-    const dot=$('wd-'+i);
-    dot.className='wiz-dot';
-    if(i<d.point_index) dot.className='wiz-dot done';
-    else if(i===d.point_index && d.step!=='idle' && d.step!=='complete') dot.className='wiz-dot active';
-  }
-  $('wiz-point').textContent=`Point ${d.point_index}/${d.total_points}`;
-  // Update step name and instructions
-  $('wiz-step-name').textContent=STEP_NAMES[d.step]||d.step;
-  $('wiz-instructions').textContent=d.instructions||'';
-  // Show/hide buttons based on step
-  const btns={start:d.step==='idle'||d.step==='complete',next:d.step==='center',fire:d.step==='fire',confirm:d.step==='verify',skip:['center','aim','fire'].includes(d.step),reset:d.step!=='idle'};
-  $('wiz-start-btn').style.display=btns.start?'':'none';
-  $('wiz-next-btn').style.display=btns.next?'':'none';
-  $('wiz-fire-btn').style.display=btns.fire?'':'none';
-  $('wiz-confirm-btn').style.display=btns.confirm?'':'none';
-  $('wiz-skip-btn').style.display=btns.skip?'':'none';
-  $('wiz-reset-btn').style.display=btns.reset?'':'none';
-  // Update calibration data display
-  if(d.table){
-    const t=d.table;
-    let txt=`Global Offset: pitch=${t.offset_pitch}° yaw=${t.offset_yaw}°\n`;
-    txt+=`Points: ${t.confirmed_count} confirmed / ${t.point_count} total\n`;
-    if(t.last_updated) txt+=`Last Updated: ${t.last_updated}\n`;
-    txt+='\n';
-    if(t.points && t.points.length) {
-      t.points.forEach((p,i)=>{
-        txt+=`#${i+1}: Aim(${p.aim_px},${p.aim_py}) → Hit(${p.hit_px},${p.hit_py}) Offset: P=${p.offset_pitch.toFixed(2)}° Y=${p.offset_yaw.toFixed(2)}° ${p.hit_confirmed?'✅':'❓'}\n`;
-      });
+async function acStop() {
+  await fetch('/api/calibration/auto/stop', {method:'POST'});
+  if (acPolling) { clearInterval(acPolling); acPolling = null; }
+  $('ac-start-btn').style.display = '';
+  $('ac-stop-btn').style.display = 'none';
+  $('ac-bar-text').textContent = 'Cancelled';
+}
+
+async function acPoll() {
+  try {
+    const d = await fetch('/api/calibration/auto/status').then(r => r.json());
+    acUpdateUI(d);
+
+    // Stop polling when done
+    if (!d.running && acPolling) {
+      clearInterval(acPolling);
+      acPolling = null;
+      $('ac-start-btn').style.display = '';
+      $('ac-stop-btn').style.display = 'none';
     }
-    $('cal-data-log').textContent=txt;
+  } catch(e) { console.error('Poll error:', e); }
+}
+
+function acUpdateUI(d) {
+  // Phase badge
+  const phaseNames = {idle:'Idle',scanning:'Scanning...',calibrating:'Calibrating',complete:'✅ Complete',error:'❌ Error',cancelled:'Cancelled'};
+  $('ac-phase').textContent = phaseNames[d.phase] || d.phase;
+
+  // Progress bar
+  $('ac-bar').style.width = d.progress_pct + '%';
+  $('ac-bar-text').textContent = d.phase === 'complete'
+    ? '✅ Calibration Complete!'
+    : `Point ${d.point_index + 1} / ${d.total_points}`;
+
+  // Stats
+  $('ac-point').textContent = `${d.point_index}/${d.total_points}`;
+  $('ac-hits').textContent = d.success_count;
+  $('ac-fails').textContent = d.fail_count;
+  $('ac-skips').textContent = d.skip_count;
+
+  // Offset display
+  if (d.table) {
+    $('ac-offset').textContent = `Offset: P=${d.table.offset_pitch}° Y=${d.table.offset_yaw}°`;
+    $('cal-off-pitch').value = d.table.offset_pitch;
+    $('cal-off-pitch-v').textContent = d.table.offset_pitch + '°';
+    $('cal-off-yaw').value = d.table.offset_yaw;
+    $('cal-off-yaw-v').textContent = d.table.offset_yaw + '°';
   }
-  // Update hit detection info
-  if(d.hit_detector){
-    const h=d.hit_detector;
-    let info=h.hit_detected ? `✅ Hit detected at (${h.hit_x}, ${h.hit_y}) — confidence: ${h.confidence}px²` : (h.has_before ? '⏳ Waiting for detection...' : 'No detection data yet.');
-    $('cal-detection-info').textContent=info;
-    // Show hit marker
-    if(h.hit_detected){
-      const feed=$('cal-sniper-feed');
-      const r=feed.getBoundingClientRect();
-      const sx=h.hit_x/1280*r.width;
-      const sy=h.hit_y/720*r.height;
-      $('cal-hit-marker').style.display='block';
-      $('cal-hit-marker').style.left=sx+'px';
-      $('cal-hit-marker').style.top=sy+'px';
+
+  // Status line
+  $('ac-status').textContent = d.status;
+
+  // Activity log
+  if (d.log && d.log.length) {
+    let html = '';
+    d.log.forEach(e => {
+      const cls = e.type === 'hit' ? 'ok' : (e.type === 'miss' || e.type === 'error' ? 'err' : 'info');
+      html += `<span class="${cls}">[${e.timestamp}] ${e.message}</span>\n`;
+    });
+    $('ac-log').innerHTML = html;
+    $('ac-log').scrollTop = $('ac-log').scrollHeight;
+  }
+
+  // Hit detection info
+  if (d.hit_detector) {
+    const h = d.hit_detector;
+    if (h.hit_detected) {
+      $('cal-detection-info').textContent = `✅ Hit at (${h.hit_x}, ${h.hit_y}) — confidence: ${h.confidence}px²`;
+      // Show hit marker on sniper feed
+      const feed = $('cal-sniper-feed');
+      const r = feed.getBoundingClientRect();
+      const sx = h.hit_x / 1280 * r.width;
+      const sy = h.hit_y / 720 * r.height;
+      $('cal-hit-marker').style.display = 'block';
+      $('cal-hit-marker').style.left = sx + 'px';
+      $('cal-hit-marker').style.top = sy + 'px';
     }
   }
-  // Load before/after images
-  if(d.step==='verify'||d.step==='complete'){
-    $('cal-before-img').src='/api/calibration/snapshot/before?t='+Date.now();
-    $('cal-after-img').src='/api/calibration/snapshot?t='+Date.now();
-  }
-  // Update offset sliders from table
-  if(d.table){
-    $('cal-off-pitch').value=d.table.offset_pitch;
-    $('cal-off-pitch-v').textContent=d.table.offset_pitch+'°';
-    $('cal-off-yaw').value=d.table.offset_yaw;
-    $('cal-off-yaw-v').textContent=d.table.offset_yaw+'°';
+
+  // Load before/after images during calibration
+  if (d.phase === 'calibrating' || d.phase === 'complete') {
+    const ts = Date.now();
+    $('cal-before-img').src = '/api/calibration/snapshot/before?t=' + ts;
+    $('cal-after-img').src = '/api/calibration/snapshot?t=' + ts;
   }
 }
 
-async function wizStart(){ await wizFetch('/api/calibration/wizard/start') }
-async function wizNext(){ await wizFetch('/api/calibration/wizard/next') }
-async function wizFire(){
-  $('wiz-fire-btn').disabled=true;
-  $('wiz-fire-btn').innerHTML='<span class="sp"></span> Firing...';
-  $('cal-hit-marker').style.display='none';
-  $('cal-aim-marker').style.display='none';
-  await wizFetch('/api/calibration/wizard/fire',{duration:0.4});
-  $('wiz-fire-btn').disabled=false;
-  $('wiz-fire-btn').textContent='💧 Fire & Detect';
+async function calApplyOffset() {
+  await fetch('/api/calibration/offset', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({offset_pitch: +$('cal-off-pitch').value, offset_yaw: +$('cal-off-yaw').value})});
+  showToast('✅ Offset Applied', `Pitch: ${$('cal-off-pitch').value}° Yaw: ${$('cal-off-yaw').value}°`);
 }
-async function wizVerify(confirmed){ await wizFetch('/api/calibration/wizard/verify',{confirmed}) }
-async function wizSkip(){ await wizFetch('/api/calibration/wizard/skip') }
-async function wizReset(){
-  await wizFetch('/api/calibration/wizard/reset');
-  $('cal-hit-marker').style.display='none';
-  $('cal-aim-marker').style.display='none';
-  $('cal-before-img').src='';
-  $('cal-after-img').src='';
+async function calSaveOffset() {
+  await fetch('/api/calibration/offset/save', {method:'POST'});
+  showToast('💾 Saved', 'Calibration saved to calibration_visual.json');
+}
+async function calLoadOffset() {
+  const d = await fetch('/api/calibration/offset').then(r => r.json());
+  $('cal-off-pitch').value = d.offset_pitch; $('cal-off-pitch-v').textContent = d.offset_pitch + '°';
+  $('cal-off-yaw').value = d.offset_yaw; $('cal-off-yaw-v').textContent = d.offset_yaw + '°';
+  showToast('🔄 Loaded', `Offset: pitch=${d.offset_pitch}° yaw=${d.offset_yaw}°`);
 }
 
-function wizAimClick(e){
-  if(!wizState || wizState.step!=='aim') return;
-  const feed=$('cal-sniper-feed');
-  const r=feed.getBoundingClientRect();
-  const px=Math.round((e.clientX-r.left)*1280/r.width);
-  const py=Math.round((e.clientY-r.top)*720/r.height);
-  // Show aim marker
-  $('cal-aim-marker').style.display='block';
-  $('cal-aim-marker').style.left=(e.clientX-r.left)+'px';
-  $('cal-aim-marker').style.top=(e.clientY-r.top)+'px';
-  // Send to wizard
-  wizFetch('/api/calibration/wizard/aim',{px,py});
-}
-
-async function calApplyOffset(){
-  await fetch('/api/calibration/offset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({offset_pitch:+$('cal-off-pitch').value,offset_yaw:+$('cal-off-yaw').value})});
-  showToast('✅ Offset Applied',`Pitch: ${$('cal-off-pitch').value}° Yaw: ${$('cal-off-yaw').value}°`);
-}
-async function calSaveOffset(){
-  await fetch('/api/calibration/offset/save',{method:'POST'});
-  showToast('💾 Saved','Calibration saved to calibration_visual.json');
-}
-async function calLoadOffset(){
-  const d=await fetch('/api/calibration/offset').then(r=>r.json());
-  $('cal-off-pitch').value=d.offset_pitch;$('cal-off-pitch-v').textContent=d.offset_pitch+'°';
-  $('cal-off-yaw').value=d.offset_yaw;$('cal-off-yaw-v').textContent=d.offset_yaw+'°';
-  $('cal-data-log').textContent=JSON.stringify(d,null,2);
-  showToast('🔄 Loaded',`Offset: pitch=${d.offset_pitch}° yaw=${d.offset_yaw}°`);
-}
-
-async function calFreeFire(){
-  $('ff-log').textContent='Aiming...\n';
-  const d=await fetch('/api/calibration/freefire',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pitch:+$('ff-pitch').value,yaw:+$('ff-yaw').value,duration:+$('ff-dur').value,aim_px:640,aim_py:360})}).then(r=>r.json());
-  let log=`Aimed: P=${d.aimed.pitch}° Y=${d.aimed.yaw}°\nDistance: ${d.distance_m}m\n`;
-  if(d.detection.hit_detected){
-    log+=`✅ Hit detected at (${d.detection.hit_x}, ${d.detection.hit_y})\n`;
-    if(d.offset) log+=`Offset: P=${d.offset.pitch}° Y=${d.offset.yaw}° (${d.offset.px}px, ${d.offset.py}px)\n`;
+async function calFreeFire() {
+  $('ff-log').textContent = 'Aiming...\n';
+  const d = await fetch('/api/calibration/freefire', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({pitch:+$('ff-pitch').value, yaw:+$('ff-yaw').value, duration:+$('ff-dur').value, aim_px:640, aim_py:360})}).then(r => r.json());
+  let log = `Aimed: P=${d.aimed.pitch}° Y=${d.aimed.yaw}°\nDistance: ${d.distance_m}m\n`;
+  if (d.detection.hit_detected) {
+    log += `✅ Hit detected at (${d.detection.hit_x}, ${d.detection.hit_y})\n`;
+    if (d.offset) log += `Offset: P=${d.offset.pitch}° Y=${d.offset.yaw}° (${d.offset.px}px, ${d.offset.py}px)\n`;
   } else {
-    log+=`❌ No hit detected — try a darker target surface or adjust threshold\n`;
+    log += `❌ No hit detected — try a darker target surface or adjust threshold\n`;
   }
-  $('ff-log').textContent=log;
-  $('cal-before-img').src='/api/calibration/snapshot/before?t='+Date.now();
-  $('cal-after-img').src='/api/calibration/snapshot?t='+Date.now();
+  $('ff-log').textContent = log;
+  $('cal-before-img').src = '/api/calibration/snapshot/before?t=' + Date.now();
+  $('cal-after-img').src = '/api/calibration/snapshot?t=' + Date.now();
 }
 
-function calRefresh(){
-  wizFetch('/api/calibration/wizard/step');
+function calRefresh() {
+  acPoll();
 }
 
 // ---- Crosshair / Calibration ----

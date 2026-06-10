@@ -29,7 +29,7 @@ from hardware import (
     SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
-from calibration_engine import CalibrationTable, HitDetector, CalibrationWizard
+from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
 
 # ============================================================================
 # FLASK APP INITIALIZATION
@@ -62,7 +62,7 @@ ARC_COMPENSATION_DEG = 12.0
 cal_table = CalibrationTable(filepath=os.path.join(APP_DIR, "calibration_visual.json"))
 cal_table.load()  # Load previous calibration if exists
 hit_detector = HitDetector()
-cal_wizard = CalibrationWizard(cal_table, hit_detector)
+auto_cal = AutoCalibrator(cal_table, hit_detector)
 
 
 # ============================================================================
@@ -599,86 +599,33 @@ def api_cal_clear():
 
 
 # ============================================================================
-# VISUAL CALIBRATION WIZARD API — SW-001 §2.8
+# AUTO-CALIBRATION API — SW-001 §2.8
 # ============================================================================
 
-@app.route('/api/calibration/wizard/start', methods=['POST'])
-def api_cal_wizard_start():
-    """Start the calibration wizard. Resets all previous calibration data."""
-    cal_wizard.start()
-    return jsonify(cal_wizard.get_state())
+@app.route('/api/calibration/auto/start', methods=['POST'])
+def api_cal_auto_start():
+    """Start autonomous one-button calibration in a background thread."""
+    result = auto_cal.start(
+        gimbal=gimbal,
+        scout_cam=scout_cam,
+        sniper_cam=sniper_cam,
+        relay=relay,
+        lidar=lidar
+    )
+    return jsonify(result)
 
 
-@app.route('/api/calibration/wizard/step', methods=['GET'])
-def api_cal_wizard_step():
-    """Get current wizard step, instructions, and state."""
-    return jsonify(cal_wizard.get_state())
+@app.route('/api/calibration/auto/status', methods=['GET'])
+def api_cal_auto_status():
+    """Get live calibration progress (polled by UI every 500ms)."""
+    return jsonify(auto_cal.get_status())
 
 
-@app.route('/api/calibration/wizard/next', methods=['POST'])
-def api_cal_wizard_next():
-    """Advance from CENTER step: move servos to pattern position, go to AIM."""
-    state = cal_wizard.get_state()
-    if state['step'] == 'center':
-        # Move servos to the calibration pattern position
-        gimbal.set_angles(state['pattern_pitch'], state['pattern_yaw'])
-        time.sleep(1.0)  # Let servos settle
-        cal_wizard.advance_to_aim()
-    return jsonify(cal_wizard.get_state())
-
-
-@app.route('/api/calibration/wizard/aim', methods=['POST'])
-def api_cal_wizard_aim():
-    """User clicked on a target in the sniper feed.
-    Body: {"px": int, "py": int}"""
-    data = request.get_json(force=True)
-    px = int(data.get('px', 0))
-    py = int(data.get('py', 0))
-    cal_wizard.record_aim(px, py)
-    return jsonify(cal_wizard.get_state())
-
-
-@app.route('/api/calibration/wizard/fire', methods=['POST'])
-def api_cal_wizard_fire():
-    """Fire water and detect where it hits.
-    Body: {"duration": float (optional, default 0.4)}"""
-    data = request.get_json(force=True) if request.data else {}
-    duration = float(data.get('duration', 0.4))
-    distance = lidar.read_distance()
-    result = cal_wizard.fire_and_detect(
-        camera=sniper_cam, relay=relay,
-        fire_duration=duration, distance_m=distance)
-    return jsonify({**cal_wizard.get_state(), "detection": result})
-
-
-@app.route('/api/calibration/wizard/verify', methods=['POST'])
-def api_cal_wizard_verify():
-    """Confirm or correct the detected hit location.
-    Body: {"confirmed": bool, "corrected_px": int, "corrected_py": int}"""
-    data = request.get_json(force=True)
-    confirmed = bool(data.get('confirmed', True))
-    cpx = data.get('corrected_px')
-    cpy = data.get('corrected_py')
-    cal_wizard.verify_hit(
-        confirmed=confirmed,
-        corrected_px=int(cpx) if cpx is not None else None,
-        corrected_py=int(cpy) if cpy is not None else None)
-    return jsonify(cal_wizard.get_state())
-
-
-@app.route('/api/calibration/wizard/skip', methods=['POST'])
-def api_cal_wizard_skip():
-    """Skip the current calibration point."""
-    cal_wizard.skip_point()
-    return jsonify(cal_wizard.get_state())
-
-
-@app.route('/api/calibration/wizard/reset', methods=['POST'])
-def api_cal_wizard_reset():
-    """Reset wizard to idle and clear calibration data."""
-    cal_wizard.reset()
-    cal_table.clear()
-    return jsonify(cal_wizard.get_state())
+@app.route('/api/calibration/auto/stop', methods=['POST'])
+def api_cal_auto_stop():
+    """Cancel in-progress calibration."""
+    auto_cal.stop()
+    return jsonify(auto_cal.get_status())
 
 
 @app.route('/api/calibration/offset', methods=['GET'])

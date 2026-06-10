@@ -343,194 +343,522 @@ class HitDetector:
 
 
 # ============================================================================
-# CALIBRATION WIZARD — Step-by-step guided calibration
+# TARGET SELECTION — Feature Detection for Auto-Calibration
 # ============================================================================
 
-class CalibrationWizard:
+class TargetSelector:
     """
-    Guided calibration state machine.
+    Scan the scene and pick well-distributed high-contrast target points.
 
-    Steps:
-    1. CENTER — Verify sniper camera sees the scene correctly
-    2. AIM — User clicks on a target in the sniper feed
-    3. FIRE — System fires water, captures before/after
-    4. VERIFY — User confirms or corrects detected hit location
-    5. NEXT — Move to next calibration point or finish
-
-    Calibration pattern: center + 4 corners (5 points total).
+    Uses Shi-Tomasi corner detection on the Scout camera (wide-angle, fixed)
+    to find features, then selects N points that are maximally spread across
+    the servo's range of motion using greedy farthest-point sampling.
     """
 
-    STEPS = ["idle", "center", "aim", "fire", "verify", "complete"]
+    # Shi-Tomasi parameters
+    MAX_CORNERS = 200         # Maximum corners to detect
+    QUALITY_LEVEL = 0.05      # Minimum corner quality (0-1)
+    MIN_DISTANCE = 40         # Minimum pixel distance between corners
+    BLOCK_SIZE = 7            # Neighborhood size for corner detection
 
-    # Default 5-point calibration pattern (pitch, yaw) in degrees
-    CALIBRATION_PATTERN = [
-        (0, 0),       # Center
-        (-15, -20),   # Top-left
-        (-15, 20),    # Top-right
-        (15, -20),    # Bottom-left
-        (15, 20),     # Bottom-right
-    ]
+    # Frame margins — exclude edges where servos can't reach
+    MARGIN_FRACTION = 0.08    # Skip outer 8% of frame (endstop dead zone)
+
+    def __init__(self, fov_h: float = 110.0, fov_v: float = 75.0,
+                 frame_w: int = 1280, frame_h: int = 720):
+        self.fov_h = fov_h
+        self.fov_v = fov_v
+        self.frame_w = frame_w
+        self.frame_h = frame_h
+
+    def detect_targets(self, frame: np.ndarray, n_targets: int = 10) -> List[dict]:
+        """
+        Detect N well-distributed target points in the frame.
+
+        Args:
+            frame: BGR image from the Scout camera.
+            n_targets: Number of targets to select.
+
+        Returns:
+            List of dicts: [{"px": int, "py": int, "pitch": float, "yaw": float,
+                            "quality": float}, ...]
+        """
+        if not CV2_AVAILABLE or frame is None:
+            return self._fallback_grid(n_targets)
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        # Detect Shi-Tomasi corners
+        corners = cv2.goodFeaturesToTrack(
+            gray,
+            maxCorners=self.MAX_CORNERS,
+            qualityLevel=self.QUALITY_LEVEL,
+            minDistance=self.MIN_DISTANCE,
+            blockSize=self.BLOCK_SIZE
+        )
+
+        if corners is None or len(corners) < n_targets:
+            print(f"[TargetSelector] Only {len(corners) if corners is not None else 0} "
+                  f"corners found, falling back to grid pattern")
+            return self._fallback_grid(n_targets)
+
+        # Filter out margins
+        margin_x = int(self.frame_w * self.MARGIN_FRACTION)
+        margin_y = int(self.frame_h * self.MARGIN_FRACTION)
+        valid = []
+        for c in corners:
+            px, py = int(c[0][0]), int(c[0][1])
+            if margin_x < px < self.frame_w - margin_x and \
+               margin_y < py < self.frame_h - margin_y:
+                valid.append((px, py))
+
+        if len(valid) < n_targets:
+            return self._fallback_grid(n_targets)
+
+        # Greedy farthest-point sampling for maximum spatial spread
+        selected = [valid[0]]  # Start with first valid point
+        remaining = valid[1:]
+
+        while len(selected) < n_targets and remaining:
+            best_point = None
+            best_min_dist = -1
+            for p in remaining:
+                min_dist = min(
+                    math.sqrt((p[0] - s[0])**2 + (p[1] - s[1])**2)
+                    for s in selected
+                )
+                if min_dist > best_min_dist:
+                    best_min_dist = min_dist
+                    best_point = p
+            if best_point:
+                selected.append(best_point)
+                remaining.remove(best_point)
+
+        # Convert pixel → servo angles
+        targets = []
+        for px, py in selected:
+            pitch, yaw = self._pixel_to_angle(px, py)
+            targets.append({
+                "px": px, "py": py,
+                "pitch": round(pitch, 2),
+                "yaw": round(yaw, 2),
+                "quality": round(gray[py, px] / 255.0, 2) if 0 <= py < gray.shape[0] else 0.5
+            })
+
+        print(f"[TargetSelector] Selected {len(targets)} targets via feature detection")
+        return targets
+
+    def _pixel_to_angle(self, px: int, py: int) -> Tuple[float, float]:
+        """Convert Scout camera pixel to approximate servo angles."""
+        norm_x = (px / self.frame_w) - 0.5
+        norm_y = (py / self.frame_h) - 0.5
+        yaw = norm_x * self.fov_h
+        pitch = norm_y * self.fov_v
+        return pitch, yaw
+
+    def _fallback_grid(self, n_targets: int) -> List[dict]:
+        """Generate a fixed grid pattern when feature detection fails."""
+        print("[TargetSelector] Using fallback grid pattern")
+        targets = []
+        # Generate a roughly circular pattern
+        if n_targets <= 5:
+            pattern = [(0, 0), (-15, -20), (-15, 20), (15, -20), (15, 20)]
+        else:
+            pattern = [
+                (0, 0),          # Center
+                (-20, 0),        # Top
+                (20, 0),         # Bottom
+                (0, -30),        # Left
+                (0, 30),         # Right
+                (-15, -20),      # Top-left
+                (-15, 20),       # Top-right
+                (15, -20),       # Bottom-left
+                (15, 20),        # Bottom-right
+                (0, 0),          # Center re-verify
+            ]
+        for i, (pitch, yaw) in enumerate(pattern[:n_targets]):
+            # Convert angles back to approximate pixel coords
+            px = int((yaw / self.fov_h + 0.5) * self.frame_w)
+            py = int((pitch / self.fov_v + 0.5) * self.frame_h)
+            targets.append({
+                "px": max(0, min(px, self.frame_w - 1)),
+                "py": max(0, min(py, self.frame_h - 1)),
+                "pitch": pitch, "yaw": yaw,
+                "quality": 0.5
+            })
+        return targets
+
+
+# ============================================================================
+# AUTO-CALIBRATOR — One-Button Autonomous Calibration
+# ============================================================================
+
+class AutoCalibrator:
+    """
+    Fully autonomous one-button calibration system.
+
+    Press one button → system scans scene → picks 10 targets → fires at each →
+    detects hits → adapts offset in real-time → saves. Designed for commercial
+    one-button UX.
+
+    Runs in a background thread so the API doesn't block. The UI polls
+    get_status() for live progress updates.
+
+    Adaptive offset: After each successful hit, the running offset average
+    is updated and applied to the NEXT shot. This means later shots are
+    progressively more accurate.
+
+    3-tier retry on miss:
+    1. Retry with longer burst (0.8s instead of 0.4s)
+    2. Lower detection threshold (from 30 → 15)
+    3. Skip point, use remaining points for offset
+    """
+
+    # Configuration
+    N_POINTS = 10             # Number of calibration points
+    FIRE_DURATION = 0.4       # Default fire pulse (seconds)
+    RETRY_DURATION = 0.8      # Longer burst for retry
+    SETTLE_TIME = 1.5         # Seconds to wait after servo move
+    POST_FIRE_DELAYS = [0.3, 0.6, 1.0]  # Capture intervals after firing
+    MAX_RETRIES = 2           # Max retries per point (total 3 attempts)
 
     def __init__(self, cal_table: CalibrationTable, hit_detector: HitDetector):
         self.table = cal_table
         self.detector = hit_detector
-        self._step = "idle"
-        self._point_index = 0
-        self._current_point: Optional[CalibrationPoint] = None
-        self._fire_duration = 0.4  # Default fire pulse
+        self.target_selector = TargetSelector()
+
+        # State
+        self._thread: Optional[threading.Thread] = None
+        self._running = False
         self._lock = threading.Lock()
 
-    @property
-    def step(self) -> str:
-        with self._lock:
-            return self._step
+        # Progress (read by UI via get_status())
+        self._phase = "idle"           # idle, scanning, calibrating, complete, error, cancelled
+        self._point_index = 0
+        self._total_points = self.N_POINTS
+        self._targets: List[dict] = []
+        self._log: List[dict] = []     # Rolling log of results
+        self._current_status = ""      # Human-readable status line
+        self._success_count = 0
+        self._fail_count = 0
+        self._skip_count = 0
 
-    def start(self):
-        """Start the calibration wizard."""
+        # Hardware refs (set during start)
+        self._gimbal = None
+        self._scout_cam = None
+        self._sniper_cam = None
+        self._relay = None
+        self._lidar = None
+
+    def start(self, gimbal, scout_cam, sniper_cam, relay, lidar):
+        """
+        Start autonomous calibration in a background thread.
+
+        Args:
+            gimbal: ServoTurretController instance
+            scout_cam: Scout CameraStream (wide-angle, fixed)
+            sniper_cam: Sniper CameraStream (on gimbal)
+            relay: RelayController instance
+            lidar: LiDARController instance
+        """
         with self._lock:
+            if self._running:
+                return {"error": "Calibration already in progress"}
+
+            self._gimbal = gimbal
+            self._scout_cam = scout_cam
+            self._sniper_cam = sniper_cam
+            self._relay = relay
+            self._lidar = lidar
+
             self.table.clear()
-            self._step = "center"
+            self._phase = "scanning"
             self._point_index = 0
-            self._current_point = None
-        print("[Wizard] Started calibration wizard")
+            self._targets = []
+            self._log = []
+            self._current_status = "Scanning scene for targets..."
+            self._success_count = 0
+            self._fail_count = 0
+            self._skip_count = 0
+            self._running = True
 
-    def get_state(self) -> dict:
-        """Return full wizard state for the UI."""
+        self._thread = threading.Thread(target=self._run, daemon=True, name="auto-cal")
+        self._thread.start()
+        print("[AutoCal] Started autonomous calibration")
+        return self.get_status()
+
+    def stop(self):
+        """Cancel in-progress calibration."""
         with self._lock:
-            pattern_point = self.CALIBRATION_PATTERN[self._point_index] \
-                if self._point_index < len(self.CALIBRATION_PATTERN) else (0, 0)
+            if self._running:
+                self._running = False
+                self._phase = "cancelled"
+                self._current_status = "Calibration cancelled by user."
+        print("[AutoCal] Calibration cancelled")
+
+    def get_status(self) -> dict:
+        """Return full calibration status for the UI (polled every 500ms)."""
+        with self._lock:
             return {
-                "step": self._step,
+                "phase": self._phase,
                 "point_index": self._point_index,
-                "total_points": len(self.CALIBRATION_PATTERN),
-                "pattern_pitch": pattern_point[0],
-                "pattern_yaw": pattern_point[1],
-                "current_point": asdict(self._current_point) if self._current_point else None,
-                "instructions": self._get_instructions(),
-                "hit_detector": self.detector.get_state(),
+                "total_points": self._total_points,
+                "progress_pct": int(self._point_index / max(self._total_points, 1) * 100),
+                "status": self._current_status,
+                "success_count": self._success_count,
+                "fail_count": self._fail_count,
+                "skip_count": self._skip_count,
+                "targets": self._targets,
+                "log": self._log[-15:],   # Last 15 entries for UI
                 "table": self.table.to_dict(),
+                "hit_detector": self.detector.get_state(),
+                "running": self._running,
             }
 
-    def _get_instructions(self) -> str:
-        """Human-readable instructions for the current step."""
-        if self._step == "idle":
-            return "Click 'Start Calibration' to begin the guided wizard."
-        elif self._step == "center":
-            p, y = self.CALIBRATION_PATTERN[self._point_index]
-            return (f"Point {self._point_index + 1}/{len(self.CALIBRATION_PATTERN)}: "
-                    f"Aim servos to ({p}°, {y}°). "
-                    f"Click 'Next' when the sniper camera shows the scene.")
-        elif self._step == "aim":
-            return ("Click on a visible target in the sniper feed. "
-                    "Choose something easy to see (edge of a box, corner of a poster, etc.).")
-        elif self._step == "fire":
-            return "Ready to fire. Click 'Fire' to shoot water at the target."
-        elif self._step == "verify":
-            return ("Check the result. Green circle = detected hit. "
-                    "Click 'Confirm' if correct, or click on the actual hit location to correct it.")
-        elif self._step == "complete":
-            return (f"Calibration complete! {len(self.table.points)} points recorded. "
-                    f"Global offset: pitch={self.table.offset_pitch:.2f}° "
-                    f"yaw={self.table.offset_yaw:.2f}°. Click 'Save' to persist.")
-        return ""
-
-    def advance_to_aim(self):
-        """Move from CENTER to AIM step (user confirmed servo position)."""
+    def _update(self, status: str, **kwargs):
+        """Update progress state (thread-safe)."""
         with self._lock:
-            if self._step == "center":
-                self._step = "aim"
-                self._current_point = CalibrationPoint(
-                    aim_pitch=self.CALIBRATION_PATTERN[self._point_index][0],
-                    aim_yaw=self.CALIBRATION_PATTERN[self._point_index][1],
-                )
+            self._current_status = status
+            for k, v in kwargs.items():
+                setattr(self, f"_{k}", v)
 
-    def record_aim(self, px: int, py: int):
-        """User clicked on the target — record aim pixel coordinates."""
+    def _add_log(self, entry: dict):
+        """Append to the rolling log."""
+        entry["timestamp"] = time.strftime("%H:%M:%S")
         with self._lock:
-            if self._step == "aim" and self._current_point:
-                self._current_point.aim_px = px
-                self._current_point.aim_py = py
-                self._step = "fire"
+            self._log.append(entry)
+        print(f"[AutoCal] {entry}")
 
-    def fire_and_detect(self, camera, relay, fire_duration: float = 0.4,
-                        distance_m: float = 2.0) -> dict:
-        """
-        Execute the fire-and-detect sequence:
-        1. Capture before frame
-        2. Fire water
-        3. Wait + capture after frames
-        4. Run hit detection
-        5. Advance to verify step
+    def _run(self):
+        """Main calibration loop (runs in background thread)."""
+        try:
+            # Phase 1: Scan scene and select targets
+            self._phase_scan()
 
-        Returns detection result dict.
-        """
-        # Capture before
-        self.detector.capture_before(camera)
-
-        # Fire
-        relay.fire(fire_duration)
-        time.sleep(fire_duration + 0.2)
-
-        # Capture after frames at intervals
-        for delay in [0.3, 0.6, 1.0]:
-            time.sleep(delay)
-            self.detector.capture_after(camera)
-
-        # Detect hit
-        hit = self.detector.detect()
-
-        with self._lock:
-            if self._current_point:
-                self._current_point.distance_m = distance_m
-                if hit:
-                    self._current_point.hit_px = hit[0]
-                    self._current_point.hit_py = hit[1]
-                self._step = "verify"
-
-        return self.detector.get_state()
-
-    def verify_hit(self, confirmed: bool, corrected_px: int = None,
-                   corrected_py: int = None):
-        """
-        User confirms or corrects the detected hit location.
-        Computes offset and advances to next point.
-        """
-        with self._lock:
-            if self._step != "verify" or not self._current_point:
+            if not self._running:
                 return
 
-            if corrected_px is not None and corrected_py is not None:
-                self._current_point.hit_px = corrected_px
-                self._current_point.hit_py = corrected_py
+            # Phase 2: Calibrate each target
+            self._phase_calibrate()
 
-            self._current_point.hit_confirmed = confirmed
-            self._current_point.timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            self._current_point.compute_offset()
+            if not self._running:
+                return
 
-            # Add to table
-            self.table.add_point(self._current_point)
+            # Phase 3: Finalize and save
+            self._phase_finalize()
 
-            # Advance to next point or complete
-            self._point_index += 1
-            if self._point_index >= len(self.CALIBRATION_PATTERN):
-                self._step = "complete"
-            else:
-                self._step = "center"
-                self._current_point = None
+        except Exception as e:
+            self._update(f"Error: {e}", phase="error")
+            self._add_log({"type": "error", "message": str(e)})
+            print(f"[AutoCal] Error: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            with self._lock:
+                self._running = False
 
-    def skip_point(self):
-        """Skip the current calibration point."""
+    def _phase_scan(self):
+        """Phase 1: Move to center, capture scout frame, detect features."""
+        self._update("Moving to center position...", phase="scanning")
+
+        # Center the gimbal so scout camera has a clean reference
+        self._gimbal.center()
+        time.sleep(self.SETTLE_TIME)
+
+        # Capture a frame from the scout camera
+        self._update("Scanning scene for high-contrast targets...")
+        frame = self._scout_cam.get_frame()
+
+        if frame is None:
+            self._add_log({"type": "warning", "message": "Scout camera unavailable, using grid pattern"})
+
+        # Detect targets
+        targets = self.target_selector.detect_targets(frame, self.N_POINTS)
         with self._lock:
-            self._point_index += 1
-            if self._point_index >= len(self.CALIBRATION_PATTERN):
-                self._step = "complete"
-            else:
-                self._step = "center"
-                self._current_point = None
+            self._targets = targets
+            self._total_points = len(targets)
 
-    def reset(self):
-        """Reset wizard to idle state."""
+        self._add_log({
+            "type": "scan_complete",
+            "message": f"Found {len(targets)} calibration targets",
+            "targets": [(t["pitch"], t["yaw"]) for t in targets]
+        })
+
+    def _phase_calibrate(self):
+        """Phase 2: Fire at each target, detect hits, adapt offset."""
+        self._update("Starting calibration sequence...", phase="calibrating")
+
+        for i, target in enumerate(self._targets):
+            if not self._running:
+                return
+
+            with self._lock:
+                self._point_index = i
+
+            pitch = target["pitch"]
+            yaw = target["yaw"]
+            aim_px = target["px"]
+            aim_py = target["py"]
+
+            self._update(f"Point {i+1}/{len(self._targets)}: "
+                        f"Aiming at ({pitch:.1f}°, {yaw:.1f}°)...")
+
+            # Apply current offset correction to this shot
+            corrected_pitch = pitch + self.table.offset_pitch
+            corrected_yaw = yaw + self.table.offset_yaw
+
+            # Move servos
+            self._gimbal.set_angles(corrected_pitch, corrected_yaw)
+            time.sleep(self.SETTLE_TIME)
+
+            # Try to fire and detect hit (with retries)
+            result = self._fire_and_detect_with_retry(
+                i, corrected_pitch, corrected_yaw, aim_px, aim_py)
+
+            if result["success"]:
+                with self._lock:
+                    self._success_count += 1
+            elif result["skipped"]:
+                with self._lock:
+                    self._skip_count += 1
+            else:
+                with self._lock:
+                    self._fail_count += 1
+
+    def _fire_and_detect_with_retry(self, point_idx: int,
+                                     pitch: float, yaw: float,
+                                     aim_px: int, aim_py: int) -> dict:
+        """
+        Fire at a target with 3-tier retry logic.
+
+        Tier 1: Normal fire (0.4s)
+        Tier 2: Longer burst (0.8s)
+        Tier 3: Lower detection threshold (15 instead of 30)
+        If all fail: skip point.
+        """
+        original_threshold = self.detector.DIFF_THRESHOLD
+
+        for attempt in range(self.MAX_RETRIES + 1):
+            if not self._running:
+                return {"success": False, "skipped": True}
+
+            # Configure retry parameters
+            if attempt == 0:
+                duration = self.FIRE_DURATION
+                self.detector.DIFF_THRESHOLD = original_threshold
+                attempt_desc = "standard"
+            elif attempt == 1:
+                duration = self.RETRY_DURATION
+                self.detector.DIFF_THRESHOLD = original_threshold
+                attempt_desc = "longer burst"
+            else:
+                duration = self.RETRY_DURATION
+                self.detector.DIFF_THRESHOLD = max(15, original_threshold // 2)
+                attempt_desc = "lower threshold"
+
+            self._update(f"Point {point_idx+1}: Firing ({attempt_desc})...")
+
+            # Capture before frame
+            self.detector.capture_before(self._sniper_cam)
+
+            # Fire
+            self._relay.fire_pump(duration)
+            time.sleep(duration + 0.2)
+
+            # Capture after frames
+            for delay in self.POST_FIRE_DELAYS:
+                time.sleep(delay)
+                self.detector.capture_after(self._sniper_cam)
+
+            # Detect hit
+            hit = self.detector.detect()
+
+            # Restore threshold
+            self.detector.DIFF_THRESHOLD = original_threshold
+
+            if hit:
+                # Success! Compute offset and update table
+                hit_px, hit_py = hit
+                point = CalibrationPoint(
+                    aim_pitch=pitch, aim_yaw=yaw,
+                    aim_px=aim_px, aim_py=aim_py,
+                    hit_px=hit_px, hit_py=hit_py,
+                    hit_confirmed=True,
+                    distance_m=self._lidar.read_distance(),
+                    note=f"auto-cal point {point_idx+1} (attempt {attempt+1})"
+                )
+                point.compute_offset()
+                self.table.add_point(point)
+
+                self._add_log({
+                    "type": "hit",
+                    "point": point_idx + 1,
+                    "attempt": attempt + 1,
+                    "aim": f"({aim_px},{aim_py})",
+                    "hit": f"({hit_px},{hit_py})",
+                    "offset_pitch": round(point.offset_pitch, 2),
+                    "offset_yaw": round(point.offset_yaw, 2),
+                    "running_offset": f"P={self.table.offset_pitch:.2f}° Y={self.table.offset_yaw:.2f}°",
+                    "message": f"✅ Point {point_idx+1}: Hit detected at ({hit_px},{hit_py}). "
+                              f"Offset: P={point.offset_pitch:.2f}° Y={point.offset_yaw:.2f}°"
+                })
+
+                self._update(
+                    f"Point {point_idx+1}: ✅ Hit! "
+                    f"Running offset: P={self.table.offset_pitch:.2f}° Y={self.table.offset_yaw:.2f}°")
+                return {"success": True, "skipped": False}
+
+            else:
+                self._add_log({
+                    "type": "miss",
+                    "point": point_idx + 1,
+                    "attempt": attempt + 1,
+                    "attempt_desc": attempt_desc,
+                    "message": f"❌ Point {point_idx+1}: No hit detected ({attempt_desc})"
+                              + (" — retrying..." if attempt < self.MAX_RETRIES else " — skipping.")
+                })
+
+                if attempt < self.MAX_RETRIES:
+                    self._update(f"Point {point_idx+1}: Miss — retrying with {attempt_desc}...")
+                    time.sleep(0.5)  # Brief pause before retry
+
+        # All retries exhausted
+        self._add_log({
+            "type": "skip",
+            "point": point_idx + 1,
+            "message": f"⏭ Point {point_idx+1}: Skipped after {self.MAX_RETRIES + 1} attempts"
+        })
+        self._update(f"Point {point_idx+1}: Skipped (no hit detected after retries)")
+        return {"success": False, "skipped": True}
+
+    def _phase_finalize(self):
+        """Phase 3: Save results and report."""
+        self.table.save()
+
+        summary = (
+            f"Calibration complete! "
+            f"{self._success_count} hits, {self._skip_count} skipped, "
+            f"{self._fail_count} failed. "
+            f"Final offset: P={self.table.offset_pitch:.2f}° Y={self.table.offset_yaw:.2f}°"
+        )
+
+        self._add_log({
+            "type": "complete",
+            "success": self._success_count,
+            "skipped": self._skip_count,
+            "failed": self._fail_count,
+            "offset_pitch": round(self.table.offset_pitch, 3),
+            "offset_yaw": round(self.table.offset_yaw, 3),
+            "message": summary
+        })
+
+        # Return to center
+        self._gimbal.center()
+
         with self._lock:
-            self._step = "idle"
-            self._point_index = 0
-            self._current_point = None
+            self._phase = "complete"
+            self._point_index = self._total_points
+            self._current_status = summary
+
+        print(f"[AutoCal] {summary}")
+
