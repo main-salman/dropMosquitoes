@@ -597,3 +597,6 @@
 - **[CODE]** `calibration_engine.py` HitDetector: Raised `DIFF_THRESHOLD` 30→40, `MIN_CONTOUR_AREA` 50→500px², `BLUR_KERNEL` 5→7. Added `MIN_CHANGE_PCT=0.3%` and `MAX_CHANGE_PCT=15%` gates — rejects frames with too little change (noise) or too much (lighting shift). Heavier morphological cleanup (7×7 kernel). Debug logging for rejected/confirmed hits.
 - **[CODE]** `hardware.py`: Lowered `fire_pump()` minimum clamp from 0.05s→0.01s, default from 0.4s→0.025s. User reports 0.05s still delivers too much water for insect deterrence.
 - **[UI]** `index.html`: Pulse slider min=0.01s, step=0.005s, default=0.025s (was min=0.05, step=0.05, default=0.6). Free-fire pulse default 0.4→0.025s.
+- **[CODE]** `app.py`: Removed auto-priming from `/api/relay/fire` — Test Fire now fires immediately. Priming remains in auto-calibration `_phase_prime()` only.
+- **[UI]** `index.html`: Added dedicated "💧 PRIME LINE" button in Fire Control card below Test Fire. Calls `/api/prime/now` with inline status feedback.
+- **[HW]** User replaced nozzle assembly — upgraded from leaking barb-to-silicone junction to improved nozzle fitting (details TBD by user).
