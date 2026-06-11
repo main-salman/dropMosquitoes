@@ -154,15 +154,15 @@ class RelayController:
 
     # -- Pump (CH1) ----------------------------------------------------------
 
-    def fire_pump(self, duration_sec: float = 0.4):
+    def fire_pump(self, duration_sec: float = 0.025):
         """
         Fire the water pump for a specified duration.
-        Default: 400ms (Stream-and-Sweep with 12V diaphragm pump).
+        Default: 25ms (micro-pulse for insect deterrence).
 
         Args:
-            duration_sec: Pulse length in seconds (0.05 to 2.0).
+            duration_sec: Pulse length in seconds (0.01 to 2.0).
         """
-        duration_sec = max(0.05, min(duration_sec, 2.0))  # Clamp to safe range
+        duration_sec = max(0.01, min(duration_sec, 2.0))  # Clamp to safe range
         print(f"[RelayController] FIRE! Pump ON for {duration_sec:.2f}s")
 
         def _pulse():

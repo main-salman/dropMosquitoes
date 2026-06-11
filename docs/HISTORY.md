@@ -590,3 +590,10 @@
 - **[CODE]** `app.py`: Auto-prime check in `/api/relay/fire` endpoint. New endpoints: `GET /api/prime/status`, `POST /api/prime/now`, `GET|POST /api/prime/settings`. `PrimingSystem` initialized at startup with keep-alive thread.
 - **[UI]** `index.html`: Settings tab — "💧 Water Line Priming" card with sliders for prime duration (500-10000ms), keep-alive interval (1-30 min), keep-alive pulse (50-1000ms), auto-detect toggle, keep-alive toggle, and "Prime Now" button.
 - **[HW]** Nozzle leak identified at silicone-tube-to-nozzle barb junction. Recommendation: replace barb with 1/4" NPT threaded connection + brass adjustable jet nozzle + PTFE tape for permanent seal.
+
+## 2026-06-11 — FALSE HIT DETECTION FIX & MICRO-PULSE TUNING
+
+- **[BUG]** Auto-calibration falsely detecting "hits" when no water was fired. Root cause: `MIN_CONTOUR_AREA=50` too low — natural scene noise (lighting, wind, sensor drift) triggers false positives.
+- **[CODE]** `calibration_engine.py` HitDetector: Raised `DIFF_THRESHOLD` 30→40, `MIN_CONTOUR_AREA` 50→500px², `BLUR_KERNEL` 5→7. Added `MIN_CHANGE_PCT=0.3%` and `MAX_CHANGE_PCT=15%` gates — rejects frames with too little change (noise) or too much (lighting shift). Heavier morphological cleanup (7×7 kernel). Debug logging for rejected/confirmed hits.
+- **[CODE]** `hardware.py`: Lowered `fire_pump()` minimum clamp from 0.05s→0.01s, default from 0.4s→0.025s. User reports 0.05s still delivers too much water for insect deterrence.
+- **[UI]** `index.html`: Pulse slider min=0.01s, step=0.005s, default=0.025s (was min=0.05, step=0.05, default=0.6). Free-fire pulse default 0.4→0.025s.

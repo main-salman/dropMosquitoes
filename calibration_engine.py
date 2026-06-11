@@ -196,10 +196,12 @@ class HitDetector:
     """
 
     # Tuning parameters
-    DIFF_THRESHOLD = 30       # Pixel intensity difference to count as "changed"
-    MIN_CONTOUR_AREA = 50     # Minimum splash area in pixels²
+    DIFF_THRESHOLD = 40       # Pixel intensity difference to count as "changed"
+    MIN_CONTOUR_AREA = 500    # Minimum splash area in pixels² (raised from 50 to reject noise)
     MAX_CONTOUR_AREA = 50000  # Maximum (reject full-frame changes like lighting)
-    BLUR_KERNEL = 5           # Gaussian blur before diff (reduce noise)
+    BLUR_KERNEL = 7           # Gaussian blur before diff (reduce noise)
+    MIN_CHANGE_PCT = 0.3      # Minimum % of total pixels that must change (rejects sensor noise)
+    MAX_CHANGE_PCT = 15.0     # Maximum % change (rejects lighting shifts / camera shake)
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -262,10 +264,25 @@ class HitDetector:
                 # Threshold
                 _, thresh = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
 
-                # Morphological cleanup
-                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-                thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+                # Check overall change percentage — reject if too little (noise) or too much (lighting)
+                total_pixels = thresh.shape[0] * thresh.shape[1]
+                changed_pixels = cv2.countNonZero(thresh)
+                change_pct = changed_pixels / total_pixels * 100
+
+                if change_pct < self.MIN_CHANGE_PCT:
+                    # Not enough change — likely no water was fired or too subtle
+                    print(f"[HitDetector] Rejected: only {change_pct:.2f}% changed (min {self.MIN_CHANGE_PCT}%)")
+                    continue
+
+                if change_pct > self.MAX_CHANGE_PCT:
+                    # Too much change — lighting shift or camera shake, not a splash
+                    print(f"[HitDetector] Rejected: {change_pct:.2f}% changed (max {self.MAX_CHANGE_PCT}%) — scene-wide change")
+                    continue
+
+                # Morphological cleanup — heavier to remove scattered noise
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+                thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)   # Remove small dots
+                thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)  # Fill small gaps
 
                 # Find contours
                 contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
@@ -283,6 +300,11 @@ class HitDetector:
                                 best_hit = (cx, cy)
                                 best_confidence = area
                                 best_diff = diff
+
+            if best_hit:
+                print(f"[HitDetector] Hit confirmed: ({best_hit[0]},{best_hit[1]}) confidence={best_confidence:.0f}px²")
+            else:
+                print(f"[HitDetector] No valid hit found")
 
             self._hit_point = best_hit
             self._confidence = best_confidence
@@ -510,7 +532,7 @@ class AutoCalibrator:
 
     3-tier retry on miss:
     1. Retry with longer burst (0.8s instead of 0.4s)
-    2. Lower detection threshold (from 30 → 15)
+    2. Lower detection threshold (from 40 → 20)
     3. Skip point, use remaining points for offset
     """
 

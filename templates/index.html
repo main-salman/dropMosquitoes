@@ -221,8 +221,8 @@
       <div class="card-body">
         <div class="sl">
           <label>Pulse</label>
-          <input type="range" id="fd" min="0.05" max="2.0" step="0.05" value="0.6" oninput="$('fdv').textContent=this.value+'s'">
-          <div class="v" id="fdv">0.6s</div>
+          <input type="range" id="fd" min="0.01" max="2.0" step="0.005" value="0.025" oninput="$('fdv').textContent=this.value+'s'">
+          <div class="v" id="fdv">0.025s</div>
         </div>
         <div class="sl">
           <label>Airburst Pitch</label>
@@ -377,7 +377,7 @@
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Manual fire-and-detect for testing specific angles.</p>
         <div class="cal-row"><label>Pitch (°)</label><input type="number" id="ff-pitch" value="0" step="1"><label>Yaw (°)</label><input type="number" id="ff-yaw" value="0" step="1"></div>
-        <div class="cal-row"><label>Pulse (s)</label><input type="number" id="ff-dur" value="0.4" step="0.05" min="0.05" max="2.0"></div>
+        <div class="cal-row"><label>Pulse (s)</label><input type="number" id="ff-dur" value="0.025" step="0.005" min="0.01" max="2.0"></div>
         <button class="btn btn-red" style="width:100%;margin-top:8px" onclick="calFreeFire()">🔥 Aim → Fire → Detect</button>
         <div class="cal-result" id="ff-log">Ready.</div>
       </div>
