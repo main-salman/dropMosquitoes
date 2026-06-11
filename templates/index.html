@@ -230,6 +230,8 @@
           <div class="v" id="aov">+12°</div>
         </div>
         <button class="btn btn-red" style="width:100%;padding:14px;font-size:15px;margin-top:8px" onclick="fire()">🔥 TEST FIRE</button>
+        <button class="btn btn-blue" style="width:100%;padding:10px;font-size:13px;margin-top:6px" onclick="primeFromFireControl()">💧 PRIME LINE</button>
+        <div id="fire-prime-status" style="font-size:11px;color:var(--dim);text-align:center;margin-top:4px"></div>
       </div>
     </div>
     <div class="card">
@@ -540,6 +542,21 @@ document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;con
 
 // ---- Fire ----
 function fire(){api('/api/relay/fire',{duration:+$('fd').value})}
+
+async function primeFromFireControl() {
+  $('fire-prime-status').textContent = '💧 Priming... aiming down & pumping';
+  try {
+    const d = await fetch('/api/prime/now', {method:'POST'}).then(r => r.json());
+    if (d.status === 'primed') {
+      $('fire-prime-status').textContent = '✅ Primed! Water detected.';
+    } else if (d.status === 'prime_uncertain') {
+      $('fire-prime-status').textContent = '⚠️ Primed (uncertain detection)';
+    } else {
+      $('fire-prime-status').textContent = '❌ ' + (d.error || d.status);
+    }
+    setTimeout(() => $('fire-prime-status').textContent = '', 5000);
+  } catch(e) { $('fire-prime-status').textContent = '❌ ' + e.message; }
+}
 
 // ---- Toast ----
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}

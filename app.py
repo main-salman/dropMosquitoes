@@ -345,20 +345,13 @@ def api_velocity_reset():
 def api_relay_fire():
     """
     Fire the water pump for a specified duration.
-    Auto-primes the line if needed (first shot fills the pipe).
-    Body: {"duration": float}  (seconds, 0.05–2.0)
+    Body: {"duration": float}  (seconds, 0.01–2.0)
     """
     data = request.get_json(force=True)
-    duration = float(data.get('duration', 0.4))
-
-    # Check if we need to prime first
-    if primer.needs_priming():
-        print("[app] Line needs priming — running prime sequence first")
-        primer.prime(gimbal=gimbal, camera=sniper_cam)
-
+    duration = float(data.get('duration', 0.025))
     relay.fire_pump(duration)
     primer.mark_fired()
-    return jsonify({"fired": True, "duration": duration, "primed": True})
+    return jsonify({"fired": True, "duration": duration})
 
 
 @app.route('/api/relay/pump', methods=['POST'])
