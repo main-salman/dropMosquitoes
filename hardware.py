@@ -152,22 +152,50 @@ class RelayController:
             print("[RelayController] STUB MODE — no real GPIO control.")
 
 
-    # -- Pump (CH1) ----------------------------------------------------------
+    # Pre-pressurization settings (configurable via API)
+    # Solves diaphragm pump pulsation inconsistency:
+    # - stabilize_ms: Short burst to move diaphragm to end-of-stroke
+    # - settle_ms: Wait for diaphragm spring to return to known start position
+    # - Then fire actual pulse from a consistent pressure state
+    stabilize_ms = 50         # Pre-fire stabilization burst (ms)
+    settle_ms = 80            # Gap after stabilization for diaphragm return (ms)
+    pre_pressurize = True     # Enable/disable pre-pressurization
 
     def fire_pump(self, duration_sec: float = 0.025):
         """
         Fire the water pump for a specified duration.
         Default: 25ms (micro-pulse for insect deterrence).
 
+        If pre_pressurize is enabled, runs a stabilization sequence first
+        to ensure consistent diaphragm pump pressure:
+        1. Pump ON for stabilize_ms → positions diaphragm at end-of-stroke
+        2. Pump OFF for settle_ms → diaphragm spring returns to known position
+        3. Pump ON for actual pulse → consistent pressure every time
+
         Args:
             duration_sec: Pulse length in seconds (0.01 to 2.0).
         """
         duration_sec = max(0.01, min(duration_sec, 2.0))  # Clamp to safe range
-        print(f"[RelayController] FIRE! Pump ON for {duration_sec:.2f}s")
+
+        if self.pre_pressurize:
+            print(f"[RelayController] FIRE! Stabilize {self.stabilize_ms}ms → "
+                  f"settle {self.settle_ms}ms → pulse {duration_sec*1000:.0f}ms")
+        else:
+            print(f"[RelayController] FIRE! Pump ON for {duration_sec:.3f}s")
 
         def _pulse():
             with self._lock:
                 try:
+                    if self.pre_pressurize and self.stabilize_ms > 0:
+                        # Step 1: Stabilization burst — move diaphragm to end-of-stroke
+                        self._set_pump(True)
+                        time.sleep(self.stabilize_ms / 1000.0)
+
+                        # Step 2: Settle — let diaphragm spring return
+                        self._set_pump(False)
+                        time.sleep(self.settle_ms / 1000.0)
+
+                    # Step 3: Actual fire pulse — from consistent starting pressure
                     self._set_pump(True)
                     time.sleep(duration_sec)
                 finally:

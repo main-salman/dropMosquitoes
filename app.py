@@ -406,6 +406,40 @@ def api_prime_settings_set():
 
 
 # ============================================================================
+# PUMP STABILIZATION API (Pre-pressurization for diaphragm pump consistency)
+# ============================================================================
+
+@app.route('/api/pump/stabilize', methods=['GET'])
+def api_pump_stabilize_get():
+    """Get pump stabilization settings."""
+    return jsonify({
+        "pre_pressurize": relay.pre_pressurize,
+        "stabilize_ms": relay.stabilize_ms,
+        "settle_ms": relay.settle_ms,
+    })
+
+
+@app.route('/api/pump/stabilize', methods=['POST'])
+def api_pump_stabilize_set():
+    """Update pump stabilization settings.
+    Body: {"pre_pressurize": bool, "stabilize_ms": int, "settle_ms": int}"""
+    data = request.get_json(force=True)
+    if "pre_pressurize" in data:
+        relay.pre_pressurize = bool(data["pre_pressurize"])
+    if "stabilize_ms" in data:
+        relay.stabilize_ms = max(0, min(int(data["stabilize_ms"]), 500))
+    if "settle_ms" in data:
+        relay.settle_ms = max(0, min(int(data["settle_ms"]), 500))
+    print(f"[app] Stabilization: {'ON' if relay.pre_pressurize else 'OFF'}, "
+          f"burst={relay.stabilize_ms}ms, settle={relay.settle_ms}ms")
+    return jsonify({
+        "pre_pressurize": relay.pre_pressurize,
+        "stabilize_ms": relay.stabilize_ms,
+        "settle_ms": relay.settle_ms,
+    })
+
+
+# ============================================================================
 # AI / YOLO API
 # ============================================================================
 

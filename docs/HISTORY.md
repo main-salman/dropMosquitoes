@@ -600,3 +600,10 @@
 - **[CODE]** `app.py`: Removed auto-priming from `/api/relay/fire` — Test Fire now fires immediately. Priming remains in auto-calibration `_phase_prime()` only.
 - **[UI]** `index.html`: Added dedicated "💧 PRIME LINE" button in Fire Control card below Test Fire. Calls `/api/prime/now` with inline status feedback.
 - **[HW]** User replaced nozzle assembly — upgraded from leaking barb-to-silicone junction to improved nozzle fitting (details TBD by user).
+
+## 2026-06-11 — PUMP STABILIZATION (PRE-PRESSURIZATION FIX)
+
+- **[BUG]** 10ms shots inconsistent: ~70% land within 5cm, ~10% land 50cm away. Root cause: diaphragm pump pulsation — 10ms catches random point in stroke cycle (peak vs valley pressure).
+- **[CODE]** `hardware.py` `RelayController`: Added pre-pressurization sequence: (1) stabilize burst (50ms) positions diaphragm at end-of-stroke, (2) settle gap (80ms) lets spring return to known position, (3) actual fire pulse from consistent starting pressure. Configurable via `stabilize_ms`, `settle_ms`, `pre_pressurize` class attributes.
+- **[CODE]** `app.py`: New endpoints `GET|POST /api/pump/stabilize` for stabilization settings (enable/disable, burst ms, settle ms).
+- **[UI]** `index.html`: Settings tab — "🎯 Pump Stabilization" card with enable toggle, burst slider (0-200ms), settle slider (0-300ms), and Apply button.

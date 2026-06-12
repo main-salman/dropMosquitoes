@@ -503,6 +503,30 @@
         <div class="cal-result" id="prime-status" style="margin-top:8px;font-size:11px">Ready</div>
       </div>
     </div>
+    <!-- Pump Stabilization -->
+    <div class="card">
+      <div class="card-title">🎯 Pump Stabilization</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Fixes shot-to-shot inconsistency from diaphragm pump pulsation. Runs a brief stabilization burst before each shot to position the diaphragm at a known point.</p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" id="set-stab-on" checked style="width:16px;height:16px"> Pre-pressurize enabled
+          </label>
+        </div>
+        <div class="sl">
+          <label>Stabilize Burst (ms)</label>
+          <input type="range" id="set-stab-burst" min="0" max="200" step="5" value="50" oninput="$('set-stab-burst-v').textContent=this.value+'ms'">
+          <div class="v" id="set-stab-burst-v">50ms</div>
+        </div>
+        <div class="sl">
+          <label>Settle Time (ms)</label>
+          <input type="range" id="set-stab-settle" min="0" max="300" step="5" value="80" oninput="$('set-stab-settle-v').textContent=this.value+'ms'">
+          <div class="v" id="set-stab-settle-v">80ms</div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyStabSettings()">✅ Apply Stabilization</button>
+        <p style="font-size:10px;color:var(--dim);margin-top:8px">Sequence: Burst → Settle → Fire. Total delay before shot = burst + settle.</p>
+      </div>
+    </div>
   </div></div>
 </div>
 
@@ -827,6 +851,30 @@ async function primeNow() {
 
 // Load priming settings on page load
 setTimeout(loadPrimeSettings, 1500);
+
+// ---- Pump Stabilization ----
+async function loadStabSettings() {
+  try {
+    const d = await fetch('/api/pump/stabilize').then(r => r.json());
+    $('set-stab-on').checked = d.pre_pressurize;
+    $('set-stab-burst').value = d.stabilize_ms;
+    $('set-stab-burst-v').textContent = d.stabilize_ms + 'ms';
+    $('set-stab-settle').value = d.settle_ms;
+    $('set-stab-settle-v').textContent = d.settle_ms + 'ms';
+  } catch(e) { console.error('Stabilization settings load:', e); }
+}
+
+async function applyStabSettings() {
+  const body = {
+    pre_pressurize: $('set-stab-on').checked,
+    stabilize_ms: +$('set-stab-burst').value,
+    settle_ms: +$('set-stab-settle').value,
+  };
+  await fetch('/api/pump/stabilize', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  showToast('🎯 Stabilization', `${body.pre_pressurize ? 'ON' : 'OFF'}: Burst ${body.stabilize_ms}ms → Settle ${body.settle_ms}ms`);
+}
+
+setTimeout(loadStabSettings, 2000);
 </script>
 </body>
 </html>
