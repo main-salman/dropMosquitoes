@@ -1,8 +1,8 @@
 # HW-001: Hardware Specification
 
 **Status:** APPROVED  
-**Version:** 4.0 (ECO-2026-002)  
-**Last Updated:** 2026-05-15  
+**Version:** 5.0 (ECO-2026-004)  
+**Last Updated:** 2026-06-12  
 **Owner:** Salman
 
 ## 1. Compute Platform
@@ -74,8 +74,9 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | 1 | INPUT from WH-02 RED wire |
 | 2 | Yahboom Jetson (barrel jack) |
 | 3 | Univivi IR Illuminator (direct, always-on) |
-| 4 | Relay CH1 Common (→ Pump +12V via NO contact) |
+| 4 | Diaphragm Pump +12V (continuous run via pressure switch or software control) |
 | 5 | Gimbal +12V (direct connection via 2A inline fuse) |
+| — | *Add 2nd Wago 221-415 if needed for solenoid +12V (from MOSFET drain)* |
 
 ### Wago GND Port Map
 
@@ -112,8 +113,8 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 |:---------|:-----------|:----|:----------------|:-----------|:-----------------|
 | **Relay V+ (5V)** | Pin 2 | — | Terminal 2 | RED | Monk Makes relay power input |
 | **Relay V- (GND)** | Pin 9 | — | Terminal 9 | BLACK | Monk Makes relay ground |
-| **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → CH1 (Water Pump) |
-| **Reserved (Relay CH2)** | Pin 13 | BCM 27 | Terminal 13 | ORANGE | Reserved / Unused (Gimbal now directly powered via 2A fuse) |
+| **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → CH1 (Pump On/Off — continuous run mode) |
+| **Solenoid MOSFET Gate** | Pin 13 | BCM 27 | Terminal 13 | ORANGE | **IRLB8721 MOSFET Gate → Solenoid valve control (ECO-2026-004)** |
 | **LiDAR I2C SDA** | Pin 3 | BCM 2 | Terminal 3 | BLUE | TF-Luna data line |
 | **LiDAR I2C SCL** | Pin 5 | BCM 3 | Terminal 5 | YELLOW | TF-Luna clock line |
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
@@ -124,12 +125,34 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
+### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004)
+
+> **⚠ NEW — Replaces relay-gated pump timing for fluid control.**
+> The solenoid valve is switched by an IRLB8721 N-Channel MOSFET driven directly from Jetson GPIO BCM 27 (3.3V logic level compatible).
+
+```
+Jetson GPIO BCM 27 (Pin 13) ──[10kΩ pull-down to GND]──┬── IRLB8721 Gate
+                                                        │
++12V ──> [Solenoid Coil +] ──> [Solenoid Coil -] ──> IRLB8721 Drain
+                    │                    │
+                    └──[1N4007 Flyback]──┘  (Cathode to +12V, Anode to Drain)
+                                                        │
+                                              IRLB8721 Source ──> GND
+```
+
+**Component Notes:**
+- **10kΩ resistor** from Gate to GND: ensures solenoid stays closed when GPIO is floating (boot/shutdown)
+- **1N4007 flyback diode** across solenoid coil: absorbs back-EMF (same as pump diode in §6.1)
+- **Logic level:** IRLB8721 has R_DS(on) < 10mΩ at V_GS = 3.3V — no level shifter needed
+
 
 ## 6. Isolation & Safety Hardware
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
-  - CH1: Pump trigger (GPIO 17 → 3.3V control → NO closes → Pump gets +12V)
-  - CH2: Reserved / Unused (previously Gimbal boot delay, now bypassed via 2A fuse)
+  - CH1: Pump On/Off control (GPIO 17 → continuous run mode with accumulator)
+  - CH2: Reserved / Unused
+- **Solenoid Valve:** GOODRIG 12V DC Direct-Acting NC, 1/4" FNPT (fluid gating, replaces relay-timed pump pulses)
+- **MOSFET Switch:** IRLB8721PBF N-Channel (TO-220), 30V/62A, 3.3V logic compatible (gates solenoid via BCM 27)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
 ### 6.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)
@@ -182,18 +205,56 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 
 ## 8. Fluid System
 
-> ⚠ **ECO-2026-003:** Replaced submersible centrifugal pump with 12V DC diaphragm pump. Submersible pumps suffer destructive short cycling (3-8× inrush current per start) when used for 600ms burst firing. Diaphragm pumps are positive displacement and designed for rapid on/off duty cycles.
+> ⚠ **ECO-2026-004:** Constant-Pressure Accumulator + Solenoid Gate architecture.
+> Previous direct relay-gated diaphragm pump timing was fundamentally unreliable at sub-10ms pulses
+> due to sinusoidal cam pulsation, silicone tube elastic slingshot effect, and mechanical relay jitter.
+> See HISTORY.md 2026-06-12 for full root cause analysis.
+
+### 8.0 Components
 
 | Component | Spec |
 |:----------|:-----|
-| Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming. Surface-mounted **adjacent to** enclosure (NOT inside the Jetson box — moisture/thermal isolation) |
+| Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming. **Runs continuously** (or pressure-switched). Feeds accumulator tank. |
+| Accumulator | **Swess 0.75L Mini Pressure Tank**, 125 PSI max, dual 1/2" MNPT ports. Absorbs pump pulsation → flat pressure line. |
+| Solenoid Valve | **GOODRIG 12V DC Direct-Acting NC**, 1/4" FNPT. Gates fluid at nozzle. Sub-ms response via MOSFET. |
+| MOSFET Switch | **IRLB8721PBF** N-Channel TO-220, 30V/62A. Drives solenoid from Jetson GPIO BCM 27 (3.3V logic). |
 | Tubing | Feelers 1/4" ID × 3/8" OD Silicone (26.25ft spool) |
-| Check Valve | Built into diaphragm pump (internal one-way valves prevent backflow). External PVDF valve retained as redundant safety on gimbal-mounted vertical runs |
-| Nozzle | Orbit 66190 Flex-Mist Adjustable (narrow stream pattern). Future: 3D-printed tapered nozzle for higher velocity |
+| Barb Adapters | **Kozelo** 1/4" Barb × 1/4" MNPT (×2) — solenoid I/O. **uxcell** 1/4" Barb × 1/2" FNPT (×2) — accumulator I/O. |
+| Check Valve | Built into diaphragm pump (internal one-way valves prevent backflow) |
+| Nozzle | Adjustable stream nozzle with 1/4" NPT thread + PTFE tape seal |
 | Reservoir | Shallow Plastic Storage Tote (placed ABOVE enclosure for gravity-assisted feed) |
 | Service Loop | 3" slack arc at gimbal entry (zip-tied at 2 anchors) |
 
-### 8.1 Physical Stacking (Top to Bottom)
+### 8.1 System Topology (ECO-2026-004)
+
+```
+[Reservoir] ──> (1/4" Flex Line) ──> [Diaphragm Pump (continuous run)]
+                                              │
+                              (1/4" Flex Line) │
+                                              ▼
+                              [1/2" FNPT-to-1/4" Barb Adapter (uxcell)]
+                                              │
+                              [Swess 0.75L Accumulator Tank (125 PSI)]
+                              [  Absorbs all pump pulsation → flat   ]
+                              [  pressure line to solenoid            ]
+                                              │
+                              [1/2" FNPT-to-1/4" Barb Adapter (uxcell)]
+                                              │
+                              (1/4" Flex Line) │
+                                              ▼
+                              [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
+                                              │
+                              [GOODRIG 12V Solenoid Valve (NC, 1/4" FNPT)]
+                              [  Gated by IRLB8721 MOSFET via BCM 27   ]
+                                              │
+                              [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
+                                              │
+                              (1/4" Flex Line) │
+                                              ▼
+                              [Nozzle (on gimbal payload)]
+```
+
+### 8.2 Physical Stacking (Top to Bottom)
 
 The chassis is a vertically condensed dome enclosure with the gimbal mounted INVERTED (hanging from the bottom baseplate):
 
@@ -202,7 +263,11 @@ The chassis is a vertically condensed dome enclosure with the gimbal mounted INV
 │   Water Reservoir       │ ← Ground level or elevated shelf
 │   (intake tube drops in)│
 ├─────────────────────────┤
-│   Diaphragm Pump        │ ← Mounted on bracket, adjacent to enclosure
+│   Diaphragm Pump        │ ← Runs continuously, feeds accumulator
+├─────────────────────────┤
+│   Accumulator Tank      │ ← Swess 0.75L — absorbs pulsation
+├─────────────────────────┤
+│   Solenoid Valve        │ ← GOODRIG NC — MOSFET-gated, sub-ms
 ├─────────────────────────┤
 │   IP67 Dome Enclosure   │ ← Baseplate at top, dome hanging down. Jetson inside.
 ├─────────────────────────┤
@@ -211,11 +276,14 @@ The chassis is a vertically condensed dome enclosure with the gimbal mounted INV
 └─────────────────────────┘
 ```
 
-### 8.2 Fluid Routing
+### 8.3 Fluid Routing
 
-1. **Inlet** — silicone tubing drops into reservoir → runs up to pump inlet barb
-2. **Outlet** — pump outlet → high-pressure tubing up the gimbal arm (alongside FPV HDMI cable) → nozzle
-3. **Power** — Relay CH1 NO contact supplies +12V to pump; pump GND returns to Wago GND port 4
+1. **Inlet** — silicone tubing drops into reservoir → runs to pump inlet barb
+2. **Pump → Accumulator** — pump outlet → 1/4" flex line → uxcell 1/2" FNPT adapter → accumulator port 1
+3. **Accumulator → Solenoid** — accumulator port 2 → uxcell 1/2" FNPT adapter → 1/4" flex line → Kozelo 1/4" MNPT adapter → solenoid inlet
+4. **Solenoid → Nozzle** — solenoid outlet → Kozelo 1/4" MNPT adapter → 1/4" flex line → nozzle on gimbal
+5. **Pump Power** — Relay CH1 supplies +12V for pump on/off (continuous run or software-managed duty cycle)
+6. **Solenoid Power** — IRLB8721 MOSFET (BCM 27) gates +12V to solenoid coil with microsecond precision
 
 ## 9. Enclosure & Weatherproofing
 
@@ -247,3 +315,16 @@ The turret must start automatically on power-up without manual SSH intervention.
 ## 12. Bill of Materials
 
 See [parts.csv](../../parts.csv) for the complete, URL-verified procurement list.
+
+### 12.1 ECO-2026-004 — Accumulator + Solenoid Upgrade Parts
+
+| Part | Qty | Price (CAD) | Source | Thread Spec | Purpose |
+|:-----|:----|:------------|:-------|:------------|:--------|
+| Swess 0.75L Accumulator Tank | 1 | $49.99 | Amazon.ca | 2× 1/2" MNPT | Pressure dampening |
+| GOODRIG 12V DC Solenoid Valve (NC, Direct-Acting) | 1 | $12.99 | Amazon.ca | 1/4" FNPT | Fluid gating |
+| IRLB8721PBF N-Channel MOSFET (TO-220) | 5 | $8.99 | Amazon.ca | — | Solenoid switching (3.3V logic) |
+| Kozelo 1/4" Barb × 1/4" MNPT Brass Adapter | 2 | $9.19 | Amazon.ca | 1/4" NPT | Solenoid ↔ flex line |
+| uxcell 1/4" Barb × 1/2" FNPT Brass Adapter | 2 | $17.59 | Amazon.ca | 1/2" NPT | Accumulator ↔ flex line |
+| 1N4007 Flyback Diode | 1 | ~$0.10 | — | — | Solenoid back-EMF protection |
+| 10kΩ Resistor | 1 | ~$0.05 | — | — | MOSFET gate pull-down |
+| **Total** | | **$98.75** | | | |

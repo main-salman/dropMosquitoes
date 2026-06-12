@@ -645,3 +645,18 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - `hardware.py`: Replace `RelayController` relay GPIO with MOSFET GPIO for solenoid control. Remove pre-pressurization code (no longer needed with constant-pressure system).
 - `app.py`: Add pump control API (continuous run / auto with pressure switch).
 - HW-001 spec: Update wiring diagram, GPIO assignments, BOM.
+
+## 2026-06-12 — ECO-2026-004: PARTS ORDERED — ACCUMULATOR + SOLENOID UPGRADE
+
+- **[HW]** HW-001 updated to v5.0 (ECO-2026-004). Complete fluid architecture redesign.
+- **[PROCUREMENT]** Parts ordered from Amazon.ca (all arriving same day):
+  - Swess 0.75L Accumulator Tank, 125 PSI — $49.99
+  - GOODRIG 12V DC Solenoid Valve (NC, Direct-Acting, 1/4" FNPT) — $12.99
+  - IRLB8721PBF N-Channel MOSFET ×5 (30V/62A, 3.3V logic) — $8.99
+  - Kozelo 1/4" Barb × 1/4" MNPT Brass Adapter ×2 — $9.19
+  - uxcell 1/4" Barb × 1/2" FNPT Brass Adapter ×2 — $17.59
+  - **Total: $98.75 CAD**
+- **[SPEC]** HW-001 §5.3: BCM 27 (Pin 13, Terminal 13) reassigned from "Reserved" to Solenoid MOSFET Gate.
+- **[SPEC]** HW-001 §5.4: New MOSFET switching circuit schematic (IRLB8721 + 10kΩ pull-down + 1N4007 flyback).
+- **[SPEC]** HW-001 §8: Complete rewrite — accumulator + solenoid topology with full plumbing diagram and routing.
+- **[SPEC]** HW-001 §12.1: New BOM section for ECO-2026-004 parts with prices and thread specs.
