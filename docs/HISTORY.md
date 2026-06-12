@@ -613,3 +613,35 @@
 - **[CODE]** `hardware.py`: Lowered `fire_pump()` minimum clamp from 0.01s→0.001s (1ms). Enables ultra-fine water control for insect deterrence.
 - **[CODE]** `app.py`: New endpoints `GET|POST /api/pulse/config` for separate calibration pulse, operational pulse, calibration retry pulse, and prime duration. Modifies `AutoCalibrator.FIRE_DURATION` and `AutoCalibrator.RETRY_DURATION` at runtime.
 - **[UI]** `index.html`: Test Fire pulse slider now goes down to 1ms (step=1ms), shows ms for <100ms values. Added "🔥 Fire Pulse Configuration" card in Settings tab with separate sliders for: Operational Pulse (1-500ms), Calibration Pulse (10-2000ms), Calibration Retry Pulse (10-2000ms), and Prime Duration (500-10000ms). Settings sync with Test Fire slider on apply.
+
+## 2026-06-12 — ⚠️ SOFTWARE STABILIZATION FAILED — HARDWARE MIGRATION REQUIRED
+
+> **CRITICAL FINDING:** The software pre-pressurization approach (stabilize burst → settle → fire)
+> does NOT solve the shot consistency problem. The root cause is fundamentally hardware, not software.
+> No software timing trick can compensate for the physics of diaphragm pump pulsation + elastic tubing.
+
+### Root Cause Analysis (Confirmed by Testing)
+
+Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherently unreliable:
+
+1. **Sinusoidal Cam Strike:** Diaphragm pump uses a wobbling cam to push a flexible membrane. A 10ms relay closure randomly hits peak (max pressure) or intake (min pressure) of the cam cycle → ~2x pressure variance between shots.
+2. **Silicone Tube Slingshot Effect:** 50cm silicone tube has significant elastic compliance. At peak cam stroke, the tube balloons and stores elastic potential energy. When relay cuts power, stored energy snaps back and fires an extra high-velocity "slingshot" pulse through the nozzle → explains why wild shots land exactly in-line but 50cm further.
+3. **Mechanical Relay Jitter:** Standard mechanical relay has ±3-5ms bounce/float. At 10ms target pulse, this is 30-50% error in volume and pressure delivery.
+
+### Required Hardware Migration: Constant-Pressure Accumulator + Solenoid Gate
+
+```
+[Reservoir] → [Diaphragm Pump] → [Check Valve] → [Accumulator Tank] → [12V Solenoid] → [Nozzle]
+                (runs continuously)                  (absorbs pulsation)    (MOSFET-gated)
+```
+
+**Parts to source:**
+- **Accumulator tank** (0.75-1L, pre-charged, 1/4" NPT) — ~$25. Absorbs all pump oscillation → flat pressure line.
+- **12V direct-acting solenoid valve** (1/4" NPT, normally closed, stainless/brass) — ~$10-15. Must be direct-acting (not pilot-operated). Sub-ms response time.
+- **IRLB8721 or TIP120 MOSFET/transistor** — replaces mechanical relay for solenoid switching. Microsecond precision, zero jitter/bounce.
+- **Pressure switch** (optional, 30-50 PSI cutoff) — auto-stops pump when accumulator is full.
+
+**Software changes needed post-migration:**
+- `hardware.py`: Replace `RelayController` relay GPIO with MOSFET GPIO for solenoid control. Remove pre-pressurization code (no longer needed with constant-pressure system).
+- `app.py`: Add pump control API (continuous run / auto with pressure switch).
+- HW-001 spec: Update wiring diagram, GPIO assignments, BOM.
