@@ -221,8 +221,8 @@
       <div class="card-body">
         <div class="sl">
           <label>Pulse</label>
-          <input type="range" id="fd" min="0.01" max="2.0" step="0.005" value="0.025" oninput="$('fdv').textContent=this.value+'s'">
-          <div class="v" id="fdv">0.025s</div>
+          <input type="range" id="fd" min="0.001" max="2.0" step="0.001" value="0.025" oninput="$('fdv').textContent=fmtPulse(this.value)">
+          <div class="v" id="fdv">25ms</div>
         </div>
         <div class="sl">
           <label>Airburst Pitch</label>
@@ -379,7 +379,7 @@
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">Manual fire-and-detect for testing specific angles.</p>
         <div class="cal-row"><label>Pitch (°)</label><input type="number" id="ff-pitch" value="0" step="1"><label>Yaw (°)</label><input type="number" id="ff-yaw" value="0" step="1"></div>
-        <div class="cal-row"><label>Pulse (s)</label><input type="number" id="ff-dur" value="0.025" step="0.005" min="0.01" max="2.0"></div>
+        <div class="cal-row"><label>Pulse (s)</label><input type="number" id="ff-dur" value="0.025" step="0.001" min="0.001" max="2.0"></div>
         <button class="btn btn-red" style="width:100%;margin-top:8px" onclick="calFreeFire()">🔥 Aim → Fire → Detect</button>
         <div class="cal-result" id="ff-log">Ready.</div>
       </div>
@@ -460,6 +460,35 @@
         <p style="font-size:10px;color:var(--dim);margin-top:6px">Presets auto-apply immediately.</p>
       </div>
     </div>
+    <!-- Fire Pulse Configuration -->
+    <div class="card">
+      <div class="card-title">🔥 Fire Pulse Configuration</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Set different pulse lengths for calibration, operational use, and priming.</p>
+        <div class="sl">
+          <label>Operational Pulse (live fire)</label>
+          <input type="range" id="set-op-pulse" min="0.001" max="0.5" step="0.001" value="0.025" oninput="$('set-op-pulse-v').textContent=fmtPulse(this.value)">
+          <div class="v" id="set-op-pulse-v">25ms</div>
+        </div>
+        <div class="sl">
+          <label>Calibration Pulse</label>
+          <input type="range" id="set-cal-pulse" min="0.01" max="2.0" step="0.01" value="0.4" oninput="$('set-cal-pulse-v').textContent=fmtPulse(this.value)">
+          <div class="v" id="set-cal-pulse-v">400ms</div>
+        </div>
+        <div class="sl">
+          <label>Calibration Retry Pulse</label>
+          <input type="range" id="set-cal-retry" min="0.01" max="2.0" step="0.01" value="0.8" oninput="$('set-cal-retry-v').textContent=fmtPulse(this.value)">
+          <div class="v" id="set-cal-retry-v">800ms</div>
+        </div>
+        <div class="sl">
+          <label>Prime Duration</label>
+          <input type="range" id="set-prime-dur2" min="500" max="10000" step="100" value="3000" oninput="$('set-prime-dur2-v').textContent=this.value+'ms'">
+          <div class="v" id="set-prime-dur2-v">3000ms</div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyPulseConfig()">✅ Apply Pulse Config</button>
+        <p style="font-size:10px;color:var(--dim);margin-top:8px">Operational pulse is used for live mosquito targeting. Calibration uses longer pulses for visible splash detection.</p>
+      </div>
+    </div>
     <!-- Live Info -->
     <div class="card">
       <div class="card-title">📊 Current Config</div>
@@ -538,6 +567,7 @@
 
 <script>
 const $=id=>document.getElementById(id);
+function fmtPulse(v){v=+v;return v<0.1?(v*1000).toFixed(0)+'ms':v.toFixed(3)+'s'}
 const SUITES=['smoke','camera','relay','yolo','safety','accuracy','servo_turret'];
 const ICONS={0:'🌐',1:'🔩',3:'🛡️',4:'🎯'};
 const ST={};
@@ -875,6 +905,40 @@ async function applyStabSettings() {
 }
 
 setTimeout(loadStabSettings, 2000);
+
+// ---- Fire Pulse Configuration ----
+async function loadPulseConfig() {
+  try {
+    const d = await fetch('/api/pulse/config').then(r => r.json());
+    $('set-op-pulse').value = d.operational_pulse;
+    $('set-op-pulse-v').textContent = fmtPulse(d.operational_pulse);
+    $('set-cal-pulse').value = d.cal_pulse;
+    $('set-cal-pulse-v').textContent = fmtPulse(d.cal_pulse);
+    $('set-cal-retry').value = d.cal_retry_pulse;
+    $('set-cal-retry-v').textContent = fmtPulse(d.cal_retry_pulse);
+    $('set-prime-dur2').value = d.prime_duration_ms;
+    $('set-prime-dur2-v').textContent = d.prime_duration_ms + 'ms';
+    // Also sync the test fire slider to operational pulse
+    $('fd').value = d.operational_pulse;
+    $('fdv').textContent = fmtPulse(d.operational_pulse);
+  } catch(e) { console.error('Pulse config load:', e); }
+}
+
+async function applyPulseConfig() {
+  const body = {
+    operational_pulse: +$('set-op-pulse').value,
+    cal_pulse: +$('set-cal-pulse').value,
+    cal_retry_pulse: +$('set-cal-retry').value,
+    prime_duration_ms: +$('set-prime-dur2').value,
+  };
+  const d = await fetch('/api/pulse/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}).then(r=>r.json());
+  // Sync test fire slider
+  $('fd').value = d.operational_pulse;
+  $('fdv').textContent = fmtPulse(d.operational_pulse);
+  showToast('🔥 Pulse Config', `Op: ${fmtPulse(d.operational_pulse)} · Cal: ${fmtPulse(d.cal_pulse)} · Retry: ${fmtPulse(d.cal_retry_pulse)}`);
+}
+
+setTimeout(loadPulseConfig, 2500);
 </script>
 </body>
 </html>

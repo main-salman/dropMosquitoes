@@ -607,3 +607,9 @@
 - **[CODE]** `hardware.py` `RelayController`: Added pre-pressurization sequence: (1) stabilize burst (50ms) positions diaphragm at end-of-stroke, (2) settle gap (80ms) lets spring return to known position, (3) actual fire pulse from consistent starting pressure. Configurable via `stabilize_ms`, `settle_ms`, `pre_pressurize` class attributes.
 - **[CODE]** `app.py`: New endpoints `GET|POST /api/pump/stabilize` for stabilization settings (enable/disable, burst ms, settle ms).
 - **[UI]** `index.html`: Settings tab — "🎯 Pump Stabilization" card with enable toggle, burst slider (0-200ms), settle slider (0-300ms), and Apply button.
+
+## 2026-06-12 — MICRO-PULSE & SEPARATE PULSE CONFIGURATION
+
+- **[CODE]** `hardware.py`: Lowered `fire_pump()` minimum clamp from 0.01s→0.001s (1ms). Enables ultra-fine water control for insect deterrence.
+- **[CODE]** `app.py`: New endpoints `GET|POST /api/pulse/config` for separate calibration pulse, operational pulse, calibration retry pulse, and prime duration. Modifies `AutoCalibrator.FIRE_DURATION` and `AutoCalibrator.RETRY_DURATION` at runtime.
+- **[UI]** `index.html`: Test Fire pulse slider now goes down to 1ms (step=1ms), shows ms for <100ms values. Added "🔥 Fire Pulse Configuration" card in Settings tab with separate sliders for: Operational Pulse (1-500ms), Calibration Pulse (10-2000ms), Calibration Retry Pulse (10-2000ms), and Prime Duration (500-10000ms). Settings sync with Test Fire slider on apply.

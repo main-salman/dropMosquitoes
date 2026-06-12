@@ -173,9 +173,9 @@ class RelayController:
         3. Pump ON for actual pulse → consistent pressure every time
 
         Args:
-            duration_sec: Pulse length in seconds (0.01 to 2.0).
+            duration_sec: Pulse length in seconds (0.001 to 2.0).
         """
-        duration_sec = max(0.01, min(duration_sec, 2.0))  # Clamp to safe range
+        duration_sec = max(0.001, min(duration_sec, 2.0))  # Clamp to safe range
 
         if self.pre_pressurize:
             print(f"[RelayController] FIRE! Stabilize {self.stabilize_ms}ms → "

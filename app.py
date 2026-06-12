@@ -440,6 +440,49 @@ def api_pump_stabilize_set():
 
 
 # ============================================================================
+# FIRE PULSE CONFIGURATION API
+# ============================================================================
+
+@app.route('/api/pulse/config', methods=['GET'])
+def api_pulse_config_get():
+    """Get pulse configuration for calibration, operational, and priming."""
+    return jsonify({
+        "operational_pulse": relay.fire_pump.__defaults__[0] if relay.fire_pump.__defaults__ else 0.025,
+        "cal_pulse": auto_cal.FIRE_DURATION,
+        "cal_retry_pulse": auto_cal.RETRY_DURATION,
+        "prime_duration_ms": primer.prime_duration_ms if hasattr(primer, 'prime_duration_ms') else 3000,
+    })
+
+
+@app.route('/api/pulse/config', methods=['POST'])
+def api_pulse_config_set():
+    """Update pulse configuration.
+    Body: {"operational_pulse": float, "cal_pulse": float,
+           "cal_retry_pulse": float, "prime_duration_ms": int}"""
+    data = request.get_json(force=True)
+    if "operational_pulse" in data:
+        op = max(0.001, min(float(data["operational_pulse"]), 2.0))
+        relay.fire_pump.__func__.__defaults__ = (op,)
+        print(f"[app] Operational pulse set to {op*1000:.0f}ms")
+    if "cal_pulse" in data:
+        auto_cal.FIRE_DURATION = max(0.01, min(float(data["cal_pulse"]), 2.0))
+        print(f"[app] Calibration pulse set to {auto_cal.FIRE_DURATION*1000:.0f}ms")
+    if "cal_retry_pulse" in data:
+        auto_cal.RETRY_DURATION = max(0.01, min(float(data["cal_retry_pulse"]), 2.0))
+        print(f"[app] Calibration retry pulse set to {auto_cal.RETRY_DURATION*1000:.0f}ms")
+    if "prime_duration_ms" in data:
+        if hasattr(primer, 'prime_duration_ms'):
+            primer.prime_duration_ms = max(500, min(int(data["prime_duration_ms"]), 10000))
+            print(f"[app] Prime duration set to {primer.prime_duration_ms}ms")
+    return jsonify({
+        "operational_pulse": relay.fire_pump.__defaults__[0] if relay.fire_pump.__defaults__ else 0.025,
+        "cal_pulse": auto_cal.FIRE_DURATION,
+        "cal_retry_pulse": auto_cal.RETRY_DURATION,
+        "prime_duration_ms": primer.prime_duration_ms if hasattr(primer, 'prime_duration_ms') else 3000,
+    })
+
+
+# ============================================================================
 # AI / YOLO API
 # ============================================================================
 
