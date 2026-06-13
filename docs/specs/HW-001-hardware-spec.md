@@ -278,12 +278,36 @@ The chassis is a vertically condensed dome enclosure with the gimbal mounted INV
 
 ### 8.3 Fluid Routing
 
+> ⚠ **CRITICAL: Solenoid valve is mounted ON the servo turret payload**, directly connected to the nozzle
+> with ZERO tubing between them. Any flexible tubing after the solenoid creates "dead volume" that
+> absorbs the 10ms pulse energy, defeating the entire accumulator upgrade.
+
 1. **Inlet** — silicone tubing drops into reservoir → runs to pump inlet barb
 2. **Pump → Accumulator** — pump outlet → 1/4" flex line → uxcell 1/2" FNPT adapter → accumulator port 1
-3. **Accumulator → Solenoid** — accumulator port 2 → uxcell 1/2" FNPT adapter → 1/4" flex line → Kozelo 1/4" MNPT adapter → solenoid inlet
-4. **Solenoid → Nozzle** — solenoid outlet → Kozelo 1/4" MNPT adapter → 1/4" flex line → nozzle on gimbal
+3. **Accumulator → Turret** — accumulator port 2 → uxcell 1/2" FNPT adapter → 1/4" flex line → through PG9 cable gland → service loop → Kozelo 1/4" MNPT adapter → **solenoid inlet (ON TURRET)**
+4. **Solenoid → Nozzle (DIRECT)** — solenoid outlet → Kozelo 1/4" MNPT adapter → **nozzle threads DIRECTLY into adapter** (zero dead volume, zero drip, 40 PSI at nozzle tip)
 5. **Pump Power** — Relay CH1 supplies +12V for pump on/off (continuous run or software-managed duty cycle)
-6. **Solenoid Power** — IRLB8721 MOSFET (BCM 27) gates +12V to solenoid coil with microsecond precision
+6. **Solenoid Power** — IRLB8721 MOSFET (BCM 27) gates +12V to solenoid coil with microsecond precision. 12V/GND wires routed from enclosure to turret alongside silicone line.
+
+### 8.4 Turret Payload Weight Budget
+
+| Component | Weight |
+|:----------|:-------|
+| IMX219 Sniper Camera | ~30g |
+| GOODRIG Solenoid + brass fittings | ~200g |
+| Kozelo adapters ×2 | ~30g |
+| Nozzle | ~15g |
+| **Total** | **~275g** |
+
+MG996R stall torque = 11 kg·cm at 6V → payload is **2.5% of capacity**.
+Mount solenoid **near the pivot center** to minimize rotational inertia.
+
+### 8.5 Fallback (If Servos Struggle)
+
+If MG996R servos overheat or overshoot with the solenoid on-turret, replace the silicone tubing
+between accumulator and turret with **rigid PTFE (Teflon) or nylon tubing** and move the solenoid
+off-turret. Rigid tubing does not expand under pressure, preserving pulse integrity. However,
+rigid tubing restricts turret movement range — use solenoid-on-turret first.
 
 ## 9. Enclosure & Weatherproofing
 

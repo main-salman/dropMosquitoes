@@ -660,3 +660,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** HW-001 §5.4: New MOSFET switching circuit schematic (IRLB8721 + 10kΩ pull-down + 1N4007 flyback).
 - **[SPEC]** HW-001 §8: Complete rewrite — accumulator + solenoid topology with full plumbing diagram and routing.
 - **[SPEC]** HW-001 §12.1: New BOM section for ECO-2026-004 parts with prices and thread specs.
+
+## 2026-06-12 — SOLENOID MOUNTED ON SERVO TURRET (ZERO DEAD VOLUME)
+
+- **[DECISION]** Solenoid valve MUST be mounted directly on servo turret payload, connected directly to nozzle with ZERO tubing between them. Rationale: Any flexible tubing after the solenoid creates "dead volume" — the tube balloons under pressure, absorbing the 10ms pulse energy and producing a dribble instead of a laser stream. Direct connection keeps 40 PSI right at the nozzle tip.
+- **[DECISION]** MG996R servos (11 kg·cm stall torque) can easily handle ~275g turret payload (camera + solenoid + adapters + nozzle = 2.5% of capacity). Mount solenoid near pivot center to minimize rotational inertia.
+- **[DECISION]** Fallback if servos struggle: replace silicone tubing (accumulator→turret) with rigid PTFE/Teflon tubing and move solenoid off-turret. Rigid tubing preserves pulse integrity but restricts turret movement.
+- **[SPEC]** HW-001 §8.3: Updated fluid routing — solenoid on turret, direct to nozzle. Added §8.4 weight budget, §8.5 fallback plan.
+- **[DIAGRAMS]** Updated all ECO-2026-004 diagrams (3 draw.io + 3 reference images) to show servo turret (not Storm32 gimbal) with solenoid + nozzle on payload plate.
