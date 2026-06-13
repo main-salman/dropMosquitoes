@@ -24,7 +24,7 @@ from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
     RelayController, LiDARController, create_turret_controller,
-    PrimingSystem,
+    PrimingSystem, AccumulatorManager,
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
     YAW_LIMIT, PITCH_LIMIT, PITCH_HOME,
     SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
@@ -40,6 +40,7 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
+accum = AccumulatorManager(relay)  # ECO-2026-004: Charge-on-demand accumulator
 gimbal = create_turret_controller()
 lidar = LiDARController()
 
@@ -85,6 +86,7 @@ def cleanup():
     sniper_cam.stop()
     lidar.cleanup()
     gimbal.cleanup()
+    accum.cleanup()  # ECO-2026-004: Ensure pump OFF, solenoid CLOSED
     relay.cleanup()
     print("[app] Shutdown complete.")
 
@@ -370,6 +372,76 @@ def api_relay_gimbal_power():
     state = bool(data.get('state', False))
     relay.set_gimbal_power(state)
     return jsonify(relay.get_status())
+
+
+# ============================================================================
+# ACCUMULATOR API — ECO-2026-004
+# Charge-on-demand system: arm → fire (solenoid pulse) → auto-topup → disarm
+# ============================================================================
+
+@app.route('/api/accumulator/arm', methods=['POST'])
+def api_accum_arm():
+    """
+    Charge the accumulator and enter armed state.
+    Pump runs for ~3s (solenoid closed), then stops.
+    System holds ~30 PSI passively, ready to fire.
+    """
+    def _arm():
+        return accum.arm()
+    result = _arm()
+    return jsonify(result)
+
+
+@app.route('/api/accumulator/disarm', methods=['POST'])
+def api_accum_disarm():
+    """Disarm: pump OFF, solenoid CLOSED, reset all state."""
+    result = accum.disarm()
+    return jsonify(result)
+
+
+@app.route('/api/accumulator/fire', methods=['POST'])
+def api_accum_fire():
+    """
+    Fire a precision water pulse via solenoid.
+    Pump stays OFF — accumulator provides stored pressure.
+    Body: {"duration_ms": float}  (milliseconds, 1–2000, default 10)
+    """
+    data = request.get_json(force=True) if request.data else {}
+    duration_ms = float(data.get('duration_ms', accum.DEFAULT_PULSE_SEC * 1000))
+    duration_sec = duration_ms / 1000.0
+    result = accum.fire(duration_sec)
+    primer.mark_fired()
+    return jsonify(result)
+
+
+@app.route('/api/accumulator/status', methods=['GET'])
+def api_accum_status():
+    """Get accumulator state: armed, shot count, pressure estimate, config."""
+    return jsonify(accum.get_status())
+
+
+@app.route('/api/accumulator/config', methods=['GET'])
+def api_accum_config_get():
+    """Get current accumulator charge/fire configuration."""
+    status = accum.get_status()
+    return jsonify(status.get("config", {}))
+
+
+@app.route('/api/accumulator/config', methods=['POST'])
+def api_accum_config_set():
+    """
+    Update accumulator configuration at runtime.
+    Body: {
+        "initial_charge_sec": float,
+        "topup_charge_sec": float,
+        "topup_interval_shots": int,
+        "topup_interval_sec": float,
+        "default_pulse_ms": float
+    }
+    """
+    data = request.get_json(force=True)
+    accum.update_config(data)
+    return jsonify(accum.get_status())
 
 
 # ============================================================================

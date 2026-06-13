@@ -1,0 +1,80 @@
+<mxfile>
+  <diagram name="ECO-004 Unified Wiring" id="eco004_wiring">
+    <mxGraphModel dx="1600" dy="900" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Title -->
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;ECO-2026-004: Unified Pump + Solenoid Wiring Schematic&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666;font-size:11px'&gt;BCM 17 → Relay CH1 → R385 Pump | BCM 27 → IRLB8721 MOSFET → GOODRIG Solenoid&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="800" height="45" as="geometry"/></mxCell>
+        <!-- ===== JETSON ===== -->
+        <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="200" height="250" as="geometry"/></mxCell>
+        <mxCell id="jetsonlbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="50" y="130" width="180" height="30" as="geometry"/></mxCell>
+        <!-- Pin 11 / BCM 17 -->
+        <mxCell id="pin11" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="175" width="160" height="40" as="geometry"/></mxCell>
+        <mxCell id="pin11l" value="&lt;b style='color:#C8E6C9;font-size:10px'&gt;Terminal 11 / BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:8px'&gt;3.3V GPIO → Relay IN1&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="178" width="150" height="30" as="geometry"/></mxCell>
+        <!-- Pin 13 / BCM 27 -->
+        <mxCell id="pin13" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="235" width="160" height="40" as="geometry"/></mxCell>
+        <mxCell id="pin13l" value="&lt;b style='color:#C8E6C9;font-size:10px'&gt;Terminal 13 / BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:8px'&gt;3.3V GPIO → MOSFET Gate&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="238" width="150" height="30" as="geometry"/></mxCell>
+        <!-- GND pins -->
+        <mxCell id="gndpin" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="295" width="160" height="35" as="geometry"/></mxCell>
+        <mxCell id="gndpinl" value="&lt;b style='color:#CCC;font-size:10px'&gt;Terminal 6,9,14,20... (GND)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="300" width="150" height="20" as="geometry"/></mxCell>
+
+        <!-- ===== PATH 1: BCM 17 → RELAY → PUMP ===== -->
+        <!-- Wire BCM 17 → Relay -->
+        <mxCell id="w1" value="" style="endArrow=block;endFill=1;strokeColor=#FF9800;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="240" y="195" as="sourcePoint"/><mxPoint x="360" y="195" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w1l" value="&lt;span style='font-size:8px;color:#E65100'&gt;&lt;b&gt;ORANGE wire&lt;/b&gt;&lt;br&gt;3.3V signal&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="260" y="170" width="75" height="22" as="geometry"/></mxCell>
+        <!-- RELAY MODULE -->
+        <mxCell id="relay" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="360" y="130" width="180" height="130" as="geometry"/></mxCell>
+        <mxCell id="relaylbl" value="&lt;b style='color:#BCAAA4;font-size:12px'&gt;Monk Makes Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;CH1 = Pump (BCM 17)&lt;br&gt;&lt;br&gt;Signal IN → closes relay contact&lt;br&gt;Switches +12V to pump motor&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="365" y="138" width="170" height="65" as="geometry"/></mxCell>
+        <mxCell id="relaycontact" value="&lt;span style='font-size:9px;color:#BCAAA4'&gt;NO ↔ COM (closed when HIGH)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="370" y="215" width="160" height="14" as="geometry"/></mxCell>
+        <!-- Wire Relay → Pump -->
+        <mxCell id="w2" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="540" y="195" as="sourcePoint"/><mxPoint x="680" y="195" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w2l" value="&lt;span style='font-size:8px;color:#C62828'&gt;&lt;b&gt;RED wire&lt;/b&gt;&lt;br&gt;+12V switched&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="570" y="170" width="75" height="22" as="geometry"/></mxCell>
+        <!-- R385 PUMP -->
+        <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="680" y="130" width="200" height="130" as="geometry"/></mxCell>
+        <mxCell id="pumpmotor" value="" style="ellipse;fillColor=#1565C0;strokeColor=#1976D2;" vertex="1" parent="1"><mxGeometry x="700" y="165" width="35" height="35" as="geometry"/></mxCell>
+        <mxCell id="pumplbl" value="&lt;b style='color:#BBDEFB;font-size:12px'&gt;R385 Pump Motor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:9px'&gt;12V DC brushed&lt;br&gt;~30-35 PSI max&lt;br&gt;&lt;b style='color:#FF8A80'&gt;⚠ Cannot deadhead!&lt;/b&gt;&lt;br&gt;Charge-on-demand only&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="740" y="140" width="130" height="60" as="geometry"/></mxCell>
+        <mxCell id="pumpcap" value="&lt;b style='font-size:10px'&gt;PATH 1: PUMP&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;BCM 17 → Relay CH1 → R385 motor (+12V switched)&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#0D47A1;align=center;" vertex="1" parent="1"><mxGeometry x="360" y="100" width="520" height="28" as="geometry"/></mxCell>
+
+        <!-- ===== PATH 2: BCM 27 → MOSFET → SOLENOID ===== -->
+        <!-- Wire BCM 27 → MOSFET Gate -->
+        <mxCell id="w3" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="240" y="255" as="sourcePoint"/><mxPoint x="360" y="450" as="targetPoint"/><Array as="points"><mxPoint x="300" y="255"/><mxPoint x="300" y="450"/></Array></mxGeometry></mxCell>
+        <mxCell id="w3l" value="&lt;span style='font-size:8px;color:#2E7D32'&gt;&lt;b&gt;GREEN wire&lt;/b&gt;&lt;br&gt;3.3V gate signal&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="260" y="340" width="85" height="22" as="geometry"/></mxCell>
+        <!-- 10kΩ pull-down -->
+        <mxCell id="pd" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="360" y="370" width="120" height="50" as="geometry"/></mxCell>
+        <mxCell id="pdlbl" value="&lt;b style='color:#E65100;font-size:10px'&gt;10kΩ Pull-Down&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:8px'&gt;Gate → GND (boot safety)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="362" y="375" width="116" height="35" as="geometry"/></mxCell>
+        <!-- MOSFET -->
+        <mxCell id="mos" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="360" y="430" width="180" height="120" as="geometry"/></mxCell>
+        <mxCell id="mosicon" value="" style="rounded=0;fillColor=#3F51B5;strokeColor=#283593;" vertex="1" parent="1"><mxGeometry x="375" y="455" width="40" height="65" as="geometry"/></mxCell>
+        <mxCell id="moslbl" value="&lt;b style='color:#283593;font-size:12px'&gt;IRLB8721PBF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:9px'&gt;N-Ch MOSFET TO-220&lt;br&gt;V_DSS=30V I_D=62A&lt;br&gt;&lt;b&gt;G&lt;/b&gt;=BCM27 &lt;b&gt;D&lt;/b&gt;=Sol(-) &lt;b&gt;S&lt;/b&gt;=GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="420" y="445" width="115" height="55" as="geometry"/></mxCell>
+        <!-- Wire MOSFET Drain → Solenoid (-) -->
+        <mxCell id="w4" value="" style="endArrow=block;endFill=1;strokeColor=#5C6BC0;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="540" y="490" as="sourcePoint"/><mxPoint x="680" y="490" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w4l" value="&lt;span style='font-size:8px;color:#283593'&gt;Drain → Solenoid (-)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="565" y="473" width="100" height="14" as="geometry"/></mxCell>
+        <!-- SOLENOID VALVE -->
+        <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="680" y="410" width="200" height="140" as="geometry"/></mxCell>
+        <mxCell id="solcoil" value="" style="rounded=1;fillColor=#37474F;strokeColor=#455A64;arcSize=10;" vertex="1" parent="1"><mxGeometry x="720" y="435" width="120" height="35" as="geometry"/></mxCell>
+        <mxCell id="sollbl" value="&lt;b style='color:#B0BEC5;font-size:12px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:9px'&gt;12V DC NC Direct-Acting&lt;br&gt;&lt;b style='color:#4CAF50'&gt;ON SERVO TURRET&lt;/b&gt;&lt;br&gt;Direct to nozzle&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="695" y="475" width="170" height="50" as="geometry"/></mxCell>
+        <mxCell id="solcap" value="&lt;b style='font-size:10px'&gt;PATH 2: SOLENOID&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;BCM 27 → MOSFET gate → 12V solenoid coil (microsecond switching)&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#263238;align=center;" vertex="1" parent="1"><mxGeometry x="360" y="560" width="520" height="28" as="geometry"/></mxCell>
+        <!-- 1N4007 Flyback -->
+        <mxCell id="diode" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="910" y="435" width="140" height="50" as="geometry"/></mxCell>
+        <mxCell id="diodelbl" value="&lt;b style='color:#880E4F;font-size:10px'&gt;1N4007 Flyback&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:8px'&gt;Across solenoid coil&lt;br&gt;Cathode → +12V&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="915" y="438" width="130" height="40" as="geometry"/></mxCell>
+        <!-- +12V → Solenoid (+) -->
+        <mxCell id="w5" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="780" y="410" as="sourcePoint"/><mxPoint x="780" y="380" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- +12V BUS -->
+        <mxCell id="v12" value="" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="680" y="340" width="200" height="35" as="geometry"/></mxCell>
+        <mxCell id="v12lbl" value="&lt;b style='color:#FFF;font-size:11px'&gt;+12V DC Bus (Wago)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="685" y="345" width="190" height="20" as="geometry"/></mxCell>
+        <!-- GND BUS -->
+        <mxCell id="gnd" value="" style="rounded=1;fillColor=#333;strokeColor=#555;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="600" width="840" height="30" as="geometry"/></mxCell>
+        <mxCell id="gndlbl" value="&lt;b style='color:#CCC;font-size:11px'&gt;GND Bus (Common Ground: Jetson GND + 12V PSU GND + MOSFET Source)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="50" y="605" width="820" height="18" as="geometry"/></mxCell>
+        <!-- GND wires -->
+        <mxCell id="gw1" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="120" y="340" as="sourcePoint"/><mxPoint x="120" y="600" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="gw2" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="420" y="550" as="sourcePoint"/><mxPoint x="420" y="600" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="gw2l" value="&lt;span style='font-size:7px;color:#666'&gt;Source→GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="565" width="55" height="12" as="geometry"/></mxCell>
+        <!-- Legend -->
+        <mxCell id="leg" value="&lt;b style='font-size:10px'&gt;Software Control Logic (AccumulatorManager):&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;&lt;b&gt;ARM:&lt;/b&gt; BCM 27=LOW (solenoid closed) → BCM 17=HIGH (pump ON for 3s) → BCM 17=LOW (pump off, tank at ~30 PSI)&lt;br&gt;&lt;b&gt;FIRE:&lt;/b&gt; BCM 17=LOW (pump off) → BCM 27=HIGH for 10ms (solenoid opens, water fires) → BCM 27=LOW (solenoid closes)&lt;br&gt;&lt;b&gt;TOPUP:&lt;/b&gt; After 10 shots → BCM 27=LOW → BCM 17=HIGH for 1s → BCM 17=LOW (recharge complete)&lt;br&gt;&lt;b&gt;DISARM:&lt;/b&gt; BCM 17=LOW + BCM 27=LOW (everything OFF, system safe)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontColor=#333;fontSize=9;strokeWidth=1;align=left;spacingLeft=10;" vertex="1" parent="1"><mxGeometry x="40" y="660" width="840" height="80" as="geometry"/></mxCell>
+        <!-- SAFETY NOTE -->
+        <mxCell id="safety" value="&lt;b style='color:#C62828'&gt;⚠ DEADHEAD PROTECTION:&lt;/b&gt; R385 pump runs MAX 5s per burst. 10kΩ pull-down on BCM 27 ensures solenoid stays CLOSED during Jetson boot/shutdown." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#F44336;fontColor=#333;fontSize=10;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="40" y="755" width="840" height="30" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

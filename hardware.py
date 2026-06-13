@@ -103,34 +103,34 @@ except ImportError:
 
 
 # ============================================================================
-# GPIO PIN ASSIGNMENTS — ECO-2026-002
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# GPIO PIN ASSIGNMENTS — ECO-2026-004
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # ROUTING: Jetson GPIO Header → 40-pin F/F Ribbon Cable → IDC40P Terminal Block
 # All wiring connects to screw terminals on the IDC40P breakout, NOT the Jetson.
 # Terminal numbers match physical pin numbers 1:1.
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (Pump)
-RELAY_GIMBAL_PIN = 27     # BCM 27 = Pin 13 → IDC40P Terminal 13 → Relay CH2 (Gimbal)
-# ============================================================================
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump)
+SOLENOID_PIN = 27         # BCM 27 = Pin 13 → IDC40P Terminal 13 → IRLB8721 MOSFET Gate → Solenoid
+# =======================================================================================================
 
 
 class RelayController:
     """
-    Controls the Monk Makes Dual Relay via Jetson GPIO.
+    Controls the R385 pump (via Relay CH1) and GOODRIG solenoid valve
+    (via IRLB8721 MOSFET on BCM 27) through Jetson GPIO.
 
-    CH1 (RELAY_PUMP_PIN):  Water pump. Pulsed for N ms to fire a shot.
-    CH2 (RELAY_GIMBAL_PIN): Gimbal power. Held OFF on boot; turned ON
-                            only after Jetson has initialized serial comms.
+    ECO-2026-004: BCM 27 reassigned from Relay CH2 (gimbal) to MOSFET gate
+    for solenoid valve. Gimbal power now via dedicated buck converter (no relay).
 
-    SAFE-001 §1: Relay CH2 MUST initialize to OFF (gimbal unpowered at boot).
+    SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
     """
 
     def __init__(self):
         global JETSON_AVAILABLE
         self._pump_state = False
-        self._gimbal_state = True  # Always True since gimbal is directly powered via 2A fuse
+        self._solenoid_state = False
         self._lock = threading.Lock()
 
         if JETSON_AVAILABLE:
@@ -138,11 +138,11 @@ class RelayController:
                 GPIO.setmode(GPIO.BCM)
                 GPIO.setwarnings(False)
                 GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
-                GPIO.setup(RELAY_GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
+                GPIO.setup(SOLENOID_PIN, GPIO.OUT, initial=GPIO.LOW)  # Solenoid CLOSED at boot
                 configure_push_pull()
-                print(f"[RelayController] GPIO initialized and Pinmux forced to Push-Pull. Pump=Pin{RELAY_PUMP_PIN}, Gimbal=Pin{RELAY_GIMBAL_PIN}")
+                print(f"[RelayController] GPIO initialized. Pump=BCM{RELAY_PUMP_PIN}, "
+                      f"Solenoid=BCM{SOLENOID_PIN} (MOSFET gate)")
             except OSError as e:
-                # Device busy or unavailable – fall back to stub mode
                 print(f"[RelayController] GPIO init failed ({e}); running in STUB mode.")
                 JETSON_AVAILABLE = False
             except Exception as e:
@@ -151,58 +151,46 @@ class RelayController:
         else:
             print("[RelayController] STUB MODE — no real GPIO control.")
 
-
-    # Pre-pressurization settings (configurable via API)
-    # Solves diaphragm pump pulsation inconsistency:
-    # - stabilize_ms: Short burst to move diaphragm to end-of-stroke
-    # - settle_ms: Wait for diaphragm spring to return to known start position
-    # - Then fire actual pulse from a consistent pressure state
-    stabilize_ms = 50         # Pre-fire stabilization burst (ms)
-    settle_ms = 80            # Gap after stabilization for diaphragm return (ms)
-    pre_pressurize = True     # Enable/disable pre-pressurization
+    # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
+    # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
+    stabilize_ms = 50
+    settle_ms = 80
+    pre_pressurize = False  # Disabled by default — accumulator handles this now
 
     def fire_pump(self, duration_sec: float = 0.025):
         """
-        Fire the water pump for a specified duration.
-        Default: 25ms (micro-pulse for insect deterrence).
+        LEGACY: Fire the water pump relay for a specified duration.
+        In ECO-2026-004, use AccumulatorManager.fire() instead — it pulses
+        the solenoid while the accumulator provides stored pressure.
 
-        If pre_pressurize is enabled, runs a stabilization sequence first
-        to ensure consistent diaphragm pump pressure:
-        1. Pump ON for stabilize_ms → positions diaphragm at end-of-stroke
-        2. Pump OFF for settle_ms → diaphragm spring returns to known position
-        3. Pump ON for actual pulse → consistent pressure every time
+        This method is still used internally by AccumulatorManager for
+        charging the accumulator tank (pump on, solenoid closed).
 
         Args:
-            duration_sec: Pulse length in seconds (0.001 to 2.0).
+            duration_sec: Pulse length in seconds (0.001 to 5.0).
         """
-        duration_sec = max(0.001, min(duration_sec, 2.0))  # Clamp to safe range
+        duration_sec = max(0.001, min(duration_sec, 5.0))  # Allow longer for charging
 
         if self.pre_pressurize:
             print(f"[RelayController] FIRE! Stabilize {self.stabilize_ms}ms → "
                   f"settle {self.settle_ms}ms → pulse {duration_sec*1000:.0f}ms")
         else:
-            print(f"[RelayController] FIRE! Pump ON for {duration_sec:.3f}s")
+            print(f"[RelayController] Pump ON for {duration_sec:.3f}s")
 
         def _pulse():
             with self._lock:
                 try:
                     if self.pre_pressurize and self.stabilize_ms > 0:
-                        # Step 1: Stabilization burst — move diaphragm to end-of-stroke
                         self._set_pump(True)
                         time.sleep(self.stabilize_ms / 1000.0)
-
-                        # Step 2: Settle — let diaphragm spring return
                         self._set_pump(False)
                         time.sleep(self.settle_ms / 1000.0)
 
-                    # Step 3: Actual fire pulse — from consistent starting pressure
                     self._set_pump(True)
                     time.sleep(duration_sec)
                 finally:
-                    # SAFE-001 §2: ALWAYS turn off, even on exception
                     self._set_pump(False)
 
-        # Run in a thread so we don't block the Flask request
         threading.Thread(target=_pulse, daemon=True).start()
 
     def set_pump(self, state: bool):
@@ -216,35 +204,432 @@ class RelayController:
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
-    def set_gimbal_power(self, state: bool):
+    # -- Solenoid Control (ECO-2026-004) --------------------------------------
+
+    def set_solenoid(self, state: bool):
         """
-        Turn gimbal power ON or OFF (Bypassed via 2A inline fuse).
-        Gimbal is always powered. Keep state as True.
+        Open (HIGH) or close (LOW) the solenoid valve via MOSFET gate.
+        HIGH = 3.3V on IRLB8721 gate → MOSFET conducts → 12V flows through
+        solenoid coil → magnetic plunger retracts → water flows.
+        LOW = gate pulled to GND via 10kΩ → MOSFET off → solenoid spring-closed.
         """
         with self._lock:
-            self._gimbal_state = True
-            print(f"[RelayController] Gimbal power relay bypassed (2A fuse). Gimbal is always ON.")
+            self._set_solenoid(state)
+
+    def _set_solenoid(self, state: bool):
+        self._solenoid_state = state
+        if JETSON_AVAILABLE:
+            GPIO.output(SOLENOID_PIN, GPIO.HIGH if state else GPIO.LOW)
+        print(f"[RelayController] Solenoid {'OPEN' if state else 'CLOSED'}")
+
+    def fire_solenoid(self, duration_sec: float = 0.010):
+        """
+        Pulse the solenoid valve open for duration_sec, then close.
+        This is the precision firing mechanism — pump stays OFF,
+        accumulator provides stored pressure.
+
+        Args:
+            duration_sec: Valve open time in seconds (0.001 to 2.0).
+        """
+        duration_sec = max(0.001, min(duration_sec, 2.0))
+        print(f"[RelayController] SOLENOID PULSE: {duration_sec*1000:.1f}ms")
+
+        def _pulse():
+            with self._lock:
+                try:
+                    self._set_solenoid(True)
+                    time.sleep(duration_sec)
+                finally:
+                    self._set_solenoid(False)
+
+        threading.Thread(target=_pulse, daemon=True).start()
+
+    # -- Backward compatibility -----------------------------------------------
+
+    def set_gimbal_power(self, state: bool):
+        """
+        DEPRECATED: Gimbal relay removed in ECO-2026-004.
+        Servos powered via dedicated 5V 10A buck converter.
+        Kept as no-op for backward compatibility with app.py calls.
+        """
+        print(f"[RelayController] set_gimbal_power() deprecated — servos always powered.")
 
     # -- Status ---------------------------------------------------------------
 
     def get_status(self) -> dict:
         return {
             "pump": self._pump_state,
-            "gimbal_power": self._gimbal_state
+            "solenoid": self._solenoid_state,
+            "gimbal_power": True  # Always on (backward compat)
         }
 
     # -- Cleanup --------------------------------------------------------------
 
     def cleanup(self):
-        """Ensure all relays are OFF and release GPIO pins."""
+        """Ensure pump OFF, solenoid CLOSED, and release GPIO pins."""
         print("[RelayController] Cleaning up GPIO...")
         try:
             if JETSON_AVAILABLE:
                 GPIO.output(RELAY_PUMP_PIN, GPIO.LOW)
-                GPIO.output(RELAY_GIMBAL_PIN, GPIO.LOW)
+                GPIO.output(SOLENOID_PIN, GPIO.LOW)
                 GPIO.cleanup()
         except Exception as e:
             print(f"[RelayController] Cleanup error: {e}")
+
+
+# ============================================================================
+# ACCUMULATOR MANAGER — ECO-2026-004
+# Implements: HW-001 §8, SW-001 §2.4
+#
+# Charge-on-demand strategy for R385 micro-diaphragm pump + 0.75L Swess
+# accumulator + GOODRIG 12V solenoid (MOSFET-gated).
+#
+# The R385 pump CANNOT deadhead (run continuously against closed valve).
+# It has no built-in pressure switch and will overheat/burn out.
+#
+# Strategy:
+#   1. ARM:   Pump charges accumulator for ~3s → pump OFF → system holds ~30 PSI
+#   2. FIRE:  Pulse solenoid MOSFET for 10ms → pump stays OFF → accumulator provides pressure
+#   3. TOPUP: After N shots or T seconds, brief 1s pump burst to recharge
+#   4. DISARM: Everything OFF, solenoid closed, pump cold
+# ============================================================================
+
+class AccumulatorManager:
+    """
+    Manages the R385 pump + 0.75L Swess accumulator + GOODRIG solenoid
+    using a charge-on-demand strategy.
+
+    The R385 brushed motor pump has NO pressure switch and CANNOT run
+    continuously against a closed solenoid (deadheading → overheat → burn out).
+
+    Instead, we treat the accumulator like a battery:
+    - Charge it with a timed pump burst (solenoid closed)
+    - Fire by pulsing the solenoid (pump off, stored pressure does the work)
+    - Top up after N shots to maintain consistent pressure
+
+    State machine: IDLE → CHARGING → ARMED → FIRING → ARMED → ...
+    """
+
+    # -- Configurable charge parameters (tunable via API / calibration) --------
+    INITIAL_CHARGE_SEC = 3.0     # Pump run time when first arming (fills from empty)
+    TOPUP_CHARGE_SEC = 1.0       # Brief pump burst to recharge after N shots
+    TOPUP_INTERVAL_SHOTS = 10    # Top up every N shots
+    TOPUP_INTERVAL_SEC = 60.0    # Or top up every T seconds of armed time
+    MAX_PUMP_RUN_SEC = 5.0       # Absolute max pump run time (deadhead protection)
+    DEFAULT_PULSE_SEC = 0.010    # Default solenoid pulse (10ms)
+
+    # States
+    STATE_IDLE = "idle"
+    STATE_CHARGING = "charging"
+    STATE_ARMED = "armed"
+    STATE_FIRING = "firing"
+
+    def __init__(self, relay: RelayController):
+        """
+        Args:
+            relay: RelayController instance (manages GPIO for pump + solenoid)
+        """
+        self._relay = relay
+        self._state = self.STATE_IDLE
+        self._shot_count = 0           # Shots since last charge/top-up
+        self._total_shots = 0          # Total shots since arming
+        self._armed = False
+        self._last_charge_time = 0.0
+        self._last_fire_time = 0.0
+        self._arm_time = 0.0
+        self._lock = threading.Lock()
+        self._topup_timer = None
+        print("[AccumulatorManager] Initialized (IDLE state)")
+
+    def arm(self) -> dict:
+        """
+        Charge the accumulator and enter the ARMED state.
+
+        Sequence:
+        1. Ensure solenoid is CLOSED (valve shut)
+        2. Run pump for INITIAL_CHARGE_SEC (accumulator fills to ~30 PSI)
+        3. Turn pump OFF
+        4. System is now passively holding pressure — ready to fire
+
+        Returns:
+            dict with arm status, charge duration, timestamp
+        """
+        with self._lock:
+            if self._state == self.STATE_CHARGING:
+                return {"status": "already_charging"}
+            self._state = self.STATE_CHARGING
+
+        result = {"status": "arming", "charge_sec": self.INITIAL_CHARGE_SEC}
+
+        try:
+            # Step 1: Ensure solenoid is CLOSED (safety: never pump into open valve)
+            self._relay._set_solenoid(False)
+            time.sleep(0.05)  # Brief settle for solenoid spring to close
+
+            # Step 2: Run pump to charge accumulator
+            charge_duration = min(self.INITIAL_CHARGE_SEC, self.MAX_PUMP_RUN_SEC)
+            print(f"[AccumulatorManager] ⚡ ARMING: Charging accumulator for {charge_duration:.1f}s...")
+            self._relay._set_pump(True)
+            time.sleep(charge_duration)
+            self._relay._set_pump(False)
+
+            # Step 3: Enter ARMED state
+            with self._lock:
+                self._state = self.STATE_ARMED
+                self._armed = True
+                self._shot_count = 0
+                self._total_shots = 0
+                self._last_charge_time = time.time()
+                self._arm_time = time.time()
+
+            # Step 4: Start top-up monitoring timer
+            self._start_topup_timer()
+
+            result["status"] = "armed"
+            result["timestamp"] = time.strftime("%H:%M:%S")
+            print(f"[AccumulatorManager] ✅ ARMED — accumulator at ~30 PSI, ready to fire")
+
+        except Exception as e:
+            # Safety: ensure pump is OFF on any error
+            self._relay._set_pump(False)
+            self._relay._set_solenoid(False)
+            with self._lock:
+                self._state = self.STATE_IDLE
+                self._armed = False
+            result["status"] = "error"
+            result["error"] = str(e)
+            print(f"[AccumulatorManager] ❌ ARM ERROR: {e}")
+
+        return result
+
+    def disarm(self) -> dict:
+        """
+        Disarm the system: pump OFF, solenoid CLOSED, reset all state.
+
+        Returns:
+            dict with disarm status and shot statistics
+        """
+        # Stop top-up timer
+        self._stop_topup_timer()
+
+        # Ensure everything is off
+        self._relay._set_pump(False)
+        self._relay._set_solenoid(False)
+
+        with self._lock:
+            total = self._total_shots
+            self._state = self.STATE_IDLE
+            self._armed = False
+            self._shot_count = 0
+            self._total_shots = 0
+
+        print(f"[AccumulatorManager] 🔒 DISARMED — total shots fired: {total}")
+        return {
+            "status": "disarmed",
+            "total_shots_fired": total,
+            "timestamp": time.strftime("%H:%M:%S")
+        }
+
+    def fire(self, duration_sec: float = None) -> dict:
+        """
+        Fire a precision water pulse by opening the solenoid valve.
+
+        The pump stays OFF — accumulated pressure in the tank does the work.
+        After firing, checks if a top-up is needed.
+
+        Args:
+            duration_sec: Solenoid open time (default: DEFAULT_PULSE_SEC = 10ms)
+
+        Returns:
+            dict with fire status, shot count, pressure estimate
+        """
+        if duration_sec is None:
+            duration_sec = self.DEFAULT_PULSE_SEC
+
+        with self._lock:
+            if not self._armed:
+                return {"status": "not_armed", "error": "System must be armed first"}
+            if self._state == self.STATE_CHARGING:
+                return {"status": "charging", "error": "Cannot fire while charging"}
+            if self._state == self.STATE_FIRING:
+                return {"status": "busy", "error": "Already firing"}
+            self._state = self.STATE_FIRING
+
+        duration_sec = max(0.001, min(duration_sec, 2.0))
+
+        try:
+            # Pulse solenoid (blocking in this thread for timing precision)
+            print(f"[AccumulatorManager] 🔫 FIRE! Solenoid pulse: {duration_sec*1000:.1f}ms "
+                  f"(shot #{self._total_shots + 1})")
+            self._relay._set_solenoid(True)
+            time.sleep(duration_sec)
+            self._relay._set_solenoid(False)
+
+            # Update counters
+            with self._lock:
+                self._shot_count += 1
+                self._total_shots += 1
+                self._last_fire_time = time.time()
+                shot_num = self._total_shots
+                since_charge = self._shot_count
+                self._state = self.STATE_ARMED
+
+            # Check if top-up needed
+            self._topup_if_needed()
+
+            return {
+                "status": "fired",
+                "duration_ms": duration_sec * 1000,
+                "shot_number": shot_num,
+                "shots_since_charge": since_charge,
+                "topup_in": max(0, self.TOPUP_INTERVAL_SHOTS - since_charge)
+            }
+
+        except Exception as e:
+            self._relay._set_solenoid(False)
+            with self._lock:
+                self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
+            print(f"[AccumulatorManager] ❌ FIRE ERROR: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def fire_blocking(self, duration_sec: float = None) -> dict:
+        """
+        Same as fire() but runs in a background thread to not block Flask.
+        Returns immediately with the shot queued.
+        """
+        if duration_sec is None:
+            duration_sec = self.DEFAULT_PULSE_SEC
+
+        with self._lock:
+            if not self._armed:
+                return {"status": "not_armed", "error": "System must be armed first"}
+
+        def _do_fire():
+            self.fire(duration_sec)
+
+        threading.Thread(target=_do_fire, daemon=True, name="accum-fire").start()
+        return {"status": "queued", "duration_ms": duration_sec * 1000}
+
+    def _topup_if_needed(self):
+        """
+        Check if the accumulator needs a top-up charge.
+        Triggers if shot count exceeds TOPUP_INTERVAL_SHOTS.
+        """
+        with self._lock:
+            if not self._armed:
+                return
+            needs_topup = self._shot_count >= self.TOPUP_INTERVAL_SHOTS
+
+        if needs_topup:
+            self._topup()
+
+    def _topup(self):
+        """
+        Run a brief pump burst to recharge the accumulator.
+        Solenoid stays closed during charging.
+        """
+        with self._lock:
+            if self._state == self.STATE_CHARGING:
+                return  # Already charging
+            self._state = self.STATE_CHARGING
+
+        try:
+            charge_duration = min(self.TOPUP_CHARGE_SEC, self.MAX_PUMP_RUN_SEC)
+            print(f"[AccumulatorManager] 🔄 TOP-UP: Recharging for {charge_duration:.1f}s "
+                  f"(after {self._shot_count} shots)")
+
+            self._relay._set_solenoid(False)  # Ensure closed
+            time.sleep(0.02)
+            self._relay._set_pump(True)
+            time.sleep(charge_duration)
+            self._relay._set_pump(False)
+
+            with self._lock:
+                self._shot_count = 0  # Reset shot counter
+                self._last_charge_time = time.time()
+                self._state = self.STATE_ARMED
+
+            print(f"[AccumulatorManager] ✅ TOP-UP complete — pressure restored")
+
+        except Exception as e:
+            self._relay._set_pump(False)
+            self._relay._set_solenoid(False)
+            with self._lock:
+                self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
+            print(f"[AccumulatorManager] ❌ TOP-UP ERROR: {e}")
+
+    def _start_topup_timer(self):
+        """Start a background timer that triggers periodic top-ups."""
+        self._stop_topup_timer()
+
+        def _timer_loop():
+            while self._armed:
+                time.sleep(self.TOPUP_INTERVAL_SEC)
+                if not self._armed:
+                    break
+                # Only top up if we haven't charged recently
+                since_charge = time.time() - self._last_charge_time
+                if since_charge >= self.TOPUP_INTERVAL_SEC * 0.9:
+                    print(f"[AccumulatorManager] ⏰ Timer-triggered top-up "
+                          f"({since_charge:.0f}s since last charge)")
+                    self._topup()
+
+        self._topup_timer = threading.Thread(
+            target=_timer_loop, daemon=True, name="accum-topup-timer")
+        self._topup_timer.start()
+
+    def _stop_topup_timer(self):
+        """Stop the periodic top-up timer."""
+        # Timer thread checks self._armed and exits naturally
+        pass
+
+    def get_status(self) -> dict:
+        """Return comprehensive accumulator status for the API."""
+        with self._lock:
+            since_charge = time.time() - self._last_charge_time if self._last_charge_time else None
+            since_fire = time.time() - self._last_fire_time if self._last_fire_time else None
+            armed_duration = time.time() - self._arm_time if self._arm_time and self._armed else None
+
+            return {
+                "state": self._state,
+                "armed": self._armed,
+                "shot_count": self._shot_count,
+                "total_shots": self._total_shots,
+                "shots_until_topup": max(0, self.TOPUP_INTERVAL_SHOTS - self._shot_count),
+                "since_charge_sec": round(since_charge, 1) if since_charge else None,
+                "since_fire_sec": round(since_fire, 1) if since_fire else None,
+                "armed_duration_sec": round(armed_duration, 1) if armed_duration else None,
+                "config": {
+                    "initial_charge_sec": self.INITIAL_CHARGE_SEC,
+                    "topup_charge_sec": self.TOPUP_CHARGE_SEC,
+                    "topup_interval_shots": self.TOPUP_INTERVAL_SHOTS,
+                    "topup_interval_sec": self.TOPUP_INTERVAL_SEC,
+                    "default_pulse_ms": self.DEFAULT_PULSE_SEC * 1000,
+                }
+            }
+
+    def update_config(self, config: dict):
+        """Update charge/fire configuration at runtime."""
+        if "initial_charge_sec" in config:
+            self.INITIAL_CHARGE_SEC = max(0.5, min(float(config["initial_charge_sec"]), 10.0))
+        if "topup_charge_sec" in config:
+            self.TOPUP_CHARGE_SEC = max(0.5, min(float(config["topup_charge_sec"]), 5.0))
+        if "topup_interval_shots" in config:
+            self.TOPUP_INTERVAL_SHOTS = max(1, min(int(config["topup_interval_shots"]), 50))
+        if "topup_interval_sec" in config:
+            self.TOPUP_INTERVAL_SEC = max(10.0, min(float(config["topup_interval_sec"]), 300.0))
+        if "default_pulse_ms" in config:
+            self.DEFAULT_PULSE_SEC = max(0.001, min(float(config["default_pulse_ms"]) / 1000.0, 2.0))
+        print(f"[AccumulatorManager] Config updated: charge={self.INITIAL_CHARGE_SEC}s, "
+              f"topup={self.TOPUP_CHARGE_SEC}s every {self.TOPUP_INTERVAL_SHOTS} shots, "
+              f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
+
+    def cleanup(self):
+        """Emergency shutdown: everything OFF."""
+        self._armed = False
+        self._relay._set_pump(False)
+        self._relay._set_solenoid(False)
+        print("[AccumulatorManager] Emergency cleanup — all OFF")
 
 
 # ============================================================================

@@ -668,3 +668,23 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[DECISION]** Fallback if servos struggle: replace silicone tubing (accumulator→turret) with rigid PTFE/Teflon tubing and move solenoid off-turret. Rigid tubing preserves pulse integrity but restricts turret movement.
 - **[SPEC]** HW-001 §8.3: Updated fluid routing — solenoid on turret, direct to nozzle. Added §8.4 weight budget, §8.5 fallback plan.
 - **[DIAGRAMS]** Updated all ECO-2026-004 diagrams (3 draw.io + 3 reference images) to show servo turret (not Storm32 gimbal) with solenoid + nozzle on payload plate.
+
+## 2026-06-12 — ECO-2026-004: SOFTWARE IMPLEMENTATION — CHARGE-ON-DEMAND + SOLENOID CONTROL
+
+- **[SW]** `hardware.py`: GPIO reassignment — `RELAY_GIMBAL_PIN` (BCM 27) renamed to `SOLENOID_PIN`. Now drives IRLB8721 MOSFET gate for solenoid valve instead of Relay CH2. Gimbal relay code replaced with solenoid control methods (`set_solenoid()`, `fire_solenoid()`).
+- **[SW]** `hardware.py`: NEW `AccumulatorManager` class — charge-on-demand strategy for R385 pump:
+  - `arm()`: Pump ON 3s (solenoid closed) → pump OFF → system holds ~30 PSI passively
+  - `fire()`: Pulse solenoid MOSFET 10ms → pump stays OFF → accumulator provides pressure
+  - `_topup()`: After 10 shots or 60s, brief 1s pump burst to recharge
+  - `disarm()`: Everything OFF, solenoid closed, pump cold
+  - Deadhead protection: MAX_PUMP_RUN_SEC=5s absolute limit
+  - Background timer thread for periodic top-ups
+- **[SW]** `hardware.py`: Pre-pressurization (`stabilize_ms`/`settle_ms`) disabled by default — accumulator eliminates pulsation.
+- **[SW]** `app.py`: NEW accumulator API endpoints:
+  - `POST /api/accumulator/arm` — charge and arm
+  - `POST /api/accumulator/disarm` — safe shutdown
+  - `POST /api/accumulator/fire` — precision solenoid pulse
+  - `GET /api/accumulator/status` — state, shot count, config
+  - `GET/POST /api/accumulator/config` — runtime tuning
+- **[TEST]** `tests/test_pressure_drawdown.py`: NEW calibration script — fires N shots after M seconds charge, user marks first weak shot, calculates optimal top-up interval. Sweep mode tests 7 charge durations.
+- **[DIAGRAMS]** `eco004_unified_wiring.drawio`: NEW unified wiring schematic showing both GPIO paths (BCM 17→Relay→Pump, BCM 27→MOSFET→Solenoid) with software state machine logic.
