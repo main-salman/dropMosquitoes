@@ -1,0 +1,89 @@
+<mxfile>
+  <diagram name="ECO-004 Vertical Assembly Stack" id="eco004_stack">
+    <mxGraphModel dx="800" dy="1400" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="1400" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Title -->
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;ECO-2026-004: Vertical Assembly Stack&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666;font-size:11px'&gt;Physical mounting order — top to bottom&lt;/span&gt;" style="text;html=1;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="100" y="15" width="500" height="45" as="geometry"/></mxCell>
+        <!-- ===== LEVEL LABELS (left side) ===== -->
+        <mxCell id="lev1" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 1&lt;br&gt;Ground / Shelf&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="100" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="lev2" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 2&lt;br&gt;Bracket&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="250" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="lev3" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 3&lt;br&gt;Inline&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="420" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="lev4" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 4&lt;br&gt;Inline&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="580" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="lev5" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 5&lt;br&gt;Enclosure&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="740" width="90" height="28" as="geometry"/></mxCell>
+        <mxCell id="lev6" value="&lt;span style='font-size:10px;color:#999'&gt;LEVEL 6&lt;br&gt;Hanging&lt;/span&gt;" style="text;html=1;align=right;" vertex="1" parent="1"><mxGeometry x="10" y="920" width="90" height="28" as="geometry"/></mxCell>
+        <!-- ===== 1. RESERVOIR ===== -->
+        <mxCell id="res" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#90CAF9;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="150" y="80" width="500" height="100" as="geometry"/></mxCell>
+        <mxCell id="reswater" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=40;" vertex="1" parent="1"><mxGeometry x="170" y="120" width="460" height="45" as="geometry"/></mxCell>
+        <mxCell id="reslbl" value="&lt;b style='color:#1565C0;font-size:14px'&gt;💧 Water Reservoir (Tote)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#1976D2;font-size:10px'&gt;Gravity-fed • Mesh lid to prevent debris • Intake tube drops in&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="200" y="88" width="400" height="32" as="geometry"/></mxCell>
+        <!-- Tube down to pump -->
+        <mxCell id="tube1" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=8;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="180" as="sourcePoint"/><mxPoint x="400" y="220" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="tube1l" value="&lt;span style='font-size:9px;color:#42A5F5'&gt;1/4&amp;quot; silicone intake&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="190" width="100" height="14" as="geometry"/></mxCell>
+        <!-- ===== 2. DIAPHRAGM PUMP ===== -->
+        <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="200" y="220" width="400" height="100" as="geometry"/></mxCell>
+        <mxCell id="pumpmotor" value="" style="ellipse;fillColor=#1565C0;strokeColor=#1976D2;" vertex="1" parent="1"><mxGeometry x="220" y="245" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="pumplbl" value="&lt;b style='color:#BBDEFB;font-size:14px'&gt;⚡ 12V Diaphragm Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:10px'&gt;60 PSI • Self-priming • Runs CONTINUOUSLY via Relay CH1 (BCM 17)&lt;br&gt;Internal check valves prevent backflow • Surface-mounted on bracket&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="265" y="235" width="325" height="50" as="geometry"/></mxCell>
+        <!-- Tube down to accumulator -->
+        <mxCell id="tube2" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=8;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="320" as="sourcePoint"/><mxPoint x="400" y="360" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="tube2l" value="&lt;span style='font-size:9px;color:#42A5F5'&gt;1/4&amp;quot; silicone →&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="328" width="80" height="14" as="geometry"/></mxCell>
+        <!-- ===== UXCELL ADAPTER IN ===== -->
+        <mxCell id="ux1" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FFD54F;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="280" y="360" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="ux1lbl" value="&lt;b style='color:#F57F17;font-size:11px'&gt;uxcell Adapter&lt;/b&gt; &lt;span style='color:#FF8F00;font-size:9px'&gt;— 1/4&amp;quot; Barb × 1/2&amp;quot; FNPT → threads onto accumulator 1/2&amp;quot; MNPT port&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="285" y="368" width="230" height="30" as="geometry"/></mxCell>
+        <!-- Into accumulator -->
+        <mxCell id="tube3" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=6;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="410" as="sourcePoint"/><mxPoint x="400" y="450" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- ===== 3. ACCUMULATOR TANK ===== -->
+        <mxCell id="accum" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#7986CB;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="180" y="450" width="440" height="120" as="geometry"/></mxCell>
+        <mxCell id="accumbladder" value="" style="rounded=1;fillColor=#C5CAE9;strokeColor=#7986CB;arcSize=20;" vertex="1" parent="1"><mxGeometry x="200" y="470" width="140" height="80" as="geometry"/></mxCell>
+        <mxCell id="accumair" value="&lt;span style='font-size:9px;color:#5C6BC0'&gt;&lt;b&gt;Air Bladder&lt;/b&gt;&lt;br&gt;Absorbs&lt;br&gt;pulsation&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="215" y="480" width="110" height="35" as="geometry"/></mxCell>
+        <mxCell id="accumlbl" value="&lt;b style='color:#283593;font-size:14px'&gt;🏗️ Swess 0.75L Accumulator Tank&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:10px'&gt;125 PSI max • Dual 1/2&amp;quot; MNPT ports • Pre-charged air bladder&lt;br&gt;&lt;b style='color:#4CAF50'&gt;Converts pulsating pump output → flat, constant pressure line&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="350" y="465" width="265" height="55" as="geometry"/></mxCell>
+        <!-- Out of accumulator -->
+        <mxCell id="tube4" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=6;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="570" as="sourcePoint"/><mxPoint x="400" y="610" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- ===== UXCELL ADAPTER OUT ===== -->
+        <mxCell id="ux2" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FFD54F;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="280" y="610" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="ux2lbl" value="&lt;b style='color:#F57F17;font-size:11px'&gt;uxcell Adapter&lt;/b&gt; &lt;span style='color:#FF8F00;font-size:9px'&gt;— 1/4&amp;quot; Barb × 1/2&amp;quot; FNPT → threads onto accumulator 1/2&amp;quot; MNPT port&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="285" y="618" width="230" height="30" as="geometry"/></mxCell>
+        <!-- Tube to kozelo/solenoid -->
+        <mxCell id="tube5" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=8;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="660" as="sourcePoint"/><mxPoint x="400" y="700" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="tube5l" value="&lt;span style='font-size:9px;color:#42A5F5'&gt;1/4&amp;quot; silicone&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="670" width="70" height="14" as="geometry"/></mxCell>
+        <!-- ===== KOZELO + SOLENOID + KOZELO ===== -->
+        <mxCell id="solblock" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="150" y="700" width="500" height="130" as="geometry"/></mxCell>
+        <!-- Kozelo IN -->
+        <mxCell id="kz1" value="" style="rounded=0;fillColor=#FFB74D;strokeColor=#FF9800;arcSize=0;" vertex="1" parent="1"><mxGeometry x="170" y="735" width="80" height="20" as="geometry"/></mxCell>
+        <mxCell id="kz1l" value="&lt;span style='color:#FFB74D;font-size:8px'&gt;&lt;b&gt;Kozelo&lt;/b&gt; 1/4&amp;quot; Barb→MNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="160" y="758" width="100" height="18" as="geometry"/></mxCell>
+        <!-- Arrow in -->
+        <mxCell id="solinarr" value="&lt;span style='font-size:18px;color:#42A5F5'&gt;→&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="255" y="730" width="30" height="25" as="geometry"/></mxCell>
+        <!-- Solenoid body -->
+        <mxCell id="solbody" value="" style="rounded=1;fillColor=#455A64;strokeColor=#546E7A;arcSize=8;" vertex="1" parent="1"><mxGeometry x="290" y="715" width="220" height="55" as="geometry"/></mxCell>
+        <mxCell id="solcoil" value="" style="rounded=1;fillColor=#546E7A;strokeColor=#607D8B;" vertex="1" parent="1"><mxGeometry x="350" y="720" width="100" height="25" as="geometry"/></mxCell>
+        <mxCell id="sollbl" value="&lt;b style='color:#B0BEC5;font-size:13px'&gt;⚡ GOODRIG 12V Solenoid (NC)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:10px'&gt;Direct-Acting • 1/4&amp;quot; FNPT • MOSFET-gated via BCM 27&lt;br&gt;&lt;b style='color:#4CAF50'&gt;Sub-millisecond precision — zero jitter&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="165" y="778" width="470" height="45" as="geometry"/></mxCell>
+        <!-- Arrow out -->
+        <mxCell id="soloutarr" value="&lt;span style='font-size:18px;color:#42A5F5'&gt;→&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="515" y="730" width="30" height="25" as="geometry"/></mxCell>
+        <!-- Kozelo OUT -->
+        <mxCell id="kz2" value="" style="rounded=0;fillColor=#FFB74D;strokeColor=#FF9800;arcSize=0;" vertex="1" parent="1"><mxGeometry x="550" y="735" width="80" height="20" as="geometry"/></mxCell>
+        <mxCell id="kz2l" value="&lt;span style='color:#FFB74D;font-size:8px'&gt;&lt;b&gt;Kozelo&lt;/b&gt; 1/4&amp;quot; Barb→MNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="540" y="758" width="100" height="18" as="geometry"/></mxCell>
+        <!-- Tube down to enclosure/gimbal -->
+        <mxCell id="tube6" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=8;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="830" as="sourcePoint"/><mxPoint x="400" y="870" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="tube6l" value="&lt;span style='font-size:9px;color:#42A5F5'&gt;1/4&amp;quot; silicone → through PG9 gland&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="838" width="160" height="14" as="geometry"/></mxCell>
+        <!-- ===== ENCLOSURE ===== -->
+        <mxCell id="enc" value="" style="rounded=1;fillColor=#ECEFF1;strokeColor=#90A4AE;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="200" y="870" width="400" height="70" as="geometry"/></mxCell>
+        <mxCell id="enclbl" value="&lt;b style='color:#37474F;font-size:12px'&gt;🔒 IP67 Dome Enclosure&lt;/b&gt;&lt;br&gt;&lt;span style='color:#546E7A;font-size:9px'&gt;Contains: Jetson Orin Nano • IDC40P Terminal Block • MOSFET circuit&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="210" y="878" width="380" height="32" as="geometry"/></mxCell>
+        <!-- Tube/cable down to gimbal -->
+        <mxCell id="tube7" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=8;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="400" y="940" as="sourcePoint"/><mxPoint x="400" y="990" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="tube7l" value="&lt;span style='font-size:9px;color:#42A5F5'&gt;silicone tube + FPV HDMI&lt;br&gt;(3&amp;quot; service loop)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="948" width="120" height="22" as="geometry"/></mxCell>
+        <!-- ===== GIMBAL + NOZZLE ===== -->
+        <mxCell id="gimbal" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="200" y="990" width="400" height="130" as="geometry"/></mxCell>
+        <mxCell id="gimbalbody" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;arcSize=0;" vertex="1" parent="1"><mxGeometry x="340" y="1010" width="120" height="40" as="geometry"/></mxCell>
+        <mxCell id="camera" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=5;" vertex="1" parent="1"><mxGeometry x="250" y="1020" width="60" height="40" as="geometry"/></mxCell>
+        <mxCell id="camlbl" value="&lt;span style='color:#A5D6A7;font-size:8px'&gt;Sniper Cam&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="245" y="1065" width="70" height="12" as="geometry"/></mxCell>
+        <mxCell id="lidar" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=5;" vertex="1" parent="1"><mxGeometry x="320" y="1060" width="30" height="15" as="geometry"/></mxCell>
+        <mxCell id="lidarlbl" value="&lt;span style='color:#A5D6A7;font-size:8px'&gt;LiDAR&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="310" y="1075" width="50" height="12" as="geometry"/></mxCell>
+        <mxCell id="nozzle" value="" style="triangle;fillColor=#4CAF50;strokeColor=#2E7D32;direction=south;" vertex="1" parent="1"><mxGeometry x="470" y="1040" width="20" height="40" as="geometry"/></mxCell>
+        <mxCell id="nozzlelbl" value="&lt;span style='color:#A5D6A7;font-size:8px'&gt;Nozzle&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="455" y="1082" width="50" height="12" as="geometry"/></mxCell>
+        <mxCell id="gimballbl" value="&lt;b style='color:#C8E6C9;font-size:13px'&gt;🎯 Storm32 CNC Gimbal (INVERTED)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;Sniper Camera + LiDAR + Nozzle on payload plate • Fires downward&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="210" y="995" width="380" height="28" as="geometry"/></mxCell>
+        <!-- Spray -->
+        <mxCell id="spray" value="&lt;span style='font-size:22px'&gt;💧&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="465" y="1100" width="30" height="30" as="geometry"/></mxCell>
+        <mxCell id="spraylbl" value="&lt;b style='color:#42A5F5;font-size:11px'&gt;Precision water pulse&lt;br&gt;(consistent, no pulsation)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="380" y="1130" width="200" height="25" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

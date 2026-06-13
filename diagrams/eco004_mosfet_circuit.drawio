@@ -1,0 +1,66 @@
+<mxfile>
+  <diagram name="ECO-004 MOSFET Solenoid Circuit" id="eco004_circuit">
+    <mxGraphModel dx="1400" dy="800" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="750" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <!-- Title -->
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;ECO-2026-004: MOSFET Solenoid Switching Circuit&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666;font-size:11px'&gt;Jetson GPIO BCM 27 (3.3V) → IRLB8721 MOSFET Gate → 12V Solenoid Coil → Water flows&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="700" height="45" as="geometry"/></mxCell>
+        <!-- ===== JETSON GPIO ===== -->
+        <mxCell id="gpio" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="160" height="120" as="geometry"/></mxCell>
+        <mxCell id="gpiolbl" value="&lt;b style='color:#A5D6A7;font-size:12px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#81C784;font-size:9px'&gt;IDC40P Terminal Block&lt;br&gt;&lt;br&gt;&lt;b&gt;Pin 13 / BCM 27&lt;/b&gt;&lt;br&gt;3.3V logic output&lt;br&gt;(via Terminal 13)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="50" y="135" width="140" height="75" as="geometry"/></mxCell>
+        <!-- Wire GPIO → Gate -->
+        <mxCell id="w1" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="200" y="190" as="sourcePoint"/><mxPoint x="350" y="190" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w1l" value="&lt;span style='font-size:9px;color:#2E7D32'&gt;&lt;b&gt;GREEN wire&lt;/b&gt;&lt;br&gt;GPIO BCM 27 → Gate&lt;br&gt;3.3V = OPEN valve&lt;br&gt;0V = CLOSED valve&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="225" y="150" width="115" height="40" as="geometry"/></mxCell>
+        <!-- ===== 10kΩ PULL-DOWN ===== -->
+        <mxCell id="pd" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="280" y="260" width="100" height="60" as="geometry"/></mxCell>
+        <mxCell id="pdlbl" value="&lt;b style='color:#E65100;font-size:10px'&gt;10kΩ Resistor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:8px'&gt;Gate pull-down to GND&lt;br&gt;Safety: keeps valve CLOSED&lt;br&gt;during boot/shutdown&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="270" y="325" width="120" height="40" as="geometry"/></mxCell>
+        <!-- Wire pull-down to gate line -->
+        <mxCell id="w_pd" value="" style="endArrow=none;strokeColor=#FFB74D;strokeWidth=2;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="260" as="sourcePoint"/><mxPoint x="330" y="195" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- Wire pull-down to GND -->
+        <mxCell id="w_pd_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="320" as="sourcePoint"/><mxPoint x="330" y="375" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="gnd1" value="&lt;b style='font-size:12px'&gt;⏚ GND&lt;/b&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="310" y="375" width="50" height="20" as="geometry"/></mxCell>
+        <!-- ===== IRLB8721 MOSFET ===== -->
+        <mxCell id="mos" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="350" y="120" width="180" height="140" as="geometry"/></mxCell>
+        <mxCell id="mosicon" value="" style="rounded=0;fillColor=#3F51B5;strokeColor=#283593;" vertex="1" parent="1"><mxGeometry x="365" y="145" width="50" height="80" as="geometry"/></mxCell>
+        <mxCell id="moslbl" value="&lt;b style='color:#283593;font-size:12px'&gt;IRLB8721PBF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:9px'&gt;N-Channel MOSFET&lt;br&gt;TO-220 Package&lt;br&gt;&lt;br&gt;V_DSS = 30V&lt;br&gt;I_D = 62A&lt;br&gt;R_DS(on) &amp;lt; 10mΩ @ 3.3V&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="420" y="130" width="105" height="90" as="geometry"/></mxCell>
+        <!-- Pin labels on MOSFET -->
+        <mxCell id="gpin" value="&lt;b style='color:#4CAF50;font-size:10px'&gt;G&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="345" y="175" width="20" height="16" as="geometry"/></mxCell>
+        <mxCell id="dpin" value="&lt;b style='color:#F44336;font-size:10px'&gt;D&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="383" y="130" width="20" height="16" as="geometry"/></mxCell>
+        <mxCell id="spin" value="&lt;b style='color:#333;font-size:10px'&gt;S&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="383" y="225" width="20" height="16" as="geometry"/></mxCell>
+        <!-- Wire MOSFET Source → GND -->
+        <mxCell id="w_s_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="390" y="260" as="sourcePoint"/><mxPoint x="390" y="375" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="gnd2" value="&lt;b style='font-size:12px'&gt;⏚ GND&lt;/b&gt;" style="text;html=1;align=center;fontColor=#333;" vertex="1" parent="1"><mxGeometry x="370" y="375" width="50" height="20" as="geometry"/></mxCell>
+        <!-- Wire MOSFET Drain → Solenoid -->
+        <mxCell id="w_d_sol" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="390" y="120" as="sourcePoint"/><mxPoint x="390" y="80" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w_d_sol2" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="390" y="80" as="sourcePoint"/><mxPoint x="630" y="80" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w_d_sol3" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="630" y="80" as="sourcePoint"/><mxPoint x="630" y="130" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w_d_lbl" value="&lt;span style='font-size:8px;color:#C62828'&gt;Drain → Solenoid (-)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="445" y="63" width="120" height="14" as="geometry"/></mxCell>
+        <!-- ===== SOLENOID VALVE ===== -->
+        <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="580" y="130" width="170" height="130" as="geometry"/></mxCell>
+        <mxCell id="solcoil" value="" style="rounded=1;fillColor=#37474F;strokeColor=#455A64;arcSize=10;" vertex="1" parent="1"><mxGeometry x="610" y="145" width="110" height="40" as="geometry"/></mxCell>
+        <mxCell id="sollbl" value="&lt;b style='color:#B0BEC5;font-size:11px'&gt;GOODRIG Solenoid Valve&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:9px'&gt;12V DC Direct-Acting NC&lt;br&gt;1/4&amp;quot; FNPT both ends&lt;br&gt;Coil resistance ~12Ω&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="590" y="190" width="155" height="50" as="geometry"/></mxCell>
+        <mxCell id="solplus" value="&lt;b style='color:#F44336;font-size:9px'&gt;(+)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="700" y="133" width="25" height="14" as="geometry"/></mxCell>
+        <mxCell id="solminus" value="&lt;b style='color:#42A5F5;font-size:9px'&gt;(-)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="610" y="133" width="25" height="14" as="geometry"/></mxCell>
+        <!-- Wire +12V → Solenoid (+) -->
+        <mxCell id="w_12v" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="720" y="80" as="sourcePoint"/><mxPoint x="720" y="130" as="targetPoint"/></mxGeometry></mxCell>
+        <mxCell id="w_12v2" value="" style="endArrow=none;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="720" y="80" as="sourcePoint"/><mxPoint x="850" y="80" as="targetPoint"/></mxGeometry></mxCell>
+        <!-- +12V Source -->
+        <mxCell id="v12" value="" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="850" y="60" width="110" height="40" as="geometry"/></mxCell>
+        <mxCell id="v12lbl" value="&lt;b style='color:#FFFFFF;font-size:12px'&gt;+12V DC&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCDD2;font-size:8px'&gt;From Wago +12V bus&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="852" y="62" width="106" height="35" as="geometry"/></mxCell>
+        <!-- ===== 1N4007 FLYBACK DIODE ===== -->
+        <mxCell id="diode" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="810" y="140" width="140" height="70" as="geometry"/></mxCell>
+        <mxCell id="diodebody" value="" style="rounded=0;fillColor=#333;strokeColor=#222;arcSize=0;" vertex="1" parent="1"><mxGeometry x="845" y="160" width="60" height="16" as="geometry"/></mxCell>
+        <mxCell id="diodestripe" value="" style="rounded=0;fillColor=#BDBDBD;strokeColor=#999;" vertex="1" parent="1"><mxGeometry x="893" y="160" width="8" height="16" as="geometry"/></mxCell>
+        <mxCell id="diodelbl" value="&lt;b style='color:#880E4F;font-size:10px'&gt;1N4007 Flyback Diode&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:8px'&gt;Cathode (stripe) → +12V side&lt;br&gt;Anode → Drain/GND side&lt;br&gt;Absorbs back-EMF spike&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="810" y="218" width="140" height="45" as="geometry"/></mxCell>
+        <!-- Diode connection lines -->
+        <mxCell id="d_cath" value="&lt;span style='font-size:7px;color:#880E4F'&gt;K (cathode)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="900" y="147" width="50" height="12" as="geometry"/></mxCell>
+        <mxCell id="d_anode" value="&lt;span style='font-size:7px;color:#880E4F'&gt;A (anode)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="147" width="50" height="12" as="geometry"/></mxCell>
+        <!-- ===== SIGNAL FLOW SUMMARY ===== -->
+        <mxCell id="flow" value="&lt;b&gt;Signal Path:&lt;/b&gt; Jetson GPIO BCM 27 (3.3V HIGH) → MOSFET Gate opens → 12V current flows through solenoid coil → magnetic plunger retracts → water flows through valve → 1N4007 absorbs back-EMF when GPIO goes LOW" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;fontColor=#333;fontSize=11;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="40" y="430" width="920" height="35" as="geometry"/></mxCell>
+        <!-- Timing note -->
+        <mxCell id="timing" value="&lt;b&gt;⚡ Timing:&lt;/b&gt; MOSFET switches in &amp;lt;1μs. Solenoid opens in ~3-5ms. Total jitter: &amp;lt;1ms (vs 3-5ms with mechanical relay). This enables consistent 1-10ms water pulses." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontColor=#333;fontSize=10;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="40" y="480" width="920" height="30" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
