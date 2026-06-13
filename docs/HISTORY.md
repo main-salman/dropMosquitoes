@@ -688,3 +688,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `GET/POST /api/accumulator/config` — runtime tuning
 - **[TEST]** `tests/test_pressure_drawdown.py`: NEW calibration script — fires N shots after M seconds charge, user marks first weak shot, calculates optimal top-up interval. Sweep mode tests 7 charge durations.
 - **[DIAGRAMS]** `eco004_unified_wiring.drawio`: NEW unified wiring schematic showing both GPIO paths (BCM 17→Relay→Pump, BCM 27→MOSFET→Solenoid) with software state machine logic.
+- **[DIAGRAMS]** `eco004_wiring_migration.drawio`: NEW before/after 2-page wiring migration guide. Page 1: current wiring (BCM 27→Relay CH2, unused). Page 2: new wiring (BCM 27→MOSFET gate) with 7-step instructions for physical rewire.
