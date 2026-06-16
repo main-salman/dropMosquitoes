@@ -61,3 +61,6 @@ tools/sentry_control_center/dataset/
 yolov8n.pt
 models/yolov8n.pt
 tools/sentry_control_center/yolov8n.pt
+
+# Large media files (exceed GitHub 100MB limit)
+*.mp4
