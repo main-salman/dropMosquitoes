@@ -689,3 +689,18 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[TEST]** `tests/test_pressure_drawdown.py`: NEW calibration script — fires N shots after M seconds charge, user marks first weak shot, calculates optimal top-up interval. Sweep mode tests 7 charge durations.
 - **[DIAGRAMS]** `eco004_unified_wiring.drawio`: NEW unified wiring schematic showing both GPIO paths (BCM 17→Relay→Pump, BCM 27→MOSFET→Solenoid) with software state machine logic.
 - **[DIAGRAMS]** `eco004_wiring_migration.drawio`: NEW before/after 2-page wiring migration guide. Page 1: current wiring (BCM 27→Relay CH2, unused). Page 2: new wiring (BCM 27→MOSFET gate) with 7-step instructions for physical rewire.
+
+## 2026-06-16 — AIDLC WORKFLOW INTEGRATION & CUSTOM EXTENSIONS
+
+- **[ARCHITECTURE]** Integrated AWS AI-DLC (AI-Driven Life Cycle) v0.1.8 adaptive workflow steering rules from [awslabs/aidlc-workflows](https://github.com/awslabs/aidlc-workflows). Three-phase methodology (Inception → Construction → Operations) now available via `Using AI-DLC, ...` invocation.
+- **[ARCHITECTURE]** Downloaded AIDLC core workflow rules to `.aidlc/aidlc-rules/` (gitignored — re-downloadable from GitHub releases). Core rules include workspace detection, reverse engineering, requirements analysis, user stories, workflow planning, application design, and units generation.
+- **[ARCHITECTURE]** Created `.agent/rules/ai-dlc.md` — Antigravity IDE steering file that activates AIDLC when invoked and resolves rule detail paths.
+- **[PROCESS]** Created custom TDD (Test-Driven Development) extension in `.aidlc-rule-details/extensions/testing/tdd/`:
+  - `tdd-enforcement.md`: 6 blocking rules (TDD-01 through TDD-06) enforcing test-first mandate, layer-appropriate testing per TEST-001, safety test gates for SAFE-001 code, regression prevention, mock boundary enforcement, and test results logging.
+  - `tdd-enforcement.opt-in.md`: Opt-in prompt with Full/Partial/No enforcement options.
+- **[PROCESS]** Created custom SDD (Spec-Driven Development) extension in `.aidlc-rule-details/extensions/spec-driven/baseline/`:
+  - `spec-driven-development.md`: 6 blocking rules (SDD-01 through SDD-06) enforcing spec-before-code mandate per agents.md, history logging, spec traceability headers, spec review gates, no-dummy-data policy, and safety spec compliance.
+  - `spec-driven-development.opt-in.md`: Opt-in prompt with Full/Partial/No enforcement options.
+- **[DECISION]** Custom extensions placed in `.aidlc-rule-details/` (version-controlled) rather than inside `.aidlc/` (gitignored). This ensures project-specific TDD and SDD rules survive fresh clones while core AIDLC rules are re-downloaded from the release.
+- **[CONFIG]** Updated `.gitignore` to exclude `.aidlc/` (downloaded content) while keeping `.aidlc-rule-details/` tracked.
+

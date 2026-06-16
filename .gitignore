@@ -37,6 +37,10 @@ tests/output/
 # Gemini local
 .gemini/
 
+# AIDLC downloaded rules (re-download from https://github.com/awslabs/aidlc-workflows/releases)
+# NOTE: .aidlc-rule-details/ is NOT gitignored — it contains project-specific custom extensions
+.aidlc/
+
 # YOLO training output
 runs/
 
