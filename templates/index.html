@@ -141,6 +141,7 @@
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="tab('ctrl')">🕹️ Control</button>
+  <button class="tab-btn" onclick="tab('sol')">💉 Solenoid</button>
   <button class="tab-btn" onclick="tab('cal')">🔧 Calibration</button>
   <button class="tab-btn" onclick="tab('tests')">🧪 Tests</button>
   <button class="tab-btn" onclick="tab('settings')">⚙️ Settings</button>
@@ -264,6 +265,179 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ===================== SOLENOID TAB ===================== -->
+<div class="tab-pane" id="p-sol">
+  <div style="padding:14px 14px 0;display:flex;align-items:center;gap:12px">
+    <span style="font-size:15px;font-weight:600">💉 Solenoid & Accumulator</span>
+    <span style="flex:1"></span>
+    <span class="cal-stat" id="sol-state">IDLE</span>
+  </div>
+  <div class="cal-section"><div class="cal-grid">
+
+    <!-- Step 1: MOSFET Smoke Test -->
+    <div class="card">
+      <div class="card-title">🔧 Step 1 — MOSFET Smoke Test</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Toggles BCM 27 HIGH then LOW without pump or accumulator. Listen for <b>TWO clicks</b> (open → close). If no click, check 12V supply and MOSFET wiring per HW-001 §5.4.</p>
+        <div class="sl">
+          <label>Hold Time</label>
+          <input type="range" id="sol-test-dur" min="50" max="2000" step="50" value="500" oninput="$('sol-test-dur-v').textContent=this.value+'ms'">
+          <div class="v" id="sol-test-dur-v">500ms</div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="solTest()">
+          ⚡ Click Test
+        </button>
+        <div class="cal-result" id="sol-test-log" style="margin-top:8px">Ready — press Click Test to toggle the solenoid valve.</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Arm / Fire / Disarm -->
+    <div class="card">
+      <div class="card-title">🎯 Step 2 — Arm → Fire → Disarm</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Full accumulator cycle: charge the tank (pump ON, solenoid closed), fire a precision pulse (pump OFF, solenoid opens), then disarm everything.</p>
+
+        <div class="sl">
+          <label>Solenoid Pulse</label>
+          <input type="range" id="sol-fire-dur" min="1" max="500" step="1" value="10" oninput="$('sol-fire-dur-v').textContent=this.value+'ms'">
+          <div class="v" id="sol-fire-dur-v">10ms</div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-green" style="flex:1;padding:12px;font-size:13px" onclick="solArm()">⚡ ARM</button>
+          <button class="btn btn-red" style="flex:2;padding:12px;font-size:14px;font-weight:700" onclick="solFire()">🔫 FIRE</button>
+          <button class="btn" style="flex:1;padding:12px;font-size:13px" onclick="solDisarm()">🔒 DISARM</button>
+        </div>
+
+        <div class="cal-result" id="sol-afd-log" style="margin-top:8px">Not armed. Press ARM to charge the accumulator.</div>
+      </div>
+    </div>
+
+    <!-- Live Accumulator Status -->
+    <div class="card">
+      <div class="card-title">📊 Live Accumulator Status</div>
+      <div class="card-body">
+        <div class="telem" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="telem-item">
+            <div class="telem-val" id="sol-tv-state" style="color:var(--dim);font-size:20px">idle</div>
+            <div class="telem-label">State</div>
+          </div>
+          <div class="telem-item">
+            <div class="telem-val" id="sol-tv-shots" style="color:var(--green);font-size:28px">0</div>
+            <div class="telem-label">Shots Fired</div>
+          </div>
+          <div class="telem-item">
+            <div class="telem-val" id="sol-tv-topup" style="color:var(--orange);font-size:28px">—</div>
+            <div class="telem-label">Until Top-Up</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:14px;font-size:11px;color:var(--dim)">
+          <span>Since charge: <b id="sol-tv-since-charge" style="color:var(--teal)">—</b></span>
+          <span>Since fire: <b id="sol-tv-since-fire" style="color:var(--accent)">—</b></span>
+          <span>Armed for: <b id="sol-tv-armed-dur" style="color:var(--purple)">—</b></span>
+        </div>
+        <div style="margin-top:10px">
+          <div class="tgl-row">
+            <span>🚰 Solenoid Override</span>
+            <label class="tgl"><input type="checkbox" id="sol-tgl" onchange="solToggle(this.checked)"><i></i></label>
+          </div>
+          <div class="tgl-row">
+            <span>💧 Pump Override</span>
+            <label class="tgl"><input type="checkbox" id="sol-pump-tgl" onchange="api('/api/relay/pump',{state:this.checked})"><i></i></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Pressure Drawdown Calibration -->
+    <div class="card">
+      <div class="card-title">📉 Step 3 — Pressure Drawdown Calibration</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Charges the accumulator, fires N shots, shows results. Watch the nozzle and click the shot number where the stream first becomes weak.</p>
+
+        <div class="sl">
+          <label>Charge Time</label>
+          <input type="range" id="dd-charge" min="0.5" max="10" step="0.5" value="3" oninput="$('dd-charge-v').textContent=this.value+'s'">
+          <div class="v" id="dd-charge-v">3s</div>
+        </div>
+        <div class="sl">
+          <label>Shots</label>
+          <input type="range" id="dd-shots" min="5" max="50" step="1" value="15" oninput="$('dd-shots-v').textContent=this.value">
+          <div class="v" id="dd-shots-v">15</div>
+        </div>
+        <div class="sl">
+          <label>Pulse (ms)</label>
+          <input type="range" id="dd-pulse" min="1" max="200" step="1" value="10" oninput="$('dd-pulse-v').textContent=this.value+'ms'">
+          <div class="v" id="dd-pulse-v">10ms</div>
+        </div>
+        <div class="sl">
+          <label>Delay Between</label>
+          <input type="range" id="dd-delay" min="100" max="3000" step="100" value="500" oninput="$('dd-delay-v').textContent=this.value+'ms'">
+          <div class="v" id="dd-delay-v">500ms</div>
+        </div>
+
+        <button class="btn btn-green" id="dd-start-btn" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="ddStart()">
+          📉 Run Drawdown Test
+        </button>
+
+        <!-- Progress bar -->
+        <div style="background:rgba(255,255,255,0.05);border-radius:8px;height:28px;overflow:hidden;margin-top:10px;position:relative;display:none" id="dd-progress-wrap">
+          <div id="dd-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:8px;transition:width 0.3s ease"></div>
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff" id="dd-bar-text">Charging…</div>
+        </div>
+
+        <!-- Shot results (clickable) -->
+        <div id="dd-shot-grid" style="display:none;margin-top:10px">
+          <p style="font-size:11px;color:var(--dim);margin-bottom:8px">Click the <b>first weak shot</b>:</p>
+          <div id="dd-shots-row" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+        </div>
+
+        <!-- Recommendation -->
+        <div class="cal-result" id="dd-result" style="margin-top:10px;display:none"></div>
+      </div>
+    </div>
+
+    <!-- Step 4: Accumulator Configuration -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">⚙️ Accumulator Configuration</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Tune charge timing, top-up intervals, and default pulse. Changes take effect immediately.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div class="sl">
+              <label>Initial Charge</label>
+              <input type="range" id="ac-charge" min="0.5" max="10" step="0.5" value="3" oninput="$('ac-charge-v').textContent=this.value+'s'">
+              <div class="v" id="ac-charge-v">3s</div>
+            </div>
+            <div class="sl">
+              <label>Top-Up Charge</label>
+              <input type="range" id="ac-topup-charge" min="0.5" max="5" step="0.5" value="1" oninput="$('ac-topup-charge-v').textContent=this.value+'s'">
+              <div class="v" id="ac-topup-charge-v">1s</div>
+            </div>
+          </div>
+          <div>
+            <div class="sl">
+              <label>Top-Up Every N Shots</label>
+              <input type="range" id="ac-topup-shots" min="1" max="50" step="1" value="10" oninput="$('ac-topup-shots-v').textContent=this.value+' shots'">
+              <div class="v" id="ac-topup-shots-v">10 shots</div>
+            </div>
+            <div class="sl">
+              <label>Default Pulse</label>
+              <input type="range" id="ac-def-pulse" min="1" max="200" step="1" value="10" oninput="$('ac-def-pulse-v').textContent=this.value+'ms'">
+              <div class="v" id="ac-def-pulse-v">10ms</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-blue" style="flex:1" onclick="acConfigApply()">✅ Apply Config</button>
+          <button class="btn" style="flex:1" onclick="acConfigLoad()">🔄 Load Current</button>
+        </div>
+      </div>
+    </div>
+
+  </div></div>
 </div>
 
 <!-- ===================== CALIBRATION TAB ===================== -->
@@ -616,7 +790,7 @@ async function primeFromFireControl() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,cal:1,tests:2,settings:3};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings()}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,settings:4};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop()}}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -939,6 +1113,242 @@ async function applyPulseConfig() {
 }
 
 setTimeout(loadPulseConfig, 2500);
+
+// ---- Solenoid Tab ----
+let solPollTimer = null;
+
+async function solTest() {
+  $('sol-test-log').innerHTML = '<span class="info">⚡ Toggling solenoid...</span>';
+  try {
+    const d = await fetch('/api/solenoid/test', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({duration_ms: +$('sol-test-dur').value})}).then(r => r.json());
+    $('sol-test-log').innerHTML =
+      `<span class="ok">✅ Solenoid toggled for ${d.duration_ms}ms</span>\n` +
+      `State after: ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}\n\n` +
+      `<span class="info">Did you hear TWO clicks?</span>\n` +
+      `  Click 1 = solenoid OPENS (plunger retracts)\n` +
+      `  Click 2 = solenoid CLOSES (spring returns)\n\n` +
+      `If no clicks: check 12V supply, MOSFET wiring,\n` +
+      `and 10kΩ pull-down resistor per HW-001 §5.4`;
+  } catch(e) {
+    $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function solArm() {
+  $('sol-afd-log').innerHTML = '<span class="info">⚡ Charging accumulator (~3s)...</span>';
+  try {
+    const d = await fetch('/api/accumulator/arm', {method:'POST'}).then(r => r.json());
+    if (d.status === 'armed') {
+      $('sol-afd-log').innerHTML =
+        `<span class="ok">✅ ARMED at ${d.timestamp}</span>\n` +
+        `Charged for ${d.charge_sec}s — accumulator at ~30 PSI\n` +
+        `Ready to fire. Press FIRE to pulse the solenoid.`;
+    } else {
+      $('sol-afd-log').innerHTML = `<span class="err">❌ ARM failed: ${d.status}</span>\n${d.error||''}`;
+    }
+  } catch(e) { $('sol-afd-log').innerHTML = `<span class="err">❌ ${e.message}</span>`; }
+}
+
+async function solFire() {
+  const ms = +$('sol-fire-dur').value;
+  $('sol-afd-log').innerHTML += `\n<span class="info">🔫 Firing ${ms}ms pulse...</span>`;
+  try {
+    const d = await fetch('/api/accumulator/fire', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({duration_ms: ms})}).then(r => r.json());
+    if (d.status === 'fired') {
+      $('sol-afd-log').innerHTML +=
+        `\n<span class="ok">✅ Shot #${d.shot_number} — ${d.duration_ms}ms pulse</span>` +
+        `\n   Shots since charge: ${d.shots_since_charge}  |  Top-up in: ${d.topup_in} shots`;
+    } else {
+      $('sol-afd-log').innerHTML += `\n<span class="err">❌ ${d.status}: ${d.error||''}</span>`;
+    }
+    $('sol-afd-log').scrollTop = $('sol-afd-log').scrollHeight;
+  } catch(e) { $('sol-afd-log').innerHTML += `\n<span class="err">❌ ${e.message}</span>`; }
+}
+
+async function solDisarm() {
+  try {
+    const d = await fetch('/api/accumulator/disarm', {method:'POST'}).then(r => r.json());
+    $('sol-afd-log').innerHTML +=
+      `\n<span class="info">🔒 DISARMED — total shots: ${d.total_shots_fired}</span>`;
+    $('sol-afd-log').scrollTop = $('sol-afd-log').scrollHeight;
+  } catch(e) { $('sol-afd-log').innerHTML += `\n<span class="err">❌ ${e.message}</span>`; }
+}
+
+async function solToggle(state) {
+  await fetch('/api/relay/pump', {method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}); // no-op to wake
+  relay_result = await fetch('/api/solenoid/test', {method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({duration_ms: state ? 999999 : 1})}).then(r=>r.json());
+  // For toggle ON, we just hold it open. For OFF, the 1ms pulse closes it.
+  if (!state) { /* already closed by the short pulse */ }
+}
+
+async function solPollOnce() {
+  try {
+    const d = await fetch('/api/accumulator/status').then(r => r.json());
+    const stateColors = {idle:'var(--dim)', charging:'var(--orange)', armed:'var(--green)', firing:'var(--red)'};
+    $('sol-tv-state').textContent = d.state;
+    $('sol-tv-state').style.color = stateColors[d.state] || 'var(--dim)';
+    $('sol-tv-shots').textContent = d.total_shots;
+    $('sol-tv-topup').textContent = d.armed ? d.shots_until_topup : '—';
+    $('sol-tv-since-charge').textContent = d.since_charge_sec ? d.since_charge_sec + 's' : '—';
+    $('sol-tv-since-fire').textContent = d.since_fire_sec ? d.since_fire_sec + 's' : '—';
+    $('sol-tv-armed-dur').textContent = d.armed_duration_sec ? d.armed_duration_sec + 's' : '—';
+    // State badge
+    const badgeColors = {idle:'rgba(120,120,128,0.3)', charging:'rgba(255,159,10,0.2)', armed:'rgba(48,209,88,0.2)', firing:'rgba(255,69,58,0.2)'};
+    const badgeText = {idle:'IDLE', charging:'⚡ CHARGING', armed:'🟢 ARMED', firing:'🔫 FIRING'};
+    $('sol-state').textContent = badgeText[d.state] || d.state;
+    $('sol-state').style.background = badgeColors[d.state] || '';
+    $('sol-state').style.color = stateColors[d.state] || 'var(--dim)';
+    // Sync toggles
+    const rs = await fetch('/api/status').then(r=>r.json());
+    $('sol-pump-tgl').checked = rs.relay.pump;
+  } catch(e) {}
+}
+function solPollStart() { if (!solPollTimer) { solPollOnce(); solPollTimer = setInterval(solPollOnce, 1500); } }
+function solPollStop() { if (solPollTimer) { clearInterval(solPollTimer); solPollTimer = null; } }
+
+// ---- Drawdown Calibration ----
+let ddLastResult = null;
+
+async function ddStart() {
+  const btn = $('dd-start-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  $('dd-progress-wrap').style.display = '';
+  $('dd-bar').style.width = '5%';
+  $('dd-bar-text').textContent = 'Charging accumulator...';
+  $('dd-shot-grid').style.display = 'none';
+  $('dd-result').style.display = 'none';
+
+  try {
+    const body = {
+      charge_sec: +$('dd-charge').value,
+      num_shots: +$('dd-shots').value,
+      pulse_ms: +$('dd-pulse').value,
+      delay_ms: +$('dd-delay').value,
+    };
+
+    $('dd-bar').style.width = '15%';
+    $('dd-bar-text').textContent = `Charging for ${body.charge_sec}s...`;
+
+    const d = await fetch('/api/solenoid/drawdown', {method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}).then(r => r.json());
+
+    if (d.status === 'error') {
+      $('dd-bar').style.width = '100%';
+      $('dd-bar').style.background = 'var(--red)';
+      $('dd-bar-text').textContent = '❌ ' + (d.detail?.status || 'Error');
+      btn.disabled = false;
+      btn.textContent = '📉 Run Drawdown Test';
+      return;
+    }
+
+    ddLastResult = d;
+
+    // Show progress complete
+    $('dd-bar').style.width = '100%';
+    $('dd-bar-text').textContent = `✅ ${d.num_shots} shots fired — click the first weak one`;
+
+    // Build shot grid
+    $('dd-shot-grid').style.display = '';
+    const row = $('dd-shots-row');
+    row.innerHTML = '';
+    d.shots.forEach((s, i) => {
+      const b = document.createElement('button');
+      b.className = 'btn btn-sm';
+      b.style.cssText = 'min-width:36px;font-size:11px;padding:4px 8px';
+      b.textContent = s.shot_num;
+      b.onclick = () => ddMarkWeak(s.shot_num, d);
+      row.appendChild(b);
+    });
+    // Add "All Strong" button
+    const allBtn = document.createElement('button');
+    allBtn.className = 'btn btn-sm btn-green';
+    allBtn.style.cssText = 'font-size:11px;padding:4px 12px;margin-left:8px';
+    allBtn.textContent = '✅ All Strong';
+    allBtn.onclick = () => ddMarkWeak(null, d);
+    row.appendChild(allBtn);
+
+  } catch(e) {
+    $('dd-bar-text').textContent = '❌ ' + e.message;
+  }
+  btn.disabled = false;
+  btn.textContent = '📉 Run Drawdown Test';
+}
+
+function ddMarkWeak(weakShot, d) {
+  const consistent = weakShot ? weakShot - 1 : d.num_shots;
+  const recTopup = Math.max(1, Math.floor(consistent * 0.8));
+  const recCharge = d.charge_sec;
+  const recTopupCharge = Math.min(d.charge_sec, 2.0);
+
+  // Color the shot buttons
+  const buttons = $('dd-shots-row').querySelectorAll('button');
+  buttons.forEach((b, i) => {
+    if (b.textContent === '✅ All Strong') return;
+    const num = i + 1;
+    if (weakShot && num >= weakShot) {
+      b.style.background = 'var(--red)'; b.style.color = '#fff'; b.style.borderColor = 'var(--red)';
+    } else {
+      b.style.background = 'var(--green)'; b.style.color = '#000'; b.style.borderColor = 'var(--green)';
+    }
+  });
+
+  // Show recommendation
+  const res = $('dd-result');
+  res.style.display = '';
+  res.innerHTML =
+    `<span class="ok">✅ RESULTS</span>\n` +
+    `  Charge:           ${d.charge_sec}s\n` +
+    `  Total shots:      ${d.num_shots}\n` +
+    `  Consistent shots: ${consistent}\n` +
+    `  First weak:       ${weakShot || 'none'}\n\n` +
+    `<span class="info">📋 RECOMMENDED SETTINGS</span>\n` +
+    `  INITIAL_CHARGE_SEC     = ${recCharge}\n` +
+    `  TOPUP_CHARGE_SEC       = ${recTopupCharge}\n` +
+    `  TOPUP_INTERVAL_SHOTS   = ${recTopup}\n` +
+    `  DEFAULT_PULSE_SEC      = ${d.pulse_ms / 1000}\n\n`;
+
+  // Add apply button
+  const applyRow = document.createElement('div');
+  applyRow.style.cssText = 'display:flex;gap:8px;margin-top:8px';
+  applyRow.innerHTML =
+    `<button class="btn btn-green" style="flex:1" onclick="ddApply(${recCharge},${recTopupCharge},${recTopup},${d.pulse_ms})">✅ Apply These Settings</button>`;
+  res.appendChild(applyRow);
+}
+
+async function ddApply(charge, topupCharge, topupShots, pulseMs) {
+  await fetch('/api/solenoid/drawdown/apply', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({initial_charge_sec: charge, topup_charge_sec: topupCharge,
+      topup_interval_shots: topupShots, default_pulse_ms: pulseMs})});
+  showToast('✅ Settings Applied', `Charge: ${charge}s · Top-up: every ${topupShots} shots · Pulse: ${pulseMs}ms`);
+  acConfigLoad();
+}
+
+// ---- Accumulator Config ----
+async function acConfigLoad() {
+  try {
+    const d = await fetch('/api/accumulator/status').then(r => r.json());
+    const c = d.config;
+    $('ac-charge').value = c.initial_charge_sec; $('ac-charge-v').textContent = c.initial_charge_sec + 's';
+    $('ac-topup-charge').value = c.topup_charge_sec; $('ac-topup-charge-v').textContent = c.topup_charge_sec + 's';
+    $('ac-topup-shots').value = c.topup_interval_shots; $('ac-topup-shots-v').textContent = c.topup_interval_shots + ' shots';
+    $('ac-def-pulse').value = c.default_pulse_ms; $('ac-def-pulse-v').textContent = c.default_pulse_ms + 'ms';
+  } catch(e) {}
+}
+
+async function acConfigApply() {
+  const body = {
+    initial_charge_sec: +$('ac-charge').value,
+    topup_charge_sec: +$('ac-topup-charge').value,
+    topup_interval_shots: +$('ac-topup-shots').value,
+    default_pulse_ms: +$('ac-def-pulse').value,
+  };
+  await fetch('/api/accumulator/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  showToast('⚙️ Accumulator Config', `Charge: ${body.initial_charge_sec}s · Top-up: every ${body.topup_interval_shots} shots · Pulse: ${body.default_pulse_ms}ms`);
+}
 </script>
 </body>
 </html>

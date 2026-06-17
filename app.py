@@ -444,6 +444,102 @@ def api_accum_config_set():
     return jsonify(accum.get_status())
 
 
+@app.route('/api/solenoid/test', methods=['POST'])
+def api_solenoid_test():
+    """
+    Quick solenoid MOSFET smoke test: open for duration_ms, then close.
+    No pump, no accumulator — just toggles the MOSFET gate to verify the
+    solenoid clicks. Listen for TWO clicks (open + close).
+    Body: {"duration_ms": float}  (default 500ms)
+    """
+    data = request.get_json(force=True) if request.data else {}
+    duration_ms = float(data.get('duration_ms', 500))
+    duration_sec = max(0.01, min(duration_ms / 1000.0, 2.0))
+
+    relay.set_solenoid(True)
+    time.sleep(duration_sec)
+    relay.set_solenoid(False)
+
+    return jsonify({
+        "status": "complete",
+        "duration_ms": round(duration_sec * 1000, 1),
+        "solenoid_state": relay.get_status()["solenoid"],
+    })
+
+
+@app.route('/api/solenoid/drawdown', methods=['POST'])
+def api_solenoid_drawdown():
+    """
+    GUI-driven pressure drawdown test.
+    Charges the accumulator, fires N solenoid pulses, returns results.
+    User visually identifies first weak shot via the GUI.
+
+    Body: {
+        "charge_sec": float,    (default 3.0)
+        "num_shots": int,       (default 15)
+        "pulse_ms": float,      (default 10)
+        "delay_ms": float,      (default 500)
+    }
+    """
+    data = request.get_json(force=True) if request.data else {}
+    charge_sec = min(float(data.get('charge_sec', 3.0)), 10.0)
+    num_shots = min(int(data.get('num_shots', 15)), 50)
+    pulse_ms = max(1.0, min(float(data.get('pulse_ms', 10)), 2000))
+    delay_ms = max(100, min(float(data.get('delay_ms', 500)), 5000))
+
+    # Step 1: Charge
+    accum.INITIAL_CHARGE_SEC = charge_sec
+    arm_result = accum.arm()
+    if arm_result.get("status") != "armed":
+        return jsonify({"status": "error", "phase": "arm", "detail": arm_result})
+
+    time.sleep(0.3)
+
+    # Step 2: Fire shots
+    shots = []
+    for i in range(num_shots):
+        t0 = time.time()
+        fire_result = accum.fire(pulse_ms / 1000.0)
+        t1 = time.time()
+        shots.append({
+            "shot_num": i + 1,
+            "fire_time_ms": round((t1 - t0) * 1000, 2),
+            "status": fire_result.get("status", "unknown"),
+        })
+        if i < num_shots - 1:
+            time.sleep(delay_ms / 1000.0)
+
+    # Step 3: Disarm
+    disarm_result = accum.disarm()
+
+    return jsonify({
+        "status": "complete",
+        "charge_sec": charge_sec,
+        "pulse_ms": pulse_ms,
+        "delay_ms": delay_ms,
+        "num_shots": num_shots,
+        "shots": shots,
+        "total_fired": disarm_result.get("total_shots_fired", num_shots),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+    })
+
+
+@app.route('/api/solenoid/drawdown/apply', methods=['POST'])
+def api_solenoid_drawdown_apply():
+    """
+    Apply recommended settings from drawdown calibration.
+    Body: {
+        "initial_charge_sec": float,
+        "topup_charge_sec": float,
+        "topup_interval_shots": int,
+        "default_pulse_ms": float,
+    }
+    """
+    data = request.get_json(force=True)
+    accum.update_config(data)
+    return jsonify(accum.get_status())
+
+
 # ============================================================================
 # PRIMING API
 # ============================================================================

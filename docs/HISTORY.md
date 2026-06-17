@@ -704,3 +704,16 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[DECISION]** Custom extensions placed in `.aidlc-rule-details/` (version-controlled) rather than inside `.aidlc/` (gitignored). This ensures project-specific TDD and SDD rules survive fresh clones while core AIDLC rules are re-downloaded from the release.
 - **[CONFIG]** Updated `.gitignore` to exclude `.aidlc/` (downloaded content) while keeping `.aidlc-rule-details/` tracked.
 
+## 2026-06-16 — SOLENOID TESTING & CALIBRATION GUI
+
+- **[GUI]** Added new `💉 Solenoid` tab to the web dashboard (`templates/index.html`) with 4 panels for solenoid bring-up and calibration:
+  - **Step 1 — MOSFET Smoke Test:** Toggles BCM 27 HIGH/LOW without pump or accumulator. Verifies solenoid clicks. Adjustable hold time slider.
+  - **Step 2 — Arm → Fire → Disarm:** Full accumulator cycle with adjustable solenoid pulse slider (1–500ms). ARM charges accumulator (~3s), FIRE pulses solenoid, DISARM shuts everything down. Shot-by-shot log output.
+  - **Live Accumulator Status:** Real-time polling (1.5s) showing state (idle/charging/armed/firing), shot count, top-up countdown, timing telemetry, and solenoid/pump override toggles.
+  - **Step 3 — Pressure Drawdown Calibration:** GUI version of `test_pressure_drawdown.py`. Configurable charge time, shot count, pulse, and delay sliders. Fires N shots, displays clickable shot grid — user clicks first weak shot, system computes recommended top-up settings, one-click apply.
+  - **Accumulator Configuration:** Runtime tuning for initial charge, top-up charge, top-up interval, and default pulse. Load current and apply changes instantly.
+- **[CODE]** `app.py`: Added 3 new API endpoints:
+  - `POST /api/solenoid/test` — Quick MOSFET click test (toggle solenoid without pump/accumulator)
+  - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
+  - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
+
