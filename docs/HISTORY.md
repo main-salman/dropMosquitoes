@@ -717,3 +717,16 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
   - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
 
+## 2026-06-19 — ECO-004 REV B: RELAY CH2 GATE DRIVE FOR SOLENOID MOSFET
+- **[SPEC]** HW-001 §5.3–§5.4 Rev B: BCM 27 (GREEN) → Monk Makes Relay IN B (control only). Terminal 17 (+3.3V) → CH2 screw B1 → B2 → IRLB8721 Gate. Removes direct GPIO-to-gate wiring — Yahboom PY.00 sources only ~1.5–1.6V HIGH, insufficient for MOSFET turn-on.
+- **[DIAGRAM]** `eco004_wiring_migration.drawio`: Before/after updated — BEFORE shows failed direct gate wiring; AFTER shows 3 wire moves (GREEN→IN B, T17→B1, B2→Gate) plus removal of 104 pull-ups and old CH2 12V feed.
+- **[DIAGRAM]** `eco004_mosfet_circuit.drawio`: Schematic redrawn for Relay CH2 + Terminal 17 gate drive path.
+
+## 2026-06-19 — GPIO PADCTL FIX (1.5V → 3.3V ON BCM 17/27)
+- **[BUG FIX]** `hardware.py`: `configure_push_pull()` now writes full PADCTL value `0x05` (GPIO output) to PR.04 and PY.00 instead of only clearing bit 4. Old approach left tristate + internal pull-down active — multimeter read ~1.5V on Terminal 11 during ARM and ~0V on Terminal 13; MOSFET never fully conducted.
+- **[CODE]** Re-apply `configure_push_pull()` before every pump/solenoid `GPIO.output()` (Jetson.GPIO can reset pad registers).
+- **[CODE]** `sentry.service`: ExecStartPre updated to write `0x05` to both pad registers.
+- **[TEST]** Added `tests/test_gpio_pinmux.py` — root diagnostic for PADCTL register values and 3s GPIO HIGH hold.
+
+## 2026-06-19 — ECO-004 MOSFET PINOUT CLARITY
+- **[DOCS]** `eco004_wiring_migration.drawio`, `eco004_mosfet_circuit.drawio`, HW-001 §5.4: Clarified IRLB8721 TO-220AB pinout — metal tab and middle pin are both Drain (same node); wire solenoid (−) to middle pin only. Added explicit 10kΩ pull-down wiring (Gate ↔ GND, parallel with green wire).
