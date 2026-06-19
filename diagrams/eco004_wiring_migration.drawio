@@ -1,151 +1,358 @@
-<mxfile>
-  <diagram name="BEFORE — Current Wiring" id="before">
-    <mxGraphModel dx="1400" dy="1200" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="600" background="#FFF8E1">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <!-- Title -->
-        <mxCell id="t1" value="&lt;b style='font-size:18px;color:#E65100'&gt;BEFORE — Current Wiring (What You Have Now)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:11px'&gt;Both BCM 17 and BCM 27 go to the Monk Makes Dual Relay board&lt;/span&gt;" style="text;html=1;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="200" y="15" width="700" height="45" as="geometry"/></mxCell>
-        <!-- ===== JETSON IDC40P ===== -->
-        <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="100" width="220" height="250" as="geometry"/></mxCell>
-        <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="60" y="110" width="180" height="30" as="geometry"/></mxCell>
-        <!-- Terminal 11 / BCM 17 -->
-        <mxCell id="t11" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="160" width="180" height="40" as="geometry"/></mxCell>
-        <mxCell id="t11l" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 11 / BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;Yellow wire → Relay IN1&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="163" width="170" height="30" as="geometry"/></mxCell>
-        <!-- Terminal 13 / BCM 27 -->
-        <mxCell id="t13" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="220" width="180" height="40" as="geometry"/></mxCell>
-        <mxCell id="t13l" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 13 / BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;Orange wire → Relay IN2&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="223" width="170" height="30" as="geometry"/></mxCell>
-        <!-- GND -->
-        <mxCell id="gnd1" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="280" width="180" height="35" as="geometry"/></mxCell>
-        <mxCell id="gnd1l" value="&lt;b style='color:#CCC;font-size:10px'&gt;Terminal 6/9/14 (GND)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="285" width="170" height="18" as="geometry"/></mxCell>
-
-        <!-- ===== WIRES TO RELAY ===== -->
-        <!-- BCM 17 → Relay IN1 (YELLOW — stays) -->
-        <mxCell id="w1" value="" style="endArrow=block;endFill=1;strokeColor=#FFEB3B;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="260" y="180" as="sourcePoint"/><mxPoint x="420" y="180" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w1l" value="&lt;b style='font-size:9px;color:#F57F17'&gt;YELLOW wire&lt;br&gt;(STAYS — no change)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="280" y="152" width="120" height="25" as="geometry"/></mxCell>
-        <!-- BCM 27 → Relay IN2 (ORANGE — WILL BE REMOVED) -->
-        <mxCell id="w2" value="" style="endArrow=block;endFill=1;strokeColor=#FF9800;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="260" y="240" as="sourcePoint"/><mxPoint x="420" y="240" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w2l" value="&lt;b style='font-size:9px;color:#E65100'&gt;ORANGE wire&lt;br&gt;⚠ REMOVE THIS WIRE!&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="280" y="212" width="120" height="25" as="geometry"/></mxCell>
-        <!-- GND → Relay -->
-        <mxCell id="wg" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="260" y="297" as="sourcePoint"/><mxPoint x="420" y="297" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="wgl" value="&lt;span style='font-size:8px;color:#666'&gt;GND&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="320" y="300" width="40" height="12" as="geometry"/></mxCell>
-
-        <!-- ===== MONK MAKES DUAL RELAY ===== -->
-        <mxCell id="relay" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="420" y="100" width="250" height="250" as="geometry"/></mxCell>
-        <mxCell id="rlbl" value="&lt;b style='color:#BCAAA4;font-size:14px'&gt;Monk Makes Dual Relay&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="110" width="230" height="20" as="geometry"/></mxCell>
-        <!-- CH1 -->
-        <mxCell id="ch1" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#6D4C41;arcSize=8;" vertex="1" parent="1"><mxGeometry x="440" y="145" width="210" height="55" as="geometry"/></mxCell>
-        <mxCell id="ch1l" value="&lt;b style='color:#FFEB3B;font-size:11px'&gt;CH1 (IN1 ← BCM 17)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;YELLOW wire → switches +12V to pump&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="445" y="150" width="200" height="35" as="geometry"/></mxCell>
-        <!-- CH2 -->
-        <mxCell id="ch2" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#FF9800;arcSize=8;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="440" y="215" width="210" height="55" as="geometry"/></mxCell>
-        <mxCell id="ch2l" value="&lt;b style='color:#FF9800;font-size:11px'&gt;CH2 (IN2 ← BCM 27)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFB74D;font-size:9px'&gt;⚠ ORANGE wire: Gimbal power (UNUSED)&lt;br&gt;Will be DISCONNECTED&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="445" y="218" width="200" height="42" as="geometry"/></mxCell>
-
-        <!-- ===== RELAY → PUMP ===== -->
-        <mxCell id="w3" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="670" y="172" as="sourcePoint"/><mxPoint x="810" y="172" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w3l" value="&lt;b style='font-size:9px;color:#C62828'&gt;RED wire (+12V switched)&lt;br&gt;(STAYS — no change)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="690" y="145" width="130" height="25" as="geometry"/></mxCell>
-        <!-- PUMP -->
-        <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="810" y="130" width="180" height="85" as="geometry"/></mxCell>
-        <mxCell id="plbl" value="&lt;b style='color:#BBDEFB;font-size:12px'&gt;R385 Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:9px'&gt;12V motor on Relay CH1&lt;br&gt;No changes needed&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="140" width="160" height="42" as="geometry"/></mxCell>
-
-        <!-- CH2 → Gimbal (dead connection) -->
-        <mxCell id="w4" value="" style="endArrow=block;endFill=1;strokeColor=#9E9E9E;strokeWidth=3;rounded=1;dashed=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="670" y="242" as="sourcePoint"/><mxPoint x="810" y="242" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w4l" value="&lt;span style='font-size:9px;color:#9E9E9E'&gt;DEAD (gimbal bypassed)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="690" y="248" width="120" height="14" as="geometry"/></mxCell>
-        <!-- Dead gimbal -->
-        <mxCell id="gimb" value="" style="rounded=1;fillColor=#EEEEEE;strokeColor=#BDBDBD;arcSize=8;dashed=1;" vertex="1" parent="1"><mxGeometry x="810" y="225" width="180" height="50" as="geometry"/></mxCell>
-        <mxCell id="gimblbl" value="&lt;span style='color:#9E9E9E;font-size:11px'&gt;&lt;s&gt;Storm32 Gimbal&lt;/s&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Replaced by MG996R servos&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="230" width="160" height="35" as="geometry"/></mxCell>
-
-        <!-- MOSFET not connected -->
-        <mxCell id="mosfet_na" value="" style="rounded=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;arcSize=8;dashed=1;" vertex="1" parent="1"><mxGeometry x="810" y="310" width="180" height="60" as="geometry"/></mxCell>
-        <mxCell id="mosfet_na_lbl" value="&lt;span style='color:#BDBDBD;font-size:11px'&gt;&lt;b&gt;IRLB8721 MOSFET&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Not connected yet&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="318" width="160" height="35" as="geometry"/></mxCell>
-
-        <!-- Note -->
-        <mxCell id="note1" value="&lt;b style='color:#E65100;font-size:11px'&gt;STATUS:&lt;/b&gt; BCM 27 ORANGE wire goes to Relay CH2 (currently doing nothing — gimbal replaced by servos). BCM 17 YELLOW wire drives Relay CH1 for the pump. MOSFET + Solenoid hardware ordered but not wired." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB74D;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="40" y="410" width="700" height="35" as="geometry"/></mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-  <diagram name="AFTER — New Wiring" id="after">
-    <mxGraphModel dx="1400" dy="1200" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="700" background="#E8F5E9">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
-        <!-- Title -->
-        <mxCell id="t2" value="&lt;b style='font-size:18px;color:#2E7D32'&gt;AFTER — New Wiring (What To Change)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#388E3C;font-size:11px'&gt;BCM 17 YELLOW stays on Relay CH1 (pump). BCM 27 ORANGE removed — replaced with GREEN to MOSFET gate.&lt;/span&gt;" style="text;html=1;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="200" y="15" width="750" height="45" as="geometry"/></mxCell>
-        <!-- ===== JETSON IDC40P ===== -->
-        <mxCell id="jetson2" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="40" y="100" width="220" height="300" as="geometry"/></mxCell>
-        <mxCell id="j2lbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="60" y="110" width="180" height="30" as="geometry"/></mxCell>
-        <!-- Terminal 11 / BCM 17 — NO CHANGE -->
-        <mxCell id="t11b" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="160" width="180" height="40" as="geometry"/></mxCell>
-        <mxCell id="t11bl" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 11 / BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;Yellow wire → Relay IN1 (NO CHANGE)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="163" width="170" height="30" as="geometry"/></mxCell>
-        <!-- Terminal 13 / BCM 27 — CHANGED -->
-        <mxCell id="t13b" value="" style="rounded=1;fillColor=#4CAF50;strokeColor=#FFEB3B;arcSize=8;strokeWidth=3;" vertex="1" parent="1"><mxGeometry x="60" y="225" width="180" height="40" as="geometry"/></mxCell>
-        <mxCell id="t13bl" value="&lt;b style='color:#FFF;font-size:11px'&gt;Terminal 13 / BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:9px'&gt;⚡ ORANGE removed → GREEN to MOSFET!&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="228" width="170" height="30" as="geometry"/></mxCell>
-        <!-- GND -->
-        <mxCell id="gnd2" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="290" width="180" height="35" as="geometry"/></mxCell>
-        <mxCell id="gnd2l" value="&lt;b style='color:#CCC;font-size:10px'&gt;Terminal 6/9/14 (GND)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="295" width="170" height="18" as="geometry"/></mxCell>
-        <!-- 12V label -->
-        <mxCell id="v5" value="" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;arcSize=8;" vertex="1" parent="1"><mxGeometry x="60" y="345" width="180" height="35" as="geometry"/></mxCell>
-        <mxCell id="v5l" value="&lt;b style='color:#FFF;font-size:10px'&gt;+12V DC Bus (Wago/PSU)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="65" y="350" width="170" height="18" as="geometry"/></mxCell>
-
-        <!-- ===== PATH 1: BCM 17 → RELAY CH1 → PUMP (unchanged) ===== -->
-        <mxCell id="w1b" value="" style="endArrow=block;endFill=1;strokeColor=#FFEB3B;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="260" y="180" as="sourcePoint"/><mxPoint x="420" y="150" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w1bl" value="&lt;b style='font-size:9px;color:#F57F17'&gt;YELLOW wire&lt;br&gt;✅ NO CHANGE&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="280" y="128" width="100" height="25" as="geometry"/></mxCell>
-        <!-- Relay (only CH1 now) -->
-        <mxCell id="relay2" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="420" y="100" width="200" height="120" as="geometry"/></mxCell>
-        <mxCell id="r2lbl" value="&lt;b style='color:#BCAAA4;font-size:13px'&gt;Monk Makes Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:10px'&gt;Only CH1 used now&lt;br&gt;(Orange removed from IN2)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="430" y="108" width="180" height="35" as="geometry"/></mxCell>
-        <mxCell id="ch1b" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#6D4C41;arcSize=8;" vertex="1" parent="1"><mxGeometry x="440" y="150" width="160" height="50" as="geometry"/></mxCell>
-        <mxCell id="ch1bl" value="&lt;b style='color:#FFEB3B;font-size:11px'&gt;CH1 (BCM 17)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;YELLOW → Switches +12V → Pump&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="445" y="153" width="150" height="35" as="geometry"/></mxCell>
-        <!-- Relay → Pump -->
-        <mxCell id="w3b" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="175" as="sourcePoint"/><mxPoint x="810" y="175" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w3bl" value="&lt;b style='font-size:9px;color:#C62828'&gt;RED wire (+12V switched)&lt;br&gt;✅ NO CHANGE&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="650" y="145" width="130" height="25" as="geometry"/></mxCell>
-        <!-- PUMP -->
-        <mxCell id="pump2" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="810" y="135" width="200" height="80" as="geometry"/></mxCell>
-        <mxCell id="p2lbl" value="&lt;b style='color:#BBDEFB;font-size:13px'&gt;R385 Pump Motor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:10px'&gt;+12V via Relay CH1 (no change)&lt;br&gt;Charge-on-demand only&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="820" y="143" width="180" height="45" as="geometry"/></mxCell>
-
-        <!-- ===== PATH 2: BCM 27 → MOSFET → SOLENOID (NEW!) ===== -->
-        <!-- BCM 27 GREEN wire to MOSFET -->
-        <mxCell id="w2b" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="260" y="245" as="sourcePoint"/><mxPoint x="420" y="340" as="targetPoint"/><Array as="points"><mxPoint x="330" y="245"/><mxPoint x="330" y="340"/></Array></mxGeometry></mxCell>
-        <mxCell id="w2bl" value="&lt;b style='font-size:10px;color:#2E7D32'&gt;🔀 GREEN wire (NEW!)&lt;br&gt;Replaces orange wire&lt;br&gt;from Terminal 13&lt;br&gt;→ MOSFET Gate pin&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="260" y="268" width="145" height="55" as="geometry"/></mxCell>
-
-        <!-- 10kΩ pull-down -->
-        <mxCell id="pd2" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="420" y="280" width="130" height="50" as="geometry"/></mxCell>
-        <mxCell id="pd2l" value="&lt;b style='color:#E65100;font-size:11px'&gt;10kΩ Resistor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:9px'&gt;Gate ↔ GND (boot safety)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="425" y="285" width="120" height="35" as="geometry"/></mxCell>
-
-        <!-- MOSFET -->
-        <mxCell id="mos2" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="420" y="340" width="200" height="120" as="geometry"/></mxCell>
-        <mxCell id="mos2pkg" value="" style="rounded=0;fillColor=#3F51B5;strokeColor=#283593;" vertex="1" parent="1"><mxGeometry x="435" y="360" width="35" height="65" as="geometry"/></mxCell>
-        <mxCell id="mos2l" value="&lt;b style='color:#283593;font-size:13px'&gt;IRLB8721PBF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:9px'&gt;N-Ch MOSFET (TO-220)&lt;br&gt;&lt;b&gt;G&lt;/b&gt; ← BCM 27 (green wire)&lt;br&gt;&lt;b&gt;D&lt;/b&gt; → Solenoid (−) terminal&lt;br&gt;&lt;b&gt;S&lt;/b&gt; → GND bus&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="475" y="345" width="140" height="65" as="geometry"/></mxCell>
-        <mxCell id="mpG" value="&lt;b style='color:#4CAF50;font-size:9px'&gt;G&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="425" y="345" width="15" height="15" as="geometry"/></mxCell>
-        <mxCell id="mpD" value="&lt;b style='color:#F44336;font-size:9px'&gt;D&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="425" y="383" width="15" height="15" as="geometry"/></mxCell>
-        <mxCell id="mpS" value="&lt;b style='color:#333;font-size:9px'&gt;S&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="425" y="410" width="15" height="15" as="geometry"/></mxCell>
-
-        <!-- MOSFET Drain → Solenoid -->
-        <mxCell id="w4b" value="" style="endArrow=block;endFill=1;strokeColor=#5C6BC0;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="395" as="sourcePoint"/><mxPoint x="810" y="395" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="w4bl" value="&lt;span style='font-size:9px;color:#283593'&gt;&lt;b&gt;BLUE wire&lt;/b&gt;&lt;br&gt;Drain → Sol(−)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="655" y="370" width="90" height="22" as="geometry"/></mxCell>
-
-        <!-- SOLENOID VALVE -->
-        <mxCell id="sol2" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=6;" vertex="1" parent="1"><mxGeometry x="810" y="300" width="200" height="140" as="geometry"/></mxCell>
-        <mxCell id="sol2coil" value="" style="rounded=1;fillColor=#37474F;strokeColor=#455A64;arcSize=8;" vertex="1" parent="1"><mxGeometry x="850" y="325" width="120" height="25" as="geometry"/></mxCell>
-        <mxCell id="sol2l" value="&lt;b style='color:#B0BEC5;font-size:13px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:9px'&gt;12V DC Normally-Closed&lt;br&gt;(+) → +12V bus (red wire)&lt;br&gt;(−) → MOSFET Drain (blue wire)&lt;br&gt;&lt;b style='color:#4CAF50'&gt;ON SERVO TURRET&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="825" y="352" width="170" height="65" as="geometry"/></mxCell>
-        <!-- +12V → Solenoid (+) -->
-        <mxCell id="w5b" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="910" y="300" as="sourcePoint"/><mxPoint x="910" y="272" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="v12bus2" value="&lt;b style='color:#FFF;font-size:10px'&gt;+12V Bus&lt;/b&gt;" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;arcSize=12;" vertex="1" parent="1"><mxGeometry x="840" y="248" width="100" height="25" as="geometry"/></mxCell>
-
-        <!-- 1N4007 flyback -->
-        <mxCell id="diode2" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="1040" y="340" width="140" height="55" as="geometry"/></mxCell>
-        <mxCell id="diode2l" value="&lt;b style='color:#880E4F;font-size:11px'&gt;1N4007 Flyback ⚡&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:9px'&gt;Across solenoid terminals&lt;br&gt;Anode→(−) Cathode→(+)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1045" y="345" width="130" height="42" as="geometry"/></mxCell>
-        <mxCell id="dw1" value="" style="endArrow=none;strokeColor=#E91E63;strokeWidth=2;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="355" as="sourcePoint"/><mxPoint x="1040" y="355" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="dw2" value="" style="endArrow=none;strokeColor=#E91E63;strokeWidth=2;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1010" y="385" as="sourcePoint"/><mxPoint x="1040" y="385" as="targetPoint"/></mxGeometry></mxCell>
-
-        <!-- GND bus -->
-        <mxCell id="gndbus" value="" style="rounded=1;fillColor=#333;strokeColor=#555;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="40" y="490" width="1150" height="28" as="geometry"/></mxCell>
-        <mxCell id="gndbusl" value="&lt;b style='color:#CCC;font-size:11px'&gt;GND Bus — Common Ground (Jetson GND + 12V PSU GND + MOSFET Source)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="50" y="494" width="700" height="18" as="geometry"/></mxCell>
-        <mxCell id="gw1b" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="140" y="340" as="sourcePoint"/><mxPoint x="140" y="490" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="gw2b" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="450" y="460" as="sourcePoint"/><mxPoint x="450" y="490" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="gw2bl" value="&lt;span style='font-size:8px;color:#666'&gt;MOSFET Source&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="460" y="468" width="70" height="12" as="geometry"/></mxCell>
-
-        <!-- ===== INSTRUCTIONS BOX ===== -->
-        <mxCell id="instbox" value="&lt;b style='font-size:13px;color:#1B5E20'&gt;📋 WIRING CHANGES — Step by Step:&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#C62828'&gt;1. DISCONNECT:&lt;/b&gt; Remove the &lt;b&gt;ORANGE wire&lt;/b&gt; from &lt;b&gt;Terminal 13&lt;/b&gt; (BCM 27) on the IDC40P — this goes to Relay IN2 which is now unused. Discard/cap the orange wire.&lt;br&gt;&lt;br&gt;&lt;b style='color:#2E7D32'&gt;2. NEW WIRE:&lt;/b&gt; Run a &lt;b&gt;GREEN wire&lt;/b&gt; from &lt;b&gt;Terminal 13 (BCM 27)&lt;/b&gt; to the &lt;b&gt;GATE pin&lt;/b&gt; of the IRLB8721 MOSFET (left pin when facing the TO-220 package with tab at back)&lt;br&gt;&lt;br&gt;&lt;b style='color:#E65100'&gt;3. ADD PULL-DOWN:&lt;/b&gt; Solder a &lt;b&gt;10kΩ resistor&lt;/b&gt; between MOSFET Gate and GND (prevents solenoid firing during Jetson boot/reboot)&lt;br&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;4. MOSFET DRAIN:&lt;/b&gt; Run a &lt;b&gt;BLUE wire&lt;/b&gt; from MOSFET &lt;b&gt;Drain pin&lt;/b&gt; (center pin) to Solenoid &lt;b&gt;(−) terminal&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;5. MOSFET SOURCE:&lt;/b&gt; Run a &lt;b&gt;BLACK wire&lt;/b&gt; from MOSFET &lt;b&gt;Source pin&lt;/b&gt; (right pin) to &lt;b&gt;GND bus&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#C62828'&gt;6. SOLENOID POWER:&lt;/b&gt; Run a &lt;b&gt;RED wire&lt;/b&gt; from &lt;b&gt;+12V bus&lt;/b&gt; (Wago) to Solenoid &lt;b&gt;(+) terminal&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#880E4F'&gt;7. FLYBACK DIODE:&lt;/b&gt; Solder &lt;b&gt;1N4007&lt;/b&gt; across solenoid terminals: &lt;b&gt;Anode→(−)&lt;/b&gt;, &lt;b&gt;Cathode (stripe end)→(+)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;span style='color:#388E3C;font-size:10px'&gt;✅ &lt;b&gt;YELLOW wire&lt;/b&gt; (BCM 17 → Relay CH1 → R385 Pump) is UNCHANGED. Don't touch it.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#4CAF50;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;spacingBottom=8;" vertex="1" parent="1"><mxGeometry x="40" y="540" width="1150" height="230" as="geometry"/></mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
+<mxfile host="65bd71144e">
+    <diagram name="before and after" id="before">
+        <mxGraphModel dx="1791" dy="819" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="600" background="#FFF8E1" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="t1" value="&lt;b style='font-size:18px;color:#E65100'&gt;BEFORE — Interim Wiring (Direct Gate — FAILED)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:11px'&gt;GREEN from T13 straight to MOSFET Gate reads ~1.6V — solenoid never clicks&lt;/span&gt;" style="text;html=1;fontColor=#333;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="15" width="700" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="100" width="220" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="110" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="t11" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="160" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="t11l" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 11 / BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;Yellow wire → Relay IN1&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="65" y="163" width="170" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="t13" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="220" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="t13l" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 13 / BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;GREEN wire → MOSFET Gate (wrong!)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="65" y="223" width="170" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="gnd1" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="280" width="180" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="gnd1l" value="&lt;b style='color:#CCC;font-size:10px'&gt;Terminal 6/9/14 (GND)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="65" y="285" width="170" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="w1" value="" style="endArrow=block;endFill=1;strokeColor=#FFEB3B;strokeWidth=4;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="260" y="180" as="sourcePoint"/>
+                        <mxPoint x="420" y="180" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w1l" value="&lt;b style='font-size:9px;color:#F57F17'&gt;YELLOW wire&lt;br&gt;(STAYS — no change)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="152" width="120" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="w2" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=4;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="260" y="240" as="sourcePoint"/>
+                        <mxPoint x="810" y="340" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="340" y="240"/>
+                            <mxPoint x="340" y="340"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w2l" value="&lt;b style='font-size:9px;color:#2E7D32'&gt;GREEN wire&lt;br&gt;⚠ MOVE OFF GATE!&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="280" y="212" width="120" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="wg" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="260" y="297" as="sourcePoint"/>
+                        <mxPoint x="420" y="297" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wgl" value="&lt;span style='font-size:8px;color:#666'&gt;GND&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="320" y="300" width="40" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="relay" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=6;" parent="1" vertex="1">
+                    <mxGeometry x="420" y="100" width="250" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="rlbl" value="&lt;b style='color:#BCAAA4;font-size:14px'&gt;Monk Makes Dual Relay&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="110" width="230" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch1" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#6D4C41;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="145" width="210" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch1l" value="&lt;b style='color:#FFEB3B;font-size:11px'&gt;CH1 (IN1 ← BCM 17)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;YELLOW wire → switches +12V to pump&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="445" y="150" width="200" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch2" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#FF9800;arcSize=8;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="440" y="215" width="210" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="ch2l" value="&lt;b style='color:#9E9E9E;font-size:11px'&gt;CH2 (Relay IN B)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:9px'&gt;UNUSED — no control wire&lt;br&gt;Old 12V gimbal feed idle&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="445" y="218" width="200" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="w3" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=4;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="670" y="172" as="sourcePoint"/>
+                        <mxPoint x="810" y="172" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w3l" value="&lt;b style='font-size:9px;color:#C62828'&gt;RED wire (+12V switched)&lt;br&gt;(STAYS — no change)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="690" y="145" width="130" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="130" width="180" height="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="plbl" value="&lt;b style='color:#BBDEFB;font-size:12px'&gt;R385 Pump&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:9px'&gt;12V motor on Relay CH1&lt;br&gt;No changes needed&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="140" width="160" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="w4" value="" style="endArrow=block;endFill=1;strokeColor=#9E9E9E;strokeWidth=3;rounded=1;dashed=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="670" y="242" as="sourcePoint"/>
+                        <mxPoint x="810" y="242" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w4l" value="&lt;span style='font-size:9px;color:#9E9E9E'&gt;DEAD (gimbal bypassed)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="690" y="248" width="120" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="gimb" value="" style="rounded=1;fillColor=#EEEEEE;strokeColor=#BDBDBD;arcSize=8;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="225" width="180" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="gimblbl" value="&lt;span style='color:#9E9E9E;font-size:11px'&gt;&lt;s&gt;Storm32 Gimbal&lt;/s&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;Replaced by MG996R servos&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="230" width="160" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="mosfet_na" value="" style="rounded=1;fillColor=#FFEBEE;strokeColor=#F44336;arcSize=8;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="810" y="310" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="mosfet_na_lbl" value="&lt;span style='color:#C62828;font-size:11px'&gt;&lt;b&gt;IRLB8721 Gate&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;GREEN wired here — only ~1.6V!&lt;br&gt;Remove 104 (100kΩ) pull-ups&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="820" y="318" width="160" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="note1" value="&lt;b style='color:#C62828;font-size:11px'&gt;PROBLEM:&lt;/b&gt; Yahboom PY.00 (BCM 27) sources only ~1.5–1.6V — enough for Monk Makes relay IN (~1.5V) but NOT for IRLB8721 gate (~3.3V needed). Bench test: touching +3.3V to Gate → solenoid clicks. Fix: use Relay CH2 to switch +3.3V to Gate." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#F44336;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="410" width="700" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-49" value="&lt;b style='font-size:18px;color:#2E7D32'&gt;AFTER — Relay CH2 Gate Drive (ECO-004 Rev B)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#388E3C;font-size:11px'&gt;BCM 27 GREEN → Relay IN B (control). Terminal 17 (+3.3V) → CH2 B1 → B2 → MOSFET Gate.&lt;/span&gt;" style="text;html=1;fontColor=#333;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="225" y="530" width="750" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-50" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="65" y="615" width="220" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-51" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="625" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-52" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#388E3C;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="675" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-53" value="&lt;b style='color:#C8E6C9;font-size:11px'&gt;Terminal 11 / BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:9px'&gt;Yellow wire → Relay IN1 (NO CHANGE)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="678" width="170" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-54" value="" style="rounded=1;fillColor=#4CAF50;strokeColor=#FFEB3B;arcSize=8;strokeWidth=3;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="740" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-55" value="&lt;b style='color:#FFF;font-size:11px'&gt;Terminal 13 / BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:9px'&gt;🔀 GREEN → Relay IN B&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="743" width="170" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-56" value="" style="rounded=1;fillColor=#333;strokeColor=#555;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="805" width="180" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-57" value="&lt;b style='color:#CCC;font-size:10px'&gt;Terminal 6/9/14 (GND)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="810" width="170" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-58" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#0D47A1;arcSize=8;strokeWidth=2;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="860" width="180" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-59" value="&lt;b style='color:#FFF;font-size:10px'&gt;Terminal 17 (+3.3V) — NEW WIRE&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="865" width="170" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="t17_12v" value="" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="85" y="905" width="180" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="t17_12v_lbl" value="&lt;b style='color:#FFF;font-size:9px'&gt;+12V DC Bus (solenoid/pump — unchanged)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="90" y="910" width="170" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-60" value="" style="endArrow=block;endFill=1;strokeColor=#FFEB3B;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="285" y="695" as="sourcePoint"/>
+                        <mxPoint x="445" y="665" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-61" value="&lt;b style='font-size:9px;color:#F57F17'&gt;YELLOW wire&lt;br&gt;✅ NO CHANGE&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="305" y="643" width="100" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-62" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="445" y="615" width="220" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-63" value="&lt;b style='color:#BCAAA4;font-size:13px'&gt;Monk Makes Dual Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:10px'&gt;CH1 = Pump | CH2 = MOSFET gate&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="455" y="623" width="200" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="relay_ch2_box" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#4CAF50;arcSize=8;strokeWidth=3;" vertex="1" parent="1">
+                    <mxGeometry x="465" y="730" width="180" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="relay_ch2_lbl" value="&lt;b style='color:#4CAF50;font-size:11px'&gt;CH2 (IN B ← GREEN)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;B1 ← +3.3V (T17) feed&lt;br&gt;B2 → MOSFET Gate&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="470" y="735" width="170" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-64" value="" style="rounded=1;fillColor=#4E342E;strokeColor=#6D4C41;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="465" y="665" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-65" value="&lt;b style='color:#FFEB3B;font-size:11px'&gt;CH1 (BCM 17)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:9px'&gt;YELLOW → Switches +12V → Pump&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="470" y="668" width="150" height="35" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-66" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="645" y="690" as="sourcePoint"/>
+                        <mxPoint x="835" y="690" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-67" value="&lt;b style='font-size:9px;color:#C62828'&gt;RED wire (+12V switched)&lt;br&gt;✅ NO CHANGE&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="675" y="660" width="130" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-68" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="835" y="650" width="200" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-69" value="&lt;b style='color:#BBDEFB;font-size:13px'&gt;R385 Pump Motor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:10px'&gt;+12V via Relay CH1 (no change)&lt;br&gt;Charge-on-demand only&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="845" y="658" width="180" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-70" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="285" y="760" as="sourcePoint"/>
+                        <mxPoint x="465" y="765" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="380" y="760"/>
+                            <mxPoint x="380" y="765"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-71" value="&lt;b style='font-size:10px;color:#2E7D32'&gt;🔀 MOVE GREEN wire&lt;br&gt;FROM MOSFET Gate&lt;br&gt;TO Relay IN B pin&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="285" y="720" width="145" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_t17_b1" value="" style="endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="285" y="877" as="sourcePoint"/>
+                        <mxPoint x="465" y="770" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="400" y="877"/>
+                            <mxPoint x="400" y="770"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w_t17_b1_lbl" value="&lt;b style='font-size:9px;color:#1565C0'&gt;NEW wire (RED/WHT)&lt;br&gt;T17 (+3.3V) → B1&lt;br&gt;⚠ NOT to Gate!&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="300" y="830" width="110" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="w_b2_gate" value="" style="endArrow=block;endFill=1;strokeColor=#7B1FA2;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="645" y="780" as="sourcePoint"/>
+                        <mxPoint x="445" y="890" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="680" y="780"/>
+                            <mxPoint x="680" y="890"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="w_b2_gate_lbl" value="&lt;b style='font-size:9px;color:#7B1FA2'&gt;NEW wire&lt;br&gt;B2 → Gate (G)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="685" y="820" width="90" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-72" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="445" y="795" width="130" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-73" value="&lt;b style='color:#E65100;font-size:11px'&gt;10kΩ (optional)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BF360C;font-size:9px'&gt;Gate → GND when relay OFF&lt;br&gt;Remove any 104 (100kΩ) pull-ups!&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="445" y="795" width="130" height="48" as="geometry"/>
+                </mxCell>
+                <mxCell id="pd_w_gate" value="" style="endArrow=none;strokeColor=#FFB74D;strokeWidth=2;dashed=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="510" y="795" as="sourcePoint"/>
+                        <mxPoint x="467" y="875" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="pd_w_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#FFB74D;strokeWidth=2;dashed=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="510" y="843" as="sourcePoint"/>
+                        <mxPoint x="510" y="1005" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="510" y="870"/>
+                            <mxPoint x="200" y="870"/>
+                            <mxPoint x="200" y="1005"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-74" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;shadow=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="445" y="855" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-75" value="" style="rounded=0;fillColor=#3F51B5;strokeColor=#283593;" vertex="1" parent="1">
+                    <mxGeometry x="460" y="875" width="35" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-76" value="&lt;b style='color:#283593;font-size:13px'&gt;IRLB8721PBF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:9px'&gt;TO-220AB — face label, pins down&lt;br&gt;&lt;b&gt;G&lt;/b&gt; (left) ← B2 wire (~3.3V)&lt;br&gt;&lt;b&gt;D&lt;/b&gt; (middle) → blue wire&lt;br&gt;&lt;b&gt;S&lt;/b&gt; (right) → GND bus&lt;br&gt;&lt;b style='color:#C62828'&gt;Tab = D&lt;/b&gt; (use middle pin only)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="500" y="855" width="145" height="78" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-77" value="&lt;b style='color:#4CAF50;font-size:9px'&gt;G&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="450" y="860" width="15" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-78" value="&lt;b style='color:#F44336;font-size:9px'&gt;D&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="450" y="898" width="15" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-79" value="&lt;b style='color:#333;font-size:9px'&gt;S&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="450" y="925" width="15" height="15" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-80" value="" style="endArrow=block;endFill=1;strokeColor=#5C6BC0;strokeWidth=4;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="645" y="910" as="sourcePoint"/>
+                        <mxPoint x="835" y="910" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-81" value="&lt;span style='font-size:9px;color:#283593'&gt;&lt;b&gt;BLUE wire&lt;/b&gt;&lt;br&gt;Middle pin (D) → Sol(−)&lt;br&gt;Tab is also D — don't use both&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="665" y="878" width="115" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-82" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=6;" vertex="1" parent="1">
+                    <mxGeometry x="835" y="815" width="200" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-83" value="" style="rounded=1;fillColor=#37474F;strokeColor=#455A64;arcSize=8;" vertex="1" parent="1">
+                    <mxGeometry x="875" y="840" width="120" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-84" value="&lt;b style='color:#B0BEC5;font-size:13px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:9px'&gt;12V DC Normally-Closed&lt;br&gt;(+) → +12V bus (red wire)&lt;br&gt;(−) → MOSFET Drain (blue wire)&lt;br&gt;&lt;b style='color:#4CAF50'&gt;ON SERVO TURRET&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="850" y="867" width="170" height="65" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-85" value="" style="endArrow=block;endFill=1;strokeColor=#F44336;strokeWidth=3;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="935" y="815" as="sourcePoint"/>
+                        <mxPoint x="935" y="787" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-86" value="&lt;b style='color:#FFF;font-size:10px'&gt;+12V Bus&lt;/b&gt;" style="rounded=1;fillColor=#F44336;strokeColor=#C62828;arcSize=12;" vertex="1" parent="1">
+                    <mxGeometry x="865" y="763" width="100" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-87" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="1065" y="855" width="140" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-88" value="&lt;b style='color:#880E4F;font-size:11px'&gt;1N4007 Flyback ⚡&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:9px'&gt;Across solenoid terminals&lt;br&gt;Anode→(−) Cathode→(+)&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="1070" y="860" width="130" height="42" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-89" value="" style="endArrow=none;strokeColor=#E91E63;strokeWidth=2;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1035" y="870" as="sourcePoint"/>
+                        <mxPoint x="1065" y="870" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-90" value="" style="endArrow=none;strokeColor=#E91E63;strokeWidth=2;rounded=1;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1035" y="900" as="sourcePoint"/>
+                        <mxPoint x="1065" y="900" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-91" value="" style="rounded=1;fillColor=#333;strokeColor=#555;shadow=1;arcSize=12;" vertex="1" parent="1">
+                    <mxGeometry x="65" y="1005" width="1150" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-92" value="&lt;b style='color:#CCC;font-size:11px'&gt;GND Bus — Common Ground (Jetson GND + 12V PSU GND + MOSFET Source)&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="75" y="1009" width="700" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-93" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="165" y="855" as="sourcePoint"/>
+                        <mxPoint x="165" y="1005" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-94" value="" style="endArrow=block;endFill=1;strokeColor=#333;strokeWidth=2;" edge="1" parent="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="475" y="975" as="sourcePoint"/>
+                        <mxPoint x="475" y="1005" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-95" value="&lt;span style='font-size:8px;color:#666'&gt;MOSFET Source&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
+                    <mxGeometry x="485" y="983" width="70" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="g85OO_5E283azgmpjkhN-96" value="&lt;b style='font-size:13px;color:#1B5E20'&gt;📋 WIRING CHANGES — Step by Step (Rev B):&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#C62828'&gt;1. DISCONNECT from Gate:&lt;/b&gt; Remove &lt;b&gt;GREEN wire&lt;/b&gt; from MOSFET &lt;b&gt;Gate (G)&lt;/b&gt; pin — it goes to Relay IN B instead. Remove any &lt;b&gt;104 (100kΩ)&lt;/b&gt; pull-up resistors from Gate.&lt;br&gt;&lt;br&gt;&lt;b style='color:#2E7D32'&gt;2. MOVE GREEN (control):&lt;/b&gt; Connect &lt;b&gt;GREEN wire&lt;/b&gt; from &lt;b&gt;Terminal 13 (BCM 27)&lt;/b&gt; to Monk Makes &lt;b&gt;Relay IN B&lt;/b&gt; pin (same as old orange gimbal control wire location).&lt;br&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;3. NEW +3.3V feed:&lt;/b&gt; Run a &lt;b&gt;new wire&lt;/b&gt; from &lt;b&gt;Terminal 17 (+3.3V)&lt;/b&gt; to Relay CH2 screw &lt;b&gt;B1&lt;/b&gt;. &lt;b&gt;Do NOT&lt;/b&gt; connect T17 to Gate — T17 is power, not GPIO.&lt;br&gt;&lt;br&gt;&lt;b style='color:#7B1FA2'&gt;4. NEW Gate drive:&lt;/b&gt; Run a &lt;b&gt;new wire&lt;/b&gt; from Relay CH2 screw &lt;b&gt;B2&lt;/b&gt; to MOSFET &lt;b&gt;Gate (G)&lt;/b&gt; left pin.&lt;br&gt;&lt;br&gt;&lt;b style='color:#C62828'&gt;5. REMOVE old CH2 12V:&lt;/b&gt; Disconnect any &lt;b&gt;+12V red wire&lt;/b&gt; from Relay B1 (old gimbal feed). CH2 now switches 3.3V only.&lt;br&gt;&lt;br&gt;&lt;b style='color:#E65100'&gt;6. OPTIONAL pull-down:&lt;/b&gt; Solder &lt;b&gt;10kΩ (103)&lt;/b&gt; Gate→GND if you have one — keeps valve closed when relay OFF.&lt;br&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;7–9. UNCHANGED:&lt;/b&gt; MOSFET Drain→Solenoid(−), Source→GND, Solenoid(+)→+12V, 1N4007 flyback, YELLOW pump wire.&lt;br&gt;&lt;br&gt;&lt;span style='color:#388E3C;font-size:10px'&gt;✅ &lt;b&gt;Test:&lt;/b&gt; Click Test 500ms → Gate ~3.3V, Drain ~0V, &lt;b&gt;two audible clicks&lt;/b&gt;. Software unchanged (still BCM 27).&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#4CAF50;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;spacingBottom=8;" vertex="1" parent="1">
+                    <mxGeometry x="65" y="1055" width="1150" height="250" as="geometry"/>
+                </mxCell>
+                <mxCell id="GJ6VvBEB1VO6xrJh4_M--1" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/png,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;" vertex="1" parent="1">
+                    <mxGeometry x="1130" y="623" width="156" height="163" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
 </mxfile>
