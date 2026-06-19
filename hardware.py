@@ -38,33 +38,43 @@ except ImportError:
     SERIAL_AVAILABLE = False
     print("[hardware] WARNING: pyserial not found. Gimbal commands will be no-ops.")
 
-def configure_push_pull():
+# PADCTL GPIO output value for Orin Nano (TRM: SFIO=0, E_INPUT=0, TRISTATE=0, PUPD=NONE).
+# Clearing only bit 4 leaves internal pull-down + tristate — reads ~1.5V instead of 3.3V.
+_PADCTL_GPIO_OUTPUT = 0x05
+_PADCTL_REGS = (
+    ("PR.04", 0x98),   # BCM 17 / Pin 11 / Terminal 11 — pump relay
+    ("PY.00", 0xD030), # BCM 27 / Pin 13 / Terminal 13 — Relay CH2 IN B (solenoid control)
+)
+
+
+def configure_push_pull() -> bool:
     """
-    ECO-2026-004: Directly clear Bit 4 (Open Drain) from the pinmux registers of
-    BCM 17 (PR.04) and BCM 27 (PY.00) to force them into standard 3.3V Push-Pull GPIO mode.
-    Needs root privileges to write to /dev/mem.
+    ECO-2026-004: Force BCM 17 (PR.04) and BCM 27 (PY.00) into GPIO push-pull output
+    via PADCTL register writes. On Yahboom Orin Nano boards these pins boot as UART
+    functions with tristate + pull-down — GPIO HIGH floats to ~1.5V instead of 3.3V.
+
+    Must run as root (/dev/mem). Re-applied before every GPIO.output because
+    Jetson.GPIO can reset pad registers after export/toggle.
     """
     try:
         import mmap
         import struct
-        # PR.04 (Pin 11): Reg 0x02430098
-        # PY.00 (Pin 13): Reg 0x0243d030
+
         with open("/dev/mem", "r+b") as f:
             mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
-            
-            # PR.04 (Pin 11) - clear Bit 4 (Open Drain)
-            val_pr4 = struct.unpack("<I", mem[0x98:0x9c])[0]
-            new_pr4 = val_pr4 & ~(1 << 4)
-            mem[0x98:0x9c] = struct.pack("<I", new_pr4)
-            
-            # PY.00 (Pin 13) - clear Bit 4 (Open Drain)
-            val_py0 = struct.unpack("<I", mem[0xd030:0xd034])[0]
-            new_py0 = val_py0 & ~(1 << 4)
-            mem[0xd030:0xd034] = struct.pack("<I", new_py0)
-            
-            print(f"[PADMUX] Pinmux forced to Push-Pull: PR4={hex(new_pr4)}, PY0={hex(new_py0)}")
+            results = []
+            for name, offset in _PADCTL_REGS:
+                old = struct.unpack("<I", mem[offset:offset + 4])[0]
+                mem[offset:offset + 4] = struct.pack("<I", _PADCTL_GPIO_OUTPUT)
+                new = struct.unpack("<I", mem[offset:offset + 4])[0]
+                results.append(f"{name}={hex(old)}→{hex(new)}")
+            mem.close()
+
+        print(f"[PADMUX] GPIO output mode: {', '.join(results)}")
+        return True
     except Exception as e:
         print(f"[PADMUX] WARNING: Could not force Push-Pull mode (needs root): {e}")
+        return False
 
 
 def configure_pwm_pinmux():
@@ -111,17 +121,17 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump)
-SOLENOID_PIN = 27         # BCM 27 = Pin 13 → IDC40P Terminal 13 → IRLB8721 MOSFET Gate → Solenoid
+SOLENOID_PIN = 27         # BCM 27 = Pin 13 → Relay CH2 IN B → switches +3.3V to MOSFET gate
 # =======================================================================================================
 
 
 class RelayController:
     """
     Controls the R385 pump (via Relay CH1) and GOODRIG solenoid valve
-    (via IRLB8721 MOSFET on BCM 27) through Jetson GPIO.
+    (via Relay CH2 + IRLB8721 MOSFET on BCM 27) through Jetson GPIO.
 
-    ECO-2026-004: BCM 27 reassigned from Relay CH2 (gimbal) to MOSFET gate
-    for solenoid valve. Gimbal power now via dedicated buck converter (no relay).
+    ECO-2026-004 Rev B: BCM 27 drives Monk Makes Relay CH2 (control). Relay switches
+    Terminal 17 (+3.3V) to MOSFET gate — direct GPIO-to-gate insufficient on Yahboom.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -141,7 +151,7 @@ class RelayController:
                 GPIO.setup(SOLENOID_PIN, GPIO.OUT, initial=GPIO.LOW)  # Solenoid CLOSED at boot
                 configure_push_pull()
                 print(f"[RelayController] GPIO initialized. Pump=BCM{RELAY_PUMP_PIN}, "
-                      f"Solenoid=BCM{SOLENOID_PIN} (MOSFET gate)")
+                      f"Solenoid=BCM{SOLENOID_PIN} (Relay CH2 control)")
             except OSError as e:
                 print(f"[RelayController] GPIO init failed ({e}); running in STUB mode.")
                 JETSON_AVAILABLE = False
@@ -201,6 +211,7 @@ class RelayController:
     def _set_pump(self, state: bool):
         self._pump_state = state
         if JETSON_AVAILABLE:
+            configure_push_pull()
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
@@ -208,10 +219,10 @@ class RelayController:
 
     def set_solenoid(self, state: bool):
         """
-        Open (HIGH) or close (LOW) the solenoid valve via MOSFET gate.
-        HIGH = 3.3V on IRLB8721 gate → MOSFET conducts → 12V flows through
+        Open (HIGH) or close (LOW) the solenoid valve via Relay CH2 → MOSFET gate.
+        HIGH = Relay CH2 ON → +3.3V on IRLB8721 gate → MOSFET conducts → 12V through
         solenoid coil → magnetic plunger retracts → water flows.
-        LOW = gate pulled to GND via 10kΩ → MOSFET off → solenoid spring-closed.
+        LOW = Relay CH2 OFF → gate low/floating → MOSFET off → solenoid spring-closed.
         """
         with self._lock:
             self._set_solenoid(state)
@@ -219,6 +230,7 @@ class RelayController:
     def _set_solenoid(self, state: bool):
         self._solenoid_state = state
         if JETSON_AVAILABLE:
+            configure_push_pull()
             GPIO.output(SOLENOID_PIN, GPIO.HIGH if state else GPIO.LOW)
         print(f"[RelayController] Solenoid {'OPEN' if state else 'CLOSED'}")
 

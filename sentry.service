@@ -34,7 +34,7 @@ ExecStartPre=-/bin/bash -c '/usr/sbin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
 ExecStartPre=-/bin/bash -c 'systemctl restart nvargus-daemon; sleep 3'
 
 # --- Pre-start: configure GPIO pinmux (push-pull mode for relay pins) ---
-ExecStartPre=-/usr/bin/python3 -c 'import mmap, struct; f = open("/dev/mem", "r+b"); mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000); mem[0x98:0x9c] = struct.pack("<I", struct.unpack("<I", mem[0x98:0x9c])[0] & ~(1 << 4)); mem[0xd030:0xd034] = struct.pack("<I", struct.unpack("<I", mem[0xd030:0xd034])[0] & ~(1 << 4))'
+ExecStartPre=-/usr/bin/python3 -c 'import mmap, struct; f=open("/dev/mem","r+b"); m=mmap.mmap(f.fileno(),0x10000,offset=0x02430000); m[0x98:0x9c]=struct.pack("<I",0x5); m[0xD030:0xD034]=struct.pack("<I",0x5); m.close()'
 
 # --- Main: start the sentry server ---
 ExecStart=/usr/bin/python3 -u app.py --port 8000
