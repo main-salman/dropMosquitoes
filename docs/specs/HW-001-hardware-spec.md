@@ -113,8 +113,9 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 |:---------|:-----------|:----|:----------------|:-----------|:-----------------|
 | **Relay V+ (5V)** | Pin 2 | — | Terminal 2 | RED | Monk Makes relay power input |
 | **Relay V- (GND)** | Pin 9 | — | Terminal 9 | BLACK | Monk Makes relay ground |
-| **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → CH1 (Pump On/Off — continuous run mode) |
-| **Solenoid MOSFET Gate** | Pin 13 | BCM 27 | Terminal 13 | ORANGE | **IRLB8721 MOSFET Gate → Solenoid valve control (ECO-2026-004)** |
+| **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → Relay IN A (Pump On/Off — continuous run mode) |
+| **Relay CH2 (Solenoid)** | Pin 13 | BCM 27 | Terminal 13 | GREEN | Trigger line → Relay IN B (switches +3.3V to MOSFET gate — ECO-2026-004 Rev B) |
+| **Logic +3.3V (Gate feed)** | Pin 17 | — | Terminal 17 | RED/WHT | +3.3V → Relay CH2 screw B1 (switched gate power — NOT a GPIO) |
 | **LiDAR I2C SDA** | Pin 3 | BCM 2 | Terminal 3 | BLUE | TF-Luna data line |
 | **LiDAR I2C SCL** | Pin 5 | BCM 3 | Terminal 5 | YELLOW | TF-Luna clock line |
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
@@ -125,34 +126,41 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
-### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004)
+### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004 Rev B)
 
 > **⚠ NEW — Replaces relay-gated pump timing for fluid control.**
-> The solenoid valve is switched by an IRLB8721 N-Channel MOSFET driven directly from Jetson GPIO BCM 27 (3.3V logic level compatible).
+> The solenoid coil is switched by an IRLB8721 N-Channel MOSFET. **Gate drive uses Monk Makes Relay CH2** to route fixed +3.3V to the MOSFET gate — required because Yahboom carrier boards leave BCM 27 (PY.00) in open-drain/tristate mode (~1.5–1.6V HIGH), which cannot fully turn on the IRLB8721.
 
 ```
-Jetson GPIO BCM 27 (Pin 13) ──[10kΩ pull-down to GND]──┬── IRLB8721 Gate
-                                                        │
+Jetson GPIO BCM 27 (Pin 13) ──> Monk Makes Relay IN B (control only, ~1.5V OK)
+
+Terminal 17 (+3.3V) ──> Relay CH2 screw B1 (input)
+Relay CH2 screw B2 (output) ──[optional 10kΩ to GND]──┬── IRLB8721 Gate
+                                                      │
 +12V ──> [Solenoid Coil +] ──> [Solenoid Coil -] ──> IRLB8721 Drain
                     │                    │
                     └──[1N4007 Flyback]──┘  (Cathode to +12V, Anode to Drain)
-                                                        │
-                                              IRLB8721 Source ──> GND
+                                                      │
+                                            IRLB8721 Source ──> GND
 ```
 
 **Component Notes:**
-- **10kΩ resistor** from Gate to GND: ensures solenoid stays closed when GPIO is floating (boot/shutdown)
+- **TO-220AB pinout (IRLB8721):** Face the printed label, pins pointing down — **G** (left), **D** (middle), **S** (right). The **metal mounting tab is internally tied to D** (same electrical node as the middle pin). Wire the solenoid (−) to the **middle pin only**; leave the tab unconnected or insulate it (~1 A solenoid coil does not need heatsinking).
+- **Relay CH2 repurposed:** CH2 previously switched +12V to Storm32 gimbal (now replaced by MG996R servos). **Remove any +12V feed from screw B1.** B1 now receives +3.3V from Terminal 17; B2 connects to MOSFET Gate. Software still toggles BCM 27 — no code change.
+- **Do NOT wire Terminal 13 or Terminal 17 directly to the MOSFET gate.** T13 is GPIO control (weak HIGH); T17 is always-on +3.3V power.
+- **Optional 10kΩ** Gate→GND pull-down when relay is OFF — keeps valve closed during boot. Relay OFF = gate floating unless pull-down installed.
 - **1N4007 flyback diode** across solenoid coil: absorbs back-EMF (same as pump diode in §6.1)
-- **Logic level:** IRLB8721 has R_DS(on) < 10mΩ at V_GS = 3.3V — no level shifter needed
+- **Logic level:** IRLB8721 has R_DS(on) < 10mΩ at V_GS = 3.3V — relay must deliver full 3.3V at gate
+- **Timing:** Monk Makes solid-state relay adds ~1–5ms switch latency vs direct GPIO. Acceptable for 10ms+ solenoid pulses; sub-ms MOSFET switching preserved once gate reaches 3.3V.
 
 
 ## 6. Isolation & Safety Hardware
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
   - CH1: Pump On/Off control (GPIO 17 → continuous run mode with accumulator)
-  - CH2: Reserved / Unused
+  - CH2: Solenoid gate drive — switches +3.3V (Terminal 17) to IRLB8721 Gate when GPIO 27 HIGH
 - **Solenoid Valve:** GOODRIG 12V DC Direct-Acting NC, 1/4" FNPT (fluid gating, replaces relay-timed pump pulses)
-- **MOSFET Switch:** IRLB8721PBF N-Channel (TO-220), 30V/62A, 3.3V logic compatible (gates solenoid via BCM 27)
+- **MOSFET Switch:** IRLB8721PBF N-Channel (TO-220), 30V/62A, 3.3V logic compatible (coil switched via Drain; gate driven via Relay CH2)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
 ### 6.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)
@@ -217,7 +225,7 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 | Pump | 12V DC Diaphragm Pump, 60 PSI, self-priming. **Runs continuously** (or pressure-switched). Feeds accumulator tank. |
 | Accumulator | **Swess 0.75L Mini Pressure Tank**, 125 PSI max, dual 1/2" MNPT ports. Absorbs pump pulsation → flat pressure line. |
 | Solenoid Valve | **GOODRIG 12V DC Direct-Acting NC**, 1/4" FNPT. Gates fluid at nozzle. Sub-ms response via MOSFET. |
-| MOSFET Switch | **IRLB8721PBF** N-Channel TO-220, 30V/62A. Drives solenoid from Jetson GPIO BCM 27 (3.3V logic). |
+| MOSFET Switch | **IRLB8721PBF** N-Channel TO-220, 30V/62A. Coil via Drain; gate via Relay CH2 + Terminal 17 (+3.3V). |
 | Tubing | Feelers 1/4" ID × 3/8" OD Silicone (26.25ft spool) |
 | Barb Adapters | **Kozelo** 1/4" Barb × 1/4" MNPT (×2) — solenoid I/O. **uxcell** 1/4" Barb × 1/2" FNPT (×2) — accumulator I/O. |
 | Check Valve | Built into diaphragm pump (internal one-way valves prevent backflow) |
@@ -245,7 +253,7 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
                               [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
                                               │
                               [GOODRIG 12V Solenoid Valve (NC, 1/4" FNPT)]
-                              [  Gated by IRLB8721 MOSFET via BCM 27   ]
+                              [  Gated by IRLB8721 via Relay CH2 + BCM 27 ]
                                               │
                               [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
                                               │
@@ -287,7 +295,7 @@ The chassis is a vertically condensed dome enclosure with the gimbal mounted INV
 3. **Accumulator → Turret** — accumulator port 2 → uxcell 1/2" FNPT adapter → 1/4" flex line → through PG9 cable gland → service loop → Kozelo 1/4" MNPT adapter → **solenoid inlet (ON TURRET)**
 4. **Solenoid → Nozzle (DIRECT)** — solenoid outlet → Kozelo 1/4" MNPT adapter → **nozzle threads DIRECTLY into adapter** (zero dead volume, zero drip, 40 PSI at nozzle tip)
 5. **Pump Power** — Relay CH1 supplies +12V for pump on/off (continuous run or software-managed duty cycle)
-6. **Solenoid Power** — IRLB8721 MOSFET (BCM 27) gates +12V to solenoid coil with microsecond precision. 12V/GND wires routed from enclosure to turret alongside silicone line.
+6. **Solenoid Power** — IRLB8721 MOSFET switches solenoid coil (−) to GND. BCM 27 triggers Relay CH2 to apply +3.3V to MOSFET gate. 12V/GND wires routed from enclosure to turret alongside silicone line.
 
 ### 8.4 Turret Payload Weight Budget
 
@@ -350,5 +358,5 @@ See [parts.csv](../../parts.csv) for the complete, URL-verified procurement list
 | Kozelo 1/4" Barb × 1/4" MNPT Brass Adapter | 2 | $9.19 | Amazon.ca | 1/4" NPT | Solenoid ↔ flex line |
 | uxcell 1/4" Barb × 1/2" FNPT Brass Adapter | 2 | $17.59 | Amazon.ca | 1/2" NPT | Accumulator ↔ flex line |
 | 1N4007 Flyback Diode | 1 | ~$0.10 | — | — | Solenoid back-EMF protection |
-| 10kΩ Resistor | 1 | ~$0.05 | — | — | MOSFET gate pull-down |
+| 10kΩ Resistor | 1 | ~$0.05 | — | — | Optional MOSFET gate pull-down (relay OFF) |
 | **Total** | | **$98.75** | | | |
