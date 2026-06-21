@@ -43,7 +43,7 @@ except ImportError:
 _PADCTL_GPIO_OUTPUT = 0x05
 _PADCTL_REGS = (
     ("PR.04", 0x98),   # BCM 17 / Pin 11 / Terminal 11 — pump relay
-    ("PY.00", 0xD030), # BCM 27 / Pin 13 / Terminal 13 — Relay CH2 IN B (solenoid control)
+    ("PY.00", 0xD030), # BCM 27 / Pin 13 / Terminal 13 — solenoid MOSFET gate
 )
 
 
@@ -121,7 +121,7 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump)
-SOLENOID_PIN = 27         # BCM 27 = Pin 13 → Relay CH2 IN B → switches +3.3V to MOSFET gate
+SOLENOID_PIN = 27         # BCM 27 = Pin 13 → IRLB8721 Gate (+ 4.7kΩ pull-up from T17)
 # =======================================================================================================
 
 
@@ -130,8 +130,8 @@ class RelayController:
     Controls the R385 pump (via Relay CH1) and GOODRIG solenoid valve
     (via Relay CH2 + IRLB8721 MOSFET on BCM 27) through Jetson GPIO.
 
-    ECO-2026-004 Rev B: BCM 27 drives Monk Makes Relay CH2 (control). Relay switches
-    Terminal 17 (+3.3V) to MOSFET gate — direct GPIO-to-gate insufficient on Yahboom.
+    ECO-2026-004 Rev C: BCM 27 drives IRLB8721 gate directly; 4.7kΩ pull-up from
+    Terminal 17 (+3.3V) lifts weak Yahboom GPIO HIGH to full MOSFET turn-on.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -151,7 +151,7 @@ class RelayController:
                 GPIO.setup(SOLENOID_PIN, GPIO.OUT, initial=GPIO.LOW)  # Solenoid CLOSED at boot
                 configure_push_pull()
                 print(f"[RelayController] GPIO initialized. Pump=BCM{RELAY_PUMP_PIN}, "
-                      f"Solenoid=BCM{SOLENOID_PIN} (Relay CH2 control)")
+                      f"Solenoid=BCM{SOLENOID_PIN} (MOSFET gate + 4.7k pull-up)")
             except OSError as e:
                 print(f"[RelayController] GPIO init failed ({e}); running in STUB mode.")
                 JETSON_AVAILABLE = False
@@ -219,10 +219,9 @@ class RelayController:
 
     def set_solenoid(self, state: bool):
         """
-        Open (HIGH) or close (LOW) the solenoid valve via Relay CH2 → MOSFET gate.
-        HIGH = Relay CH2 ON → +3.3V on IRLB8721 gate → MOSFET conducts → 12V through
-        solenoid coil → magnetic plunger retracts → water flows.
-        LOW = Relay CH2 OFF → gate low/floating → MOSFET off → solenoid spring-closed.
+        Open (HIGH) or close (LOW) the solenoid valve via MOSFET gate.
+        HIGH = 4.7kΩ pull-up + weak GPIO → ~3.3V on gate → MOSFET conducts.
+        LOW = GPIO pulls gate low → MOSFET off → solenoid spring-closed.
         """
         with self._lock:
             self._set_solenoid(state)

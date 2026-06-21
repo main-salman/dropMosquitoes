@@ -717,6 +717,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
   - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
 
+## 2026-06-19 — ECO-004 REV C: 4.7kΩ PULL-UP DIRECT MOSFET GATE (NO RELAY CH2)
+- **[SPEC]** HW-001 §5.3–§5.4 Rev C: GREEN T13 → MOSFET Gate; 4.7kΩ (472) T17 (+3.3V) → Gate. Relay CH2 unused for solenoid. Replaces Rev B relay gate-drive approach.
+- **[DIAGRAM]** `eco004_wiring_migration.drawio`: AFTER panel updated for Rev C pull-up wiring; step-by-step instructions revised.
+- **[CODE]** `hardware.py`: Comments aligned to Rev C gate + pull-up architecture.
+
 ## 2026-06-19 — ECO-004 REV B: RELAY CH2 GATE DRIVE FOR SOLENOID MOSFET
 - **[SPEC]** HW-001 §5.3–§5.4 Rev B: BCM 27 (GREEN) → Monk Makes Relay IN B (control only). Terminal 17 (+3.3V) → CH2 screw B1 → B2 → IRLB8721 Gate. Removes direct GPIO-to-gate wiring — Yahboom PY.00 sources only ~1.5–1.6V HIGH, insufficient for MOSFET turn-on.
 - **[DIAGRAM]** `eco004_wiring_migration.drawio`: Before/after updated — BEFORE shows failed direct gate wiring; AFTER shows 3 wire moves (GREEN→IN B, T17→B1, B2→Gate) plus removal of 104 pull-ups and old CH2 12V feed.
