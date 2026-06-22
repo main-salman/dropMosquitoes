@@ -717,6 +717,13 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
   - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
 
+## 2026-06-22 — ECO-004: SOLENOID DRIVER = D4184 MOSFET MODULE (2A LOAD)
+- **[HW]** Confirmed GOODRIG solenoid spec: 12V DC, **2A nominal**, 1/4" NPT, brass, direct-acting normally-closed. This 2A load drives the final driver choice.
+- **[DECISION]** Selected a pre-built **D4184 logic-level MOSFET trigger module** (DC 5–36V, ~15A/400W) over: (a) ULN2803 Darlington array — rejected, 500mA/channel and package can't dissipate ~2.6W at 2A even with ganged channels; (b) bare discrete MOSFET — rejected, the hand-wired gate kept failing (no flyback + ESD + likely counterfeit parts); (c) Relay CH2 — works but has the 1–5ms variable mechanical delay the design wants to avoid. The module gives µs, repeatable switching with no fragile bare gate, and at 2A dissipates ~0.02W (runs cold).
+- **[HW]** Must be **logic-level (3.3V trigger)** — D4184-based boards trigger at ~2V Vgs(th); avoid IRF520 boards (need 4–5V, won't fully turn on at 3.3V). Pair with a **1N5408 (3A)** flyback across the coil (not the 1N4007) for the 2A inductive load.
+- **[SW]** No software change: solenoid stays on **BCM 27 / T13 via libgpiod** (clean 3.3V cleanly triggers the module; the weak ~1.6V Jetson.GPIO would not). The 4.7kΩ pull-up is dropped.
+- **[DIAGRAM]** Created `diagrams/eco004_mosfet_module_option.drawio` — "wires to move" guide: REMOVE MOSFET + 4.7kΩ/1kΩ + T17 wire; MOVE green (T13) → module SIG; module control GND → Jetson GND (shared, required); +12V → DC+, GND → DC−; OUT+ → solenoid (+), OUT− → solenoid (−); 1N5408 flyback across coil (band → OUT+ side).
+
 ## 2026-06-22 — ECO-004: ABANDON MOSFET, REVERT SOLENOID TO RELAY CH2
 - **[HW/DEBUG]** Extended MOSFET bring-up troubleshooting (Rev C/D). With T17 a solid +3.3V, the gate would only reach ~2.1V when the MOSFET was connected (3.3V open-circuit, sags to ~2.1V under MOSFET load), idle ~1.3V. Adding a 1kΩ in parallel with the 4.7kΩ pull-up did NOT raise the gate (still ~2.1V) — ruling out a simple resistive divider/leak.
 - **[HW/DEBUG]** Diagnosis: the gate is being CLAMPED at ~2.1V (not divided), the classic signature of a damaged/punctured MOSFET gate oxide behaving like a leaky ~2V zener. Confirmed by R(G→GND) ≈ 8.8kΩ and ~1.45mA continuous gate current (a healthy gate draws ~0). All three "new" MOSFETs showed the same ~2V clamp + warming.
