@@ -467,6 +467,31 @@ def api_solenoid_test():
     })
 
 
+@app.route('/api/solenoid/gate_hold', methods=['POST'])
+def api_solenoid_gate_hold():
+    """
+    Drive the solenoid MOSFET gate HIGH and HOLD it for `seconds` so the gate
+    voltage can be measured with a multimeter (expect ~3.3V at the gate junction),
+    then return it LOW. Uses the same libgpiod path as normal solenoid control.
+    Body: {"seconds": int}  (default 5, clamped 1-30)
+    """
+    data = request.get_json(force=True) if request.data else {}
+    seconds = max(1, min(int(data.get('seconds', 5)), 30))
+
+    backend = "libgpiod" if getattr(relay, "_solenoid", None) and relay._solenoid.available else "stub"
+
+    relay.set_solenoid(True)
+    time.sleep(seconds)
+    relay.set_solenoid(False)
+
+    return jsonify({
+        "status": "complete",
+        "held_sec": seconds,
+        "backend": backend,
+        "solenoid_state": relay.get_status()["solenoid"],
+    })
+
+
 @app.route('/api/solenoid/drawdown', methods=['POST'])
 def api_solenoid_drawdown():
     """

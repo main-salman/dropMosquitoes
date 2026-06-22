@@ -31,6 +31,16 @@ except ImportError:
     JETSON_AVAILABLE = False
     print("[hardware] WARNING: Jetson.GPIO not found. Running in STUB mode.")
 
+# ECO-2026-004 Rev D: solenoid gate (PY.00 / BCM 27) is driven via libgpiod.
+# Jetson.GPIO only reaches ~1.6V on this SPI-function pad on the Yahboom carrier;
+# libgpiod drives a clean 3.3V push-pull (verified on bench: gate 3.33V + click).
+try:
+    import gpiod
+    LIBGPIOD_AVAILABLE = True
+except ImportError:
+    LIBGPIOD_AVAILABLE = False
+    print("[hardware] WARNING: python3-libgpiod not found. Solenoid will be stubbed.")
+
 try:
     import serial
     SERIAL_AVAILABLE = True
@@ -120,9 +130,65 @@ except ImportError:
 # Terminal numbers match physical pin numbers 1:1.
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump)
-SOLENOID_PIN = 27         # BCM 27 = Pin 13 → IRLB8721 Gate (+ 4.7kΩ pull-up from T17)
+RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump) [Jetson.GPIO]
+SOLENOID_PIN = 27         # BCM 27 = Pin 13 (informational; solenoid driven via libgpiod below)
+
+# Solenoid MOSFET gate — driven via libgpiod, NOT Jetson.GPIO (see Rev D note above).
+SOLENOID_GPIOCHIP = "gpiochip0"
+SOLENOID_LINE_NAME = "PY.00"   # BCM 27 / Pin 13 / Terminal 13 — resolved by pad name
+SOLENOID_LINE_OFFSET = 122     # Fallback line offset if name lookup fails
 # =======================================================================================================
+
+
+class _LibGpiodSolenoid:
+    """
+    libgpiod-backed driver for the solenoid MOSFET gate (PY.00 / BCM 27).
+
+    The line is requested once and held for the controller's lifetime, giving a
+    persistent push-pull output (low = valve CLOSED, high = valve OPEN) and
+    microsecond-precise pulses for AccumulatorManager.fire().
+
+    Requires PADCTL GPIO mode (configure_push_pull) to run first so the SPI pad
+    is switched to GPIO before the line is requested.
+    """
+
+    def __init__(self):
+        self._line = None
+        if not LIBGPIOD_AVAILABLE:
+            print("[Solenoid] libgpiod unavailable — STUB mode.")
+            return
+        try:
+            line = None
+            try:
+                line = gpiod.find_line(SOLENOID_LINE_NAME)
+            except Exception:
+                line = None
+            if line is None:
+                line = gpiod.Chip(SOLENOID_GPIOCHIP).get_line(SOLENOID_LINE_OFFSET)
+            line.request(consumer="sentry-solenoid",
+                         type=gpiod.LINE_REQ_DIR_OUT, default_vals=[0])
+            self._line = line
+            print(f"[Solenoid] libgpiod line acquired ({SOLENOID_LINE_NAME}) — CLOSED.")
+        except Exception as e:
+            print(f"[Solenoid] libgpiod init failed ({e}) — STUB mode.")
+            self._line = None
+
+    @property
+    def available(self) -> bool:
+        return self._line is not None
+
+    def set(self, state: bool):
+        if self._line is not None:
+            self._line.set_value(1 if state else 0)
+
+    def release(self):
+        if self._line is not None:
+            try:
+                self._line.set_value(0)
+                self._line.release()
+            except Exception:
+                pass
+            self._line = None
 
 
 class RelayController:
@@ -130,9 +196,9 @@ class RelayController:
     Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG solenoid valve
     (via IRLB8721 MOSFET on BCM 27). Relay CH2 is unused.
 
-    ECO-2026-004 Rev C: BCM 27 (GREEN, T13) → MOSFET gate junction; 4.7kΩ pull-up
-    from Terminal 17 (+3.3V) to the same junction. Software toggles BCM 27 only —
-    no relay in the solenoid path.
+    ECO-2026-004 Rev D: BCM 27 (GREEN, T13) → MOSFET gate junction; 4.7kΩ pull-up
+    from Terminal 17 (+3.3V) to the same junction. The gate is driven via libgpiod
+    (Jetson.GPIO only reaches ~1.6V on this pad); pump stays on Jetson.GPIO.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -144,23 +210,27 @@ class RelayController:
         self._solenoid_state = False
         self._lock = threading.Lock()
 
+        # PADCTL pinmux must be in GPIO mode before either backend drives the pads.
+        configure_push_pull()
+
         if JETSON_AVAILABLE:
             try:
                 GPIO.setmode(GPIO.BCM)
                 GPIO.setwarnings(False)
                 GPIO.setup(RELAY_PUMP_PIN, GPIO.OUT, initial=GPIO.LOW)
-                GPIO.setup(SOLENOID_PIN, GPIO.OUT, initial=GPIO.LOW)  # Solenoid CLOSED at boot
-                configure_push_pull()
-                print(f"[RelayController] GPIO initialized. Pump=BCM{RELAY_PUMP_PIN}, "
-                      f"Solenoid=BCM{SOLENOID_PIN} (MOSFET gate + 4.7k pull-up)")
+                print(f"[RelayController] Pump GPIO initialized (BCM{RELAY_PUMP_PIN}).")
             except OSError as e:
-                print(f"[RelayController] GPIO init failed ({e}); running in STUB mode.")
+                print(f"[RelayController] Pump GPIO init failed ({e}); pump in STUB mode.")
                 JETSON_AVAILABLE = False
             except Exception as e:
-                print(f"[RelayController] Unexpected GPIO init error: {e}; proceeding in STUB mode.")
+                print(f"[RelayController] Unexpected pump GPIO error: {e}; pump in STUB mode.")
                 JETSON_AVAILABLE = False
         else:
-            print("[RelayController] STUB MODE — no real GPIO control.")
+            print("[RelayController] STUB MODE — no real pump GPIO control.")
+
+        # Solenoid gate via libgpiod (BCM 27 / PY.00 + 4.7kΩ pull-up to T17).
+        self._solenoid = _LibGpiodSolenoid()
+        self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
 
     # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
     # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
@@ -220,18 +290,16 @@ class RelayController:
 
     def set_solenoid(self, state: bool):
         """
-        Open (HIGH) or close (LOW) the solenoid valve via MOSFET gate.
-        HIGH = 4.7kΩ pull-up + weak GPIO → ~3.3V on gate → MOSFET conducts.
-        LOW = GPIO pulls gate low → MOSFET off → solenoid spring-closed.
+        Open (HIGH) or close (LOW) the solenoid valve via the MOSFET gate.
+        Driven through libgpiod: HIGH = ~3.3V push-pull on gate → MOSFET conducts;
+        LOW = gate held at 0V → MOSFET off → solenoid spring-closed.
         """
         with self._lock:
             self._set_solenoid(state)
 
     def _set_solenoid(self, state: bool):
         self._solenoid_state = state
-        if JETSON_AVAILABLE:
-            configure_push_pull()
-            GPIO.output(SOLENOID_PIN, GPIO.HIGH if state else GPIO.LOW)
+        self._solenoid.set(state)
         print(f"[RelayController] Solenoid {'OPEN' if state else 'CLOSED'}")
 
     def fire_solenoid(self, duration_sec: float = 0.010):
@@ -281,9 +349,10 @@ class RelayController:
         """Ensure pump OFF, solenoid CLOSED, and release GPIO pins."""
         print("[RelayController] Cleaning up GPIO...")
         try:
+            self._solenoid.set(False)
+            self._solenoid.release()
             if JETSON_AVAILABLE:
                 GPIO.output(RELAY_PUMP_PIN, GPIO.LOW)
-                GPIO.output(SOLENOID_PIN, GPIO.LOW)
                 GPIO.cleanup()
         except Exception as e:
             print(f"[RelayController] Cleanup error: {e}")

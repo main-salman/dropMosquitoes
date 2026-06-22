@@ -126,10 +126,12 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
-### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004 Rev C)
+### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004 Rev D)
 
 > **⚠ NEW — Replaces relay-gated pump timing for fluid control.**
-> The solenoid coil is switched by an IRLB8721 N-Channel MOSFET. **Gate drive:** BCM 27 (weak ~1.5V HIGH on Yahboom) plus a **4.7kΩ pull-up** from Terminal 17 (+3.3V) to the Gate — lifts gate to full 3.3V when GPIO releases/high-Z. Monk Makes Relay **CH2 is NOT used** for solenoid (pump CH1 only).
+> The solenoid coil is switched by an IRLB8721 N-Channel MOSFET. **Gate drive:** BCM 27 (Pin 13 / PY.00) with a **4.7kΩ pull-up** from Terminal 17 (+3.3V) at the gate junction. Monk Makes Relay **CH2 is NOT used** for solenoid (pump CH1 only).
+>
+> **Rev D (software):** The gate is driven via **libgpiod** (`gpiochip0` line 122 / `PY.00`), **not** Jetson.GPIO. On the Yahboom carrier Jetson.GPIO only reaches ~1.6V on this SPI-function pad (below the MOSFET threshold → intermittent/no actuation); libgpiod drives a clean **3.3V push-pull** (bench-verified: gate 3.33V + click). `configure_push_pull()` still sets PADCTL `0x05` on PR.04 + PY.00 first so the pad is in GPIO mode before the line is requested. Install dep: `sudo apt-get install -y python3-libgpiod`.
 
 ```
 Terminal 17 (+3.3V) ──[4.7kΩ]──┬──[optional 10kΩ to GND]── IRLB8721 Gate

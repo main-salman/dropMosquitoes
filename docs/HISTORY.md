@@ -717,6 +717,14 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
   - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
 
+## 2026-06-22 — ECO-004 REV D: SOLENOID GATE DRIVEN VIA LIBGPIOD (FIX INTERMITTENT CLICK)
+- **[HW/DEBUG]** Root-caused intermittent solenoid: gate stuck ~1.6V at idle even though Jetson.GPIO reported output-LOW. Bench test driving BCM 27 directly with `gpioset gpiochip0 122=1` produced a clean **3.33V and the solenoid clicked**. Conclusion: Jetson.GPIO does not properly drive PY.00 (SPI-function pad) on the Yahboom carrier (lib warns it is unverified); libgpiod does.
+- **[CODE]** `hardware.py`: New `_LibGpiodSolenoid` driver — requests `gpiochip0` line 122 (`PY.00`) once and holds it (persistent push-pull, precise pulses). `RelayController` now drives the solenoid via libgpiod; pump stays on Jetson.GPIO. PADCTL `configure_push_pull()` still applied first for pinmux.
+- **[DEP]** Installed `python3-libgpiod` (v1.6.3) via apt on Jetson; documented in `requirements.txt` (apt, not pip — pip `gpiod` is incompatible v2 API).
+- **[GUI]** `templates/index.html`: New "🔌 Gate Voltage Test (libgpiod)" card in Solenoid tab — holds gate HIGH 1–30s for multimeter measurement (expect ~3.3V at gate junction).
+- **[API]** `app.py`: `POST /api/solenoid/gate_hold` — holds gate HIGH for N seconds then LOW; reports `backend` (libgpiod/stub). Verified live: `{"backend":"libgpiod","held_sec":3}` + OPEN/CLOSED in log.
+- **[SPEC]** HW-001 §5.4 → Rev D (libgpiod gate drive note).
+
 ## 2026-06-21 — DOCS: REMOVE STALE REV B / RELAY CH2 SOLENOID COMMENTS
 - **[CODE]** `hardware.py`: RelayController docstring — solenoid via MOSFET only; CH2 unused.
 - **[TEST]** `test_gpio_pinmux.py`: Rev C probe guide (gate junction, not T13/CH2).

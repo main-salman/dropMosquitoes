@@ -3,6 +3,10 @@
 #
 # NOTE: On Jetson, install TensorRT via JetPack SDK, not pip.
 # NOTE: opencv-python is pre-installed on JetPack OS.
+# NOTE: Solenoid gate (BCM 27/PY.00) uses libgpiod v1, installed via apt — NOT pip:
+#         sudo apt-get install -y python3-libgpiod
+#       (pip 'gpiod' is the incompatible v2 API; do not use it here.)
+#       Jetson.GPIO only reaches ~1.6V on this SPI pad; libgpiod drives full 3.3V.
 
 flask>=2.3.0
 pyserial>=3.5

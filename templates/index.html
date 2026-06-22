@@ -54,6 +54,7 @@
     .btn-blue { background: var(--accent); color: #fff; border-color: transparent; }
     .btn-red { background: var(--red); color: #fff; border-color: transparent; font-weight: 700; }
     .btn-green { background: var(--green); color: #000; border-color: transparent; font-weight: 600; }
+    .btn-amber { background: #FB8C00; color: #000; border-color: transparent; font-weight: 600; }
     .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 8px; }
     .wasd { display: grid; grid-template-areas: ". w ." "a c d" ". s ."; grid-template-columns: repeat(3,50px); grid-template-rows: repeat(3,50px); gap: 5px; justify-content: center; }
     .wasd .btn { font-size: 17px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
@@ -290,6 +291,23 @@
           ⚡ Click Test
         </button>
         <div class="cal-result" id="sol-test-log" style="margin-top:8px">Ready — press Click Test to toggle the solenoid valve.</div>
+      </div>
+    </div>
+
+    <!-- Step 1b: Gate Voltage Hold Test -->
+    <div class="card">
+      <div class="card-title">🔌 Gate Voltage Test (libgpiod)</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Drives BCM 27 (PY.00) HIGH via libgpiod and <b>holds</b> it so you can measure the gate (G) with a multimeter. Expect <b>~3.3V</b> at the gate junction during the hold, then back to ~0V.</p>
+        <div class="sl">
+          <label>Hold Duration</label>
+          <input type="range" id="sol-hold-dur" min="1" max="30" step="1" value="5" oninput="$('sol-hold-dur-v').textContent=this.value+'s'">
+          <div class="v" id="sol-hold-dur-v">5s</div>
+        </div>
+        <button class="btn btn-amber" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="solGateHold()">
+          🔌 Hold Gate HIGH (measure)
+        </button>
+        <div class="cal-result" id="sol-hold-log" style="margin-top:8px">Ready — probe G, then press to hold the gate HIGH.</div>
       </div>
     </div>
 
@@ -1132,6 +1150,21 @@ async function solTest() {
       `gate junction (4.7kΩ pull-up T17→Gate), probe G not T13 per HW-001 §5.4`;
   } catch(e) {
     $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function solGateHold() {
+  const sec = +$('sol-hold-dur').value;
+  $('sol-hold-log').innerHTML = `<span class="info">🔌 Holding gate HIGH for ${sec}s — measure G now...</span>`;
+  try {
+    const d = await fetch('/api/solenoid/gate_hold', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({seconds: sec})}).then(r => r.json());
+    $('sol-hold-log').innerHTML =
+      `<span class="ok">✅ Held gate HIGH for ${d.held_sec}s, now ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}</span>\n\n` +
+      `Expected ~3.3V at the gate junction during the hold.\n` +
+      `Backend: ${d.backend}`;
+  } catch(e) {
+    $('sol-hold-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
 }
 
