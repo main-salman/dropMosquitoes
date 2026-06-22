@@ -717,6 +717,18 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   - `POST /api/solenoid/drawdown` — GUI-driven pressure drawdown test (charge → N shots → disarm → results)
   - `POST /api/solenoid/drawdown/apply` — Apply recommended drawdown calibration settings
 
+## 2026-06-21 — DOCS: REMOVE STALE REV B / RELAY CH2 SOLENOID COMMENTS
+- **[CODE]** `hardware.py`: RelayController docstring — solenoid via MOSFET only; CH2 unused.
+- **[TEST]** `test_gpio_pinmux.py`: Rev C probe guide (gate junction, not T13/CH2).
+- **[SPEC]** `spec.md`: BCM 27 documented as solenoid MOSFET gate (was "unused").
+- **[GUI]** Solenoid tab Click Test hint updated for 4.7kΩ pull-up at gate junction.
+
+## 2026-06-21 — ECO-004 DIAGRAM: SIMPLIFIED TO SINGLE AS-BUILT VIEW
+- **[DIAGRAM]** `eco004_wiring_migration.drawio`: Removed BEFORE/AFTER and all "remove/change" migration content. Now a single current as-built schematic: Jetson terminals (T11/T13/T17/+12V/GND), Relay CH1→pump, GATE JUNCTION (green + 4.7kΩ leg + MOSFET G), 4.7kΩ→T17 pull-up, IRLB8721, GOODRIG solenoid, 1N4007 flyback, common GND bus, and a "How it works" legend with bench-probe note.
+
+## 2026-06-19 — ECO-004 DIAGRAM: GATE JUNCTION CLARITY (REV C)
+- **[DIAGRAM]** `eco004_wiring_migration.drawio`: Added GATE JUNCTION callout (parallel 4.7kΩ, not in series), multimeter probe guide, real pinout photo placement, rewired schematic to ★ node.
+
 ## 2026-06-19 — ECO-004 REV C: 4.7kΩ PULL-UP DIRECT MOSFET GATE (NO RELAY CH2)
 - **[SPEC]** HW-001 §5.3–§5.4 Rev C: GREEN T13 → MOSFET Gate; 4.7kΩ (472) T17 (+3.3V) → Gate. Relay CH2 unused for solenoid. Replaces Rev B relay gate-drive approach.
 - **[DIAGRAM]** `eco004_wiring_migration.drawio`: AFTER panel updated for Rev C pull-up wiring; step-by-step instructions revised.

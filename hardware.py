@@ -127,11 +127,12 @@ SOLENOID_PIN = 27         # BCM 27 = Pin 13 → IRLB8721 Gate (+ 4.7kΩ pull-up 
 
 class RelayController:
     """
-    Controls the R385 pump (via Relay CH1) and GOODRIG solenoid valve
-    (via Relay CH2 + IRLB8721 MOSFET on BCM 27) through Jetson GPIO.
+    Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG solenoid valve
+    (via IRLB8721 MOSFET on BCM 27). Relay CH2 is unused.
 
-    ECO-2026-004 Rev C: BCM 27 drives IRLB8721 gate directly; 4.7kΩ pull-up from
-    Terminal 17 (+3.3V) lifts weak Yahboom GPIO HIGH to full MOSFET turn-on.
+    ECO-2026-004 Rev C: BCM 27 (GREEN, T13) → MOSFET gate junction; 4.7kΩ pull-up
+    from Terminal 17 (+3.3V) to the same junction. Software toggles BCM 27 only —
+    no relay in the solenoid path.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.

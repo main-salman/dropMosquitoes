@@ -11,7 +11,7 @@
 
 ## Pinout & Comms
 - **Pump Relay (Monk Makes CH1):** Jetson GPIO BCM 17 (IDC40P Terminal 11, 3.3V logic).
-- **Reserved (previously Gimbal Relay):** Jetson GPIO BCM 27 (IDC40P Terminal 13, unused).
+- **Solenoid MOSFET Gate:** Jetson GPIO BCM 27 (IDC40P Terminal 13, GREEN) → IRLB8721 gate + 4.7kΩ pull-up from T17 (+3.3V). Relay CH2 unused.
 - **Status Buzzer:** Jetson GPIO BCM 4 (IDC40P Terminal 7).
 - **Turret Comms (Storm32):** `/dev/ttyTHS1` or `/dev/ttyTHS0` (UART Serial via Terminal 8 TX / Terminal 10 RX). Baud rate: 115200.
 

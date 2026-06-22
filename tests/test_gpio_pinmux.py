@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 # Implements: TEST-001 — GPIO pinmux / voltage verification for BCM 17 & BCM 27
 """
-test_gpio_pinmux.py — Verify PADCTL registers and GPIO HIGH voltage on Yahboom Orin Nano.
+test_gpio_pinmux.py — Verify PADCTL registers and GPIO toggle on Yahboom Orin Nano.
 
 Run ON THE JETSON as root:
     sudo python3 tests/test_gpio_pinmux.py
 
-Expected: Terminal 11 ~1.5V OK for relay IN; Terminal 13 same. Gate voltage (~3.3V)
-requires Relay CH2 path per HW-001 §5.4 Rev B — do not measure T13 as gate voltage.
+Rev C (HW-001 §5.4): BCM 27 drives the IRLB8721 gate directly (+ 4.7kΩ pull-up
+from T17). Monk Makes Relay CH2 is NOT used for the solenoid.
+
+Probe guide:
+  - T11 (pump): expect ~3.3V when pump ON (relay IN may read ~1.5V — OK).
+  - T13 (BCM 27): may read ~1.6V even when HIGH — weak Yahboom GPIO; do not
+    use T13 alone to judge solenoid drive.
+  - Gate junction (G pin): probe HERE — ~0V when CLOSED, ~3.3V when OPEN.
 """
 
 import os
@@ -19,8 +25,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 PADCTL_BASE = 0x02430000
 REGS = {
-    "PR.04 / BCM 17 / Terminal 11 (pump)": 0x98,
-    "PY.00 / BCM 27 / Terminal 13 (Relay CH2)": 0xD030,
+    "PR.04 / BCM 17 / Terminal 11 (pump relay)": 0x98,
+    "PY.00 / BCM 27 / Terminal 13 (solenoid MOSFET gate)": 0xD030,
 }
 GPIO_OUTPUT = 0x05
 
@@ -36,7 +42,7 @@ def read_regs():
 
 def main():
     print("=" * 60)
-    print("  GPIO Pinmux Diagnostic — BCM 17 & BCM 27")
+    print("  GPIO Pinmux Diagnostic — BCM 17 & BCM 27 (Rev C MOSFET)")
     print("=" * 60)
 
     if os.geteuid() != 0:
@@ -66,21 +72,23 @@ def main():
         mark = "✅" if ok else "❌"
         print(f"  {mark} {name}: {val:#010x}")
 
-    print("\n--- GPIO toggle (3s each — probe Terminal 11 & 13 with multimeter) ---")
-    print("  Pump ON 3s → Terminal 11 should read ~3.3V")
+    print("\n--- GPIO toggle (3s each) ---")
+    print("  Pump ON 3s → probe T11 (~3.3V or ~1.5V at relay IN is OK)")
     relay.set_pump(True)
     time.sleep(3)
     relay.set_pump(False)
     time.sleep(1)
 
-    print("  Solenoid OPEN 3s → Terminal 13 should read ~3.3V")
+    print("  Solenoid OPEN 3s → probe GATE JUNCTION (~3.3V), not T13")
+    print("  (T13 may stay ~1.6V; 4.7kΩ pull-up from T17 lifts gate to ~3.3V)")
     relay.set_solenoid(True)
     time.sleep(3)
     relay.set_solenoid(False)
 
     relay.cleanup()
-    print("\n  Done. If multimeter still shows ~1.5V, PADCTL write did not stick.")
-    print("  Check register values above — both must be 0x00000005.")
+    print("\n  Done. Gate junction should read ~0V after cleanup (solenoid CLOSED).")
+    print("  If gate never drops to ~0V, BCM 27 is not pulling LOW — check PADCTL")
+    print("  (both registers must be 0x00000005) and run sentry as root.")
 
 
 if __name__ == "__main__":

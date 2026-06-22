@@ -1129,7 +1129,7 @@ async function solTest() {
       `  Click 1 = solenoid OPENS (plunger retracts)\n` +
       `  Click 2 = solenoid CLOSES (spring returns)\n\n` +
       `If no clicks: check 12V supply, MOSFET wiring,\n` +
-      `and 10kΩ pull-down resistor per HW-001 §5.4`;
+      `gate junction (4.7kΩ pull-up T17→Gate), probe G not T13 per HW-001 §5.4`;
   } catch(e) {
     $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
