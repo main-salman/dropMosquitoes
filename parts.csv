@@ -49,5 +49,7 @@ The Muscle v2	SunFounder PCA9685 16-Channel 12-bit PWM Servo Driver	1	16	https:/
 The Muscle v2	DWEII 12V to 5V 10A Step-Down Buck Converter (2-Pack)	1	24	https://www.amazon.ca/dp/B0DWEII	50W capacity, fully potted/waterproof. Isolated servo power — prevents Jetson brownout from MG996R stall current (up to 2.5A each). GND must tie to Jetson GND for PWM signal reference.
 The Muscle v2	Aideepen MG996R Metal Gear Servos (6-Pack)	1	42	https://www.amazon.ca/dp/B0AIDEEPEN	180° positional digital servos, full metal gears, 10-13 kg·cm torque. 2 needed (pan + tilt), 4 spares. Replaces Storm32 brushless gimbal — mechanical gear locking provides holding torque against water hose tension.
 The Muscle v2	Bolsen 2-DOF Short Pan-Tilt Servo Bracket Kit (2-Set)	1	13	https://www.amazon.ca/dp/B0BOLSEN	Aluminum U-brackets, metal servo horns, ball bearings. Rigid metal cage replaces fragile drone gimbal. 1 needed, 1 spare.
+Solenoid Driver	Kioiner DC 5-36V 400W 15A Dual High-Power MOSFET Trigger Switch Drive Module (D4184-class)	1	10	https://www.amazon.ca/s?k=dual+MOSFET+trigger+switch+drive+module+DC+5-36V+400W+15A	Switches the 12V/2A GOODRIG solenoid. Logic-level (3.3-20V trigger) — driven by BCM 27 / T13 via libgpiod; replaces the failed bare IRLB8721 MOSFET (no fragile gate, runs cold). Wiring: SIG←green, DC IN +/−←12V/GND, OUT +/−→solenoid, common GND. See eco004_mosfet_module_option.drawio.
+power protection	1N5408 Flyback Diode (3A)	10	8	https://www.amazon.ca/s?k=1N5408+diode+3A	3A flyback across the 12V/2A solenoid coil (band/cathode → +12V / OUT+ side). Heavier than the 1N4007 — needed for the 2A inductive load. The dual-MOS module has no built-in load flyback.
 
-GRAND TOTAL			1686
+GRAND TOTAL			1704
