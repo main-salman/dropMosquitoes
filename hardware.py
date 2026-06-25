@@ -56,17 +56,19 @@ except ImportError:
 _PADCTL_GPIO_OUTPUT = 0x05
 _PADCTL_REGS = (
     ("PR.04", 0x98),   # BCM 17 / Pin 11 / Terminal 11 — pump relay
+    ("PR.05", 0x90),   # BCM 16 / Pin 36 / Terminal 36 — solenoid trigger (module SIG)
 )
-# Note: the solenoid trigger moved to PR.05 (BCM 16 / T36) in Rev E. PR.05 boots in
-# GPIO mode and drives a clean push-pull 3.3V via libgpiod, so it needs no PADCTL fix
-# (unlike the abandoned PY.00 pad, which booted as a tristate SFIO pin).
+# reg_addr (Jetson.GPIO): PR.04=0x2430098, PR.05=0x2430090 → offsets from base 0x02430000.
+# Both pads boot tristated; without the 0x05 PADCTL write the pin outputs 0V even
+# though libgpiod requests it as OUTPUT.
 
 
 def configure_push_pull() -> bool:
     """
-    ECO-2026-004: Force BCM 17 (PR.04) into GPIO push-pull output via PADCTL register
-    writes. On Yahboom Orin Nano boards this pin boots as a UART function with
-    tristate + pull-down — GPIO HIGH floats to ~1.5V instead of 3.3V.
+    ECO-2026-004: Force BCM 17 (PR.04, pump) and BCM 16 (PR.05, solenoid trigger)
+    into GPIO push-pull output via PADCTL register writes. On Yahboom Orin Nano
+    boards these pads boot tristated with E_INPUT set — a GPIO HIGH outputs 0V
+    (PR.05) or floats to ~1.5V instead of 3.3V until 0x05 is written.
 
     Must run as root (/dev/mem). Re-applied before every GPIO.output because
     Jetson.GPIO can reset pad registers after export/toggle.
@@ -154,8 +156,9 @@ class _LibGpiodSolenoid:
     persistent push-pull output (low = valve CLOSED, high = valve OPEN) and
     microsecond-precise pulses for AccumulatorManager.fire().
 
-    PR.05 boots in GPIO mode, so (unlike the old PY.00 pad) no PADCTL fix is
-    needed — libgpiod requests a clean push-pull 3.3V directly.
+    Requires PADCTL GPIO mode (configure_push_pull writes 0x05 to PR.05's pad
+    register 0x90) to run first — otherwise the tristated pad outputs 0V even
+    though libgpiod requests the line as OUTPUT.
     """
 
     def __init__(self):
