@@ -11,7 +11,7 @@
 
 ## Pinout & Comms
 - **Pump Relay (Monk Makes CH1):** Jetson GPIO BCM 17 (IDC40P Terminal 11, 3.3V logic).
-- **Solenoid MOSFET Gate:** Jetson GPIO BCM 27 (IDC40P Terminal 13, GREEN) → IRLB8721 gate + 4.7kΩ pull-up from T17 (+3.3V). Relay CH2 unused.
+- **Solenoid Trigger (ECO-004 Rev E):** Jetson GPIO BCM 16 / PR.05 (IDC40P Terminal 36, GREEN) → dual-MOSFET trigger module SIG pin (driven via libgpiod, clean 3.3V push-pull). Module DC IN = +12V / GND; OUT = solenoid (low-side switch) + 1N5408 flyback across the coil. Moved off BCM 27 / PY.00 (weak ~1.9V pad). Relay CH2 unused.
 - **Status Buzzer:** Jetson GPIO BCM 4 (IDC40P Terminal 7).
 - **Turret Comms (Storm32):** `/dev/ttyTHS1` or `/dev/ttyTHS0` (UART Serial via Terminal 8 TX / Terminal 10 RX). Baud rate: 115200.
 

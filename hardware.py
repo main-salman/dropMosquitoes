@@ -31,9 +31,12 @@ except ImportError:
     JETSON_AVAILABLE = False
     print("[hardware] WARNING: Jetson.GPIO not found. Running in STUB mode.")
 
-# ECO-2026-004 Rev D: solenoid gate (PY.00 / BCM 27) is driven via libgpiod.
-# Jetson.GPIO only reaches ~1.6V on this SPI-function pad on the Yahboom carrier;
-# libgpiod drives a clean 3.3V push-pull (verified on bench: gate 3.33V + click).
+# ECO-2026-004 Rev E: solenoid trigger relocated from PY.00 (BCM 27 / T13) to
+# PR.05 (BCM 16 / Pin 36 / Terminal 36), driven via libgpiod.
+# Why: PY.00 is a weak SPI-function pad on the Yahboom carrier — even via libgpiod
+# it only sources ~1.9V into the dual-MOSFET module's internal pull-down, below the
+# 3.3V trigger threshold (module never switched). PR.05 is the sister pad of the
+# proven-good pump pad PR.04 (same GPIO port) and drives a clean push-pull 3.3V.
 try:
     import gpiod
     LIBGPIOD_AVAILABLE = True
@@ -53,15 +56,17 @@ except ImportError:
 _PADCTL_GPIO_OUTPUT = 0x05
 _PADCTL_REGS = (
     ("PR.04", 0x98),   # BCM 17 / Pin 11 / Terminal 11 — pump relay
-    ("PY.00", 0xD030), # BCM 27 / Pin 13 / Terminal 13 — solenoid MOSFET gate
 )
+# Note: the solenoid trigger moved to PR.05 (BCM 16 / T36) in Rev E. PR.05 boots in
+# GPIO mode and drives a clean push-pull 3.3V via libgpiod, so it needs no PADCTL fix
+# (unlike the abandoned PY.00 pad, which booted as a tristate SFIO pin).
 
 
 def configure_push_pull() -> bool:
     """
-    ECO-2026-004: Force BCM 17 (PR.04) and BCM 27 (PY.00) into GPIO push-pull output
-    via PADCTL register writes. On Yahboom Orin Nano boards these pins boot as UART
-    functions with tristate + pull-down — GPIO HIGH floats to ~1.5V instead of 3.3V.
+    ECO-2026-004: Force BCM 17 (PR.04) into GPIO push-pull output via PADCTL register
+    writes. On Yahboom Orin Nano boards this pin boots as a UART function with
+    tristate + pull-down — GPIO HIGH floats to ~1.5V instead of 3.3V.
 
     Must run as root (/dev/mem). Re-applied before every GPIO.output because
     Jetson.GPIO can reset pad registers after export/toggle.
@@ -131,25 +136,26 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump) [Jetson.GPIO]
-SOLENOID_PIN = 27         # BCM 27 = Pin 13 (informational; solenoid driven via libgpiod below)
+SOLENOID_PIN = 16         # BCM 16 = Pin 36 (informational; solenoid driven via libgpiod below)
 
-# Solenoid MOSFET gate — driven via libgpiod, NOT Jetson.GPIO (see Rev D note above).
+# Solenoid trigger (dual-MOSFET module SIG) — driven via libgpiod (see Rev E note above).
 SOLENOID_GPIOCHIP = "gpiochip0"
-SOLENOID_LINE_NAME = "PY.00"   # BCM 27 / Pin 13 / Terminal 13 — resolved by pad name
-SOLENOID_LINE_OFFSET = 122     # Fallback line offset if name lookup fails
+SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by pad name
+SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 # =======================================================================================================
 
 
 class _LibGpiodSolenoid:
     """
-    libgpiod-backed driver for the solenoid MOSFET gate (PY.00 / BCM 27).
+    libgpiod-backed driver for the solenoid trigger (PR.05 / BCM 16 / T36),
+    wired to the dual-MOSFET module's SIG pin.
 
     The line is requested once and held for the controller's lifetime, giving a
     persistent push-pull output (low = valve CLOSED, high = valve OPEN) and
     microsecond-precise pulses for AccumulatorManager.fire().
 
-    Requires PADCTL GPIO mode (configure_push_pull) to run first so the SPI pad
-    is switched to GPIO before the line is requested.
+    PR.05 boots in GPIO mode, so (unlike the old PY.00 pad) no PADCTL fix is
+    needed — libgpiod requests a clean push-pull 3.3V directly.
     """
 
     def __init__(self):
@@ -193,12 +199,12 @@ class _LibGpiodSolenoid:
 
 class RelayController:
     """
-    Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG solenoid valve
-    (via IRLB8721 MOSFET on BCM 27). Relay CH2 is unused.
+    Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG 12V 2A solenoid
+    valve (via a dual-MOSFET trigger module). Relay CH2 is unused.
 
-    ECO-2026-004 Rev D: BCM 27 (GREEN, T13) → MOSFET gate junction; 4.7kΩ pull-up
-    from Terminal 17 (+3.3V) to the same junction. The gate is driven via libgpiod
-    (Jetson.GPIO only reaches ~1.6V on this pad); pump stays on Jetson.GPIO.
+    ECO-2026-004 Rev E: BCM 16 / PR.05 (GREEN, T36) → module SIG pin. The trigger
+    is driven via libgpiod (clean push-pull 3.3V); pump stays on Jetson.GPIO. The
+    module switches the solenoid low side; a 1N5408 flyback sits across the coil.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -228,7 +234,7 @@ class RelayController:
         else:
             print("[RelayController] STUB MODE — no real pump GPIO control.")
 
-        # Solenoid gate via libgpiod (BCM 27 / PY.00 + 4.7kΩ pull-up to T17).
+        # Solenoid trigger via libgpiod (BCM 16 / PR.05 / T36 → module SIG).
         self._solenoid = _LibGpiodSolenoid()
         self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
 
