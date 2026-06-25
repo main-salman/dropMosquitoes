@@ -1,81 +1,69 @@
 <mxfile host="65bd71144e">
     <diagram name="as built" id="asbuilt">
-        <mxGraphModel dx="2083" dy="649" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" background="#FFFFFF" math="0" shadow="0">
+        <mxGraphModel dx="3020" dy="941" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1000" background="#FFFFFF" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-
                 <mxCell id="title" value="&lt;b style='font-size:20px;color:#1B5E20'&gt;Solenoid + Pump Wiring — AS BUILT&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:12px'&gt;Jetson Orin Nano · IRLB8721 MOSFET · 4.7kΩ gate pull-up · GOODRIG 12V solenoid&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" parent="1" vertex="1">
                     <mxGeometry x="450" y="25" width="600" height="50" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=5;" parent="1" vertex="1">
                     <mxGeometry x="60" y="120" width="250" height="430" as="geometry"/>
                 </mxCell>
                 <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:15px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="80" y="132" width="210" height="34" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="t11" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#FFEB3B;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="80" y="185" width="210" height="48" as="geometry"/>
                 </mxCell>
                 <mxCell id="t11l" value="&lt;b style='color:#FFF59D;font-size:12px'&gt;T11 · BCM 17&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:10px'&gt;YELLOW → Relay CH1 (pump)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="85" y="190" width="200" height="38" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="t13" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#A5D6A7;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="80" y="250" width="210" height="48" as="geometry"/>
                 </mxCell>
                 <mxCell id="t13l" value="&lt;b style='color:#C8E6C9;font-size:12px'&gt;T13 · BCM 27&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:10px'&gt;GREEN → MOSFET Gate&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="85" y="255" width="200" height="38" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="t17" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#90CAF9;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="80" y="315" width="210" height="48" as="geometry"/>
                 </mxCell>
                 <mxCell id="t17l" value="&lt;b style='color:#FFF;font-size:12px'&gt;T17 · +3.3V&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BBDEFB;font-size:10px'&gt;→ 4.7kΩ pull-up&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="85" y="320" width="200" height="38" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="v12" value="" style="rounded=1;fillColor=#C62828;strokeColor=#EF9A9A;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="80" y="380" width="210" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="v12l" value="&lt;b style='color:#FFF;font-size:12px'&gt;+12V DC Bus&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCDD2;font-size:10px'&gt;feeds pump + solenoid (+)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="85" y="385" width="200" height="34" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="gnd" value="" style="rounded=1;fillColor=#212121;strokeColor=#616161;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="80" y="440" width="210" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gndl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;GND · T6 / T9 / T14&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;common ground&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="85" y="445" width="200" height="34" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="relay" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#5D4037;shadow=1;arcSize=6;" parent="1" vertex="1">
                     <mxGeometry x="470" y="130" width="220" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="relayl" value="&lt;b style='color:#BCAAA4;font-size:14px'&gt;Monk Makes Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFEB3B;font-size:11px'&gt;CH1 ← BCM 17&lt;/span&gt;&lt;br&gt;&lt;span style='color:#A1887F;font-size:10px'&gt;switches +12V to pump&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="475" y="142" width="210" height="66" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=8;" parent="1" vertex="1">
                     <mxGeometry x="830" y="135" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="pumpl" value="&lt;b style='color:#BBDEFB;font-size:14px'&gt;R385 Pump Motor&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:10px'&gt;12V via Relay CH1&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="835" y="148" width="210" height="50" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="junction" value="&lt;b style='color:#1B5E20;font-size:13px'&gt;★ GATE&lt;br&gt;JUNCTION&lt;/b&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;strokeWidth=3;fontColor=#1B5E20;" parent="1" vertex="1">
                     <mxGeometry x="400" y="295" width="100" height="60" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="res" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FB8C00;shadow=1;arcSize=12;strokeWidth=2;" parent="1" vertex="1">
                     <mxGeometry x="300" y="395" width="70" height="40" as="geometry"/>
                 </mxCell>
                 <mxCell id="resl" value="&lt;b style='color:#E65100;font-size:11px'&gt;4.7kΩ&lt;br&gt;(472)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="302" y="400" width="66" height="30" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="mosfet" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#5C6BC0;shadow=1;arcSize=6;" parent="1" vertex="1">
                     <mxGeometry x="460" y="420" width="230" height="150" as="geometry"/>
                 </mxCell>
@@ -94,32 +82,27 @@
                 <mxCell id="mosfetl" value="&lt;b style='color:#283593;font-size:14px'&gt;IRLB8721 MOSFET&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:10px'&gt;G (left) ← Gate junction&lt;br&gt;D (mid) → solenoid (−)&lt;br&gt;S (right) → GND&lt;br&gt;&lt;b style='color:#C62828'&gt;Tab = D&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="525" y="438" width="160" height="100" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="photo" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=data:image/png,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;" parent="1" vertex="1">
                     <mxGeometry x="730" y="420" width="156" height="163" as="geometry"/>
                 </mxCell>
                 <mxCell id="photol" value="&lt;b style='font-size:10px;color:#777'&gt;IRLB8721 pinout (reference)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="730" y="585" width="156" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#455A64;shadow=1;arcSize=6;" parent="1" vertex="1">
                     <mxGeometry x="950" y="420" width="220" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="soll" value="&lt;b style='color:#B0BEC5;font-size:14px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90A4AE;font-size:10px'&gt;12V normally-closed valve&lt;br&gt;(+) RED → +12V bus&lt;br&gt;(−) BLUE → MOSFET Drain&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="955" y="445" width="210" height="75" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="flyback" value="&lt;b style='color:#880E4F;font-size:12px'&gt;1N4007 Flyback&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:10px'&gt;across solenoid terminals&lt;br&gt;band → (+) side&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;fontColor=#333;fontSize=10;" parent="1" vertex="1">
                     <mxGeometry x="1230" y="435" width="160" height="60" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="gndbus" value="" style="rounded=1;fillColor=#212121;strokeColor=#616161;shadow=1;arcSize=10;" parent="1" vertex="1">
                     <mxGeometry x="60" y="690" width="1110" height="34" as="geometry"/>
                 </mxCell>
                 <mxCell id="gndbusl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;COMMON GND BUS — Jetson GND + 12V PSU GND + MOSFET Source&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="60" y="695" width="1110" height="22" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_yellow" value="" style="endArrow=block;endFill=1;strokeColor=#FBC02D;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="209" as="sourcePoint"/>
@@ -129,7 +112,6 @@
                 <mxCell id="wire_yellow_l" value="&lt;b style='font-size:10px;color:#F57F17'&gt;YELLOW&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="345" y="172" width="70" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_red_pump" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="690" y="175" as="sourcePoint"/>
@@ -139,7 +121,6 @@
                 <mxCell id="wire_red_pump_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;+12V switched&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="700" y="150" width="120" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_green" value="" style="endArrow=block;endFill=1;strokeColor=#43A047;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="274" as="sourcePoint"/>
@@ -149,7 +130,6 @@
                 <mxCell id="wire_green_l" value="&lt;b style='font-size:10px;color:#2E7D32'&gt;GREEN (direct)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="295" y="282" width="110" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_res_t17" value="" style="endArrow=none;strokeColor=#FB8C00;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="339" as="sourcePoint"/>
@@ -159,7 +139,6 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-
                 <mxCell id="wire_res_junction" value="" style="endArrow=none;strokeColor=#FB8C00;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="370" y="415" as="sourcePoint"/>
@@ -172,7 +151,6 @@
                 <mxCell id="wire_res_junction_l" value="&lt;b style='font-size:10px;color:#E65100'&gt;4.7kΩ leg → junction&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="370" y="360" width="130" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_junction_gate" value="" style="endArrow=block;endFill=1;strokeColor=#43A047;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="450" y="355" as="sourcePoint"/>
@@ -182,7 +160,6 @@
                 <mxCell id="wire_junction_gate_l" value="&lt;b style='font-size:10px;color:#2E7D32'&gt;→ Gate (G)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="455" y="390" width="90" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_drain_sol" value="" style="endArrow=block;endFill=1;strokeColor=#1E88E5;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="690" y="483" as="sourcePoint"/>
@@ -192,7 +169,6 @@
                 <mxCell id="wire_drain_sol_l" value="&lt;b style='font-size:10px;color:#1565C0'&gt;BLUE → Solenoid (−)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="745" y="500" width="150" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_sol_12v" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="402" as="sourcePoint"/>
@@ -205,7 +181,6 @@
                 <mxCell id="wire_sol_12v_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;+12V → Solenoid (+) RED&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="640" y="380" width="170" height="18" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_src_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="540" y="570" as="sourcePoint"/>
@@ -215,14 +190,12 @@
                 <mxCell id="wire_src_gnd_l" value="&lt;b style='font-size:9px;color:#555'&gt;Source → GND&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="545" y="610" width="100" height="16" as="geometry"/>
                 </mxCell>
-
                 <mxCell id="wire_jetson_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="185" y="484" as="sourcePoint"/>
                         <mxPoint x="185" y="690" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-
                 <mxCell id="wire_fly1" value="" style="endArrow=none;strokeColor=#E91E63;strokeWidth=2;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1170" y="455" as="sourcePoint"/>
@@ -235,11 +208,12 @@
                         <mxPoint x="1230" y="490" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-
                 <mxCell id="legend" value="&lt;b style='font-size:13px;color:#1B5E20'&gt;How it works&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Gate junction&lt;/b&gt; = one solder joint shared by: GREEN wire (T13/BCM 27), one leg of the 4.7kΩ, and the MOSFET Gate pin. The 4.7kΩ other leg goes to T17 (+3.3V). The 4.7kΩ is a &lt;b&gt;pull-up in parallel at the gate&lt;/b&gt; — it is NOT in series with the green wire.&lt;br&gt;&lt;br&gt;&lt;b&gt;Fire:&lt;/b&gt; software drives BCM 27 LOW → gate pulled to 0V → MOSFET OFF → solenoid de-energizes. BCM 27 released/HIGH → 4.7kΩ holds gate at 3.3V → MOSFET ON.&lt;br&gt;&lt;br&gt;&lt;b&gt;Pump:&lt;/b&gt; BCM 17 → Relay CH1 switches +12V to the R385 pump (independent path).&lt;br&gt;&lt;br&gt;&lt;span style='color:#1565C0'&gt;&lt;b&gt;Bench check:&lt;/b&gt; probe the &lt;b&gt;gate junction&lt;/b&gt; (not T13). It should swing ~0V ↔ ~3.3V during Click Test. The T13 end of the green reading ~1.6V is normal.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F8E9;strokeColor=#4CAF50;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
                     <mxGeometry x="60" y="760" width="1330" height="200" as="geometry"/>
                 </mxCell>
-
+                <mxCell id="go8KZFj_lZu1WoZJgvMU-1" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://www.componentsinfo.com/wp-content/uploads/2022/05/IRLB8721-transistor-pinout-equivalent.gif;rotation=90;" vertex="1" parent="1">
+                    <mxGeometry x="1490" y="353" width="520" height="442" as="geometry"/>
+                </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
