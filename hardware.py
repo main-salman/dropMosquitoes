@@ -402,11 +402,15 @@ class AccumulatorManager:
 
     # -- Configurable charge parameters (tunable via API / calibration) --------
     INITIAL_CHARGE_SEC = 3.0     # Pump run time when first arming (fills from empty)
-    TOPUP_CHARGE_SEC = 1.0       # Brief pump burst to recharge after N shots
-    TOPUP_INTERVAL_SHOTS = 10    # Top up every N shots
+    TOPUP_CHARGE_SEC = 1.0       # Brief pump burst to recharge (also used per-shot)
+    TOPUP_INTERVAL_SHOTS = 10    # Burst mode: top up every N shots
     TOPUP_INTERVAL_SEC = 60.0    # Or top up every T seconds of armed time
     MAX_PUMP_RUN_SEC = 5.0       # Absolute max pump run time (deadhead protection)
     DEFAULT_PULSE_SEC = 0.010    # Default solenoid pulse (10ms)
+    # SW-001 §2.7: charge-per-shot recharges to the pump's pressure ceiling after
+    # EVERY shot so each shot fires from the same pressure → consistent distance.
+    # Set False for burst/N-shot mode (faster cadence, distance fades on drawdown).
+    CHARGE_PER_SHOT = True
 
     # States
     STATE_IDLE = "idle"
@@ -608,7 +612,9 @@ class AccumulatorManager:
         with self._lock:
             if not self._armed:
                 return
-            needs_topup = self._shot_count >= self.TOPUP_INTERVAL_SHOTS
+            # Charge-per-shot (SW-001 §2.7): recharge to the ceiling after every
+            # shot for consistent pressure. Otherwise top up every N shots.
+            needs_topup = self.CHARGE_PER_SHOT or (self._shot_count >= self.TOPUP_INTERVAL_SHOTS)
 
         if needs_topup:
             self._topup()
@@ -695,6 +701,7 @@ class AccumulatorManager:
                     "topup_interval_shots": self.TOPUP_INTERVAL_SHOTS,
                     "topup_interval_sec": self.TOPUP_INTERVAL_SEC,
                     "default_pulse_ms": self.DEFAULT_PULSE_SEC * 1000,
+                    "charge_per_shot": self.CHARGE_PER_SHOT,
                 }
             }
 
@@ -710,9 +717,11 @@ class AccumulatorManager:
             self.TOPUP_INTERVAL_SEC = max(10.0, min(float(config["topup_interval_sec"]), 300.0))
         if "default_pulse_ms" in config:
             self.DEFAULT_PULSE_SEC = max(0.001, min(float(config["default_pulse_ms"]) / 1000.0, 2.0))
-        print(f"[AccumulatorManager] Config updated: charge={self.INITIAL_CHARGE_SEC}s, "
-              f"topup={self.TOPUP_CHARGE_SEC}s every {self.TOPUP_INTERVAL_SHOTS} shots, "
-              f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
+        if "charge_per_shot" in config:
+            self.CHARGE_PER_SHOT = bool(config["charge_per_shot"])
+        mode = "charge-per-shot" if self.CHARGE_PER_SHOT else f"burst/{self.TOPUP_INTERVAL_SHOTS}-shot"
+        print(f"[AccumulatorManager] Config updated: mode={mode}, charge={self.INITIAL_CHARGE_SEC}s, "
+              f"topup={self.TOPUP_CHARGE_SEC}s, pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
 
     def cleanup(self):
         """Emergency shutdown: everything OFF."""

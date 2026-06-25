@@ -448,6 +448,10 @@
             </div>
           </div>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="ac-charge-per-shot" checked>
+          <span><b>Charge-per-shot</b> — recharge to full pressure after every shot for consistent shot distance (uncheck for faster burst/N-shot firing).</span>
+        </label>
         <div style="display:flex;gap:8px;margin-top:12px">
           <button class="btn btn-blue" style="flex:1" onclick="acConfigApply()">✅ Apply Config</button>
           <button class="btn" style="flex:1" onclick="acConfigLoad()">🔄 Load Current</button>
@@ -1369,6 +1373,7 @@ async function acConfigLoad() {
     $('ac-topup-charge').value = c.topup_charge_sec; $('ac-topup-charge-v').textContent = c.topup_charge_sec + 's';
     $('ac-topup-shots').value = c.topup_interval_shots; $('ac-topup-shots-v').textContent = c.topup_interval_shots + ' shots';
     $('ac-def-pulse').value = c.default_pulse_ms; $('ac-def-pulse-v').textContent = c.default_pulse_ms + 'ms';
+    if ('charge_per_shot' in c) $('ac-charge-per-shot').checked = !!c.charge_per_shot;
   } catch(e) {}
 }
 
@@ -1378,9 +1383,11 @@ async function acConfigApply() {
     topup_charge_sec: +$('ac-topup-charge').value,
     topup_interval_shots: +$('ac-topup-shots').value,
     default_pulse_ms: +$('ac-def-pulse').value,
+    charge_per_shot: $('ac-charge-per-shot').checked,
   };
   await fetch('/api/accumulator/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  showToast('⚙️ Accumulator Config', `Charge: ${body.initial_charge_sec}s · Top-up: every ${body.topup_interval_shots} shots · Pulse: ${body.default_pulse_ms}ms`);
+  const mode = body.charge_per_shot ? 'charge-per-shot' : `burst/${body.topup_interval_shots}-shot`;
+  showToast('⚙️ Accumulator Config', `Mode: ${mode} · Charge: ${body.initial_charge_sec}s · Pulse: ${body.default_pulse_ms}ms`);
 }
 </script>
 </body>

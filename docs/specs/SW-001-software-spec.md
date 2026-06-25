@@ -87,6 +87,33 @@ The following stages execute **in sequence** for every fire decision:
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
   3. `+ drop_offset_deg` → final corrected pitch
 
+### 2.7 Accumulator Firing Strategy (`hardware.py — AccumulatorManager`)
+
+The GOODRIG 12V solenoid is fed from a 0.75L pre-charged accumulator (ECO-2026-004).
+The R385 pump has **no pressure switch** and must not run continuously against a
+closed solenoid (deadhead → overheat), so the accumulator is charged in timed bursts
+and the solenoid pulse releases stored pressure.
+
+**Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
+pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
+requires firing from a **consistent pressure**, not a longer pulse. No electronic
+pressure sensor is used; the pump's natural dead-head ceiling (the pressure where
+output stops rising) is the repeatable reference. Charging to that ceiling every
+time yields repeatable shots without instrumentation.
+
+**Modes (selectable at runtime via `charge_per_shot`):**
+- **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** the accumulator is
+  recharged to the ceiling after every shot, so each shot fires from the same
+  pressure → consistent distance. Trade-off: a short recharge pause between shots.
+- **Burst / N-shot (`CHARGE_PER_SHOT = False`):** fire up to `TOPUP_INTERVAL_SHOTS`
+  shots from one charge, then top up. Faster cadence but distance fades across the
+  accumulator drawdown curve.
+
+**Key tunables** (runtime via `POST /api/accumulator/config`):
+`initial_charge_sec`, `topup_charge_sec`, `topup_interval_shots`,
+`topup_interval_sec`, `default_pulse_ms`, `charge_per_shot`.
+`MAX_PUMP_RUN_SEC` caps every pump burst (deadhead protection).
+
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
 ```
