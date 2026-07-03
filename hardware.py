@@ -1661,7 +1661,7 @@ class LiDARController:
 
 # ============================================================================
 # ADS1115 PRESSURE SENSOR (I2C) — HW-001 §7.1, SW-001 §2.9
-# ECO-004 pressure loop: AUTEX 0-100 PSI transducer -> 10k/20k divider -> A0.
+# ECO-004 pressure loop: AUTEX 0-100 PSI transducer -> 10k/22k divider -> A0.
 # See diagrams/eco004_ads1115_pressure.drawio.
 #
 # BUS: Must use Bus 1 (c240000.i2c, Pin 27/28) — NOT the LiDAR's Bus 7. Per the
@@ -1682,8 +1682,10 @@ ADS1115_FSR_VOLTS = 4.096          # Full-scale range for PGA=001
 ADS1115_CONV_DELAY_SEC = 0.010     # ~8ms at 128 SPS + margin
 
 # Voltage divider on transducer SIG -> A0 (keeps 4.5V max under the 3.3V rail).
+# 10k/22k: ratio 0.6875 -> 4.5V maps to ~3.09V (headroom under 3.3V VDD). If you
+# change the physical resistors, update these so the PSI math stays accurate.
 PRESSURE_DIVIDER_R1 = 10000.0      # Series resistor from SIG to tap node (ohms)
-PRESSURE_DIVIDER_R2 = 20000.0      # Tap node to GND (ohms)
+PRESSURE_DIVIDER_R2 = 22000.0      # Tap node to GND (ohms)
 # AUTEX transducer transfer function (ratiometric 5V part).
 PRESSURE_V_AT_0PSI = 0.5           # Sensor output volts at 0 PSI
 PRESSURE_V_AT_FULL = 4.5           # Sensor output volts at full scale
@@ -1699,7 +1701,7 @@ class PressureSensor:
 
     Conversion chain (single-shot, PGA +/-4.096V):
         Vtap = raw * 4.096 / 32768
-        Vsig = Vtap * (R1 + R2) / R2          # undo the 10k/20k divider
+        Vsig = Vtap * (R1 + R2) / R2          # undo the 10k/22k divider
         PSI  = ((Vsig - 0.5) / 4.0) * 100     # AUTEX 0.5-4.5V -> 0-100 PSI
 
     No-mock rule (project policy): if the ADS1115 or smbus2 is unavailable the
