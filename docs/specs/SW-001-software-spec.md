@@ -127,7 +127,7 @@ replace timed-only charging.
 - **ADS1115 config:** single-shot conversion, MUX = AINp=A0/AINn=GND, PGA = ±4.096V (FSR), 128 SPS.
 - **Processing:** Background thread samples A0 at ~5Hz, converts count → volts → transducer volts → PSI:
   - `Vtap = raw × 4.096 / 32768`
-  - `Vsig = Vtap × (R1+R2)/R2 = Vtap × 30/20` (undo the 10k/20k divider)
+  - `Vsig = Vtap × (R1+R2)/R2 = Vtap × 32/22` (undo the 10k/22k divider)
   - `PSI = ((Vsig − 0.5) / 4.0) × 100`, clamped to the 0–100 PSI range.
 - **Output:** `read_psi()` (float or `None`) and `get_status()` → `{psi, volts, connected}`.
 - **No mock data (project rule):** if the ADS1115 is absent or `smbus2` is

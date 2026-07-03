@@ -235,7 +235,8 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 > lines. The transducer itself still needs 5V excitation (Terminal 4).
 
 - **Voltage divider (transducer SIG → ADS1115 A0):** R1 = 10 kΩ (series from SIG),
-  R2 = 20 kΩ (to GND). Ratio 2/3: 0.5V→0.33V, 4.5V→3.0V — stays under the 3.3V rail.
+  R2 = 22 kΩ (to GND). Ratio 0.6875: 0.5V→0.34V, 4.5V→3.09V — stays under the 3.3V rail.
+  (22 kΩ is a common on-hand value; 20 kΩ works too. Whatever is fitted must match the firmware constants.)
 - **PGA:** ±4.096V FSR so the divided signal never clips.
 
 | Signal | From | To |
@@ -249,7 +250,7 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 | Transducer GND | Terminal 6 (GND) | transducer black |
 | Transducer SIG | transducer signal | R1 → divider node → ADS1115 A0; R2 node → GND |
 
-- **PSI conversion:** `Vsig = Vtap × 30/20` (undo divider); `PSI = ((Vsig − 0.5) / 4.0) × 100`.
+- **PSI conversion:** `Vsig = Vtap × (R1+R2)/R2 = Vtap × 32/22` (undo divider); `PSI = ((Vsig − 0.5) / 4.0) × 100`.
 - **Mounting:** Transducer screws into the 1/8" NPT brass tee on the accumulator/solenoid pressure line.
 
 ## 8. Fluid System
