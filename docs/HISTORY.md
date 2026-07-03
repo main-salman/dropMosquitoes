@@ -823,3 +823,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-02 — [GUI] PRESSURE TRANSDUCER TEST CARD
 - **[GUI]** `templates/index.html`: added a "🩺 Pressure Transducer Test (ADS1115)" card in the Solenoid & Accumulator tab. Live telemetry (Sensor connected / PSI / transducer volts) with Start/Stop live polling (~2Hz) + a one-shot "Read Once". Uses the existing `GET /api/pressure` (SW-001 §2.9) — no backend change.
 - **[UX]** When the ADC is absent it shows `none ❌` and the log guides the user to check Pin 27/28 + `i2cdetect -y 1` (expect 0x48). Live poll is stopped on tab switch (`ptStopLive()` in `tab()`).
+
+## 2026-07-02 — [DIAGRAM] ADS1115 divider redrawn with Wago 221 levers
+- **[DIAGRAM]** `diagrams/eco004_ads1115_pressure.drawio`: rebuilt the voltage-divider region as an explicit vertical schematic using **three Wago 221 lever connectors** (the user wires with Wago levers): Wago#1 221-412 (SIG↔R1), Wago#2 221-413 (TAP: R1·R2·A0), Wago#3 221-412 (R2↔GND). Added a step-by-step "exactly what connects where" list and kept the 3.3V/PGA/PSI notes. Previous divider was ambiguous about the tap junction.
+- **[NOTE]** Clarifies the 3-way tap node (R1 lower lead + R2 upper lead + A0 signal) all land in the single 3-port Wago#2 — the point that was unclear before. GND from Wago#3 is the same net as ADS1115 GND + transducer GND (T6/Pin 9).
