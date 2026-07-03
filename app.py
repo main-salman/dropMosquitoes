@@ -24,7 +24,7 @@ from flask import Flask, render_template, Response, request, jsonify
 
 from hardware import (
     RelayController, LiDARController, create_turret_controller,
-    PrimingSystem, AccumulatorManager,
+    PrimingSystem, AccumulatorManager, PressureSensor,
     pixel_to_angle, compute_ballistic_offset, compute_predictive_lead,
     YAW_LIMIT, PITCH_LIMIT, PITCH_HOME,
     SERVO_YAW_LIMIT, SERVO_PITCH_LIMIT
@@ -43,6 +43,7 @@ relay = RelayController()
 accum = AccumulatorManager(relay)  # ECO-2026-004: Charge-on-demand accumulator
 gimbal = create_turret_controller()
 lidar = LiDARController()
+pressure = PressureSensor()  # ECO-004: accumulator pressure via ADS1115 (SW-001 §2.9)
 
 # Velocity tracker for predictive lead — SW-001 §2.7.1
 velocity_tracker = VelocityTracker()
@@ -85,6 +86,7 @@ def cleanup():
     scout_cam.stop()
     sniper_cam.stop()
     lidar.cleanup()
+    pressure.cleanup()  # ECO-004: stop pressure polling, close I2C
     gimbal.cleanup()
     accum.cleanup()  # ECO-2026-004: Ensure pump OFF, solenoid CLOSED
     relay.cleanup()
@@ -306,6 +308,16 @@ def api_gimbal_click():
 def api_lidar():
     """Return current LiDAR distance and signal strength."""
     return jsonify(lidar.get_status())
+
+
+# ============================================================================
+# PRESSURE SENSOR API — SW-001 §2.9 (ECO-004 pressure loop)
+# ============================================================================
+
+@app.route('/api/pressure')
+def api_pressure():
+    """Return accumulator pressure (PSI), transducer volts, and connection state."""
+    return jsonify(pressure.get_status())
 
 
 # ============================================================================
@@ -1056,6 +1068,7 @@ def api_status():
         "gimbal": status,
         "relay": relay.get_status(),
         "lidar": lidar.get_status(),
+        "pressure": pressure.get_status(),
         "ai": {
             "enabled": detector is not None,
             "confidence": detector.confidence if detector else 0,
