@@ -219,7 +219,16 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 
 - **ADC:** ADS1115 (16-bit, 4-ch, I2C, PGA). Address `0x48` (ADDR→GND).
 - **Transducer:** AUTEX 0–100 PSI, 1/8"-27 NPT, 5V excitation, **0.5–4.5V** ratiometric output.
-- **Bus:** Shares the LiDAR I2C bus (same SDA/SCL terminals). ADS1115 `0x48` vs TF-Luna `0x10` → no address conflict.
+
+> ⚠ **BUS CHOICE — use Pin 27/28 (I2C Bus 1), NOT Pin 3/5.** Per the ECO-2026-009
+> DTB investigation (HISTORY 2026-06-09), the header's **Pin 3/5 map to I2C Gen8
+> (`c250000.i2c`), which is DISABLED in the Yahboom device tree** — that controller
+> is electrically dead. The only enabled header bus is **Bus 1 (`c240000.i2c`) on
+> Pin 27 (SDA) / Pin 28 (SCL)**, already used by the PCA9685 servo driver and the
+> Yahboom onboard INA3221 (both `0x40`). The ADS1115 joins Bus 1 at `0x48`.
+
+- **Bus:** I2C Bus 1 (Pin 27 SDA / Pin 28 SCL). Devices on Bus 1: PCA9685 `0x40`,
+  INA3221 `0x40`, ADS1115 `0x48` — **no address conflict** (I2C is multi-drop).
 
 > ⚠ **Power the ADS1115 from 3.3V, NOT 5V.** The module's onboard SDA/SCL
 > pull-ups tie to VDD; at 5V they would over-voltage the Jetson's 3.3V I2C
@@ -231,10 +240,10 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 
 | Signal | From | To |
 |:-------|:-----|:---|
-| ADS1115 VDD | Jetson 3.3V (Pin 1) | ADS1115 VDD |
-| ADS1115 GND | Terminal 6 (GND) | ADS1115 GND |
-| ADS1115 SCL | Terminal 5 (SCL) | ADS1115 SCL |
-| ADS1115 SDA | Terminal 3 (SDA) | ADS1115 SDA |
+| ADS1115 VDD | Jetson 3.3V (Pin 1 or Pin 17) | ADS1115 VDD |
+| ADS1115 GND | Terminal 6 / Pin 9 (GND) | ADS1115 GND |
+| ADS1115 SCL | **Pin 28 (I2C1 SCL)** | ADS1115 SCL |
+| ADS1115 SDA | **Pin 27 (I2C1 SDA)** | ADS1115 SDA |
 | ADS1115 ADDR | ADS1115 GND | (sets addr `0x48`) |
 | Transducer +5V | Terminal 4 (5V) | transducer red |
 | Transducer GND | Terminal 6 (GND) | transducer black |

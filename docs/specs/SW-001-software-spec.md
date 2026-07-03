@@ -120,7 +120,10 @@ Reads accumulator pressure via an ADS1115 ADC over I2C (HW-001 §7.1). This
 instruments the §2.7 dead-head reference so charge setpoints can eventually
 replace timed-only charging.
 
-- **Input:** I2C (same bus as the LiDAR), ADS1115 address `0x48`, single-ended channel A0.
+- **Input:** I2C **Bus 1** (`c240000.i2c`, Pin 27/28 — the only enabled header bus;
+  Pin 3/5 Gen8 is disabled in the Yahboom DTB, see HW-001 §7.1). ADS1115 address
+  `0x48`, single-ended channel A0. Shares Bus 1 with the PCA9685 servo driver and
+  INA3221 (both `0x40`) — unique addresses, no conflict.
 - **ADS1115 config:** single-shot conversion, MUX = AINp=A0/AINn=GND, PGA = ±4.096V (FSR), 128 SPS.
 - **Processing:** Background thread samples A0 at ~5Hz, converts count → volts → transducer volts → PSI:
   - `Vtap = raw × 4.096 / 32768`
