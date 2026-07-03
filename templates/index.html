@@ -355,6 +355,7 @@
           <span>Since charge: <b id="sol-tv-since-charge" style="color:var(--teal)">—</b></span>
           <span>Since fire: <b id="sol-tv-since-fire" style="color:var(--accent)">—</b></span>
           <span>Armed for: <b id="sol-tv-armed-dur" style="color:var(--purple)">—</b></span>
+          <span>Pressure: <b id="sol-tv-psi" style="color:var(--orange)">—</b></span>
         </div>
         <div style="margin-top:10px">
           <div class="tgl-row">
@@ -1238,9 +1239,14 @@ async function solPollOnce() {
     $('sol-state').textContent = badgeText[d.state] || d.state;
     $('sol-state').style.background = badgeColors[d.state] || '';
     $('sol-state').style.color = stateColors[d.state] || 'var(--dim)';
-    // Sync toggles
+    // Sync toggles + pressure telemetry
     const rs = await fetch('/api/status').then(r=>r.json());
     $('sol-pump-tgl').checked = rs.relay.pump;
+    if (rs.pressure) {
+      $('sol-tv-psi').textContent = rs.pressure.connected
+        ? (rs.pressure.psi != null ? rs.pressure.psi + ' PSI' : '—')
+        : 'no sensor';
+    }
   } catch(e) {}
 }
 function solPollStart() { if (!solPollTimer) { solPollOnce(); solPollTimer = setInterval(solPollOnce, 1500); } }
