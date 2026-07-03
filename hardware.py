@@ -1660,6 +1660,137 @@ class LiDARController:
 
 
 # ============================================================================
+# ADS1115 PRESSURE SENSOR (I2C) — HW-001 §7.1, SW-001 §2.9
+# ECO-004 pressure loop: AUTEX 0-100 PSI transducer -> 10k/20k divider -> A0.
+# Shares the LiDAR I2C bus. ADS1115 @ 0x48 (ADDR->GND); no conflict with 0x10.
+# See diagrams/eco004_ads1115_pressure.drawio.
+# ============================================================================
+
+PRESSURE_I2C_BUS = LIDAR_I2C_BUS   # Same 40-pin header I2C bus as the LiDAR
+PRESSURE_ADS1115_ADDR = 0x48       # ADDR pin tied to GND
+ADS1115_REG_CONVERSION = 0x00
+ADS1115_REG_CONFIG = 0x01
+# Config: OS=1 (start), MUX=100 (A0 single-ended), PGA=001 (+/-4.096V),
+# MODE=1 (single-shot), DR=100 (128 SPS), COMP_QUE=11 (disabled) -> 0xC383.
+ADS1115_CONFIG_A0_SINGLE = 0xC383
+ADS1115_FSR_VOLTS = 4.096          # Full-scale range for PGA=001
+ADS1115_CONV_DELAY_SEC = 0.010     # ~8ms at 128 SPS + margin
+
+# Voltage divider on transducer SIG -> A0 (keeps 4.5V max under the 3.3V rail).
+PRESSURE_DIVIDER_R1 = 10000.0      # Series resistor from SIG to tap node (ohms)
+PRESSURE_DIVIDER_R2 = 20000.0      # Tap node to GND (ohms)
+# AUTEX transducer transfer function (ratiometric 5V part).
+PRESSURE_V_AT_0PSI = 0.5           # Sensor output volts at 0 PSI
+PRESSURE_V_AT_FULL = 4.5           # Sensor output volts at full scale
+PRESSURE_FULL_PSI = 100.0          # Full-scale pressure
+
+
+class PressureSensor:
+    """
+    I2C driver for the accumulator pressure transducer via an ADS1115 ADC.
+
+    HW-001 §7.1: ADS1115 @ 0x48 on the shared LiDAR I2C bus, single-ended A0.
+    SW-001 §2.9: background sampling at ~5Hz, exposes read_psi()/get_status().
+
+    Conversion chain (single-shot, PGA +/-4.096V):
+        Vtap = raw * 4.096 / 32768
+        Vsig = Vtap * (R1 + R2) / R2          # undo the 10k/20k divider
+        PSI  = ((Vsig - 0.5) / 4.0) * 100     # AUTEX 0.5-4.5V -> 0-100 PSI
+
+    No-mock rule (project policy): if the ADS1115 or smbus2 is unavailable the
+    sensor reports connected=False and psi=None. It NEVER fabricates readings.
+    """
+
+    def __init__(self):
+        self._psi = None
+        self._volts = None          # Reconstructed transducer volts (pre-divider)
+        self._lock = threading.Lock()
+        self._running = False
+        self._thread = None
+        self._bus = None
+
+        if I2C_AVAILABLE:
+            try:
+                self._bus = smbus2.SMBus(PRESSURE_I2C_BUS)
+                # Verify the ADS1115 acknowledges on the bus
+                self._bus.read_i2c_block_data(PRESSURE_ADS1115_ADDR, ADS1115_REG_CONFIG, 2)
+                print(f"[PressureSensor] ADS1115 found on I2C bus {PRESSURE_I2C_BUS}, "
+                      f"addr 0x{PRESSURE_ADS1115_ADDR:02X}")
+            except Exception as e:
+                print(f"[PressureSensor] ADS1115 not detected ({e}). "
+                      f"Reporting disconnected (no synthetic data).")
+                self._bus = None
+        else:
+            print("[PressureSensor] smbus2 unavailable — reporting disconnected (no synthetic data).")
+
+        self._running = True
+        self._thread = threading.Thread(target=self._poll_loop, daemon=True,
+                                        name="pressure-poll")
+        self._thread.start()
+
+    def _read_raw_a0(self) -> int:
+        """Trigger a single-shot A0 conversion and return the signed 16-bit count."""
+        cfg = [(ADS1115_CONFIG_A0_SINGLE >> 8) & 0xFF, ADS1115_CONFIG_A0_SINGLE & 0xFF]
+        self._bus.write_i2c_block_data(PRESSURE_ADS1115_ADDR, ADS1115_REG_CONFIG, cfg)
+        time.sleep(ADS1115_CONV_DELAY_SEC)
+        data = self._bus.read_i2c_block_data(PRESSURE_ADS1115_ADDR, ADS1115_REG_CONVERSION, 2)
+        raw = (data[0] << 8) | data[1]
+        if raw > 0x7FFF:
+            raw -= 0x10000
+        return raw
+
+    @staticmethod
+    def _counts_to_psi(raw: int) -> tuple:
+        """Convert a signed ADC count to (psi, transducer_volts)."""
+        v_tap = raw * ADS1115_FSR_VOLTS / 32768.0
+        v_sig = v_tap * (PRESSURE_DIVIDER_R1 + PRESSURE_DIVIDER_R2) / PRESSURE_DIVIDER_R2
+        span_v = PRESSURE_V_AT_FULL - PRESSURE_V_AT_0PSI
+        psi = ((v_sig - PRESSURE_V_AT_0PSI) / span_v) * PRESSURE_FULL_PSI
+        psi = max(0.0, min(psi, PRESSURE_FULL_PSI))
+        return psi, v_sig
+
+    def _poll_loop(self):
+        """Background thread: sample A0 at ~5Hz. Skips when no ADC is present."""
+        while self._running:
+            if self._bus is not None:
+                try:
+                    raw = self._read_raw_a0()
+                    psi, v_sig = self._counts_to_psi(raw)
+                    with self._lock:
+                        self._psi = psi
+                        self._volts = v_sig
+                except Exception:
+                    pass  # Transient I2C errors are normal; keep last good value
+            time.sleep(0.2)  # ~5Hz
+
+    def read_psi(self):
+        """Return the latest pressure in PSI (float), or None if disconnected."""
+        with self._lock:
+            return self._psi
+
+    def get_status(self) -> dict:
+        """Return pressure telemetry as a dict."""
+        with self._lock:
+            return {
+                "psi": round(self._psi, 1) if self._psi is not None else None,
+                "volts": round(self._volts, 3) if self._volts is not None else None,
+                "connected": self._bus is not None,
+            }
+
+    def cleanup(self):
+        """Stop polling and close I2C bus."""
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1.0)
+        if self._bus:
+            try:
+                self._bus.close()
+            except Exception:
+                pass
+        print("[PressureSensor] Stopped.")
+
+
+# ============================================================================
 # BALLISTIC OFFSET ENGINE — SW-001 §2.6, §4
 #
 # The turret is mounted OVERHEAD (8-10 feet / 2.4-3.0m above ground).
