@@ -311,6 +311,33 @@
       </div>
     </div>
 
+    <!-- Step 1c: Pressure Transducer Test -->
+    <div class="card">
+      <div class="card-title">🩺 Pressure Transducer Test (ADS1115)</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Live read of the AUTEX transducer via the ADS1115 (I2C Bus 1, 0x48). Start live reading, then charge/arm or hand-pressurize the line and watch PSI track. <b>"none"</b> = ADS1115 not detected — check Pin 27/28 (SDA/SCL), 3.3V VDD, and run <code>i2cdetect -y 1</code> (expect <b>48</b>).</p>
+        <div class="telem" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="telem-item">
+            <div class="telem-val" id="pt-conn" style="color:var(--dim);font-size:18px">—</div>
+            <div class="telem-label">Sensor</div>
+          </div>
+          <div class="telem-item">
+            <div class="telem-val" id="pt-psi" style="color:var(--orange);font-size:28px">—</div>
+            <div class="telem-label">PSI</div>
+          </div>
+          <div class="telem-item">
+            <div class="telem-val" id="pt-volts" style="color:var(--teal);font-size:20px">—</div>
+            <div class="telem-label">Sensor Volts</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-blue" style="flex:2;padding:12px;font-size:13px" id="pt-live-btn" onclick="ptToggleLive()">▶ Start Live Reading</button>
+          <button class="btn" style="flex:1;padding:12px;font-size:13px" onclick="ptReadOnce()">🔄 Read Once</button>
+        </div>
+        <div class="cal-result" id="pt-log" style="margin-top:8px">Ready — press Start Live Reading to poll the transducer.</div>
+      </div>
+    </div>
+
     <!-- Step 2: Arm / Fire / Disarm -->
     <div class="card">
       <div class="card-title">🎯 Step 2 — Arm → Fire → Disarm</div>
@@ -813,7 +840,7 @@ async function primeFromFireControl() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,settings:4};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop()}}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,settings:4};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -1171,6 +1198,44 @@ async function solGateHold() {
   } catch(e) {
     $('sol-hold-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
+}
+
+// ---- Pressure Transducer Test ----
+let ptPollTimer = null;
+
+function ptRender(d) {
+  const conn = d && d.connected;
+  $('pt-conn').textContent = conn ? 'OK ✅' : 'none ❌';
+  $('pt-conn').style.color = conn ? 'var(--green)' : 'var(--red)';
+  $('pt-psi').textContent = (conn && d.psi != null) ? d.psi : '—';
+  $('pt-volts').textContent = (conn && d.volts != null) ? d.volts.toFixed(3) + 'V' : '—';
+}
+
+async function ptReadOnce() {
+  try {
+    const d = await fetch('/api/pressure').then(r => r.json());
+    ptRender(d);
+    $('pt-log').innerHTML = d.connected
+      ? `<span class="ok">✅ ${d.psi} PSI · sensor ${d.volts}V (transducer output, divider undone)</span>`
+      : `<span class="err">❌ ADS1115 not detected on I2C Bus 1 (0x48).</span>\n` +
+        `Check Pin 27 (SDA) / Pin 28 (SCL), 3.3V VDD, and run <b>i2cdetect -y 1</b> (expect 48).`;
+  } catch(e) {
+    $('pt-log').innerHTML = `<span class="err">❌ ${e.message}</span>`;
+  }
+}
+
+function ptStopLive() {
+  if (ptPollTimer) { clearInterval(ptPollTimer); ptPollTimer = null; }
+  const btn = $('pt-live-btn');
+  if (btn) { btn.textContent = '▶ Start Live Reading'; btn.classList.remove('btn-red'); btn.classList.add('btn-blue'); }
+}
+
+function ptToggleLive() {
+  if (ptPollTimer) { ptStopLive(); return; }
+  const btn = $('pt-live-btn');
+  btn.textContent = '⏹ Stop Live Reading'; btn.classList.remove('btn-blue'); btn.classList.add('btn-red');
+  ptReadOnce();
+  ptPollTimer = setInterval(ptReadOnce, 500);
 }
 
 async function solArm() {

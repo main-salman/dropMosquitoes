@@ -819,3 +819,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[VERIFY — no servo conflict]** Bus 1 already hosts the PCA9685 servo driver and the Yahboom onboard INA3221, both at `0x40`. The ADS1115 is at `0x48` → **unique address, no conflict** (I2C is multi-drop). Confirm on the Jetson with `i2cdetect -y 1` (expect `40` and, once wired, `48`).
 - **[TERMINALS]** Power/ground pins are shared rails and safe to tap: Pin 1 (3.3V, ADS1115 VDD; Pin 17 also free now that the discrete-MOSFET pull-up is gone), Pin 4 (5V, transducer excitation ~10mA), Pin 6/Pin 9 (GND, common). Keep ADS1115 VDD at 3.3V so its onboard SDA/SCL pull-ups match the bus level.
 - **[NOTE]** The stale `diagrams/turret_wiring.drawio` still shows the PCA9685 on Pin 3/5 (pre-2026-06-09). Code is authoritative: servos are on Bus 1 / Pin 27/28.
+
+## 2026-07-02 — [GUI] PRESSURE TRANSDUCER TEST CARD
+- **[GUI]** `templates/index.html`: added a "🩺 Pressure Transducer Test (ADS1115)" card in the Solenoid & Accumulator tab. Live telemetry (Sensor connected / PSI / transducer volts) with Start/Stop live polling (~2Hz) + a one-shot "Read Once". Uses the existing `GET /api/pressure` (SW-001 §2.9) — no backend change.
+- **[UX]** When the ADC is absent it shows `none ❌` and the log guides the user to check Pin 27/28 + `i2cdetect -y 1` (expect 0x48). Live poll is stopped on tab switch (`ptStopLive()` in `tab()`).
