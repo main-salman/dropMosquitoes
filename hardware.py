@@ -1662,12 +1662,17 @@ class LiDARController:
 # ============================================================================
 # ADS1115 PRESSURE SENSOR (I2C) — HW-001 §7.1, SW-001 §2.9
 # ECO-004 pressure loop: AUTEX 0-100 PSI transducer -> 10k/20k divider -> A0.
-# Shares the LiDAR I2C bus. ADS1115 @ 0x48 (ADDR->GND); no conflict with 0x10.
 # See diagrams/eco004_ads1115_pressure.drawio.
+#
+# BUS: Must use Bus 1 (c240000.i2c, Pin 27/28) — NOT the LiDAR's Bus 7. Per the
+# ECO-2026-009 DTB investigation, header Pin 3/5 map to I2C Gen8 (c250000.i2c),
+# which is DISABLED in the Yahboom device tree. Bus 1 is the only enabled header
+# bus and already hosts the PCA9685 servo driver + INA3221 (both 0x40). The
+# ADS1115 sits at 0x48 -> unique address, no conflict (I2C is multi-drop).
 # ============================================================================
 
-PRESSURE_I2C_BUS = LIDAR_I2C_BUS   # Same 40-pin header I2C bus as the LiDAR
-PRESSURE_ADS1115_ADDR = 0x48       # ADDR pin tied to GND
+PRESSURE_I2C_BUS = 1               # Bus 1 (c240000.i2c, Pin 27/28) — only enabled header bus
+PRESSURE_ADS1115_ADDR = 0x48       # ADDR pin tied to GND (unique vs PCA9685/INA3221 @ 0x40)
 ADS1115_REG_CONVERSION = 0x00
 ADS1115_REG_CONFIG = 0x01
 # Config: OS=1 (start), MUX=100 (A0 single-ended), PGA=001 (+/-4.096V),
