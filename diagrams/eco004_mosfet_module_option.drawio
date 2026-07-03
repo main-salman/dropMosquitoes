@@ -1,224 +1,302 @@
 <mxfile host="65bd71144e">
     <diagram name="mosfet module" id="mosfetmod">
-        <mxGraphModel dx="2042" dy="665" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1050" background="#FFFFFF" math="0" shadow="0">
+        <mxGraphModel dx="2042" dy="665" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" background="#FFFFFF" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;Solenoid via Dual-MOSFET Trigger Module — WIRES TO MOVE (ECO-004 Rev E)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:12px'&gt;SIG relocated BCM 27/T13 → BCM 16/PR.05/T36 (strong pad) · D4184-class, trigger 3.3–20V · GOODRIG 12V 2A valve · 1N5408 flyback&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" parent="1" vertex="1">
-                    <mxGeometry x="350" y="20" width="800" height="50" as="geometry"/>
+                <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;Solenoid via Dual-MOSFET Trigger Module — WIRES TO MOVE (ECO-004 Rev F)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:12px'&gt;SIG on BCM 16/PR.05/T36 · D4184-class, trigger 3.3–20V · GOODRIG 12V 2A valve · 1N5408 flyback · &lt;b style='color:#BF360C'&gt;NEW: 10kΩ gate pull-down via Wago levers → boot-safe OFF (SAFE-001)&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="18" width="840" height="52" as="geometry"/>
                 </mxCell>
                 <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=5;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="120" width="250" height="360" as="geometry"/>
+                    <mxGeometry x="60" y="120" width="230" height="360" as="geometry"/>
                 </mxCell>
                 <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:15px'&gt;Jetson Orin Nano&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;IDC40P Terminal Block&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="132" width="210" height="34" as="geometry"/>
+                    <mxGeometry x="72" y="132" width="206" height="34" as="geometry"/>
                 </mxCell>
                 <mxCell id="t13" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#FF6D00;arcSize=8;strokeWidth=3;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="185" width="210" height="48" as="geometry"/>
+                    <mxGeometry x="72" y="185" width="206" height="48" as="geometry"/>
                 </mxCell>
-                <mxCell id="t13l" value="&lt;b style='color:#FFE0B2;font-size:12px'&gt;T36 · BCM 16 (PR.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCC80;font-size:10px'&gt;GREEN → module SIG&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="85" y="190" width="200" height="38" as="geometry"/>
+                <mxCell id="t13l" value="&lt;b style='color:#FFE0B2;font-size:12px'&gt;T36 · BCM 16 (PR.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCC80;font-size:10px'&gt;GREEN → Wago #1 (gate)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="76" y="190" width="198" height="38" as="geometry"/>
                 </mxCell>
                 <mxCell id="gnd" value="" style="rounded=1;fillColor=#212121;strokeColor=#616161;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="250" width="210" height="46" as="geometry"/>
+                    <mxGeometry x="72" y="250" width="206" height="46" as="geometry"/>
                 </mxCell>
-                <mxCell id="gndl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;GND · T6 / T9 / T14&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;→ module GND (shared)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="85" y="255" width="200" height="36" as="geometry"/>
+                <mxCell id="gndl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;GND · T6 / T9 / T14&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;→ Wago #2 (shared GND)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="76" y="255" width="198" height="36" as="geometry"/>
                 </mxCell>
                 <mxCell id="v12" value="" style="rounded=1;fillColor=#C62828;strokeColor=#EF9A9A;arcSize=8;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="312" width="210" height="46" as="geometry"/>
+                    <mxGeometry x="72" y="312" width="206" height="46" as="geometry"/>
                 </mxCell>
                 <mxCell id="v12l" value="&lt;b style='color:#FFF;font-size:12px'&gt;+12V DC Bus&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCDD2;font-size:10px'&gt;→ module DC IN +&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="85" y="317" width="200" height="36" as="geometry"/>
+                    <mxGeometry x="76" y="317" width="198" height="36" as="geometry"/>
                 </mxCell>
                 <mxCell id="t17old" value="&lt;b style='color:#B71C1C;font-size:11px'&gt;T17 · +3.3V — NOT USED&lt;/b&gt;&lt;br&gt;&lt;span style='color:#EF9A9A;font-size:10px'&gt;drop the 4.7kΩ pull-up entirely&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#B71C1C;dashed=1;strokeWidth=2;fontColor=#EF9A9A;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="376" width="210" height="44" as="geometry"/>
+                    <mxGeometry x="72" y="376" width="206" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoA" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="322" y="192" width="104" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoA_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="184" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoA_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="362" y="184" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoA_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="394" y="184" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoA_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #1 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GATE node&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="322" y="196" width="104" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="res" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;arcSize=20;" parent="1" vertex="1">
+                    <mxGeometry x="352" y="232" width="44" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="res_l" value="&lt;b style='color:#E65100;font-size:10px'&gt;10kΩ&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="352" y="235" width="44" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="res_note" value="&lt;span style='color:#E65100;font-size:9px'&gt;¼W · 4.7k also OK&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="400" y="238" width="110" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoB" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" parent="1" vertex="1">
+                    <mxGeometry x="322" y="262" width="104" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoB_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="330" y="296" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoB_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="362" y="296" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoB_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                    <mxGeometry x="394" y="296" width="24" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="wagoB_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #2 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GND node&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="322" y="266" width="104" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="mod" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#0D2E5C;shadow=1;arcSize=4;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="430" y="150" width="410" height="320" as="geometry"/>
+                    <mxGeometry x="470" y="150" width="410" height="320" as="geometry"/>
                 </mxCell>
                 <mxCell id="modhdr" value="&lt;b style='color:#E3F2FD;font-size:13px'&gt;Dual-MOSFET Trigger Module&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BBDEFB;font-size:9px'&gt;D4184-class · DC 5–36V · 15A / 400W · trigger 3.3–20V&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="440" y="156" width="390" height="34" as="geometry"/>
+                    <mxGeometry x="480" y="156" width="390" height="34" as="geometry"/>
                 </mxCell>
                 <mxCell id="hole1" value="" style="ellipse;fillColor=#0D2E5C;strokeColor=#90CAF9;" parent="1" vertex="1">
-                    <mxGeometry x="816" y="158" width="14" height="14" as="geometry"/>
+                    <mxGeometry x="856" y="158" width="14" height="14" as="geometry"/>
                 </mxCell>
                 <mxCell id="hole2" value="" style="ellipse;fillColor=#0D2E5C;strokeColor=#90CAF9;" parent="1" vertex="1">
-                    <mxGeometry x="816" y="448" width="14" height="14" as="geometry"/>
+                    <mxGeometry x="856" y="448" width="14" height="14" as="geometry"/>
                 </mxCell>
                 <mxCell id="sighdr" value="" style="rounded=0;fillColor=#212121;strokeColor=#000000;" parent="1" vertex="1">
-                    <mxGeometry x="440" y="196" width="150" height="92" as="geometry"/>
+                    <mxGeometry x="480" y="196" width="150" height="92" as="geometry"/>
                 </mxCell>
                 <mxCell id="sighdr_cap" value="&lt;span style='color:#9E9E9E;font-size:8px'&gt;3-PIN CONTROL&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="498" y="198" width="90" height="12" as="geometry"/>
+                    <mxGeometry x="538" y="198" width="90" height="12" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_sig" value="" style="ellipse;fillColor=#FFC107;strokeColor=#FF8F00;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="448" y="212" width="16" height="16" as="geometry"/>
+                    <mxGeometry x="488" y="212" width="16" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_sig_l" value="&lt;b style='color:#FFF59D;font-size:11px'&gt;SIG / PWM&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="470" y="212" width="110" height="16" as="geometry"/>
+                    <mxGeometry x="510" y="212" width="110" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_vcc" value="" style="ellipse;fillColor=#FFC107;strokeColor=#FF8F00;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="448" y="240" width="16" height="16" as="geometry"/>
+                    <mxGeometry x="488" y="240" width="16" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_vcc_l" value="&lt;b style='color:#B0BEC5;font-size:11px'&gt;VCC (LED only)&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="470" y="240" width="120" height="16" as="geometry"/>
+                    <mxGeometry x="510" y="240" width="120" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_gnd" value="" style="ellipse;fillColor=#FFC107;strokeColor=#FF8F00;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="448" y="268" width="16" height="16" as="geometry"/>
+                    <mxGeometry x="488" y="268" width="16" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="pin_gnd_l" value="&lt;b style='color:#FFF;font-size:11px'&gt;GND&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="470" y="268" width="110" height="16" as="geometry"/>
+                    <mxGeometry x="510" y="268" width="110" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="led" value="" style="ellipse;fillColor=#FF5252;strokeColor=#B71C1C;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="606" y="210" width="16" height="16" as="geometry"/>
+                    <mxGeometry x="646" y="210" width="16" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="led_l" value="&lt;span style='color:#BBDEFB;font-size:9px'&gt;LED&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="624" y="211" width="34" height="14" as="geometry"/>
+                    <mxGeometry x="664" y="211" width="34" height="14" as="geometry"/>
                 </mxCell>
                 <mxCell id="cap" value="" style="ellipse;fillColor=#37474F;strokeColor=#B0BEC5;strokeWidth=3;" parent="1" vertex="1">
-                    <mxGeometry x="676" y="198" width="46" height="46" as="geometry"/>
+                    <mxGeometry x="716" y="198" width="46" height="46" as="geometry"/>
                 </mxCell>
                 <mxCell id="cap_mark" value="" style="shape=partialRectangle;top=0;bottom=0;right=0;fillColor=#90A4AE;strokeColor=none;" parent="1" vertex="1">
-                    <mxGeometry x="692" y="200" width="14" height="42" as="geometry"/>
+                    <mxGeometry x="732" y="200" width="14" height="42" as="geometry"/>
                 </mxCell>
                 <mxCell id="q1" value="" style="rounded=0;fillColor=#263238;strokeColor=#000000;" parent="1" vertex="1">
-                    <mxGeometry x="582" y="305" width="58" height="100" as="geometry"/>
+                    <mxGeometry x="622" y="305" width="58" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="q1tab" value="" style="rounded=0;fillColor=#CFD8DC;strokeColor=#78909C;" parent="1" vertex="1">
-                    <mxGeometry x="582" y="305" width="58" height="16" as="geometry"/>
+                    <mxGeometry x="622" y="305" width="58" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="q1_l" value="&lt;b style='color:#ECEFF1;font-size:10px'&gt;D4184&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="582" y="350" width="58" height="16" as="geometry"/>
+                    <mxGeometry x="622" y="350" width="58" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="q2" value="" style="rounded=0;fillColor=#263238;strokeColor=#000000;" parent="1" vertex="1">
-                    <mxGeometry x="650" y="305" width="58" height="100" as="geometry"/>
+                    <mxGeometry x="690" y="305" width="58" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="q2tab" value="" style="rounded=0;fillColor=#CFD8DC;strokeColor=#78909C;" parent="1" vertex="1">
-                    <mxGeometry x="650" y="305" width="58" height="16" as="geometry"/>
+                    <mxGeometry x="690" y="305" width="58" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="q2_l" value="&lt;b style='color:#ECEFF1;font-size:10px'&gt;D4184&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="650" y="350" width="58" height="16" as="geometry"/>
+                    <mxGeometry x="690" y="350" width="58" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="q_cap" value="&lt;span style='color:#BBDEFB;font-size:9px'&gt;dual MOSFETs (paralleled)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="572" y="408" width="148" height="14" as="geometry"/>
+                    <mxGeometry x="612" y="408" width="148" height="14" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#1B5E20;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="440" y="300" width="112" height="160" as="geometry"/>
+                    <mxGeometry x="480" y="300" width="112" height="160" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin_t" value="&lt;b style='color:#FFFFFF;font-size:11px'&gt;DC IN&lt;br&gt;(12V)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="494" y="362" width="54" height="34" as="geometry"/>
+                    <mxGeometry x="534" y="362" width="54" height="34" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin_p" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="320" width="24" height="24" as="geometry"/>
+                    <mxGeometry x="490" y="320" width="24" height="24" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin_p_l" value="&lt;b style='color:#FFFFFF;font-size:14px'&gt;+&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="324" width="40" height="16" as="geometry"/>
+                    <mxGeometry x="520" y="324" width="40" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin_n" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="372" width="24" height="24" as="geometry"/>
+                    <mxGeometry x="490" y="372" width="24" height="24" as="geometry"/>
                 </mxCell>
                 <mxCell id="dcin_n_l" value="&lt;b style='color:#FFFFFF;font-size:14px'&gt;−&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="376" width="40" height="16" as="geometry"/>
+                    <mxGeometry x="520" y="376" width="40" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="out" value="" style="rounded=1;fillColor=#2E7D32;strokeColor=#1B5E20;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="718" y="300" width="112" height="160" as="geometry"/>
+                    <mxGeometry x="758" y="300" width="112" height="160" as="geometry"/>
                 </mxCell>
                 <mxCell id="out_t" value="&lt;b style='color:#FFFFFF;font-size:11px'&gt;OUT&lt;br&gt;(load)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="722" y="362" width="54" height="34" as="geometry"/>
+                    <mxGeometry x="762" y="362" width="54" height="34" as="geometry"/>
                 </mxCell>
                 <mxCell id="out_p" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="800" y="320" width="24" height="24" as="geometry"/>
+                    <mxGeometry x="840" y="320" width="24" height="24" as="geometry"/>
                 </mxCell>
                 <mxCell id="out_p_l" value="&lt;b style='color:#FFFFFF;font-size:14px'&gt;+&lt;/b&gt;" style="text;html=1;align=right;" parent="1" vertex="1">
-                    <mxGeometry x="764" y="324" width="32" height="16" as="geometry"/>
+                    <mxGeometry x="804" y="324" width="32" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="out_n" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;strokeWidth=2;" parent="1" vertex="1">
-                    <mxGeometry x="800" y="372" width="24" height="24" as="geometry"/>
+                    <mxGeometry x="840" y="372" width="24" height="24" as="geometry"/>
                 </mxCell>
                 <mxCell id="out_n_l" value="&lt;b style='color:#FFFFFF;font-size:14px'&gt;−&lt;/b&gt;" style="text;html=1;align=right;" parent="1" vertex="1">
-                    <mxGeometry x="764" y="376" width="32" height="16" as="geometry"/>
+                    <mxGeometry x="804" y="376" width="32" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#FF6D00;shadow=1;arcSize=6;strokeWidth=3;" parent="1" vertex="1">
-                    <mxGeometry x="940" y="300" width="240" height="140" as="geometry"/>
+                    <mxGeometry x="980" y="300" width="240" height="140" as="geometry"/>
                 </mxCell>
                 <mxCell id="soll" value="&lt;b style='color:#FFB74D;font-size:14px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#CFD8DC;font-size:10px'&gt;12V DC · 2A · 1/4&quot; NPT&lt;br&gt;direct-acting, normally closed&lt;br&gt;(+) RED → OUT+&lt;br&gt;(−) BLUE → OUT−&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="945" y="312" width="230" height="96" as="geometry"/>
+                    <mxGeometry x="985" y="312" width="230" height="96" as="geometry"/>
                 </mxCell>
                 <mxCell id="flyback" value="&lt;b style='color:#880E4F;font-size:12px'&gt;1N5408 Flyback (3A)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AD1457;font-size:10px'&gt;across solenoid coil&lt;br&gt;band (cathode) → (+) / OUT+ side&lt;br&gt;&lt;b&gt;not the little 1N4007&lt;/b&gt; (2A coil)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#E91E63;shadow=1;arcSize=10;fontColor=#333;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="940" y="470" width="240" height="68" as="geometry"/>
+                    <mxGeometry x="980" y="470" width="240" height="68" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_green" value="" style="endArrow=block;endFill=1;strokeColor=#FF6D00;strokeWidth=5;rounded=1;dashed=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="209" as="sourcePoint"/>
-                        <mxPoint x="446" y="220" as="targetPoint"/>
+                        <mxPoint x="320" y="206" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_green_l" value="&lt;b style='font-size:11px;color:#E65100'&gt;★ MOVE GREEN T13→T36 → SIG&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="300" y="184" width="184" height="18" as="geometry"/>
+                <mxCell id="wire_green_l" value="&lt;b style='font-size:11px;color:#E65100'&gt;★ GREEN T36 → Wago #1&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="286" y="158" width="160" height="18" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_sig" value="" style="endArrow=block;endFill=1;strokeColor=#FF6D00;strokeWidth=5;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="428" y="204" as="sourcePoint"/>
+                        <mxPoint x="486" y="216" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_sig_l" value="&lt;b style='font-size:10px;color:#E65100'&gt;Wago #1 → SIG pin&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="418" y="170" width="120" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_res_top" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="374" y="228" as="sourcePoint"/>
+                        <mxPoint x="374" y="232" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_res_bot" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="374" y="258" as="sourcePoint"/>
+                        <mxPoint x="374" y="262" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="273" as="sourcePoint"/>
-                        <mxPoint x="446" y="276" as="targetPoint"/>
+                        <mxPoint x="320" y="279" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_gnd_l" value="&lt;b style='font-size:10px;color:#555'&gt;GND → header GND&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="318" y="248" width="130" height="16" as="geometry"/>
+                <mxCell id="wire_gnd_l" value="&lt;b style='font-size:10px;color:#555'&gt;GND → Wago #2&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="150" y="300" width="130" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_gndpin" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="428" y="282" as="sourcePoint"/>
+                        <mxPoint x="486" y="272" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="wire_gndpin_l" value="&lt;b style='font-size:10px;color:#555'&gt;Wago #2 → module GND pin&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="392" y="300" width="170" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_12" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="335" as="sourcePoint"/>
-                        <mxPoint x="448" y="332" as="targetPoint"/>
+                        <mxPoint x="488" y="332" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_12_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;+12V → DC IN +&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="316" y="338" width="130" height="16" as="geometry"/>
+                    <mxGeometry x="300" y="338" width="150" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_jetson_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="160" y="296" as="sourcePoint"/>
-                        <mxPoint x="160" y="560" as="targetPoint"/>
+                        <mxPoint x="150" y="296" as="sourcePoint"/>
+                        <mxPoint x="150" y="600" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_dcin_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="462" y="396" as="sourcePoint"/>
-                        <mxPoint x="462" y="560" as="targetPoint"/>
+                        <mxPoint x="502" y="396" as="sourcePoint"/>
+                        <mxPoint x="502" y="600" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_dcin_gnd_l" value="&lt;b style='font-size:9px;color:#555'&gt;DC IN − → GND bus&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="466" y="470" width="130" height="16" as="geometry"/>
+                    <mxGeometry x="506" y="500" width="130" height="16" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_wagoB_bus" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;dashed=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="374" y="306" as="sourcePoint"/>
+                        <mxPoint x="374" y="600" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_outp" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="824" y="332" as="sourcePoint"/>
-                        <mxPoint x="940" y="345" as="targetPoint"/>
+                        <mxPoint x="864" y="332" as="sourcePoint"/>
+                        <mxPoint x="980" y="345" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_outp_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;OUT + → solenoid (+)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="838" y="306" width="150" height="18" as="geometry"/>
+                    <mxGeometry x="878" y="306" width="150" height="18" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_outn" value="" style="endArrow=block;endFill=1;strokeColor=#1E88E5;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="824" y="384" as="sourcePoint"/>
-                        <mxPoint x="940" y="400" as="targetPoint"/>
+                        <mxPoint x="864" y="384" as="sourcePoint"/>
+                        <mxPoint x="980" y="400" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_outn_l" value="&lt;b style='font-size:10px;color:#1565C0'&gt;★ OUT − → solenoid (−)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="836" y="404" width="160" height="18" as="geometry"/>
+                    <mxGeometry x="876" y="404" width="160" height="18" as="geometry"/>
                 </mxCell>
                 <mxCell id="gndbus" value="" style="rounded=1;fillColor=#212121;strokeColor=#616161;shadow=1;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="560" width="1120" height="30" as="geometry"/>
+                    <mxGeometry x="60" y="600" width="1160" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="gndbusl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;COMMON GND BUS — Jetson GND + 12V PSU GND + module GND (header GND &amp; DC IN −)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="564" width="1120" height="22" as="geometry"/>
+                <mxCell id="gndbusl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;COMMON GND BUS — Jetson GND + 12V PSU GND + module GND (header GND &amp; DC IN −) + Wago #2 (pull-down)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="604" width="1160" height="22" as="geometry"/>
                 </mxCell>
-                <mxCell id="steps" value="&lt;b style='font-size:13px;color:#0D47A1'&gt;Step-by-step: → dual-MOSFET module&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Buy:&lt;/b&gt; a &lt;b&gt;dual-MOSFET trigger switch driver module&lt;/b&gt; (D4184-class, DC 5–36V, 15A/400W) whose spec lists a &lt;b&gt;3.3–20V digital trigger&lt;/b&gt;. Avoid IRF520 boards (need 4–5V, won't fully turn on at 3.3V). Plus a &lt;b&gt;1N5408&lt;/b&gt; (3A) flyback diode. NOTE: the 3-pin header may be silk-screened &lt;b&gt;PWM / VCC / GND&lt;/b&gt; (or SIG/VCC/GND); the screw blocks may read &lt;b&gt;+ −&lt;/b&gt; for IN and OUT — match by function, not exact label.&lt;br&gt;&lt;br&gt;&lt;b&gt;1.&lt;/b&gt; Power OFF (Jetson + 12V supply).&lt;br&gt;&lt;b&gt;2. REMOVE&lt;/b&gt; the IRLB8721 MOSFET, the 4.7kΩ pull-up (and any 1kΩ), and the T17 (+3.3V) wire — none are used.&lt;br&gt;&lt;b&gt;3. GREEN wire&lt;/b&gt; — MOVE from T13 (BCM 27) to &lt;b&gt;T36 (BCM 16 / PR.05)&lt;/b&gt;, then into the 3-pin header &lt;b&gt;SIG / PWM&lt;/b&gt; pin. &lt;b&gt;Why:&lt;/b&gt; PY.00/BCM 27 is a weak pad — even via libgpiod it only reaches ~1.9V into the module's pull-down (below the 3.3V trigger), so the module never switched. PR.05 is the sister of the working pump pad PR.04 and drives a clean 3.3V.&lt;br&gt;&lt;b&gt;4.&lt;/b&gt; 3-pin header &lt;b&gt;GND → Jetson GND&lt;/b&gt; (shared reference — REQUIRED, or SIG won't be seen). &lt;b&gt;VCC pin: leave open&lt;/b&gt; (it only powers the on-board LED).&lt;br&gt;&lt;b&gt;5.&lt;/b&gt; &lt;b&gt;+12V → DC IN +&lt;/b&gt; screw, &lt;b&gt;GND → DC IN −&lt;/b&gt; screw (power-in block).&lt;br&gt;&lt;b&gt;6.&lt;/b&gt; &lt;b&gt;OUT + → solenoid (+) RED&lt;/b&gt;, &lt;b&gt;OUT − → solenoid (−) BLUE&lt;/b&gt; (the module switches the low side).&lt;br&gt;&lt;b&gt;7.&lt;/b&gt; &lt;b&gt;1N5408 flyback&lt;/b&gt; across the solenoid coil — band (cathode) to the (+) / OUT+ side.&lt;br&gt;&lt;br&gt;&lt;span style='color:#1B5E20'&gt;&lt;b&gt;Software (Rev E):&lt;/b&gt; solenoid libgpiod line moved &lt;b&gt;PY.00 (line 122) → PR.05 (line 113)&lt;/b&gt; in hardware.py. PR.05 boots in GPIO mode, so no PADCTL fix is needed; libgpiod drives a clean push-pull 3.3V. HIGH → solenoid opens. Module at 2A runs cold.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
-                    <mxGeometry x="60" y="620" width="1120" height="320" as="geometry"/>
+                <mxCell id="pd_callout" value="&lt;b style='color:#BF360C;font-size:12px'&gt;WHY THE 10kΩ PULL-DOWN&lt;/b&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:10px'&gt;At boot (power-on → app claims PR.05, ~30–60s) the Jetson pad floats to ~2.8V. That half-turns the logic-level MOSFET ON: solenoid energizes, MOSFET sits in its linear region and &lt;b&gt;runs hot&lt;/b&gt;, LED glows dim/flickers. The 10kΩ from GATE→GND pins the gate to 0V whenever the Jetson isn't actively driving 3.3V HIGH → MOSFET OFF, valve CLOSED at boot / reset / crash / wire-off.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="70" width="330" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="steps" value="&lt;b style='font-size:13px;color:#0D47A1'&gt;Step-by-step: add the 10kΩ gate pull-down (Wago levers)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;You need:&lt;/b&gt; one &lt;b&gt;10kΩ ¼W resistor&lt;/b&gt; (4.7kΩ also fine), two &lt;b&gt;Wago 221-413 (3-conductor)&lt;/b&gt; levers, and two short jumper wires. The rest of the module wiring (12V, OUT→solenoid, flyback) stays as-is.&lt;br&gt;&lt;br&gt;&lt;b&gt;1.&lt;/b&gt; Power OFF (Jetson + 12V supply). &lt;b&gt;Unplug the solenoid&lt;/b&gt; until this is done so it can't cook.&lt;br&gt;&lt;b&gt;2. Wago #1 = GATE node (3 wires in):&lt;/b&gt; (a) the &lt;b&gt;GREEN&lt;/b&gt; gate wire coming from Jetson &lt;b&gt;T36 / BCM 16 / PR.05&lt;/b&gt;, (b) a short jumper out to the module &lt;b&gt;SIG / PWM&lt;/b&gt; header pin, (c) &lt;b&gt;one leg of the 10kΩ resistor&lt;/b&gt;.&lt;br&gt;&lt;b&gt;3. Wago #2 = GND node (3 wires in):&lt;/b&gt; (a) a &lt;b&gt;GND&lt;/b&gt; wire from Jetson &lt;b&gt;T6 / T9 / T14&lt;/b&gt;, (b) a short jumper out to the module &lt;b&gt;GND&lt;/b&gt; header pin, (c) the &lt;b&gt;other leg of the 10kΩ resistor&lt;/b&gt;.&lt;br&gt;&lt;b&gt;4.&lt;/b&gt; The resistor now bridges Wago #1 (gate) ↔ Wago #2 (GND). Module &lt;b&gt;VCC pin: leave open&lt;/b&gt; (LED only).&lt;br&gt;&lt;b&gt;5.&lt;/b&gt; Power block unchanged: &lt;b&gt;+12V → DC IN +&lt;/b&gt;, &lt;b&gt;GND → DC IN −&lt;/b&gt;. Load unchanged: &lt;b&gt;OUT + → solenoid (+) RED&lt;/b&gt;, &lt;b&gt;OUT − → solenoid (−) BLUE&lt;/b&gt;.&lt;br&gt;&lt;b&gt;6.&lt;/b&gt; &lt;b&gt;1N5408 flyback&lt;/b&gt; across the solenoid coil — band (cathode) to the (+)/OUT+ side. Confirm it is installed.&lt;br&gt;&lt;br&gt;&lt;b&gt;Check:&lt;/b&gt; before reconnecting the solenoid, power the Jetson from cold and measure &lt;b&gt;SIG → GND&lt;/b&gt;. It should read &lt;b&gt;~0V during the whole boot&lt;/b&gt; (was ~2.8V before) and the module LED should stay OFF until the app fires. &lt;span style='color:#1B5E20'&gt;Software drives PR.05 push-pull HIGH → solenoid opens; the pull-down only holds it safe when undriven.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="650" width="1160" height="300" as="geometry"/>
                 </mxCell>
                 <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=http://www.haoyuelectronics.com/Attachment/MOSFET-Trigger-Switch-Module/MOSFET-Trigger-Switch-Module-7.jpg;" vertex="1" parent="1">
-                    <mxGeometry x="957" y="71" width="266.66" height="220" as="geometry"/>
+                    <mxGeometry x="1240" y="150" width="220" height="182" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
