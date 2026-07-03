@@ -827,3 +827,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-02 — [DIAGRAM] ADS1115 divider redrawn with Wago 221 levers
 - **[DIAGRAM]** `diagrams/eco004_ads1115_pressure.drawio`: rebuilt the voltage-divider region as an explicit vertical schematic using **three Wago 221 lever connectors** (the user wires with Wago levers): Wago#1 221-412 (SIG↔R1), Wago#2 221-413 (TAP: R1·R2·A0), Wago#3 221-412 (R2↔GND). Added a step-by-step "exactly what connects where" list and kept the 3.3V/PGA/PSI notes. Previous divider was ambiguous about the tap junction.
 - **[NOTE]** Clarifies the 3-way tap node (R1 lower lead + R2 upper lead + A0 signal) all land in the single 3-port Wago#2 — the point that was unclear before. GND from Wago#3 is the same net as ADS1115 GND + transducer GND (T6/Pin 9).
+
+## 2026-07-02 — [FIX] Divider R2 20k → 22k (on-hand resistor value)
+- **[HW]** User's resistor kit has no 20k (has 2k/2.2k/4.7k/5.6k/10k/22k/47k/100k). Chose **R2 = 22k** with R1 = 10k → ratio 0.6875, so 4.5V maps to ~3.09V (safe under 3.3V VDD, good ADC range use). 47k would push the tap to 3.71V (over 3.3V) → rejected.
+- **[CODE]** `hardware.py`: `PRESSURE_DIVIDER_R2 = 22000.0`. Conversion is parameterized (`Vsig = Vtap × (R1+R2)/R2`), so only the constant changes; PSI math now matches the physical part (else ~3% scale error).
+- **[SPEC/DIAGRAM]** HW-001 §7.1, SW-001 §2.9, and `eco004_ads1115_pressure.drawio` updated to R2=22k, ratio 0.6875, tap 0.34–3.09V, `Vsig = Vtap × 32/22`.
