@@ -114,6 +114,26 @@ time yields repeatable shots without instrumentation.
 `topup_interval_sec`, `default_pulse_ms`, `charge_per_shot`.
 `MAX_PUMP_RUN_SEC` caps every pump burst (deadhead protection).
 
+### 2.9 Pressure Sensing (`hardware.py — PressureSensor`)
+
+Reads accumulator pressure via an ADS1115 ADC over I2C (HW-001 §7.1). This
+instruments the §2.7 dead-head reference so charge setpoints can eventually
+replace timed-only charging.
+
+- **Input:** I2C (same bus as the LiDAR), ADS1115 address `0x48`, single-ended channel A0.
+- **ADS1115 config:** single-shot conversion, MUX = AINp=A0/AINn=GND, PGA = ±4.096V (FSR), 128 SPS.
+- **Processing:** Background thread samples A0 at ~5Hz, converts count → volts → transducer volts → PSI:
+  - `Vtap = raw × 4.096 / 32768`
+  - `Vsig = Vtap × (R1+R2)/R2 = Vtap × 30/20` (undo the 10k/20k divider)
+  - `PSI = ((Vsig − 0.5) / 4.0) × 100`, clamped to the 0–100 PSI range.
+- **Output:** `read_psi()` (float or `None`) and `get_status()` → `{psi, volts, connected}`.
+- **No mock data (project rule):** if the ADS1115 is absent or `smbus2` is
+  unavailable, the sensor reports `connected: False` and `psi: None`. It never
+  fabricates readings — dev/prod must not depend on synthetic pressure.
+- **Divider / PGA calibration constants** (`PRESSURE_DIVIDER_R1`, `PRESSURE_DIVIDER_R2`,
+  `PRESSURE_V_AT_0PSI`, `PRESSURE_V_AT_FULL`, `PRESSURE_FULL_PSI`) live in `hardware.py`
+  and are exposed read-only via `GET /api/pressure`.
+
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
 ```

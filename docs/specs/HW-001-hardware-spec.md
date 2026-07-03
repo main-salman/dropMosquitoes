@@ -212,6 +212,37 @@ The diode must be wired **in parallel** with the 12V pump, in **reverse-bias** (
 - **Purpose:** "Background Proxy" — pings the surface behind a detected target to get Z-axis distance for parabolic ballistic offset calculation
 - **Mounting:** Co-axial with Sniper camera on gimbal payload plate
 
+## 7.1 Pressure Sensor (ADS1115 ADC + Transducer) — ECO-004 Pressure Loop
+
+Closed-loop accumulator pressure measurement so charge setpoints can replace
+timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
+
+- **ADC:** ADS1115 (16-bit, 4-ch, I2C, PGA). Address `0x48` (ADDR→GND).
+- **Transducer:** AUTEX 0–100 PSI, 1/8"-27 NPT, 5V excitation, **0.5–4.5V** ratiometric output.
+- **Bus:** Shares the LiDAR I2C bus (same SDA/SCL terminals). ADS1115 `0x48` vs TF-Luna `0x10` → no address conflict.
+
+> ⚠ **Power the ADS1115 from 3.3V, NOT 5V.** The module's onboard SDA/SCL
+> pull-ups tie to VDD; at 5V they would over-voltage the Jetson's 3.3V I2C
+> lines. The transducer itself still needs 5V excitation (Terminal 4).
+
+- **Voltage divider (transducer SIG → ADS1115 A0):** R1 = 10 kΩ (series from SIG),
+  R2 = 20 kΩ (to GND). Ratio 2/3: 0.5V→0.33V, 4.5V→3.0V — stays under the 3.3V rail.
+- **PGA:** ±4.096V FSR so the divided signal never clips.
+
+| Signal | From | To |
+|:-------|:-----|:---|
+| ADS1115 VDD | Jetson 3.3V (Pin 1) | ADS1115 VDD |
+| ADS1115 GND | Terminal 6 (GND) | ADS1115 GND |
+| ADS1115 SCL | Terminal 5 (SCL) | ADS1115 SCL |
+| ADS1115 SDA | Terminal 3 (SDA) | ADS1115 SDA |
+| ADS1115 ADDR | ADS1115 GND | (sets addr `0x48`) |
+| Transducer +5V | Terminal 4 (5V) | transducer red |
+| Transducer GND | Terminal 6 (GND) | transducer black |
+| Transducer SIG | transducer signal | R1 → divider node → ADS1115 A0; R2 node → GND |
+
+- **PSI conversion:** `Vsig = Vtap × 30/20` (undo divider); `PSI = ((Vsig − 0.5) / 4.0) × 100`.
+- **Mounting:** Transducer screws into the 1/8" NPT brass tee on the accumulator/solenoid pressure line.
+
 ## 8. Fluid System
 
 > ⚠ **ECO-2026-004:** Constant-Pressure Accumulator + Solenoid Gate architecture.
