@@ -51,6 +51,9 @@ ordered	The Muscle v2	Aideepen MG996R Metal Gear Servos (6-Pack)	1	42	https://ww
 ordered	The Muscle v2	Bolsen 2-DOF Short Pan-Tilt Servo Bracket Kit (2-Set)	1	13	https://www.amazon.ca/dp/B0BOLSEN	Aluminum U-brackets, metal servo horns, ball bearings. Rigid metal cage replaces fragile drone gimbal. 1 needed, 1 spare.																					
 ordered	Solenoid Driver	Kioiner DC 5-36V 400W 15A Dual High-Power MOSFET Trigger Switch Drive Module (D4184-class)	1	10	https://www.amazon.ca/s?k=dual+MOSFET+trigger+switch+drive+module+DC+5-36V+400W+15A	Switches the 12V/2A GOODRIG solenoid. Logic-level (3.3-20V trigger) — driven by BCM 27 / T13 via libgpiod; replaces the failed bare IRLB8721 MOSFET (no fragile gate, runs cold). Wiring: SIG←green, DC IN +/−←12V/GND, OUT +/−→solenoid, common GND. See eco004_mosfet_module_option.drawio.																					
 ordered	power protection	1N5408 Flyback Diode (3A)	10	8	https://www.amazon.ca/s?k=1N5408+diode+3A	3A flyback across the 12V/2A solenoid coil (band/cathode → +12V / OUT+ side). Heavier than the 1N4007 — needed for the 2A inductive load. The dual-MOS module has no built-in load flyback.																					
+ordered	Pressure Loop	AUTEX 100psi Pressure Transducer Sensor, 0-100 PSI, 1/8"-27 NPT, 5V, 0.5-4.5V output, 316 stainless, connector harness	1	35.99	https://www.amazon.ca/s?k=AUTEX+100psi+Pressure+Transducer+Sensor+0-100+Psi+1%2F8%22-27+NPT	Ordered Jun 25 2026 (Amazon order 701-8218549-9648204). Adds closed-loop accumulator pressure measurement for consistent shot distance. Wire red=5V, black=GND, signal through divider/ADC (do NOT feed raw 4.5V into Jetson).																					
+ordered	Pressure Loop	AHFMANG 2PCS Brass Barstock Tee 1/8" NPT Female × 1/8" NPT Female × 1/8" NPT Female 3 Way Pipe Fitting Adapter	1	12.99	https://www.amazon.ca/s?k=AHFMANG+2PCS+Brass+Barstock+Tee+1%2F8%22+NPT+Female	Ordered Jun 25 2026. Plumbing tee for inserting the 1/8"-27 NPT pressure transducer into the accumulator/solenoid pressure line. Includes 2 tees. Verify final hose/fitting adapters before pressurizing.																					
+ordered	Pressure Loop	ADS1115 Analog to Digital ADC Module, 16 Bit 4 Channel I2C/IIC PGA Converter Module	1	10.99	https://www.amazon.ca/s?k=ADS1115+Analog+to+Digital+ADC+Module+16+Bit+4+Channel+I2C	Ordered Jun 25 2026. Jetson has no analog input; ADS1115 reads pressure transducer signal over I2C. Power from 3.3V and scale pressure-sensor output with resistor divider before A0.																					
 																											
 																											
 																											
@@ -58,7 +61,7 @@ ordered	power protection	1N5408 Flyback Diode (3A)	10	8	https://www.amazon.ca/s?
 																											
 																											
 																											
-	GRAND TOTAL			1916																							
+	GRAND TOTAL			1976																							
 																											
 																											
 																											
