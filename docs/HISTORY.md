@@ -795,3 +795,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** `hardware.py AccumulatorManager`: added `CHARGE_PER_SHOT` (default True). `_topup_if_needed()` now recharges after **every** shot when enabled (else every N shots). `update_config()`/`get_status()` expose `charge_per_shot`.
 - **[GUI/API]** `templates/index.html`: Accumulator Configuration card gains a "Charge-per-shot" toggle (wired through the existing `POST /api/accumulator/config`).
 - **[CALIBRATION]** To set the ceiling charge time: increase `initial_charge_sec`/`topup_charge_sec` until firing longer no longer increases shot distance (that's the plateau). Optional temporary $5 mechanical gauge can confirm the plateau; not a permanent sensor.
+- **[PROCUREMENT]** `parts.csv`: added closed-loop pressure measurement parts from Amazon order 701-8218549-9648204 (ordered Jun 25 2026): AUTEX 0-100 PSI 5V pressure transducer with 1/8"-27 NPT harness ($35.99), AHFMANG 2-pack 1/8" NPT F/F/F brass tee ($12.99), and ADS1115 16-bit I2C ADC module ($10.99). Grand total updated `1916` → `1976` CAD. These are for replacing timed-only accumulator charging with measured pressure setpoints.
+
+## 2026-07-02 — [DIAGRAM] ADS1115 PRESSURE TRANSDUCER WIRING
+- **[DIAGRAM]** Created `diagrams/eco004_ads1115_pressure.drawio` — wiring for the ECO-004 pressure loop (AUTEX transducer → ADS1115 → Jetson I2C).
+- **[DESIGN]** ADS1115 joins the **existing I2C bus** (SDA=T3/Pin3, SCL=T5/Pin5) already shared with the TF-Luna LiDAR. ADS1115 addr `0x48` (ADDR→GND) vs LiDAR `0x10` → no bus conflict.
+- **[SAFETY]** ADS1115 **VDD = 3.3V** (Jetson Pin 1), NOT 5V. The module's onboard SDA/SCL pull-ups tie to VDD; powering at 5V would over-voltage the Jetson's 3.3V I2C lines. Documented as the diagram's primary warning.
+- **[DESIGN]** Transducer needs 5V excitation (T4) but outputs 0.5–4.5V, which exceeds the 3.3V ADC rail. Added a **voltage divider** R1=10kΩ / R2=20kΩ (ratio 2/3) on SIG → A0: 0.5V→0.33V, 4.5V→3.0V (stays under 3.3V VDD). Firmware undoes the divider: Vsig = Vtap×30/20; PSI = ((Vsig−0.5)/4.0)×100. PGA set to ±4.096V FSR so the tap never clips.
+- **[NOTE]** No code/spec change yet — this is the hardware wiring reference to enable the future measured-pressure setpoint feature over the current timed charge-per-shot logic.
