@@ -846,3 +846,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[DIAGRAM]** `diagrams/eco004_mosfet_module_option.drawio` bumped to Rev F: added the two Wago levers + 10kΩ resistor, rerouted green(SIG) and GND through the Wagos, added a "why the pull-down" callout, and rewrote the step-by-step for the Wago wiring + a cold-boot `SIG→GND ≈ 0V` verification (was ~2.8V). Corrected the stale "runs cold / no PADCTL needed" note.
 - **[VERIFY]** Before reconnecting the solenoid: cold-boot the Jetson and measure SIG→GND — expect ~0V for the entire boot and LED OFF until the app fires.
 - **[FLYBACK]** Re-confirm the 1N5408 sits across the coil (band/cathode → +12V/OUT+). Steady-state heat here is the gate float, not the flyback, but do not pulse-fire without it.
+
+## 2026-07-03 — [DIAGRAM] Clarify MOSFET Wago #2 GND node (remove redundant bus wire)
+- **[DIAGRAM]** `eco004_mosfet_module_option.drawio`: removed the extra dashed Wago #2 → COMMON GND BUS edge that implied a 4th connection. Wago #2 (GND node) holds exactly three conductors: (1) one wire to Jetson GND (T6/T9/T14 — this *is* the common-ground tie), (2) jumper to the module 3-pin header GND pin, (3) the 10kΩ pull-down leg. "T6/9/14" and "common GND bus" are the same net — one ground wire, not two.

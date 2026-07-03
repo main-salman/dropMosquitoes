@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="mosfet module" id="mosfetmod">
-        <mxGraphModel dx="2042" dy="665" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" background="#FFFFFF" math="0" shadow="0">
+        <mxGraphModel dx="591" dy="480" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" background="#FFFFFF" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -34,43 +34,43 @@
                 <mxCell id="t17old" value="&lt;b style='color:#B71C1C;font-size:11px'&gt;T17 · +3.3V — NOT USED&lt;/b&gt;&lt;br&gt;&lt;span style='color:#EF9A9A;font-size:10px'&gt;drop the 4.7kΩ pull-up entirely&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#B71C1C;dashed=1;strokeWidth=2;fontColor=#EF9A9A;" parent="1" vertex="1">
                     <mxGeometry x="72" y="376" width="206" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoA" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" parent="1" vertex="1">
+                <mxCell id="wagoA" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" vertex="1" parent="1">
                     <mxGeometry x="322" y="192" width="104" height="36" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoA_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoA_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="330" y="184" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoA_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoA_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="362" y="184" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoA_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoA_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="394" y="184" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoA_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #1 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GATE node&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="wagoA_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #1 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GATE node&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
                     <mxGeometry x="322" y="196" width="104" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="res" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;arcSize=20;" parent="1" vertex="1">
+                <mxCell id="res" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;arcSize=20;" vertex="1" parent="1">
                     <mxGeometry x="352" y="232" width="44" height="26" as="geometry"/>
                 </mxCell>
-                <mxCell id="res_l" value="&lt;b style='color:#E65100;font-size:10px'&gt;10kΩ&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="res_l" value="&lt;b style='color:#E65100;font-size:10px'&gt;10kΩ&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
                     <mxGeometry x="352" y="235" width="44" height="18" as="geometry"/>
                 </mxCell>
-                <mxCell id="res_note" value="&lt;span style='color:#E65100;font-size:9px'&gt;¼W · 4.7k also OK&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                <mxCell id="res_note" value="&lt;span style='color:#E65100;font-size:9px'&gt;¼W · 4.7k also OK&lt;/span&gt;" style="text;html=1;align=left;" vertex="1" parent="1">
                     <mxGeometry x="400" y="238" width="110" height="14" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoB" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" parent="1" vertex="1">
+                <mxCell id="wagoB" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" vertex="1" parent="1">
                     <mxGeometry x="322" y="262" width="104" height="36" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoB_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoB_lv1" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="330" y="296" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoB_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoB_lv2" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="362" y="296" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoB_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" parent="1" vertex="1">
+                <mxCell id="wagoB_lv3" value="" style="rounded=1;fillColor=#FFCCBC;strokeColor=#BF360C;arcSize=30;" vertex="1" parent="1">
                     <mxGeometry x="394" y="296" width="24" height="10" as="geometry"/>
                 </mxCell>
-                <mxCell id="wagoB_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #2 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GND node&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="wagoB_l" value="&lt;b style='color:#FFFFFF;font-size:10px'&gt;Wago #2 · 221-413 (3-way)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF3E0;font-size:9px'&gt;GND node&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
                     <mxGeometry x="322" y="266" width="104" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="mod" value="" style="rounded=1;fillColor=#1565C0;strokeColor=#0D2E5C;shadow=1;arcSize=4;strokeWidth=2;" parent="1" vertex="1">
@@ -196,22 +196,22 @@
                 <mxCell id="wire_green_l" value="&lt;b style='font-size:11px;color:#E65100'&gt;★ GREEN T36 → Wago #1&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="286" y="158" width="160" height="18" as="geometry"/>
                 </mxCell>
-                <mxCell id="wire_sig" value="" style="endArrow=block;endFill=1;strokeColor=#FF6D00;strokeWidth=5;rounded=1;" parent="1" edge="1">
+                <mxCell id="wire_sig" value="" style="endArrow=block;endFill=1;strokeColor=#FF6D00;strokeWidth=5;rounded=1;" edge="1" parent="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="428" y="204" as="sourcePoint"/>
                         <mxPoint x="486" y="216" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_sig_l" value="&lt;b style='font-size:10px;color:#E65100'&gt;Wago #1 → SIG pin&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="wire_sig_l" value="&lt;b style='font-size:10px;color:#E65100'&gt;Wago #1 → SIG pin&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
                     <mxGeometry x="418" y="170" width="120" height="16" as="geometry"/>
                 </mxCell>
-                <mxCell id="wire_res_top" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                <mxCell id="wire_res_top" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" edge="1" parent="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="374" y="228" as="sourcePoint"/>
                         <mxPoint x="374" y="232" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_res_bot" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                <mxCell id="wire_res_bot" value="" style="endArrow=none;strokeColor=#F9A825;strokeWidth=3;rounded=1;" edge="1" parent="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="374" y="258" as="sourcePoint"/>
                         <mxPoint x="374" y="262" as="targetPoint"/>
@@ -226,13 +226,13 @@
                 <mxCell id="wire_gnd_l" value="&lt;b style='font-size:10px;color:#555'&gt;GND → Wago #2&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="150" y="300" width="130" height="16" as="geometry"/>
                 </mxCell>
-                <mxCell id="wire_gndpin" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                <mxCell id="wire_gndpin" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" edge="1" parent="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="428" y="282" as="sourcePoint"/>
                         <mxPoint x="486" y="272" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_gndpin_l" value="&lt;b style='font-size:10px;color:#555'&gt;Wago #2 → module GND pin&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="wire_gndpin_l" value="&lt;b style='font-size:10px;color:#555'&gt;Wago #2 → module GND pin&lt;/b&gt;" style="text;html=1;align=center;" vertex="1" parent="1">
                     <mxGeometry x="392" y="300" width="170" height="16" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_12" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
@@ -259,12 +259,6 @@
                 <mxCell id="wire_dcin_gnd_l" value="&lt;b style='font-size:9px;color:#555'&gt;DC IN − → GND bus&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="506" y="500" width="130" height="16" as="geometry"/>
                 </mxCell>
-                <mxCell id="wire_wagoB_bus" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;dashed=1;" parent="1" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="374" y="306" as="sourcePoint"/>
-                        <mxPoint x="374" y="600" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
                 <mxCell id="wire_outp" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="864" y="332" as="sourcePoint"/>
@@ -289,13 +283,13 @@
                 <mxCell id="gndbusl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;COMMON GND BUS — Jetson GND + 12V PSU GND + module GND (header GND &amp; DC IN −) + Wago #2 (pull-down)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="60" y="604" width="1160" height="22" as="geometry"/>
                 </mxCell>
-                <mxCell id="pd_callout" value="&lt;b style='color:#BF360C;font-size:12px'&gt;WHY THE 10kΩ PULL-DOWN&lt;/b&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:10px'&gt;At boot (power-on → app claims PR.05, ~30–60s) the Jetson pad floats to ~2.8V. That half-turns the logic-level MOSFET ON: solenoid energizes, MOSFET sits in its linear region and &lt;b&gt;runs hot&lt;/b&gt;, LED glows dim/flickers. The 10kΩ from GATE→GND pins the gate to 0V whenever the Jetson isn't actively driving 3.3V HIGH → MOSFET OFF, valve CLOSED at boot / reset / crash / wire-off.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;" parent="1" vertex="1">
+                <mxCell id="pd_callout" value="&lt;b style='color:#BF360C;font-size:12px'&gt;WHY THE 10kΩ PULL-DOWN&lt;/b&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:10px'&gt;At boot (power-on → app claims PR.05, ~30–60s) the Jetson pad floats to ~2.8V. That half-turns the logic-level MOSFET ON: solenoid energizes, MOSFET sits in its linear region and &lt;b&gt;runs hot&lt;/b&gt;, LED glows dim/flickers. The 10kΩ from GATE→GND pins the gate to 0V whenever the Jetson isn't actively driving 3.3V HIGH → MOSFET OFF, valve CLOSED at boot / reset / crash / wire-off.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;" vertex="1" parent="1">
                     <mxGeometry x="900" y="70" width="330" height="120" as="geometry"/>
                 </mxCell>
                 <mxCell id="steps" value="&lt;b style='font-size:13px;color:#0D47A1'&gt;Step-by-step: add the 10kΩ gate pull-down (Wago levers)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;You need:&lt;/b&gt; one &lt;b&gt;10kΩ ¼W resistor&lt;/b&gt; (4.7kΩ also fine), two &lt;b&gt;Wago 221-413 (3-conductor)&lt;/b&gt; levers, and two short jumper wires. The rest of the module wiring (12V, OUT→solenoid, flyback) stays as-is.&lt;br&gt;&lt;br&gt;&lt;b&gt;1.&lt;/b&gt; Power OFF (Jetson + 12V supply). &lt;b&gt;Unplug the solenoid&lt;/b&gt; until this is done so it can't cook.&lt;br&gt;&lt;b&gt;2. Wago #1 = GATE node (3 wires in):&lt;/b&gt; (a) the &lt;b&gt;GREEN&lt;/b&gt; gate wire coming from Jetson &lt;b&gt;T36 / BCM 16 / PR.05&lt;/b&gt;, (b) a short jumper out to the module &lt;b&gt;SIG / PWM&lt;/b&gt; header pin, (c) &lt;b&gt;one leg of the 10kΩ resistor&lt;/b&gt;.&lt;br&gt;&lt;b&gt;3. Wago #2 = GND node (3 wires in):&lt;/b&gt; (a) a &lt;b&gt;GND&lt;/b&gt; wire from Jetson &lt;b&gt;T6 / T9 / T14&lt;/b&gt;, (b) a short jumper out to the module &lt;b&gt;GND&lt;/b&gt; header pin, (c) the &lt;b&gt;other leg of the 10kΩ resistor&lt;/b&gt;.&lt;br&gt;&lt;b&gt;4.&lt;/b&gt; The resistor now bridges Wago #1 (gate) ↔ Wago #2 (GND). Module &lt;b&gt;VCC pin: leave open&lt;/b&gt; (LED only).&lt;br&gt;&lt;b&gt;5.&lt;/b&gt; Power block unchanged: &lt;b&gt;+12V → DC IN +&lt;/b&gt;, &lt;b&gt;GND → DC IN −&lt;/b&gt;. Load unchanged: &lt;b&gt;OUT + → solenoid (+) RED&lt;/b&gt;, &lt;b&gt;OUT − → solenoid (−) BLUE&lt;/b&gt;.&lt;br&gt;&lt;b&gt;6.&lt;/b&gt; &lt;b&gt;1N5408 flyback&lt;/b&gt; across the solenoid coil — band (cathode) to the (+)/OUT+ side. Confirm it is installed.&lt;br&gt;&lt;br&gt;&lt;b&gt;Check:&lt;/b&gt; before reconnecting the solenoid, power the Jetson from cold and measure &lt;b&gt;SIG → GND&lt;/b&gt;. It should read &lt;b&gt;~0V during the whole boot&lt;/b&gt; (was ~2.8V before) and the module LED should stay OFF until the app fires. &lt;span style='color:#1B5E20'&gt;Software drives PR.05 push-pull HIGH → solenoid opens; the pull-down only holds it safe when undriven.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
                     <mxGeometry x="60" y="650" width="1160" height="300" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=http://www.haoyuelectronics.com/Attachment/MOSFET-Trigger-Switch-Module/MOSFET-Trigger-Switch-Module-7.jpg;" vertex="1" parent="1">
+                <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=http://www.haoyuelectronics.com/Attachment/MOSFET-Trigger-Switch-Module/MOSFET-Trigger-Switch-Module-7.jpg;" parent="1" vertex="1">
                     <mxGeometry x="1240" y="150" width="220" height="182" as="geometry"/>
                 </mxCell>
             </root>
