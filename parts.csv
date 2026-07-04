@@ -54,6 +54,7 @@ ordered	power protection	1N5408 Flyback Diode (3A)	10	8	https://www.amazon.ca/s?
 ordered	Pressure Loop	AUTEX 100psi Pressure Transducer Sensor, 0-100 PSI, 1/8"-27 NPT, 5V, 0.5-4.5V output, 316 stainless, connector harness	1	35.99	https://www.amazon.ca/s?k=AUTEX+100psi+Pressure+Transducer+Sensor+0-100+Psi+1%2F8%22-27+NPT	Ordered Jun 25 2026 (Amazon order 701-8218549-9648204). Adds closed-loop accumulator pressure measurement for consistent shot distance. Wire red=5V, black=GND, signal through divider/ADC (do NOT feed raw 4.5V into Jetson).																					
 ordered	Pressure Loop	AHFMANG 2PCS Brass Barstock Tee 1/8" NPT Female × 1/8" NPT Female × 1/8" NPT Female 3 Way Pipe Fitting Adapter	1	12.99	https://www.amazon.ca/s?k=AHFMANG+2PCS+Brass+Barstock+Tee+1%2F8%22+NPT+Female	Ordered Jun 25 2026. Plumbing tee for inserting the 1/8"-27 NPT pressure transducer into the accumulator/solenoid pressure line. Includes 2 tees. Verify final hose/fitting adapters before pressurizing.																					
 ordered	Pressure Loop	ADS1115 Analog to Digital ADC Module, 16 Bit 4 Channel I2C/IIC PGA Converter Module	1	10.99	https://www.amazon.ca/s?k=ADS1115+Analog+to+Digital+ADC+Module+16+Bit+4+Channel+I2C	Ordered Jun 25 2026. Jetson has no analog input; ADS1115 reads pressure transducer signal over I2C. Power from 3.3V and scale pressure-sensor output with resistor divider before A0.																					
+to order	power protection	Inline fuse holder + 3A fuses (5x20mm glass or ATC blade, 12V rated)	1	9	https://www.amazon.ca/s?k=inline+fuse+holder+3A+12V	ECO-004 Rev G: fuse the +12V feed to the dual-MOSFET module DC IN+. 2026-07-04 fault: MOSFETs failed short (OUT+/OUT- = 9 ohm), solenoid self-energized, shared 12V rail sagged and browned out the Jetson. Fuse blows instead. See eco004_mosfet_module_option.drawio.																					
 																											
 																											
 																											
@@ -61,7 +62,7 @@ ordered	Pressure Loop	ADS1115 Analog to Digital ADC Module, 16 Bit 4 Channel I2C
 																											
 																											
 																											
-	GRAND TOTAL			1976																							
+	GRAND TOTAL			1985																							
 																											
 																											
 																											
