@@ -129,6 +129,21 @@
     .wiz-dot { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-size:12px;font-weight:700;background:var(--card);border:2px solid var(--border);color:var(--dim);transition:all 0.3s }
     .wiz-dot.active { background:var(--accent);border-color:var(--accent);color:#fff }
     .wiz-dot.done { background:var(--green);border-color:var(--green);color:#fff }
+    /* ---- Diagnostics (SW-001 §2.10) ---- */
+    .dg-row { display:flex; align-items:center; gap:10px; padding:9px 16px; border-bottom:1px solid var(--border); }
+    .dg-row:last-child { border-bottom:none; }
+    .dg-name { font-size:12.5px; font-weight:600; min-width:200px; }
+    .dg-desc { font-size:11px; color:var(--dim2); flex:1; }
+    .dg-msg { font-size:11px; color:var(--dim); flex:1.4; font-family:'SF Mono','Menlo',monospace; word-break:break-word; }
+    .dg-badge { padding:2px 10px; border-radius:20px; font-size:10px; font-weight:700; min-width:52px; text-align:center; }
+    .dg-badge.idle { background:rgba(120,120,128,0.2); color:var(--dim); }
+    .dg-badge.run { background:rgba(10,132,255,0.15); color:var(--accent); }
+    .dg-badge.pass { background:rgba(48,209,88,0.15); color:var(--green); }
+    .dg-badge.warn { background:rgba(255,159,10,0.15); color:var(--orange); }
+    .dg-badge.fail { background:rgba(255,69,58,0.15); color:var(--red); }
+    .dg-badge.skip { background:rgba(120,120,128,0.15); color:var(--dim2); }
+    .dg-act { font-size:9px; font-weight:700; color:var(--orange); border:1px solid rgba(255,159,10,0.4); border-radius:4px; padding:1px 5px; vertical-align:middle; }
+    @media (max-width:900px){ .dg-desc{display:none} .dg-name{min-width:140px} }
   </style>
 </head>
 <body>
@@ -145,6 +160,7 @@
   <button class="tab-btn" onclick="tab('sol')">💉 Solenoid</button>
   <button class="tab-btn" onclick="tab('cal')">🔧 Calibration</button>
   <button class="tab-btn" onclick="tab('tests')">🧪 Tests</button>
+  <button class="tab-btn" onclick="tab('diag')">🩺 Diagnostics</button>
   <button class="tab-btn" onclick="tab('settings')">⚙️ Settings</button>
 </div>
 
@@ -623,6 +639,25 @@
   <div class="test-grid" id="test-grid"></div>
 </div>
 
+<!-- ===================== DIAGNOSTICS TAB (SW-001 §2.10) ===================== -->
+<div class="tab-pane" id="p-diag">
+  <div style="padding:14px 14px 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <button class="btn btn-green" id="dg-run-safe" onclick="dgRunAll(false)">▶ Run All Safe Tests</button>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--orange);cursor:pointer">
+      <input type="checkbox" id="dg-arm" onchange="dgArmChanged()">
+      ⚠️ Arm actuator tests (moves servos, runs pump, opens valve)
+    </label>
+    <button class="btn btn-amber" id="dg-run-all" onclick="dgRunAll(true)" style="display:none">▶ Run ALL (incl. actuators)</button>
+    <span style="flex:1"></span>
+    <span id="dg-summary" style="font-size:12px;color:var(--dim)"></span>
+  </div>
+  <p style="padding:8px 16px 0;font-size:11px;color:var(--dim2)">
+    Read-only checks run instantly. Rows tagged <span class="dg-act">ACTUATOR</span> physically move
+    hardware and only run when armed above. Water tests assume the system is plumbed and the reservoir is filled.
+  </p>
+  <div id="dg-cats" style="padding:14px;display:flex;flex-direction:column;gap:14px"></div>
+</div>
+
 <!-- ===================== SETTINGS TAB ===================== -->
 <div class="tab-pane" id="p-settings">
   <div style="padding:14px 14px 6px;display:flex;align-items:center;gap:12px">
@@ -840,7 +875,7 @@ async function primeFromFireControl() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,settings:4};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -864,6 +899,52 @@ try{const r=await fetch('/api/tests/run',{method:'POST',headers:{'Content-Type':
 async function runAll(){$('bra').disabled=true;$('ras').innerHTML='<span class="sp"></span> Running…';for(const id of SUITES){if(id==='smoke'){$('b-'+id).className='tc-badge pass';$('b-'+id).textContent='⏭ SKIP';$('s-'+id).textContent='Self-test';continue}await runT(id)}$('bra').disabled=false;$('ras').textContent='✅ Complete'}
 
 function updTotal(){let p=0,f=0;SUITES.forEach(id=>{if(ST[id]){p+=ST[id].p||0;f+=ST[id].f||0}});if(p+f)$('ts').innerHTML=`<b style="color:var(--green)">${p} passed</b> · <b style="color:${f?'var(--red)':'var(--green)'}">${f} failed</b>`}
+
+// ---- Diagnostics Suite (SW-001 §2.10) ----
+let dgLoaded=false,dgTests=[];
+function dgArmed(){return $('dg-arm').checked}
+function dgArmChanged(){$('dg-run-all').style.display=dgArmed()?'':'none'}
+async function dgLoad(){
+  const r=await fetch('/api/diag/list');const d=await r.json();dgTests=d.tests;
+  const wrap=$('dg-cats');wrap.innerHTML='';
+  for(const cat of d.categories){
+    const tests=d.tests.filter(t=>t.category===cat);let rows='';
+    for(const t of tests){
+      rows+=`<div class="dg-row" id="dgr-${t.id}"><span class="dg-badge idle" id="dgb-${t.id}">IDLE</span><span class="dg-name">${esc(t.name)}${t.actuator?' <span class="dg-act">ACTUATOR</span>':''}</span><span class="dg-desc">${esc(t.description)}</span><span class="dg-msg" id="dgm-${t.id}"></span><button class="btn btn-sm" onclick="dgRun('${t.id}').then(dgSummary)">▶</button></div>`;
+    }
+    wrap.innerHTML+=`<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:10px"><span>${esc(cat)}</span><span style="font-weight:400;color:var(--dim2)">${tests.length} tests</span><span style="flex:1"></span><button class="btn btn-sm" onclick="dgRunCat(this.closest('.card').dataset.cat)">▶ Run category</button></div>${rows}</div>`;
+    wrap.lastElementChild.dataset.cat=cat;
+  }
+  dgLoaded=true;
+}
+async function dgRun(id){
+  const b=$('dgb-'+id);b.className='dg-badge run';b.innerHTML='<span class="sp"></span>';$('dgm-'+id).textContent='';
+  try{
+    const r=await fetch('/api/diag/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,confirm:dgArmed()})});
+    dgPaint(await r.json());
+  }catch(e){b.className='dg-badge fail';b.textContent='ERR';$('dgm-'+id).textContent=e.message}
+}
+function dgPaint(d){
+  const b=$('dgb-'+d.id);if(!b)return;
+  b.className='dg-badge '+(d.status||'fail');b.textContent=(d.status||'fail').toUpperCase();
+  $('dgm-'+d.id).textContent=(d.message||'')+(d.elapsed_ms!=null?`  (${d.elapsed_ms} ms)`:'');
+}
+async function dgRunCat(cat){for(const t of dgTests.filter(t=>t.category===cat))await dgRun(t.id);dgSummary()}
+async function dgRunAll(inclAct){
+  $('dg-run-safe').disabled=true;$('dg-run-all').disabled=true;
+  for(const t of dgTests){
+    if(t.actuator&&!inclAct)dgPaint({id:t.id,status:'skip',message:'actuator test — skipped in safe run'});
+    else await dgRun(t.id);
+  }
+  $('dg-run-safe').disabled=false;$('dg-run-all').disabled=false;dgSummary();
+}
+function dgSummary(){
+  let p=0,w=0,f=0,s=0;
+  for(const t of dgTests){const b=$('dgb-'+t.id);if(!b)continue;
+    if(b.classList.contains('pass'))p++;else if(b.classList.contains('warn'))w++;
+    else if(b.classList.contains('fail'))f++;else if(b.classList.contains('skip'))s++}
+  if(p+w+f+s)$('dg-summary').innerHTML=`<b style="color:var(--green)">${p} pass</b> · <b style="color:var(--orange)">${w} warn</b> · <b style="color:${f?'var(--red)':'var(--dim)'}">${f} fail</b> · ${s} skip`;
+}
 
 // ---- Auto-Calibration ----
 let acPolling = null;

@@ -137,6 +137,32 @@ replace timed-only charging.
   `PRESSURE_V_AT_0PSI`, `PRESSURE_V_AT_FULL`, `PRESSURE_FULL_PSI`) live in `hardware.py`
   and are exposed read-only via `GET /api/pressure`.
 
+### 2.10 GUI Diagnostics Suite (`diagnostics.py`)
+
+A registry of fine-grained, individually runnable hardware/software diagnostics
+exposed in the dashboard's **Diagnostics** tab. Complements the coarse CLI test
+suites (`/api/tests/*`) with ~50 targeted checks a field operator can run without
+a terminal.
+
+- **Registry:** each test = `{id, name, category, description, actuator}` +
+  a callable returning `{status, message, data?}` with
+  `status ∈ {pass, warn, fail, skip}`.
+- **Categories:** Pressure/Transducer, I2C & GPIO, Servo/Gimbal, Cameras,
+  AI/Vision, LiDAR, Solenoid/Trigger, Pump/Accumulator, Calibration, System.
+- **Actuator safety:** tests flagged `actuator: true` move hardware or open
+  valves. The API refuses them unless the request body carries `confirm: true`
+  (the GUI gates this behind an explicit "arm actuator tests" checkbox).
+  Non-actuator tests are always safe (read-only).
+- **API:**
+  - `GET /api/diag/list` → `{tests: [...], categories: [...]}`
+  - `POST /api/diag/run` body `{id, confirm?}` → result of one test
+  - `POST /api/diag/run_category` body `{category, confirm?}` → results list
+    (actuator tests are `skip`ped unless confirmed)
+- **No mock data (project rule):** absent hardware yields `fail`/`skip` with a
+  diagnostic message — never fabricated readings.
+- **Timeouts:** every test must complete or fail within 30s; long operations
+  (sweeps, FPS sampling) keep well under this.
+
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
 ```

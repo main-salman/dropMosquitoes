@@ -31,6 +31,7 @@ from hardware import (
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
+import diagnostics
 
 # ============================================================================
 # FLASK APP INITIALIZATION
@@ -1075,6 +1076,46 @@ def api_status():
             "min_box_area": detector.min_box_area if detector else 0
         }
     })
+
+
+# ============================================================================
+# DIAGNOSTICS API — SW-001 §2.10
+# ============================================================================
+
+# Inject hardware handles into the diagnostics registry. detector/arc_comp are
+# lazily bound (module globals set after argparse), hence the lambdas.
+diagnostics.init(
+    relay=relay, accum=accum, gimbal=gimbal, lidar=lidar, pressure=pressure,
+    scout_cam=scout_cam, sniper_cam=sniper_cam, primer=primer,
+    cal_table=cal_table,
+    detector=lambda: detector,
+    arc_comp=lambda: ARC_COMPENSATION_DEG,
+)
+
+
+@app.route('/api/diag/list')
+def api_diag_list():
+    """List all registered diagnostics grouped by category."""
+    return jsonify(diagnostics.list_tests())
+
+
+@app.route('/api/diag/run', methods=['POST'])
+def api_diag_run():
+    """Run one diagnostic. Body: {"id": str, "confirm": bool}
+    Actuator tests are refused unless confirm=true (SW-001 §2.10)."""
+    data = request.get_json(force=True)
+    return jsonify(diagnostics.run_test(data.get('id', ''),
+                                        confirm=bool(data.get('confirm', False))))
+
+
+@app.route('/api/diag/run_category', methods=['POST'])
+def api_diag_run_category():
+    """Run every diagnostic in a category. Body: {"category": str, "confirm": bool}
+    Unconfirmed actuator tests are returned as 'skip'."""
+    data = request.get_json(force=True)
+    results = diagnostics.run_category(data.get('category', ''),
+                                       confirm=bool(data.get('confirm', False)))
+    return jsonify({"results": results})
 
 
 # ============================================================================
