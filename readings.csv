@@ -1,0 +1,17 @@
+﻿,,,,,,,
+,,,,,,,
+#,Black probe,Red probe,GATE LOW (idle),GATE HIGH (Hold Gate HIGH),Low Actual reading,High Actual reading,If reading is wrong
+1,GND,SIG pin,~0 V,~3.3 V,0,1.9,<3 V high → trigger not arriving (but LED lit says it is)
+2,GND,DC IN +,12 V,12 V,-12.28,12.28,not 12 V → supply/feed problem upstream
+3,GND,DC IN −,0 V,0 V,0,0,not 0 V → DC IN− not tied to common GND
+4,GND,OUT +,12 V,12 V,-12,-12,not 12 V → OUT+ not internally tied to DC+ (board/wiring fault)
+5,GND,OUT −,~12 V*,~0 V,-12,-12,stays ~12 V when HIGH → MOSFET not switching (key clue)
+6,OUT −,OUT +,~0 V,~12 V,0,0,~0.6 V when HIGH → flyback diode is backwards; 0 V when HIGH → MOSFET not switching / coil open
+7,solenoid (−) wire,solenoid (+) wire,~0 V,~12 V,0,0,differs from #6 → break bet
+,,,,,,,
+#,Probe A,Probe B,Expected,Actual reading,,,If wrong
+8,solenoid (+),solenoid (−),~3–8 Ω (coil),0,,,OL/open → dead coil or broken wire to the valve
+9,DC IN +,OUT +,~0 Ω,0,,,not 0 Ω → OUT+ isn't bonded to DC+ on this board
+10,module GND pin,DC IN −,~0 Ω,0,,,not 0 Ω → control GND and power GND not common
+11,12 V supply −,module GND pin,~0 Ω,0,,,not 0 Ω → supply ground not shared
+12,flyback band(stripe) side,OUT + side,"(diode check) ~0.5 V one way, OL reversed",I temporarily took this out,,,band must face OUT+/(+); reversed = it shorts the coil

@@ -55,8 +55,9 @@ except ImportError:
 # Clearing only bit 4 leaves internal pull-down + tristate — reads ~1.5V instead of 3.3V.
 _PADCTL_GPIO_OUTPUT = 0x05
 _PADCTL_REGS = (
-    ("PR.04", 0x98),   # BCM 17 / Pin 11 / Terminal 11 — pump relay
-    ("PR.05", 0x90),   # BCM 16 / Pin 36 / Terminal 36 — solenoid trigger (module SIG)
+    ("PR.04", 0x98),    # BCM 17 / Pin 11 / Terminal 11 — pump relay
+    ("PR.05", 0x90),    # BCM 16 / Pin 36 / Terminal 36 — solenoid trigger (module SIG)
+    ("PY.00", 0xD030),  # BCM 27 / Pin 13 / Terminal 13 — Relay CH2 (solenoid 12V boot interlock, Rev H)
 )
 # reg_addr (Jetson.GPIO): PR.04=0x2430098, PR.05=0x2430090 → offsets from base 0x02430000.
 # Both pads boot tristated; without the 0x05 PADCTL write the pin outputs 0V even
@@ -144,42 +145,49 @@ SOLENOID_PIN = 16         # BCM 16 = Pin 36 (informational; solenoid driven via 
 SOLENOID_GPIOCHIP = "gpiochip0"
 SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by pad name
 SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
+
+# Solenoid 12V boot interlock — Relay CH2 gates the MOSFET module's DC IN+ (Rev H).
+# Boot firmware drives PR.05 HIGH during boot; with CH2 open the module is unpowered
+# until app.py has claimed PR.05 and driven it LOW.
+SOLENOID_12V_LINE_NAME = "PY.00"   # BCM 27 / Pin 13 / Terminal 13 → Relay CH2 IN
+SOLENOID_12V_LINE_OFFSET = 122     # Fallback line offset if name lookup fails
 # =======================================================================================================
 
 
 class _LibGpiodSolenoid:
     """
-    libgpiod-backed driver for the solenoid trigger (PR.05 / BCM 16 / T36),
-    wired to the dual-MOSFET module's SIG pin.
+    libgpiod-backed push-pull output, requested once and held for the
+    controller's lifetime. Used for both the solenoid trigger (PR.05 → module
+    SIG; low = valve CLOSED, high = valve OPEN, microsecond-precise pulses for
+    AccumulatorManager.fire()) and the Rev H 12V boot interlock (PY.00 →
+    Relay CH2 IN gating the module's DC IN+).
 
-    The line is requested once and held for the controller's lifetime, giving a
-    persistent push-pull output (low = valve CLOSED, high = valve OPEN) and
-    microsecond-precise pulses for AccumulatorManager.fire().
-
-    Requires PADCTL GPIO mode (configure_push_pull writes 0x05 to PR.05's pad
-    register 0x90) to run first — otherwise the tristated pad outputs 0V even
-    though libgpiod requests the line as OUTPUT.
+    Requires PADCTL GPIO mode (configure_push_pull) to run first — otherwise
+    the tristated pad outputs 0V even though libgpiod requests the line as
+    OUTPUT.
     """
 
-    def __init__(self):
+    def __init__(self, line_name=SOLENOID_LINE_NAME, line_offset=SOLENOID_LINE_OFFSET,
+                 consumer="sentry-solenoid", label="Solenoid"):
         self._line = None
+        self._label = label
         if not LIBGPIOD_AVAILABLE:
-            print("[Solenoid] libgpiod unavailable — STUB mode.")
+            print(f"[{label}] libgpiod unavailable — STUB mode.")
             return
         try:
             line = None
             try:
-                line = gpiod.find_line(SOLENOID_LINE_NAME)
+                line = gpiod.find_line(line_name)
             except Exception:
                 line = None
             if line is None:
-                line = gpiod.Chip(SOLENOID_GPIOCHIP).get_line(SOLENOID_LINE_OFFSET)
-            line.request(consumer="sentry-solenoid",
+                line = gpiod.Chip(SOLENOID_GPIOCHIP).get_line(line_offset)
+            line.request(consumer=consumer,
                          type=gpiod.LINE_REQ_DIR_OUT, default_vals=[0])
             self._line = line
-            print(f"[Solenoid] libgpiod line acquired ({SOLENOID_LINE_NAME}) — CLOSED.")
+            print(f"[{label}] libgpiod line acquired ({line_name}) — LOW.")
         except Exception as e:
-            print(f"[Solenoid] libgpiod init failed ({e}) — STUB mode.")
+            print(f"[{label}] libgpiod init failed ({e}) — STUB mode.")
             self._line = None
 
     @property
@@ -203,11 +211,15 @@ class _LibGpiodSolenoid:
 class RelayController:
     """
     Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG 12V 2A solenoid
-    valve (via a dual-MOSFET trigger module). Relay CH2 is unused.
+    valve (via a dual-MOSFET trigger module).
 
     ECO-2026-004 Rev E: BCM 16 / PR.05 (GREEN, T36) → module SIG pin. The trigger
     is driven via libgpiod (clean push-pull 3.3V); pump stays on Jetson.GPIO. The
     module switches the solenoid low side; a 1N5408 flyback sits across the coil.
+
+    ECO-2026-004 Rev H: Relay CH2 (BCM 27 / PY.00 / T13) gates the module's 12V
+    feed. Boot firmware drives PR.05 HIGH during boot, so the module only gets
+    power after this controller has claimed PR.05 and driven it LOW (HW-001 §5.5).
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -240,6 +252,16 @@ class RelayController:
         # Solenoid trigger via libgpiod (BCM 16 / PR.05 / T36 → module SIG).
         self._solenoid = _LibGpiodSolenoid()
         self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
+
+        # Rev H boot interlock: only AFTER SIG is claimed and driven LOW do we
+        # close Relay CH2 and give the MOSFET module its 12V. During the boot
+        # window CH2 is open, so the boot firmware driving PR.05 HIGH is harmless.
+        self._sol_12v = _LibGpiodSolenoid(line_name=SOLENOID_12V_LINE_NAME,
+                                          line_offset=SOLENOID_12V_LINE_OFFSET,
+                                          consumer="sentry-sol12v",
+                                          label="Sol12V")
+        self._sol_12v_state = False
+        self.set_solenoid_power(True)
 
     # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
     # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
@@ -333,6 +355,19 @@ class RelayController:
 
         threading.Thread(target=_pulse, daemon=True).start()
 
+    def set_solenoid_power(self, state: bool):
+        """
+        Rev H boot interlock: energize/release Relay CH2, which gates the
+        MOSFET module's 12V feed. OFF = module unpowered, valve cannot open
+        no matter what the SIG pin does.
+        """
+        if state:
+            # Never power the module with the valve commanded open.
+            self._solenoid.set(False)
+        self._sol_12v.set(state)
+        self._sol_12v_state = state
+        print(f"[RelayController] Solenoid 12V (Relay CH2) {'ON' if state else 'OFF'}")
+
     # -- Backward compatibility -----------------------------------------------
 
     def set_gimbal_power(self, state: bool):
@@ -349,6 +384,7 @@ class RelayController:
         return {
             "pump": self._pump_state,
             "solenoid": self._solenoid_state,
+            "solenoid_12v": self._sol_12v_state,  # Rev H boot interlock (Relay CH2)
             "gimbal_power": True  # Always on (backward compat)
         }
 
@@ -359,6 +395,8 @@ class RelayController:
         print("[RelayController] Cleaning up GPIO...")
         try:
             self._solenoid.set(False)
+            self._sol_12v.set(False)   # Rev H: cut module 12V before releasing SIG
+            self._sol_12v.release()
             self._solenoid.release()
             if JETSON_AVAILABLE:
                 GPIO.output(RELAY_PUMP_PIN, GPIO.LOW)

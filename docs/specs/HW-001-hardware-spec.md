@@ -114,8 +114,8 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **Relay V+ (5V)** | Pin 2 | — | Terminal 2 | RED | Monk Makes relay power input |
 | **Relay V- (GND)** | Pin 9 | — | Terminal 9 | BLACK | Monk Makes relay ground |
 | **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → Relay IN A (Pump On/Off — continuous run mode) |
-| **Solenoid MOSFET Gate** | Pin 13 | BCM 27 | Terminal 13 | GREEN | BCM 27 → IRLB8721 Gate (with 4.7kΩ pull-up to T17 — ECO-2026-004 Rev C) |
-| **Logic +3.3V (Gate pull-up)** | Pin 17 | — | Terminal 17 | RED/WHT | +3.3V → 4.7kΩ → MOSFET Gate (same joint as GREEN wire — NOT a GPIO) |
+| **Solenoid Trigger (SIG)** | Pin 36 | BCM 16 | Terminal 36 | GREEN | PR.05 → MOSFET module SIG (+10kΩ pull-down to GND — ECO-2026-004 Rev E/F) |
+| **Relay CH2 (Solenoid 12V interlock)** | Pin 13 | BCM 27 | Terminal 13 | GREEN | PY.00 → Relay CH2 IN — gates module DC IN+ (ECO-2026-004 Rev H, §5.5) |
 | **LiDAR I2C SDA** | Pin 3 | BCM 2 | Terminal 3 | BLUE | TF-Luna data line |
 | **LiDAR I2C SCL** | Pin 5 | BCM 3 | Terminal 5 | YELLOW | TF-Luna clock line |
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
@@ -126,42 +126,55 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
-### 5.4 MOSFET Solenoid Switching Circuit (ECO-2026-004 Rev D)
+### 5.4 Solenoid Switching — Dual-MOSFET Trigger Module (ECO-2026-004 Rev G)
 
-> **⚠ NEW — Replaces relay-gated pump timing for fluid control.**
-> The solenoid coil is switched by an IRLB8721 N-Channel MOSFET. **Gate drive:** BCM 27 (Pin 13 / PY.00) with a **4.7kΩ pull-up** from Terminal 17 (+3.3V) at the gate junction. Monk Makes Relay **CH2 is NOT used** for solenoid (pump CH1 only).
->
-> **Rev D (software):** The gate is driven via **libgpiod** (`gpiochip0` line 122 / `PY.00`), **not** Jetson.GPIO. On the Yahboom carrier Jetson.GPIO only reaches ~1.6V on this SPI-function pad (below the MOSFET threshold → intermittent/no actuation); libgpiod drives a clean **3.3V push-pull** (bench-verified: gate 3.33V + click). `configure_push_pull()` still sets PADCTL `0x05` on PR.04 + PY.00 first so the pad is in GPIO mode before the line is requested. Install dep: `sudo apt-get install -y python3-libgpiod`.
+> **Supersedes the discrete IRLB8721 circuit (Rev C/D).** The solenoid coil is switched by a
+> **D4184-class dual-MOSFET trigger module** (DC 5–36V, 15A, trigger 3.3–20V).
+> **SIG drive:** BCM 16 (Pin 36 / **PR.05** / Terminal 36, GREEN wire) via **libgpiod**
+> push-pull with PADCTL `0x05` written to pad register `0x90` first (Yahboom pads boot
+> tristated). A **10kΩ (or 4.7kΩ) pull-down from SIG → GND** keeps the gate low whenever
+> the pin is not actively driven.
 
 ```
-Terminal 17 (+3.3V) ──[4.7kΩ]──┬──[optional 10kΩ to GND]── IRLB8721 Gate
-                                 │
-Jetson GPIO BCM 27 (Pin 13) ─────┘  (GREEN wire — pulls LOW to close valve)
+T36 (BCM 16 / PR.05, GREEN) ──┬── module SIG
+                              [10kΩ]
+                               GND
 
-+12V ──> [Solenoid Coil +] ──> [Solenoid Coil -] ──> IRLB8721 Drain
-                    │                    │
-                    └──[1N4007 Flyback]──┘  (Cathode to +12V, Anode to Drain)
-                                                      │
-                                            IRLB8721 Source ──> GND
++12V ──[3A fuse]──[Relay CH2 §5.5]── module DC IN+       module DC IN− ── GND bus
+module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLUE
+1N5408 flyback across the coil, band (cathode) → (+) side
 ```
 
 **Component Notes:**
-- **TO-220AB pinout (IRLB8721):** Face the printed label, pins pointing down — **G** (left), **D** (middle), **S** (right). The **metal mounting tab is internally tied to D** (same electrical node as the middle pin). Wire the solenoid (−) to the **middle pin only**; leave the tab unconnected or insulate it (~1 A solenoid coil does not need heatsinking).
-- **4.7kΩ (472) pull-up:** One leg on **Gate** (same solder joint as GREEN from T13), other leg on **Terminal 17 (+3.3V)**. **Do NOT use 100kΩ (104)** — too weak. Remove any 104 pull-ups previously tried.
-- **Optional 10kΩ (103) Gate→GND:** Parallel branch at Gate — keeps valve closed when GPIO floats at boot.
-- **Do NOT connect T17 directly to Gate without the 4.7kΩ resistor** — T17 is always-on power; the resistor limits current if GPIO drives LOW.
-- **1N4007 flyback diode** across solenoid coil: absorbs back-EMF (same as pump diode in §6.1)
-- **Logic level:** IRLB8721 has R_DS(on) < 10mΩ at V_GS = 3.3V
-- **Timing:** Direct MOSFET switching — sub-ms once gate reaches 3.3V (no relay in solenoid path)
+- **1N5408 (3A) flyback is MANDATORY** — the 2A coil kills the module without it (two modules lost).
+- **3A inline fuse** in the +12V feed: a shorted output FET blows the fuse instead of browning out the shared rail.
+- **VCC header pin is LED-only** — leave open.
+- Failure signature of a dead module: **OUT+ ↔ OUT− ≈ 9Ω** (healthy = open).
+
+### 5.5 Solenoid 12V Boot Interlock — Relay CH2 (ECO-2026-004 Rev H)
+
+> **Problem:** The Orin Nano boot firmware actively DRIVES PR.05 HIGH during the boot window
+> (before `app.py` claims the line). A driven pin defeats any pull-down → the MOSFET module
+> turns on and the valve opens for the whole boot. Software cannot close this window.
+>
+> **Fix:** The module's **+12V feed is gated through Monk Makes Relay CH2** (free since the
+> gimbal moved to its own 5V buck). Wiring: `+12V bus → 3A fuse → CH2 COM`, `CH2 NO → module DC IN+`.
+> **CH2 IN ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)** — energized by
+> `RelayController` only AFTER PR.05 is claimed and driven LOW; released first on cleanup.
+>
+> **Why BCM 27 is boot-safe here:** at boot PY.00 only *floats* (~2.8V, sourcing no current).
+> The relay IN is a current-driven input (kΩ-range), so a floating pad cannot energize it —
+> unlike the MOSFET SIG gate it previously drove. With CH2 open, the module is unpowered
+> during boot regardless of what PR.05 does.
 
 
 ## 6. Isolation & Safety Hardware
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
   - CH1: Pump On/Off control (GPIO 17 → continuous run mode with accumulator)
-  - CH2: Reserved / Unused (solenoid via MOSFET — not relay)
+  - CH2: Solenoid 12V boot interlock (BCM 27 → gates MOSFET module DC IN+, §5.5)
 - **Solenoid Valve:** GOODRIG 12V DC Direct-Acting NC, 1/4" FNPT (fluid gating, replaces relay-timed pump pulses)
-- **MOSFET Switch:** IRLB8721PBF N-Channel (TO-220), 30V/62A, 3.3V logic compatible (gate via BCM 27 + 4.7kΩ pull-up to T17)
+- **MOSFET Switch:** D4184-class dual-MOSFET trigger module (SIG via BCM 16/PR.05 + 10kΩ pull-down; supersedes discrete IRLB8721)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
 ### 6.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)
