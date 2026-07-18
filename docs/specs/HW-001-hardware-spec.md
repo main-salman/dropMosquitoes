@@ -157,10 +157,17 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 > (before `app.py` claims the line). A driven pin defeats any pull-down → the MOSFET module
 > turns on and the valve opens for the whole boot. Software cannot close this window.
 >
-> **Fix:** The module's **+12V feed is gated through Monk Makes Relay CH2** (free since the
-> gimbal moved to its own 5V buck). Wiring: `+12V bus → 3A fuse → CH2 COM`, `CH2 NO → module DC IN+`.
-> **CH2 IN ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)** — energized by
+> **Fix:** The module's **+12V feed is gated through Monk Makes Dual Relay channel B** ("CH2",
+> free since the gimbal moved to its own 5V buck). The board is **solid-state** (2A/16V max,
+> 1.5A continuous, silent — no click): a 3-pin header (**IN A · IN B · GND**, 4mA @ 3.3V,
+> **no Vcc pin**) plus a 4-screw block where each channel is a plain 2-terminal switch
+> (**no COM/NO**; screws are interchangeable).
+> Wiring: `+12V bus → 3A fuse → screw B①`, `screw B② → module DC IN+`, header `GND → GND bus`
+> (already present if the pump input shares the board).
+> **IN B ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)** — energized by
 > `RelayController` only AFTER PR.05 is claimed and driven LOW; released first on cleanup.
+> Current note: the solenoid's ~2A draw flows through channel B only during valve-open pulses
+> (≤0.4s) — within the 2A max; the 1.5A continuous limit is not exercised.
 >
 > **Why BCM 27 is boot-safe here:** at boot PY.00 only *floats* (~2.8V, sourcing no current).
 > The relay IN is a current-driven input (kΩ-range), so a floating pad cannot energize it —

@@ -4,7 +4,7 @@
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;Solenoid via Dual-MOSFET Trigger Module — ADD RELAY CH2 BOOT INTERLOCK (ECO-004 Rev H)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:12px'&gt;SIG on BCM 16/PR.05/T36 · D4184-class, trigger 3.3–20V · GOODRIG 12V 2A valve · 1N5408 flyback · 10kΩ gate pull-down · 3A fuse · &lt;b style='color:#B71C1C'&gt;NEW: 12V feed gated by Monk Makes Relay CH2 (T13 / BCM 27)&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" parent="1" vertex="1">
+                <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;Solenoid via Dual-MOSFET Trigger Module — ADD RELAY CH2 BOOT INTERLOCK (ECO-004 Rev H)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#555;font-size:12px'&gt;SIG on BCM 16/PR.05/T36 · D4184-class, trigger 3.3–20V · GOODRIG 12V 2A valve · 1N5408 flyback · 10kΩ gate pull-down · 3A fuse · &lt;b style='color:#B71C1C'&gt;NEW: 12V feed gated by Monk Makes Relay channel B (&quot;CH2&quot;, IN B ← T13 / BCM 27)&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;fontColor=#333;" parent="1" vertex="1">
                     <mxGeometry x="330" y="18" width="840" height="52" as="geometry"/>
                 </mxCell>
                 <mxCell id="fault_banner" value="&lt;b style='color:#FFFFFF;font-size:11px'&gt;⚠ 2026-07-14 ROOT CAUSE: the Jetson boot firmware actively DRIVES PR.05 (T36) HIGH during boot — no pull-down can win against a driven pin.&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCDD2;font-size:9px'&gt;LED goes BRIGHT for the whole boot window until app.py claims PR.05 and drives it LOW. This is what cooked module #1 (linear-region heating → FETs failed short at 9Ω). Software cannot close this window → the module's 12V must be physically gated by Relay CH2, which only closes after app.py is in control.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#B71C1C;strokeWidth=2;align=left;spacingLeft=10;spacingRight=10;spacingTop=4;" vertex="1" parent="1">
@@ -43,11 +43,56 @@
                 <mxCell id="t17old" value="&lt;b style='color:#B71C1C;font-size:11px'&gt;T17 · +3.3V — NOT USED&lt;/b&gt;&lt;br&gt;&lt;span style='color:#EF9A9A;font-size:10px'&gt;drop the 4.7kΩ pull-up entirely&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#B71C1C;dashed=1;strokeWidth=2;fontColor=#EF9A9A;" parent="1" vertex="1">
                     <mxGeometry x="72" y="430" width="206" height="42" as="geometry"/>
                 </mxCell>
-                <mxCell id="relay2" value="" style="rounded=1;fillColor=#3E2723;strokeColor=#AB47BC;shadow=1;arcSize=6;strokeWidth=3;" parent="1" vertex="1">
-                    <mxGeometry x="190" y="492" width="270" height="94" as="geometry"/>
+                <mxCell id="relay2" value="" style="rounded=1;fillColor=#212121;strokeColor=#AB47BC;shadow=1;arcSize=6;strokeWidth=3;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="486" width="290" height="106" as="geometry"/>
                 </mxCell>
-                <mxCell id="relay2l" value="&lt;b style='color:#E1BEE7;font-size:12px'&gt;★ Monk Makes Relay — CH2 (free channel)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#D7CCC8;font-size:10px'&gt;IN ← T13 (BCM 27) · COM ← +12V via 3A fuse&lt;br&gt;NO → module DC IN + · Vcc←T2(+5V) · GND←T9&lt;br&gt;&lt;b style='color:#CE93D8'&gt;OPEN during boot → module has NO 12V&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="195" y="500" width="260" height="78" as="geometry"/>
+                <mxCell id="relay2l" value="&lt;b style='color:#E1BEE7;font-size:11px'&gt;★ MONK MAKES DUAL RELAY (solid-state)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BCAAA4;font-size:9px'&gt;2A / 16V max · 1.5A cont · IN: 4mA @ 3.3V · &lt;b&gt;no Vcc pin&lt;/b&gt;&lt;br&gt;each channel = a plain 2-screw switch (no COM/NO):&lt;br&gt;&lt;b style='color:#FFF59D'&gt;B① ↔ B② connect only while IN B is HIGH&lt;/b&gt;&lt;br&gt;&lt;b style='color:#CE93D8'&gt;B open during boot → module has NO 12V&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="514" width="240" height="76" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_a" value="" style="rounded=0;fillColor=#FFC107;strokeColor=#FF8F00;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="516" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_a_l" value="&lt;span style='color:#BDBDBD;font-size:9px'&gt;&lt;b&gt;IN A&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="204" y="513" width="40" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_a_ext" value="&lt;span style='color:#757575;font-size:9px'&gt;T11 (pump) →&lt;/span&gt;" style="text;html=1;align=right;" parent="1" vertex="1">
+                    <mxGeometry x="62" y="511" width="100" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_b" value="" style="rounded=0;fillColor=#FFC107;strokeColor=#FF8F00;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="536" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_b_l" value="&lt;b style='color:#CE93D8;font-size:9px'&gt;IN B&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="204" y="533" width="40" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_g" value="" style="rounded=0;fillColor=#FFC107;strokeColor=#FF8F00;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="556" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_g_l" value="&lt;b style='color:#E0E0E0;font-size:9px'&gt;GND&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="204" y="553" width="40" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_pin_g_ext" value="&lt;span style='color:#424242;font-size:9px'&gt;GND bus →&lt;/span&gt; &lt;span style='color:#00695C;font-size:9px'&gt;&lt;b&gt;0Ω&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=right;" parent="1" vertex="1">
+                    <mxGeometry x="58" y="544" width="88" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_hdr_note" value="&lt;span style='color:#9E9E9E;font-size:8px'&gt;3-PIN HEADER (left side of board)&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="196" y="572" width="180" height="12" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_block" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="336" y="486" width="132" height="14" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_scr_a1" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;" parent="1" vertex="1">
+                    <mxGeometry x="342" y="488" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_scr_a2" value="" style="ellipse;fillColor=#BDBDBD;strokeColor=#424242;" parent="1" vertex="1">
+                    <mxGeometry x="372" y="488" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_scr_b1" value="" style="ellipse;fillColor=#FFC107;strokeColor=#FF8F00;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="410" y="488" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_scr_b2" value="" style="ellipse;fillColor=#FFC107;strokeColor=#FF8F00;strokeWidth=2;" parent="1" vertex="1">
+                    <mxGeometry x="446" y="488" width="10" height="10" as="geometry"/>
+                </mxCell>
+                <mxCell id="rl_scr_l" value="&lt;span style='color:#A5D6A7;font-size:8px'&gt;A① &amp;nbsp; A② &amp;nbsp;·&amp;nbsp; &lt;b style='color:#FFF59D'&gt;B① &amp;nbsp;&amp;nbsp; B②&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="336" y="500" width="132" height="12" as="geometry"/>
                 </mxCell>
                 <mxCell id="wagoA" value="" style="rounded=1;fillColor=#FF7043;strokeColor=#BF360C;strokeWidth=2;shadow=1;arcSize=14;" vertex="1" parent="1">
                     <mxGeometry x="322" y="192" width="104" height="36" as="geometry"/>
@@ -253,42 +298,53 @@
                 <mxCell id="wire_12" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="290" y="335" as="sourcePoint"/>
-                        <mxPoint x="330" y="492" as="targetPoint"/>
+                        <mxPoint x="415" y="486" as="targetPoint"/>
                         <Array as="points">
                             <mxPoint x="330" y="335"/>
+                            <mxPoint x="330" y="455"/>
+                            <mxPoint x="415" y="455"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="fuse" value="&lt;b style='color:#B71C1C;font-size:9px'&gt;3A fuse&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#B71C1C;strokeWidth=2;arcSize=40;fontColor=#B71C1C;" vertex="1" parent="1">
                     <mxGeometry x="302" y="420" width="56" height="22" as="geometry"/>
                 </mxCell>
-                <mxCell id="wire_12_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;+12V → 3A fuse → CH2 COM&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;Ω: +12V lug ↔ CH2 COM = 0Ω&lt;/b&gt; (OL = blown fuse)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                <mxCell id="wire_12_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;+12V → 3A fuse → relay screw B①&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;Ω: +12V lug ↔ B① = 0Ω&lt;/b&gt; (OL = blown fuse)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="336" y="366" width="240" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_relay_out" value="" style="endArrow=block;endFill=1;strokeColor=#E53935;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="460" y="540" as="sourcePoint"/>
+                        <mxPoint x="451" y="486" as="sourcePoint"/>
                         <mxPoint x="488" y="332" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="472" y="540"/>
+                            <mxPoint x="451" y="466"/>
+                            <mxPoint x="472" y="466"/>
                             <mxPoint x="472" y="332"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_relay_out_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;★ CH2 NO → DC IN +&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;Ω: NO ↔ DC IN+ = 0Ω&lt;/b&gt;&lt;br&gt;&lt;b&gt;COM ↔ NO = OL&lt;/b&gt; (relay open when off)&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+                <mxCell id="wire_relay_out_l" value="&lt;b style='font-size:10px;color:#C62828'&gt;★ relay screw B② → DC IN +&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;Ω: B② ↔ DC IN+ = 0Ω&lt;/b&gt;&lt;br&gt;&lt;b&gt;B① ↔ B② = OL&lt;/b&gt; (switch open when off)&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
                     <mxGeometry x="540" y="520" width="210" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_t13relay" value="" style="endArrow=block;endFill=1;strokeColor=#AB47BC;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="278" y="396" as="sourcePoint"/>
-                        <mxPoint x="292" y="492" as="targetPoint"/>
+                        <mxPoint x="240" y="420" as="sourcePoint"/>
+                        <mxPoint x="190" y="541" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="292" y="396"/>
+                            <mxPoint x="240" y="425"/>
+                            <mxPoint x="168" y="425"/>
+                            <mxPoint x="168" y="541"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="wire_t13relay_l" value="&lt;b style='font-size:10px;color:#8E24AA'&gt;★ T13 → CH2 IN&lt;/b&gt; &lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;· 0Ω&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-                    <mxGeometry x="120" y="475" width="150" height="16" as="geometry"/>
+                <mxCell id="wire_t13relay_l" value="&lt;b style='font-size:10px;color:#8E24AA'&gt;★ T13 → IN B&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;0Ω&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="468" width="125" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="wire_rl_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="150" y="561" as="sourcePoint"/>
+                        <mxPoint x="190" y="561" as="targetPoint"/>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="wire_jetson_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
@@ -299,7 +355,7 @@
                 <mxCell id="wire_jetson_gnd_l" value="&lt;span style='font-size:9px;color:#00695C'&gt;&lt;b&gt;Jetson GND ↔ bus · 0Ω&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
                     <mxGeometry x="30" y="586" width="140" height="14" as="geometry"/>
                 </mxCell>
-                <mxCell id="ohm_legend" value="&lt;b style='color:#004D40;font-size:12px'&gt;Ω VERIFY — everything OFF, 12V unplugged&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#333'&gt;Every plain wire = &lt;b&gt;0Ω&lt;/b&gt; probe-to-probe at the two screws/levers it joins (&amp;gt;1Ω = loose/broken — the T36 failure mode).&lt;br&gt;&lt;br&gt;&lt;b&gt;Node checks:&lt;/b&gt;&lt;br&gt;• &lt;b&gt;SIG ↔ GND = 4.7k–10k&lt;/b&gt; (pull-down). &lt;b&gt;OL = leg popped out → LED floats ON. Fix before anything else.&lt;/b&gt;&lt;br&gt;• &lt;b&gt;CH2 COM ↔ NO = OL&lt;/b&gt; (relay open when unpowered)&lt;br&gt;• &lt;b&gt;OUT+ ↔ OUT−&lt;/b&gt;: solenoid unplugged = &lt;b&gt;OL&lt;/b&gt; (≈9Ω = FETs shorted, replace module) · solenoid connected ≈ &lt;b&gt;8.7Ω&lt;/b&gt; (coil)&lt;br&gt;• &lt;b&gt;DC IN+ ↔ DC IN−&lt;/b&gt; = high/climbing kΩ (input caps) — 0Ω = dead module&lt;br&gt;• &lt;b&gt;DC IN+ ↔ OUT+&lt;/b&gt; = 0Ω (same copper)&lt;br&gt;• &lt;b&gt;T36 ↔ module SIG&lt;/b&gt; = 0Ω (through Wago #1)&lt;br&gt;• Solenoid coil pin-to-pin ≈ &lt;b&gt;8.7Ω&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;fontColor=#333;fontSize=9;strokeWidth=2;align=left;spacingLeft=10;spacingRight=10;spacingTop=6;" vertex="1" parent="1">
+                <mxCell id="ohm_legend" value="&lt;b style='color:#004D40;font-size:12px'&gt;Ω VERIFY — everything OFF, 12V unplugged&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px;color:#333'&gt;Every plain wire = &lt;b&gt;0Ω&lt;/b&gt; probe-to-probe at the two screws/levers it joins (&amp;gt;1Ω = loose/broken — the T36 failure mode).&lt;br&gt;&lt;br&gt;&lt;b&gt;Node checks:&lt;/b&gt;&lt;br&gt;• &lt;b&gt;SIG ↔ GND = 4.7k–10k&lt;/b&gt; (pull-down). &lt;b&gt;OL = leg popped out → LED floats ON. Fix before anything else.&lt;/b&gt;&lt;br&gt;• &lt;b&gt;relay B① ↔ B② = OL&lt;/b&gt; (channel open when IN B low)&lt;br&gt;• &lt;b&gt;OUT+ ↔ OUT−&lt;/b&gt;: solenoid unplugged = &lt;b&gt;OL&lt;/b&gt; (≈9Ω = FETs shorted, replace module) · solenoid connected ≈ &lt;b&gt;8.7Ω&lt;/b&gt; (coil)&lt;br&gt;• &lt;b&gt;DC IN+ ↔ DC IN−&lt;/b&gt; = high/climbing kΩ (input caps) — 0Ω = dead module&lt;br&gt;• &lt;b&gt;DC IN+ ↔ OUT+&lt;/b&gt; = 0Ω (same copper)&lt;br&gt;• &lt;b&gt;T36 ↔ module SIG&lt;/b&gt; = 0Ω (through Wago #1)&lt;br&gt;• Solenoid coil pin-to-pin ≈ &lt;b&gt;8.7Ω&lt;/b&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;fontColor=#333;fontSize=9;strokeWidth=2;align=left;spacingLeft=10;spacingRight=10;spacingTop=6;" vertex="1" parent="1">
                     <mxGeometry x="1240" y="345" width="240" height="290" as="geometry"/>
                 </mxCell>
                 <mxCell id="wire_dcin_gnd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
@@ -335,10 +391,10 @@
                 <mxCell id="gndbusl" value="&lt;b style='color:#E0E0E0;font-size:12px'&gt;COMMON GND BUS — Jetson GND + 12V PSU GND + module GND (header GND &amp; DC IN −) + Wago #2 (pull-down)&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
                     <mxGeometry x="60" y="604" width="1160" height="22" as="geometry"/>
                 </mxCell>
-                <mxCell id="pd_callout" value="&lt;b style='color:#BF360C;font-size:12px'&gt;TWO LAYERS OF PROTECTION&lt;/b&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:10px'&gt;&lt;b&gt;10kΩ pull-down (keep):&lt;/b&gt; pins SIG to 0V when PR.05 merely floats — covers app crash, reset, wire-off.&lt;br&gt;&lt;b&gt;Relay CH2 interlock (NEW):&lt;/b&gt; covers the boot window, where the firmware actively DRIVES PR.05 HIGH and defeats the pull-down. CH2 is open until app.py claims PR.05 and drives it LOW, so the module has no 12V while boot firmware owns the pin. app.py energizes CH2 (BCM 27 HIGH) at startup and releases it on shutdown.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;" vertex="1" parent="1">
+                <mxCell id="pd_callout" value="&lt;b style='color:#BF360C;font-size:12px'&gt;TWO LAYERS OF PROTECTION&lt;/b&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:10px'&gt;&lt;b&gt;10kΩ pull-down (keep):&lt;/b&gt; pins SIG to 0V when PR.05 merely floats — covers app crash, reset, wire-off.&lt;br&gt;&lt;b&gt;Relay channel B interlock (NEW):&lt;/b&gt; covers the boot window, where the firmware actively DRIVES PR.05 HIGH and defeats the pull-down. Channel B is open until app.py claims PR.05 and drives it LOW, so the module has no 12V while boot firmware owns the pin. app.py energizes IN B (BCM 27 HIGH) at startup and releases it on shutdown.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#BF360C;fontColor=#333;fontSize=10;strokeWidth=2;align=left;spacingLeft=12;spacingRight=12;spacingTop=8;" vertex="1" parent="1">
                     <mxGeometry x="900" y="70" width="330" height="140" as="geometry"/>
                 </mxCell>
-                <mxCell id="steps" value="&lt;b style='font-size:13px;color:#6A1B9A'&gt;Step-by-step (Rev H): add the Relay CH2 boot interlock — 3 wires&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;0. EVERYTHING OFF:&lt;/b&gt; Jetson off, 12V adapter unplugged, solenoid spade connectors pulled off.&lt;br&gt;&lt;b&gt;1. Find CH2&lt;/b&gt; on the Monk Makes relay board that already runs the pump on CH1. Its &lt;b&gt;Vcc (T2, +5V)&lt;/b&gt; and &lt;b&gt;GND (T9)&lt;/b&gt; are already wired — nothing to add there.&lt;br&gt;&lt;b&gt;2. NEW wire:&lt;/b&gt; &lt;b&gt;T13 → CH2 IN&lt;/b&gt;. (T13/BCM 27 is the pin that drove the old discrete MOSFET gate — it is free, and the software now drives it again for this interlock.)&lt;br&gt;&lt;b&gt;3. MOVE the 12V feed:&lt;/b&gt; the wire that now runs &lt;b&gt;+12V bus → 3A fuse → module DC IN +&lt;/b&gt; — unscrew it from &lt;b&gt;DC IN +&lt;/b&gt; only and land that end on &lt;b&gt;CH2 COM&lt;/b&gt;. The fuse stays in this wire.&lt;br&gt;&lt;b&gt;4. NEW wire:&lt;/b&gt; &lt;b&gt;CH2 NO → module DC IN +&lt;/b&gt; screw.&lt;br&gt;&lt;b&gt;5. Touch nothing else:&lt;/b&gt; SIG/Wago #1, 10k pull-down, Wago #2 GND, DC IN −, OUT±, and the 1N5408 flyback all stay exactly as they are.&lt;br&gt;&lt;br&gt;&lt;b style='color:#1B5E20'&gt;Power-up verification (solenoid still DISCONNECTED):&lt;/b&gt;&lt;br&gt;&lt;b&gt;V1.&lt;/b&gt; Before power: &lt;b&gt;SIG → GND ≈ 4.7–10kΩ&lt;/b&gt; (pull-down intact — if OL, a leg popped out of a Wago; fix first). &lt;b&gt;CH2 COM ↔ NO = OL&lt;/b&gt; (relay open).&lt;br&gt;&lt;b&gt;V2.&lt;/b&gt; 12V on, Jetson still OFF: module LED &lt;b&gt;OFF&lt;/b&gt;, &lt;b&gt;module DC IN+ → GND = 0V&lt;/b&gt; (relay is open, module unpowered).&lt;br&gt;&lt;b&gt;V3.&lt;/b&gt; Boot the Jetson: module LED must stay &lt;b&gt;OFF the entire boot&lt;/b&gt; — this is the interlock working (PR.05 goes HIGH but the module has no 12V). When app.py starts you'll hear the &lt;b&gt;CH2 relay click&lt;/b&gt;, then DC IN+ → GND = 12V and the LED stays off (SIG driven 0V).&lt;br&gt;&lt;b&gt;V4.&lt;/b&gt; Dashboard click test: LED flashes, &lt;b&gt;OUT+ ↔ OUT−&lt;/b&gt; switches 12V↔0V. Only now power off and reconnect the solenoid.&lt;br&gt;&lt;br&gt;&lt;span style='color:#5D4037'&gt;&lt;b&gt;Software (already in hardware.py):&lt;/b&gt; PADCTL 0xD030 re-added for PY.00; RelayController claims PR.05 LOW first, then energizes CH2 (BCM 27 HIGH via libgpiod). Cleanup drops CH2 before releasing SIG. Status field: solenoid_12v.&lt;/span&gt;&lt;br&gt;&lt;span style='color:#5D4037'&gt;&lt;b&gt;Recommended (commercial robustness):&lt;/b&gt; give the Jetson its own supply, separate from the solenoid 12V — a valve/driver fault must never brown out the flight computer.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#8E24AA;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
+                <mxCell id="steps" value="&lt;b style='font-size:13px;color:#6A1B9A'&gt;Step-by-step (Rev H): add the Relay CH2 boot interlock — 3 wires&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;0. EVERYTHING OFF:&lt;/b&gt; Jetson off, 12V adapter unplugged, solenoid spade connectors pulled off.&lt;br&gt;&lt;b&gt;1. Find channel B&lt;/b&gt; (the free one) on the Monk Makes board that already runs the pump on channel A. This board is &lt;b&gt;solid-state&lt;/b&gt;: a 3-pin header (IN A · IN B · GND) on one side and a green 4-screw block (A①A② · B①B②) on the other. &lt;b&gt;There is NO Vcc pin&lt;/b&gt; — the inputs need only 4mA at 3.3V.&lt;br&gt;&lt;b&gt;2. NEW wire:&lt;/b&gt; &lt;b&gt;T13 → header pin IN B&lt;/b&gt;. (T13/BCM 27 drove the old discrete MOSFET gate — it is free, and the software now drives it again for this interlock.) If the board's &lt;b&gt;GND header pin&lt;/b&gt; is not already wired for the pump input, add &lt;b&gt;GND pin → GND bus&lt;/b&gt; too.&lt;br&gt;&lt;b&gt;3. MOVE the 12V feed:&lt;/b&gt; the wire that now runs &lt;b&gt;+12V bus → 3A fuse → module DC IN +&lt;/b&gt; — unscrew it from &lt;b&gt;DC IN +&lt;/b&gt; only and land that end in &lt;b&gt;screw B①&lt;/b&gt;. The fuse stays in this wire.&lt;br&gt;&lt;b&gt;4. NEW wire:&lt;/b&gt; &lt;b&gt;screw B② → module DC IN +&lt;/b&gt;. (B① and B② are interchangeable — the channel is just a switch.)&lt;br&gt;&lt;b&gt;5. Touch nothing else:&lt;/b&gt; SIG/Wago #1, 10k pull-down, Wago #2 GND, DC IN −, OUT±, and the 1N5408 flyback all stay exactly as they are.&lt;br&gt;&lt;br&gt;&lt;b style='color:#1B5E20'&gt;Power-up verification (solenoid still DISCONNECTED):&lt;/b&gt;&lt;br&gt;&lt;b&gt;V1.&lt;/b&gt; Before power: &lt;b&gt;SIG → GND ≈ 4.7–10kΩ&lt;/b&gt; (pull-down intact — if OL, a leg popped out of a Wago; fix first). &lt;b&gt;B① ↔ B② = OL&lt;/b&gt; (switch open).&lt;br&gt;&lt;b&gt;V2.&lt;/b&gt; 12V on, Jetson still OFF: module LED &lt;b&gt;OFF&lt;/b&gt;, &lt;b&gt;module DC IN+ → GND = 0V&lt;/b&gt; (channel B open, module unpowered).&lt;br&gt;&lt;b&gt;V3.&lt;/b&gt; Boot the Jetson: module LED must stay &lt;b&gt;OFF the entire boot&lt;/b&gt; — this is the interlock working (PR.05 goes HIGH but the module has no 12V). When app.py starts (&lt;b&gt;no click — solid-state is silent&lt;/b&gt;): &lt;b&gt;DC IN+ → GND = 12V&lt;/b&gt; and the LED stays off (SIG driven 0V).&lt;br&gt;&lt;b&gt;V4.&lt;/b&gt; Dashboard click test: LED flashes, &lt;b&gt;OUT+ ↔ OUT−&lt;/b&gt; switches 12V↔0V. Only now power off and reconnect the solenoid.&lt;br&gt;&lt;br&gt;&lt;span style='color:#5D4037'&gt;&lt;b&gt;Software (already in hardware.py):&lt;/b&gt; PADCTL 0xD030 re-added for PY.00; RelayController claims PR.05 LOW first, then energizes CH2 (BCM 27 HIGH via libgpiod). Cleanup drops CH2 before releasing SIG. Status field: solenoid_12v.&lt;/span&gt;&lt;br&gt;&lt;span style='color:#5D4037'&gt;&lt;b&gt;Recommended (commercial robustness):&lt;/b&gt; give the Jetson its own supply, separate from the solenoid 12V — a valve/driver fault must never brown out the flight computer.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#8E24AA;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;spacingBottom=10;" parent="1" vertex="1">
                     <mxGeometry x="60" y="650" width="1160" height="400" as="geometry"/>
                 </mxCell>
                 <mxCell id="2" value="" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=http://www.haoyuelectronics.com/Attachment/MOSFET-Trigger-Switch-Module/MOSFET-Trigger-Switch-Module-7.jpg;" parent="1" vertex="1">
