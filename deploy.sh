@@ -73,15 +73,24 @@ echo "📦 Installing Python dependencies on Jetson..."
 ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && pip install -r requirements.txt 2>&1 | tail -5"
 
 echo ""
+echo "🔄 Restarting sentry (needs your sudo password on the Jetson)..."
+# -t allocates a TTY so sudo can prompt; plain ssh 'sudo ...' fails with
+# "a terminal is required to read the password".
+if ssh -t "${JETSON_USER}@${JETSON_HOST}" "sudo systemctl restart sentry"; then
+  echo "✅ sentry restarted."
+else
+  echo "⚠ Restart failed or skipped. From your Mac terminal run:"
+  echo "    ssh -t ${JETSON_USER}@${JETSON_HOST} 'sudo systemctl restart sentry'"
+  echo "  Or power-cycle the Jetson."
+fi
+
+echo ""
 echo "══════════════════════════════════════════════"
 echo "  Deployment complete!"
 echo ""
 echo "  To install the systemd service (first time only):"
-echo "    ssh ${JETSON_USER}@${JETSON_HOST}"
+echo "    ssh -t ${JETSON_USER}@${JETSON_HOST}"
 echo "    sudo cp ${JETSON_PATH}/sentry.service /etc/systemd/system/"
 echo "    sudo systemctl daemon-reload"
 echo "    sudo systemctl enable sentry.service"
-echo ""
-echo "  To restart the service after deploy:"
-echo "    ssh ${JETSON_USER}@${JETSON_HOST} 'sudo systemctl restart sentry'"
 echo "══════════════════════════════════════════════"
