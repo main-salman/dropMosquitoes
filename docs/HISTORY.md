@@ -916,6 +916,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-19 — [SUCCESS] Replacement ADS1115 detected at 0x48 — pressure loop LIVE
 - **[PASS]** New ADS1115 installed and powered: `i2cdetect -y -r 1` shows **48** alongside PCA9685 `40` / `71`/`72`/`74`. `/api/pressure` → `connected:true`, `volts:0.492`, `psi:0.0` (matches AUTEX 0.5V @ 0 PSI within divider/noise). Direct `i2cget` of conversion register succeeds. Prior no-name module confirmed dead; breakout replacement + existing Bus 1 / Pin 27-28 / 10k/22k divider / ADDR→GND path is correct.
 
+## 2026-07-19 — [ROOT CAUSE] Keep-alive pump toggle glitched MOSFET SIG (PR.05) → valve stuck ON / hot
+- **[OBSERVED]** User: 5‑min Priming keep-alive coincided with solenoid click; dual-MOSFET then stayed ON and ran hot (power cut quickly). Jetson still on pre-restart code (keep-alive active). Log shows keep-alive only called `fire_pump` — no `Solenoid OPEN` line — so software never intentionally opened the valve.
+- **[MECHANISM]** `_set_pump()` called `configure_push_pull()` which re-wrote **PR.05** PADCTL on every pump edge while libgpiod owned the solenoid line. That pad rewrite can glitch SIG high → MOSFET on. With a weak/disturbed pull-down the FET can stay in conduction and cook.
+- **[FIX]** `configure_push_pull(only=…)`: pump path only programs **PR.04**; full pad set reserved for init. On pump OFF, force solenoid line LOW. Keep-alive already removed in favor of PSI maintain — **restart sentry** required to load both fixes.
+
 ## 2026-07-19 — [FEATURE] Replace timed keep-alive/top-up with pressure maintain
 - **[REMOVED]** PrimingSystem 5‑min `fire_pump` keep-alive (app no longer starts it; GUI sliders removed). One-shot "Prime Now" remains for line fill.
 - **[REMOVED]** Accumulator timed top-up timer (`TOPUP_INTERVAL_SEC` ~60s) — not needed with live PSI.

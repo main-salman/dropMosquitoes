@@ -64,24 +64,34 @@ _PADCTL_REGS = (
 # though libgpiod requests it as OUTPUT.
 
 
-def configure_push_pull() -> bool:
+def configure_push_pull(only: tuple = None) -> bool:
     """
-    ECO-2026-004: Force BCM 17 (PR.04, pump) and BCM 16 (PR.05, solenoid trigger)
-    into GPIO push-pull output via PADCTL register writes. On Yahboom Orin Nano
-    boards these pads boot tristated with E_INPUT set — a GPIO HIGH outputs 0V
-    (PR.05) or floats to ~1.5V instead of 3.3V until 0x05 is written.
+    ECO-2026-004: Force selected pads into GPIO push-pull via PADCTL writes.
+    On Yahboom Orin Nano these pads boot tristated — GPIO HIGH can read 0V
+    until 0x05 is written.
 
-    Must run as root (/dev/mem). Re-applied before every GPIO.output because
-    Jetson.GPIO can reset pad registers after export/toggle.
+    Must run as root (/dev/mem).
+
+    IMPORTANT: Do NOT rewrite PR.05 (solenoid SIG) on every pump toggle.
+    Re-mmapping PR.05 while libgpiod owns it can glitch SIG high → MOSFET
+    module turns on / runs hot. Pump path only touches PR.04; full set is
+    for controller init only. (2026-07-19 keep-alive coincident fault.)
     """
     try:
         import mmap
         import struct
 
+        regs = _PADCTL_REGS
+        if only is not None:
+            want = set(only)
+            regs = tuple(r for r in _PADCTL_REGS if r[0] in want)
+            if not regs:
+                return False
+
         with open("/dev/mem", "r+b") as f:
             mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
             results = []
-            for name, offset in _PADCTL_REGS:
+            for name, offset in regs:
                 old = struct.unpack("<I", mem[offset:offset + 4])[0]
                 mem[offset:offset + 4] = struct.pack("<I", _PADCTL_GPIO_OUTPUT)
                 new = struct.unpack("<I", mem[offset:offset + 4])[0]
@@ -313,8 +323,13 @@ class RelayController:
     def _set_pump(self, state: bool):
         self._pump_state = state
         if JETSON_AVAILABLE:
-            configure_push_pull()
+            # Only touch the pump pad — never reconfigure PR.05 here (SIG glitch risk).
+            configure_push_pull(only=("PR.04",))
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
+        if not state:
+            # Belt-and-suspenders: pump-off must never leave the valve commanded open.
+            self._solenoid.set(False)
+            self._solenoid_state = False
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
     # -- Solenoid Control (ECO-2026-004) --------------------------------------
