@@ -102,10 +102,15 @@ requires firing from a **consistent pressure**, not a longer pulse.
 - When `PressureSensor` is connected (`connected: true`), arm/top-up run the pump
   until measured PSI ≥ `target_psi` (default **15 PSI**), then stop. This replaces
   timed-only charging as the primary path.
+- **Pressure maintain (while ARMED):** a background loop recharges if PSI falls
+  below `target_psi − maintain_hysteresis_psi` (default hysteresis **1.0 PSI**).
+  This replaces the old timed accumulator top-up timer (~60s) and the PrimingSystem
+  5‑minute pump keep-alive. Calibrate via GUI **Target PSI**.
 - `MAX_PUMP_RUN_SEC` remains a hard timeout (deadhead protection) if the setpoint
   is never reached.
 - If the pressure sensor is absent/disconnected, fall back to timed bursts
-  (`initial_charge_sec` / `topup_charge_sec`) — never fabricate PSI.
+  (`initial_charge_sec` / `topup_charge_sec`) — never fabricate PSI. Pressure
+  maintain is inactive without a live sensor.
 - **Setpoint guidance:** 2–5 PSI is too low for useful throw; start at **15 PSI**
   for consistency tests, then raise toward 20–30 after observing the pump's
   live plateau. Keep `target_psi` below the pump's dead-head ceiling so charges
@@ -115,12 +120,15 @@ requires firing from a **consistent pressure**, not a longer pulse.
 - **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** recharge to `target_psi`
   after every shot → consistent distance. Trade-off: short recharge pause between shots.
 - **Burst / N-shot (`CHARGE_PER_SHOT = False`):** fire up to `TOPUP_INTERVAL_SHOTS`
-  shots from one charge, then top up. Faster cadence but distance fades on drawdown.
+  shots from one charge, then rely on pressure maintain (if sensor live) or a
+  shot-count top-up. Faster cadence; distance may still fade slightly between
+  maintain cycles.
 
 **Key tunables** (runtime via `POST /api/accumulator/config`):
-`target_psi`, `initial_charge_sec`, `topup_charge_sec`, `topup_interval_shots`,
-`topup_interval_sec`, `default_pulse_ms`, `charge_per_shot`.
+`target_psi`, `maintain_hysteresis_psi`, `initial_charge_sec`, `topup_charge_sec`,
+`topup_interval_shots`, `default_pulse_ms`, `charge_per_shot`.
 `MAX_PUMP_RUN_SEC` caps every pump burst (deadhead protection).
+**Removed:** timed Priming keep-alive; timed `topup_interval_sec` pump timer.
 
 ### 2.9 Pressure Sensing (`hardware.py — PressureSensor`)
 

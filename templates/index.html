@@ -465,7 +465,7 @@
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">⚙️ Accumulator Configuration</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b> (pump runs until that pressure). Timed charge values are fallbacks only if the ADS1115 is disconnected. Start at 15 PSI; 2–5 PSI is too weak for useful throw.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b>: arm/charge-per-shot pump to that pressure, and while armed a maintain loop tops up if PSI droops ~1 PSI below target. Timed charge values are fallbacks only if the ADS1115 is disconnected.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div>
             <div class="sl">
@@ -765,28 +765,15 @@
     <div class="card">
       <div class="card-title">💧 Water Line Priming</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Ensures the water line is filled before firing. The system will auto-prime before any shot if needed.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">One-shot fill of the water line before firing. Timed 5‑min pump keep-alive is removed — while armed, pressure is held by <b>Accumulator Target PSI</b>.</p>
         <div class="sl">
           <label>Prime Duration (ms)</label>
           <input type="range" id="set-prime-dur" min="500" max="10000" step="100" value="3000" oninput="$('set-prime-dur-v').textContent=this.value+'ms'">
           <div class="v" id="set-prime-dur-v">3000ms</div>
         </div>
-        <div class="sl">
-          <label>Keep-Alive Interval (min)</label>
-          <input type="range" id="set-keepalive-int" min="1" max="30" step="1" value="5" oninput="$('set-keepalive-int-v').textContent=this.value+' min'">
-          <div class="v" id="set-keepalive-int-v">5 min</div>
-        </div>
-        <div class="sl">
-          <label>Keep-Alive Pulse (ms)</label>
-          <input type="range" id="set-keepalive-pulse" min="50" max="1000" step="50" value="200" oninput="$('set-keepalive-pulse-v').textContent=this.value+'ms'">
-          <div class="v" id="set-keepalive-pulse-v">200ms</div>
-        </div>
         <div style="display:flex;gap:12px;align-items:center;margin:10px 0">
           <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
             <input type="checkbox" id="set-auto-detect" checked style="width:16px;height:16px"> Auto-detect water flow
-          </label>
-          <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
-            <input type="checkbox" id="set-keepalive-on" checked style="width:16px;height:16px"> Keep-alive enabled
           </label>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
@@ -1154,25 +1141,17 @@ async function loadPrimeSettings() {
     const d = await fetch('/api/prime/settings').then(r => r.json());
     $('set-prime-dur').value = d.prime_duration_ms;
     $('set-prime-dur-v').textContent = d.prime_duration_ms + 'ms';
-    $('set-keepalive-int').value = d.keepalive_interval_min;
-    $('set-keepalive-int-v').textContent = d.keepalive_interval_min + ' min';
-    $('set-keepalive-pulse').value = d.keepalive_pulse_ms;
-    $('set-keepalive-pulse-v').textContent = d.keepalive_pulse_ms + 'ms';
     $('set-auto-detect').checked = d.auto_detect;
-    $('set-keepalive-on').checked = d.keepalive_enabled;
   } catch(e) { console.error('Prime settings load:', e); }
 }
 
 async function applyPrimeSettings() {
   const body = {
     prime_duration_ms: +$('set-prime-dur').value,
-    keepalive_interval_min: +$('set-keepalive-int').value,
-    keepalive_pulse_ms: +$('set-keepalive-pulse').value,
     auto_detect: $('set-auto-detect').checked,
-    keepalive_enabled: $('set-keepalive-on').checked,
   };
   await fetch('/api/prime/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  showToast('💧 Priming Settings', `Prime: ${body.prime_duration_ms}ms · Keep-alive: ${body.keepalive_interval_min}min`);
+  showToast('💧 Priming Settings', `Prime: ${body.prime_duration_ms}ms`);
 }
 
 async function primeNow() {

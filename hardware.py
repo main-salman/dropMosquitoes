@@ -437,11 +437,11 @@ class AccumulatorManager:
     """
 
     # -- Configurable charge parameters (tunable via API / calibration) --------
-    TARGET_PSI = 15.0            # Closed-loop charge setpoint (SW-001 §2.7)
+    TARGET_PSI = 15.0            # Closed-loop charge + maintain setpoint (SW-001 §2.7)
+    MAINTAIN_HYSTERESIS_PSI = 1.0  # Recharge when PSI < target − this (while armed)
     INITIAL_CHARGE_SEC = 3.0     # Timed fallback when first arming (sensor absent)
     TOPUP_CHARGE_SEC = 1.0       # Timed fallback for top-up (sensor absent)
-    TOPUP_INTERVAL_SHOTS = 10    # Burst mode: top up every N shots
-    TOPUP_INTERVAL_SEC = 60.0    # Or top up every T seconds of armed time
+    TOPUP_INTERVAL_SHOTS = 10    # Burst mode: top up every N shots (if no sensor)
     MAX_PUMP_RUN_SEC = 8.0       # Absolute max pump run time (deadhead protection)
     DEFAULT_PULSE_SEC = 0.010    # Default solenoid pulse (10ms)
     # SW-001 §2.7: charge-per-shot recharges to TARGET_PSI after EVERY shot
@@ -472,7 +472,7 @@ class AccumulatorManager:
         self._arm_time = 0.0
         self._last_psi = None
         self._lock = threading.Lock()
-        self._topup_timer = None
+        self._maintain_thread = None
         print("[AccumulatorManager] Initialized (IDLE state)")
 
     def _read_psi(self):
@@ -594,7 +594,7 @@ class AccumulatorManager:
                 self._last_charge_time = time.time()
                 self._arm_time = time.time()
 
-            self._start_topup_timer()
+            self._start_pressure_maintain()
 
             result["status"] = "armed"
             result["timestamp"] = time.strftime("%H:%M:%S")
@@ -621,9 +621,7 @@ class AccumulatorManager:
         Returns:
             dict with disarm status and shot statistics
         """
-        # Stop top-up timer
-        self._stop_topup_timer()
-
+        # Stop pressure-maintain loop (exits when _armed clears)
         # Ensure everything is off
         self._relay._set_pump(False)
         self._relay._set_solenoid(False)
@@ -770,30 +768,36 @@ class AccumulatorManager:
                 self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
             print(f"[AccumulatorManager] ❌ TOP-UP ERROR: {e}")
 
-    def _start_topup_timer(self):
-        """Start a background timer that triggers periodic top-ups."""
-        self._stop_topup_timer()
-
-        def _timer_loop():
+    def _start_pressure_maintain(self):
+        """
+        While ARMED, recharge if PSI droops below target − hysteresis.
+        Replaces the old timed top-up timer and PrimingSystem keep-alive.
+        Inactive when the pressure sensor is disconnected.
+        """
+        def _maintain_loop():
+            print(f"[AccumulatorManager] Pressure maintain ON — hold "
+                  f"{self.TARGET_PSI:.1f} PSI (−{self.MAINTAIN_HYSTERESIS_PSI:.1f} hyst)")
             while self._armed:
-                time.sleep(self.TOPUP_INTERVAL_SEC)
+                time.sleep(0.5)
                 if not self._armed:
                     break
-                # Only top up if we haven't charged recently
-                since_charge = time.time() - self._last_charge_time
-                if since_charge >= self.TOPUP_INTERVAL_SEC * 0.9:
-                    print(f"[AccumulatorManager] ⏰ Timer-triggered top-up "
-                          f"({since_charge:.0f}s since last charge)")
+                with self._lock:
+                    if self._state in (self.STATE_CHARGING, self.STATE_FIRING):
+                        continue
+                if not self._pressure_connected():
+                    continue
+                psi = self._read_psi()
+                if psi is None:
+                    continue
+                floor = self.TARGET_PSI - self.MAINTAIN_HYSTERESIS_PSI
+                if psi < floor:
+                    print(f"[AccumulatorManager] 📉 PSI {psi:.1f} < {floor:.1f} — maintain recharge")
                     self._topup()
+            print("[AccumulatorManager] Pressure maintain OFF")
 
-        self._topup_timer = threading.Thread(
-            target=_timer_loop, daemon=True, name="accum-topup-timer")
-        self._topup_timer.start()
-
-    def _stop_topup_timer(self):
-        """Stop the periodic top-up timer."""
-        # Timer thread checks self._armed and exits naturally
-        pass
+        self._maintain_thread = threading.Thread(
+            target=_maintain_loop, daemon=True, name="accum-pressure-maintain")
+        self._maintain_thread.start()
 
     def get_status(self) -> dict:
         """Return comprehensive accumulator status for the API."""
@@ -819,10 +823,10 @@ class AccumulatorManager:
                 "pressure_connected": self._pressure_connected(),
                 "config": {
                     "target_psi": self.TARGET_PSI,
+                    "maintain_hysteresis_psi": self.MAINTAIN_HYSTERESIS_PSI,
                     "initial_charge_sec": self.INITIAL_CHARGE_SEC,
                     "topup_charge_sec": self.TOPUP_CHARGE_SEC,
                     "topup_interval_shots": self.TOPUP_INTERVAL_SHOTS,
-                    "topup_interval_sec": self.TOPUP_INTERVAL_SEC,
                     "default_pulse_ms": self.DEFAULT_PULSE_SEC * 1000,
                     "charge_per_shot": self.CHARGE_PER_SHOT,
                     "max_pump_run_sec": self.MAX_PUMP_RUN_SEC,
@@ -833,20 +837,21 @@ class AccumulatorManager:
         """Update charge/fire configuration at runtime."""
         if "target_psi" in config:
             self.TARGET_PSI = max(2.0, min(float(config["target_psi"]), 50.0))
+        if "maintain_hysteresis_psi" in config:
+            self.MAINTAIN_HYSTERESIS_PSI = max(0.2, min(float(config["maintain_hysteresis_psi"]), 10.0))
         if "initial_charge_sec" in config:
             self.INITIAL_CHARGE_SEC = max(0.5, min(float(config["initial_charge_sec"]), 10.0))
         if "topup_charge_sec" in config:
             self.TOPUP_CHARGE_SEC = max(0.5, min(float(config["topup_charge_sec"]), 5.0))
         if "topup_interval_shots" in config:
             self.TOPUP_INTERVAL_SHOTS = max(1, min(int(config["topup_interval_shots"]), 50))
-        if "topup_interval_sec" in config:
-            self.TOPUP_INTERVAL_SEC = max(10.0, min(float(config["topup_interval_sec"]), 300.0))
         if "default_pulse_ms" in config:
             self.DEFAULT_PULSE_SEC = max(0.001, min(float(config["default_pulse_ms"]) / 1000.0, 2.0))
         if "charge_per_shot" in config:
             self.CHARGE_PER_SHOT = bool(config["charge_per_shot"])
         mode = "charge-per-shot" if self.CHARGE_PER_SHOT else f"burst/{self.TOPUP_INTERVAL_SHOTS}-shot"
-        print(f"[AccumulatorManager] Config updated: mode={mode}, target={self.TARGET_PSI:.1f} PSI, "
+        print(f"[AccumulatorManager] Config updated: mode={mode}, target={self.TARGET_PSI:.1f} PSI "
+              f"(hyst {self.MAINTAIN_HYSTERESIS_PSI:.1f}), "
               f"timed_fallback={self.INITIAL_CHARGE_SEC}s/{self.TOPUP_CHARGE_SEC}s, "
               f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
 
@@ -871,19 +876,19 @@ class PrimingSystem:
     - Pre-fire priming: Before any fire command, checks if primed.
       If not, aims nozzle straight down, pumps for configured duration,
       optionally auto-detects water flow via camera frame differencing.
-    - Keep-alive: Background thread periodically pulses the pump to
-      prevent air from creeping back into the line during idle periods.
+
+    Timed pump keep-alive (old 5‑min pulse) is REMOVED — pressure maintain
+    while ARMED is handled by AccumulatorManager (SW-001 §2.7).
 
     Settings (configurable via GUI):
     - prime_duration_ms: How long to pump for priming (default 3000ms)
-    - keepalive_interval_min: Minutes between keep-alive pulses (default 5)
-    - keepalive_pulse_ms: Keep-alive pump pulse duration (default 200ms)
     - auto_detect: Whether to use camera to confirm water flow
     """
 
     # Pitch angle that points the nozzle straight down
     PRIME_PITCH = 90.0  # Max downward pitch
     PRIME_YAW = 0.0     # Center yaw
+    IDLE_REPRIME_SEC = 600.0  # Re-prime if no fire for this long
 
     def __init__(self, relay: RelayController):
         self._relay = relay
@@ -897,59 +902,23 @@ class PrimingSystem:
 
         # Settings (defaults)
         self.prime_duration_ms = 3000      # 3 seconds default
-        self.keepalive_interval_min = 5    # 5 minutes
-        self.keepalive_pulse_ms = 200      # 200ms pulse
         self.auto_detect = True            # Use camera to confirm
-        self.keepalive_enabled = True
-
-        # Keep-alive thread
-        self._keepalive_thread = None
-        self._keepalive_running = False
 
     def start_keepalive(self, gimbal=None):
-        """Start the keep-alive background thread."""
-        if self._keepalive_running:
-            return
-        self._keepalive_running = True
-        self._gimbal_ref = gimbal
-        self._keepalive_thread = threading.Thread(
-            target=self._keepalive_loop, daemon=True, name="prime-keepalive")
-        self._keepalive_thread.start()
-        print(f"[Priming] Keep-alive started: every {self.keepalive_interval_min} min, "
-              f"{self.keepalive_pulse_ms}ms pulse")
+        """Deprecated no-op — pressure maintain lives in AccumulatorManager."""
+        print("[Priming] Timed keep-alive removed — use Accumulator Target PSI maintain")
 
     def stop_keepalive(self):
-        """Stop the keep-alive thread."""
-        self._keepalive_running = False
-        if self._keepalive_thread:
-            self._keepalive_thread.join(timeout=2)
-        print("[Priming] Keep-alive stopped")
-
-    def _keepalive_loop(self):
-        """Background thread: periodically pulse the pump."""
-        while self._keepalive_running:
-            interval_sec = self.keepalive_interval_min * 60
-            time.sleep(interval_sec)
-
-            if not self._keepalive_running or not self.keepalive_enabled:
-                continue
-
-            # Only pulse if we haven't fired recently
-            since_last_fire = time.time() - self._last_fire_time
-            if since_last_fire > interval_sec * 0.8:
-                print(f"[Priming] Keep-alive pulse: {self.keepalive_pulse_ms}ms")
-                self._relay.fire_pump(self.keepalive_pulse_ms / 1000.0)
-                # Keep-alive doesn't count as "primed" because it's a tiny pulse
+        """Deprecated no-op."""
+        pass
 
     def needs_priming(self) -> bool:
         """Check if the system needs priming before firing."""
         with self._lock:
             if not self._primed:
                 return True
-            # Re-prime if it's been too long since last fire
             since_last = time.time() - self._last_fire_time
-            idle_threshold = self.keepalive_interval_min * 60 * 2
-            if since_last > idle_threshold:
+            if since_last > self.IDLE_REPRIME_SEC:
                 self._primed = False
                 return True
             return False
@@ -1092,10 +1061,8 @@ class PrimingSystem:
                 "since_fire_sec": round(since_fire, 1) if since_fire else None,
                 "settings": {
                     "prime_duration_ms": self.prime_duration_ms,
-                    "keepalive_interval_min": self.keepalive_interval_min,
-                    "keepalive_pulse_ms": self.keepalive_pulse_ms,
                     "auto_detect": self.auto_detect,
-                    "keepalive_enabled": self.keepalive_enabled,
+                    "keepalive_enabled": False,  # removed; pressure maintain in AccumulatorManager
                 }
             }
 
@@ -1103,16 +1070,11 @@ class PrimingSystem:
         """Update priming settings from the API."""
         if "prime_duration_ms" in settings:
             self.prime_duration_ms = max(500, min(int(settings["prime_duration_ms"]), 10000))
-        if "keepalive_interval_min" in settings:
-            self.keepalive_interval_min = max(1, min(int(settings["keepalive_interval_min"]), 60))
-        if "keepalive_pulse_ms" in settings:
-            self.keepalive_pulse_ms = max(50, min(int(settings["keepalive_pulse_ms"]), 1000))
         if "auto_detect" in settings:
             self.auto_detect = bool(settings["auto_detect"])
-        if "keepalive_enabled" in settings:
-            self.keepalive_enabled = bool(settings["keepalive_enabled"])
+        # keepalive_* keys ignored (deprecated)
         print(f"[Priming] Settings updated: {self.prime_duration_ms}ms prime, "
-              f"{self.keepalive_interval_min}min keepalive, auto_detect={self.auto_detect}")
+              f"auto_detect={self.auto_detect}")
 
 
 

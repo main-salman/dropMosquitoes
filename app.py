@@ -70,7 +70,7 @@ auto_cal = AutoCalibrator(cal_table, hit_detector)
 
 # Water Line Priming System
 primer = PrimingSystem(relay)
-primer.start_keepalive(gimbal=gimbal)
+# Timed priming keep-alive removed — pressure maintain is AccumulatorManager (SW-001 §2.7)
 
 
 # ============================================================================

@@ -707,11 +707,11 @@ def _t_accum_cfg():
     return _fail(f"config out of bounds: {cfg}")
 
 
-@test("prime_keepalive", "Priming keepalive", "Pump / Accumulator",
-      "Priming system status + keepalive thread reachable.")
+@test("prime_status", "Priming status", "Pump / Accumulator",
+      "Priming system reachable (timed keep-alive removed; pressure maintain is Accumulator).")
 def _t_prime():
     s = _c("primer").get_status()
-    return _ok(f"primed={s.get('primed')} keepalive={s.get('settings', {}).get('keepalive_enabled')}", **{})
+    return _ok(f"primed={s.get('primed')} prime_ms={s.get('settings', {}).get('prime_duration_ms')}", **{})
 
 
 # ============================================================================

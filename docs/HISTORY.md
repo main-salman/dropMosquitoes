@@ -916,6 +916,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-19 — [SUCCESS] Replacement ADS1115 detected at 0x48 — pressure loop LIVE
 - **[PASS]** New ADS1115 installed and powered: `i2cdetect -y -r 1` shows **48** alongside PCA9685 `40` / `71`/`72`/`74`. `/api/pressure` → `connected:true`, `volts:0.492`, `psi:0.0` (matches AUTEX 0.5V @ 0 PSI within divider/noise). Direct `i2cget` of conversion register succeeds. Prior no-name module confirmed dead; breakout replacement + existing Bus 1 / Pin 27-28 / 10k/22k divider / ADDR→GND path is correct.
 
+## 2026-07-19 — [FEATURE] Replace timed keep-alive/top-up with pressure maintain
+- **[REMOVED]** PrimingSystem 5‑min `fire_pump` keep-alive (app no longer starts it; GUI sliders removed). One-shot "Prime Now" remains for line fill.
+- **[REMOVED]** Accumulator timed top-up timer (`TOPUP_INTERVAL_SEC` ~60s) — not needed with live PSI.
+- **[ADDED]** While ARMED, AccumulatorManager pressure-maintain loop: if PSI &lt; `target_psi − maintain_hysteresis_psi` (default 1.0), recharge to target. Calibrate via GUI **Target PSI**. SW-001 §2.7 updated.
+
 ## 2026-07-19 — [FEATURE] Closed-loop charge-to-PSI (default target 15 PSI)
 - **[GUIDANCE]** 2–5 PSI too weak for useful throw (distance ∝ √P; nozzle ~30 PSI class). Default **TARGET_PSI = 15** for consistency tests; raise toward 20–30 after watching the live plateau. Keep setpoint below pump dead-head so charges finish fast.
 - **[SPEC]** SW-001 §2.7 updated: when PressureSensor is connected, arm/top-up pump until PSI ≥ `target_psi`; timed `initial_charge_sec`/`topup_charge_sec` are fallbacks only; `MAX_PUMP_RUN_SEC` hard timeout stays.
