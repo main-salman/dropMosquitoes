@@ -26,6 +26,8 @@ Thumbs.db
 sentry.log
 engagements.jsonl
 calibration.json
+settings.json
+settings.json.tmp
 .sentry.pid
 *.engine
 *.onnx

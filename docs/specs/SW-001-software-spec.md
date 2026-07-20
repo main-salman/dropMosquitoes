@@ -94,6 +94,11 @@ The R385 pump has **no pressure switch** and must not run continuously against a
 closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
+**MOSFET module 12V (Relay CH2, HW-001 §5.5 Rev I):** `RelayController` keeps
+CH2 **OFF at idle**. On every solenoid open command it sequences
+CH2 ON → settle → SIG HIGH → … → SIG LOW → CH2 OFF. Never latch module 12V for
+the session — a SIG glitch with 12V present cooks the dual-MOSFET module.
+
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
 requires firing from a **consistent pressure**, not a longer pulse.
@@ -111,10 +116,12 @@ requires firing from a **consistent pressure**, not a longer pulse.
 - If the pressure sensor is absent/disconnected, fall back to timed bursts
   (`initial_charge_sec` / `topup_charge_sec`) — never fabricate PSI. Pressure
   maintain is inactive without a live sensor.
-- **Setpoint guidance:** 2–5 PSI is too low for useful throw; start at **15 PSI**
-  for consistency tests, then raise toward 20–30 after observing the pump's
-  live plateau. Keep `target_psi` below the pump's dead-head ceiling so charges
-  finish quickly and repeatably.
+- **Setpoint guidance:** Start low (factory default in `settings.json` is **5 PSI**)
+  and raise while calibrating throw/consistency. Keep `target_psi` below the pump's
+  dead-head ceiling so charges finish quickly. GUI range: **1–40 PSI**.
+- **Persistence:** permanent `target_psi` lives in project-root `settings.json`
+  (SW-001 §2.11). Calibration tab may override at runtime; **Save to Settings**
+  (with confirm) writes permanently.
 
 **Modes (selectable at runtime via `charge_per_shot`):**
 - **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** recharge to `target_psi`
@@ -178,6 +185,24 @@ a terminal.
   diagnostic message — never fabricated readings.
 - **Timeouts:** every test must complete or fail within 30s; long operations
   (sweeps, FPS sampling) keep well under this.
+
+### 2.11 Central Settings (`settings.json` / `settings_store.py`)
+
+Single project-root file for persistent operator tunables that must survive reboot.
+
+- **Path:** `settings.json` next to `app.py`. Created automatically with defaults
+  if missing (`settings_store.DEFAULTS`).
+- **Initial keys:** `target_psi` (float, factory default **5.0**, GUI range 1–40).
+- **API:**
+  - `GET /api/settings` → current persisted settings (+ `path`, `runtime` mirrors)
+  - `POST /api/settings` body partial patch → merge, write disk, apply to hardware
+- **GUI:**
+  - **Calibration** tab: Target PSI slider applies **immediately** to
+    `AccumulatorManager` (runtime only). Live transducer PSI shown beside it.
+    **Save to Settings** prompts *"Save as permanent?"* then POSTs to `/api/settings`.
+  - **Settings** tab: permanent Target PSI control; Apply writes `settings.json`.
+- **Startup:** `app.py` loads `settings.json` and applies `target_psi` before serving.
+- **Git:** `settings.json` is machine-local (gitignored); code ships the store + defaults.
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 

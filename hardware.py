@@ -156,9 +156,9 @@ SOLENOID_GPIOCHIP = "gpiochip0"
 SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by pad name
 SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 
-# Solenoid 12V boot interlock — Relay CH2 gates the MOSFET module's DC IN+ (Rev H).
-# Boot firmware drives PR.05 HIGH during boot; with CH2 open the module is unpowered
-# until app.py has claimed PR.05 and driven it LOW.
+# Solenoid 12V interlock — Relay CH2 gates the MOSFET module's DC IN+ (Rev H/I).
+# Boot: CH2 open (PY.00 floats, cannot energize SSR IN). Runtime: CH2 OFF except
+# during intentional valve pulses so a SIG glitch cannot cook the MOSFETs.
 SOLENOID_12V_LINE_NAME = "PY.00"   # BCM 27 / Pin 13 / Terminal 13 → Relay CH2 IN
 SOLENOID_12V_LINE_OFFSET = 122     # Fallback line offset if name lookup fails
 # =======================================================================================================
@@ -227,13 +227,18 @@ class RelayController:
     is driven via libgpiod (clean push-pull 3.3V); pump stays on Jetson.GPIO. The
     module switches the solenoid low side; a 1N5408 flyback sits across the coil.
 
-    ECO-2026-004 Rev H: Relay CH2 (BCM 27 / PY.00 / T13) gates the module's 12V
-    feed. Boot firmware drives PR.05 HIGH during boot, so the module only gets
-    power after this controller has claimed PR.05 and driven it LOW (HW-001 §5.5).
+    ECO-2026-004 Rev H / Rev I: Relay CH2 (BCM 27 / PY.00 / T13) gates the
+    module's 12V feed. Boot firmware drives PR.05 HIGH during boot — CH2 stays
+    OPEN so the module is unpowered. At runtime CH2 is also OFF by default and
+    only closes for intentional valve pulses (HW-001 §5.5). Leaving module 12V
+    latched ON for the whole session lets any SIG glitch cook the MOSFETs.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
     """
+
+    # Solid-state CH2 settle before asserting SIG (ms).
+    _SOL12V_SETTLE_SEC = 0.015
 
     def __init__(self):
         global JETSON_AVAILABLE
@@ -263,15 +268,44 @@ class RelayController:
         self._solenoid = _LibGpiodSolenoid()
         self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
 
-        # Rev H boot interlock: only AFTER SIG is claimed and driven LOW do we
-        # close Relay CH2 and give the MOSFET module its 12V. During the boot
-        # window CH2 is open, so the boot firmware driving PR.05 HIGH is harmless.
+        # Rev I: claim CH2 and keep it OFF. Module 12V is enabled only around
+        # intentional open pulses — never latched for the session lifetime.
         self._sol_12v = _LibGpiodSolenoid(line_name=SOLENOID_12V_LINE_NAME,
                                           line_offset=SOLENOID_12V_LINE_OFFSET,
                                           consumer="sentry-sol12v",
                                           label="Sol12V")
         self._sol_12v_state = False
-        self.set_solenoid_power(True)
+        self.set_solenoid_power(False)
+        # Boot firmware drives PR.05 HIGH until we claim it — module SIG LED can
+        # stay lit through that window. Re-assert LOW after CH2 claim, then keep
+        # an idle watchdog so a stuck-HIGH SIG (LED on, no heat when CH2 off)
+        # cannot linger until the next click test.
+        self._force_solenoid_safe()
+        self._solenoid.set(False)
+        print("[RelayController] Solenoid 12V gated OFF (pulse-power mode).")
+        self._idle_stop = threading.Event()
+        self._idle_thread = threading.Thread(
+            target=self._idle_sig_watchdog, daemon=True, name="solenoid-idle-watchdog")
+        self._idle_thread.start()
+
+    def _idle_sig_watchdog(self):
+        """
+        While idle, periodically force SIG LOW + CH2 OFF.
+        Does NOT rewrite PADCTL (that can glitch PR.05 high).
+        Module SIG LED = logic trigger indicator; with CH2 off it can light
+        without heating the FETs (Rev I).
+        """
+        while not self._idle_stop.wait(1.0):
+            with self._lock:
+                if self._solenoid_state:
+                    continue  # intentional open / gate-hold in progress
+                # Re-drive LOW even if software state already says closed —
+                # catches stuck-HIGH after boot or a missed close.
+                self._solenoid.set(False)
+                if self._sol_12v_state:
+                    print("[RelayController] IDLE WATCHDOG: CH2 was ON while idle — cutting 12V")
+                    self._sol_12v.set(False)
+                    self._sol_12v_state = False
 
     # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
     # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
@@ -326,27 +360,43 @@ class RelayController:
             # Only touch the pump pad — never reconfigure PR.05 here (SIG glitch risk).
             configure_push_pull(only=("PR.04",))
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
-        if not state:
-            # Belt-and-suspenders: pump-off must never leave the valve commanded open.
-            self._solenoid.set(False)
-            self._solenoid_state = False
+        # Pump edges must never leave the valve commanded open / SIG LED latched.
+        if not self._solenoid_state:
+            self._force_solenoid_safe()
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
     # -- Solenoid Control (ECO-2026-004) --------------------------------------
 
+    def _force_solenoid_safe(self):
+        """SIG LOW then cut module 12V — safe idle regardless of prior state."""
+        self._solenoid.set(False)
+        self._solenoid_state = False
+        if self._sol_12v_state:
+            self._sol_12v.set(False)
+            self._sol_12v_state = False
+
     def set_solenoid(self, state: bool):
         """
         Open (HIGH) or close (LOW) the solenoid valve via the MOSFET gate.
-        Driven through libgpiod: HIGH = ~3.3V push-pull on gate → MOSFET conducts;
-        LOW = gate held at 0V → MOSFET off → solenoid spring-closed.
+        Module 12V (Relay CH2) is enabled only while commanded OPEN.
         """
         with self._lock:
             self._set_solenoid(state)
 
     def _set_solenoid(self, state: bool):
-        self._solenoid_state = state
-        self._solenoid.set(state)
-        print(f"[RelayController] Solenoid {'OPEN' if state else 'CLOSED'}")
+        if state:
+            # Power the MOSFET module only for the open command.
+            if not self._sol_12v_state:
+                self._solenoid.set(False)  # never apply 12V with SIG already high
+                self._sol_12v.set(True)
+                self._sol_12v_state = True
+                time.sleep(self._SOL12V_SETTLE_SEC)
+            self._solenoid.set(True)
+            self._solenoid_state = True
+            print("[RelayController] Solenoid OPEN (12V gated ON)")
+        else:
+            self._force_solenoid_safe()
+            print("[RelayController] Solenoid CLOSED (12V gated OFF)")
 
     def fire_solenoid(self, duration_sec: float = 0.010):
         """
@@ -372,13 +422,16 @@ class RelayController:
 
     def set_solenoid_power(self, state: bool):
         """
-        Rev H boot interlock: energize/release Relay CH2, which gates the
-        MOSFET module's 12V feed. OFF = module unpowered, valve cannot open
-        no matter what the SIG pin does.
+        Manual override for Relay CH2 (module 12V). Normal fire paths gate
+        this automatically; leave OFF at idle (Rev I pulse-power mode).
         """
         if state:
             # Never power the module with the valve commanded open.
             self._solenoid.set(False)
+            self._solenoid_state = False
+        else:
+            self._solenoid.set(False)
+            self._solenoid_state = False
         self._sol_12v.set(state)
         self._sol_12v_state = state
         print(f"[RelayController] Solenoid 12V (Relay CH2) {'ON' if state else 'OFF'}")
@@ -406,11 +459,12 @@ class RelayController:
     # -- Cleanup --------------------------------------------------------------
 
     def cleanup(self):
-        """Ensure pump OFF, solenoid CLOSED, and release GPIO pins."""
+        """Ensure pump OFF, solenoid CLOSED, module 12V OFF, then release GPIO."""
         print("[RelayController] Cleaning up GPIO...")
         try:
-            self._solenoid.set(False)
-            self._sol_12v.set(False)   # Rev H: cut module 12V before releasing SIG
+            if hasattr(self, "_idle_stop"):
+                self._idle_stop.set()
+            self._force_solenoid_safe()  # SIG LOW, then CH2 OFF before release
             self._sol_12v.release()
             self._solenoid.release()
             if JETSON_AVAILABLE:
@@ -452,7 +506,7 @@ class AccumulatorManager:
     """
 
     # -- Configurable charge parameters (tunable via API / calibration) --------
-    TARGET_PSI = 15.0            # Closed-loop charge + maintain setpoint (SW-001 §2.7)
+    TARGET_PSI = 5.0             # Closed-loop charge + maintain; overridden by settings.json (SW-001 §2.11)
     MAINTAIN_HYSTERESIS_PSI = 1.0  # Recharge when PSI < target − this (while armed)
     INITIAL_CHARGE_SEC = 3.0     # Timed fallback when first arming (sensor absent)
     TOPUP_CHARGE_SEC = 1.0       # Timed fallback for top-up (sensor absent)
@@ -851,7 +905,7 @@ class AccumulatorManager:
     def update_config(self, config: dict):
         """Update charge/fire configuration at runtime."""
         if "target_psi" in config:
-            self.TARGET_PSI = max(2.0, min(float(config["target_psi"]), 50.0))
+            self.TARGET_PSI = max(1.0, min(float(config["target_psi"]), 40.0))
         if "maintain_hysteresis_psi" in config:
             self.MAINTAIN_HYSTERESIS_PSI = max(0.2, min(float(config["maintain_hysteresis_psi"]), 10.0))
         if "initial_charge_sec" in config:

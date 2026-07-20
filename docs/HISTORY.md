@@ -926,6 +926,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[REMOVED]** Accumulator timed top-up timer (`TOPUP_INTERVAL_SEC` ~60s) — not needed with live PSI.
 - **[ADDED]** While ARMED, AccumulatorManager pressure-maintain loop: if PSI &lt; `target_psi − maintain_hysteresis_psi` (default 1.0), recharge to target. Calibrate via GUI **Target PSI**. SW-001 §2.7 updated.
 
+## 2026-07-20 — [FEATURE] settings.json + Target PSI in Calibration & Settings
+- **[SPEC]** SW-001 §2.11: central `settings.json` (auto-created), `GET/POST /api/settings`, Calibration runtime override + confirm "Save as permanent?", Settings tab permanent control. Factory default `target_psi=5`.
+- **[CODE]** `settings_store.py`; `app.py` loads/applies at boot; clamp 1–40 PSI. GUI: Calibration card (live PSI, immediate apply, Save/Reload); Settings permanent card; post-auto-cal confirm prompt. `settings.json` gitignored.
+- **[NOTE]** Former Solenoid-tab-only slider remains as a convenience mirror; permanent source of truth is settings.json.
+
 ## 2026-07-19 — [FEATURE] Closed-loop charge-to-PSI (default target 15 PSI)
 - **[GUIDANCE]** 2–5 PSI too weak for useful throw (distance ∝ √P; nozzle ~30 PSI class). Default **TARGET_PSI = 15** for consistency tests; raise toward 20–30 after watching the live plateau. Keep setpoint below pump dead-head so charges finish fast.
 - **[SPEC]** SW-001 §2.7 updated: when PressureSensor is connected, arm/top-up pump until PSI ≥ `target_psi`; timed `initial_charge_sec`/`topup_charge_sec` are fallbacks only; `MAX_PUMP_RUN_SEC` hard timeout stays.
@@ -939,3 +944,20 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SAFETY]** Actuator gating is server-side (`run_test` refuses without `confirm`), and the fire-lockout test itself verifies `accum.fire()` returns `not_armed` when disarmed. Water-dependent tests (charge-Δ, leak, PSI-per-shot) skip cleanly when the ADS1115 is absent — no fabricated readings.
 - **[VERIFY]** Off-target smoke run on the dev Mac: registry lists 59 tests / 10 categories; `sys_disk` and `math_pixel_to_angle` pass; `sol_click` correctly refused without confirm; `cal_ballistic_table` warns (file absent). `py_compile` clean.
 - **[DEPLOY]** Jetson offline (no ping at 192.168.0.196) — deploy + on-target bring-up of the new tab pending next power-up (blocked on the Rev G MOSFET module replacement anyway).
+
+## 2026-07-20 — DEPLOY/RESTART VIA run-ai.sh
+- **[PROCESS]** Restored non-interactive Jetson restart: `deploy.sh` loads `.env` and pipes `JETSON_PASSWORD` to `sudo -S systemctl restart sentry` (same pattern as `run-ai.sh`).
+- **[PROCESS]** `run-ai.sh` default is now deploy + restart (not full reboot). Use `./run-ai.sh --reboot` for CSI-clean reboot; `./run-ai.sh --no-deploy` for restart-only.
+- **[DEPLOY]** Ran `./run-ai.sh` → synced to 192.168.0.196 and restarted `sentry.service`.
+
+## 2026-07-20 — MOSFET HOT: PULSE-POWER CH2 (Rev I)
+- **[INCIDENT]** Dual-MOSFET module turned ON and ran hot twice with no operator input (~10–12 min after soft restart). Jetson power-cycled both times.
+- **[ROOT CAUSE]** Rev H left Relay CH2 (module 12V) latched ON for the whole `app.py` session after claiming PR.05 LOW. Any later SIG glitch (or unclean release) powered the FETs continuously.
+- **[FIX]** Rev I pulse-power: CH2 OFF at idle; `_set_solenoid(True)` gates 12V only for the open pulse; close cuts SIG then CH2. Specs: HW-001 §5.5, SAFE-001, SW-001 §2.7.
+- **[CSI]** Confirmed soft `systemctl restart` still leaves Sniper black (`NvBufSurfaceFromFd Failed` / 0 flushed frames). Restored `./run-ai.sh` default to full reboot; `--restart` for soft-only.
+- **[DEPLOY]** Pending `./run-ai.sh` (deploy + reboot).
+
+## 2026-07-20 — MOSFET SIG LED AT IDLE
+- **[OBSERVED]** Dual-MOSFET SIG LED on while module stayed cold; click test turned LED off. Duration unknown.
+- **[ANALYSIS]** LED tracks SIG HIGH, not FET load current. Rev I CH2-off explains cold+LED: trigger asserted, 12V gated away. Click close re-drove SIG LOW.
+- **[CODE]** Idle watchdog every 1s re-asserts SIG LOW + CH2 OFF when not intentionally open; re-assert after pump edges; HW-001 notes SIG LED semantics.

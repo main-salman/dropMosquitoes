@@ -31,6 +31,7 @@ from hardware import (
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
+from settings_store import SettingsStore
 import diagnostics
 
 # ============================================================================
@@ -39,12 +40,17 @@ import diagnostics
 app = Flask(__name__)
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Central persistent settings (SW-001 §2.11) — creates settings.json if missing
+settings = SettingsStore(os.path.join(APP_DIR, "settings.json"))
+
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
 gimbal = create_turret_controller()
 lidar = LiDARController()
 pressure = PressureSensor()  # ECO-004: accumulator pressure via ADS1115 (SW-001 §2.9)
 accum = AccumulatorManager(relay, pressure)  # ECO-004: charge-to-PSI when sensor connected
+# Apply persisted target PSI (and any future accum keys) at boot
+accum.update_config({"target_psi": float(settings.get_value("target_psi", 5.0))})
 
 # Velocity tracker for predictive lead — SW-001 §2.7.1
 velocity_tracker = VelocityTracker()
@@ -319,6 +325,55 @@ def api_lidar():
 def api_pressure():
     """Return accumulator pressure (PSI), transducer volts, and connection state."""
     return jsonify(pressure.get_status())
+
+
+# ============================================================================
+# CENTRAL SETTINGS — SW-001 §2.11 (settings.json)
+# ============================================================================
+
+@app.route('/api/settings', methods=['GET'])
+def api_settings_get():
+    """Return persisted settings.json plus live runtime mirrors."""
+    data = settings.get()
+    return jsonify({
+        "path": settings.path,
+        "settings": data,
+        "runtime": {
+            "target_psi": accum.TARGET_PSI,
+            "pressure": pressure.get_status(),
+        },
+    })
+
+
+@app.route('/api/settings', methods=['POST'])
+def api_settings_set():
+    """
+    Merge a partial patch into settings.json and apply to hardware.
+    Body examples: {"target_psi": 8}
+    Always persists to disk (this is the permanent path).
+    """
+    patch = request.get_json(force=True) or {}
+    if not isinstance(patch, dict):
+        return jsonify({"error": "body must be a JSON object"}), 400
+
+    # Clamp / normalize known keys before save
+    applied = {}
+    if "target_psi" in patch:
+        psi = max(1.0, min(float(patch["target_psi"]), 40.0))
+        applied["target_psi"] = psi
+        accum.update_config({"target_psi": psi})
+
+    if not applied:
+        return jsonify({"error": "no recognized keys", "allowed": ["target_psi"]}), 400
+
+    saved = settings.update(applied, persist=True)
+    print(f"[app] settings.json updated: {applied}")
+    return jsonify({
+        "status": "saved",
+        "path": settings.path,
+        "settings": saved,
+        "runtime": {"target_psi": accum.TARGET_PSI},
+    })
 
 
 # ============================================================================

@@ -465,13 +465,13 @@
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">⚙️ Accumulator Configuration</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b>: arm/charge-per-shot pump to that pressure, and while armed a maintain loop tops up if PSI droops ~1 PSI below target. Timed charge values are fallbacks only if the ADS1115 is disconnected.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b> (1–40). Everyday tuning: <b>Calibration</b> (immediate) / <b>Settings</b> (permanent <code>settings.json</code>). Timed charge values are fallbacks only if the ADS1115 is disconnected.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div>
             <div class="sl">
               <label>Target PSI</label>
-              <input type="range" id="ac-target-psi" min="5" max="40" step="1" value="15" oninput="$('ac-target-psi-v').textContent=this.value+' PSI'">
-              <div class="v" id="ac-target-psi-v">15 PSI</div>
+              <input type="range" id="ac-target-psi" min="1" max="40" step="1" value="5" oninput="$('ac-target-psi-v').textContent=this.value+' PSI'">
+              <div class="v" id="ac-target-psi-v">5 PSI</div>
             </div>
             <div class="sl">
               <label>Initial Charge (fallback)</label>
@@ -519,6 +519,33 @@
     <span class="cal-stat" id="ac-phase">Idle</span>
   </div>
   <div class="cal-section"><div class="cal-grid">
+
+    <!-- Target PSI (runtime override for calibration) -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">💧 Accumulator Target PSI</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:12px">Changes apply <b>immediately</b> to the next Arm/Fire (runtime only). Use <b>Save to Settings</b> to keep the value across reboots.</p>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div class="sl">
+              <label>Target PSI</label>
+              <input type="range" id="cal-target-psi" min="1" max="40" step="1" value="5" oninput="calPsiOnInput(this.value)">
+              <div class="v" id="cal-target-psi-v">5 PSI</div>
+            </div>
+          </div>
+          <div style="min-width:140px;padding-top:4px">
+            <div style="font-size:11px;color:var(--dim)">Live pressure</div>
+            <div style="font-size:22px;font-weight:700;color:var(--orange)" id="cal-live-psi">—</div>
+            <div style="font-size:10px;color:var(--dim)" id="cal-live-psi-meta">ADS1115</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-green" onclick="calPsiSavePermanent()">💾 Save to Settings</button>
+          <button class="btn" onclick="calPsiReload()">🔄 Reload from Settings</button>
+        </div>
+        <div style="font-size:10px;color:var(--dim);margin-top:8px" id="cal-psi-note">Runtime override — not saved until you confirm.</div>
+      </div>
+    </div>
 
     <!-- Auto-Calibrate Panel -->
     <div class="card" style="grid-column:1/-1">
@@ -671,6 +698,27 @@
     <span class="cal-stat" id="set-status">Loading…</span>
   </div>
   <div class="cal-section"><div class="cal-grid">
+    <!-- Accumulator Target PSI (permanent) -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">💧 Accumulator Target PSI (Permanent)</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:12px">Saved to <code>settings.json</code> and restored on every boot. Range 1–40 PSI.</p>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:1;min-width:220px">
+            <div class="sl">
+              <label>Target PSI</label>
+              <input type="range" id="set-target-psi" min="1" max="40" step="1" value="5" oninput="$('set-target-psi-v').textContent=this.value+' PSI'">
+              <div class="v" id="set-target-psi-v">5 PSI</div>
+            </div>
+          </div>
+          <div style="min-width:140px;padding-top:4px">
+            <div style="font-size:11px;color:var(--dim)">Live pressure</div>
+            <div style="font-size:22px;font-weight:700;color:var(--orange)" id="set-live-psi">—</div>
+          </div>
+        </div>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="setPsiSavePermanent()">✅ Save Permanent Target PSI</button>
+      </div>
+    </div>
     <!-- Smoothness / Speed -->
     <div class="card">
       <div class="card-title">🎚️ Motion Smoothness</div>
@@ -867,7 +915,7 @@ async function primeFromFireControl() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal')calRefresh();if(t==='settings')loadSettings();if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal')}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
 
 // ---- Status poll (includes LiDAR telemetry) ----
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
@@ -942,6 +990,7 @@ function dgSummary(){
 let acPolling = null;
 
 async function acStart() {
+  _calPsiPrompted = false;
   $('ac-start-btn').style.display = 'none';
   $('ac-stop-btn').style.display = '';
   $('ac-log').innerHTML = '';
@@ -974,6 +1023,7 @@ async function acPoll() {
       acPolling = null;
       $('ac-start-btn').style.display = '';
       $('ac-stop-btn').style.display = 'none';
+      if (d.phase === 'complete') calPsiPromptSaveAfterSession();
     }
   } catch(e) { console.error('Poll error:', e); }
 }
@@ -1092,6 +1142,109 @@ function toggleCrosshair(){
   }
 }
 
+// ---- Target PSI (Calibration runtime + Settings permanent) — SW-001 §2.11 ----
+let _psiLiveTimer = null;
+let _calPsiPrompted = false;
+
+async function calPsiInit() {
+  try {
+    const d = await fetch('/api/settings').then(r => r.json());
+    const runtime = (d.runtime && d.runtime.target_psi != null) ? d.runtime.target_psi : (d.settings.target_psi || 5);
+    $('cal-target-psi').value = runtime;
+    $('cal-target-psi-v').textContent = runtime + ' PSI';
+    $('cal-psi-note').textContent = `Permanent settings.json = ${d.settings.target_psi} PSI · runtime = ${runtime} PSI`;
+  } catch (e) { console.error(e); }
+}
+
+async function calPsiOnInput(v) {
+  $('cal-target-psi-v').textContent = v + ' PSI';
+  // Immediate runtime apply — does NOT write settings.json
+  try {
+    await fetch('/api/accumulator/config', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({target_psi: +v})
+    });
+    $('cal-psi-note').textContent = `Runtime override ${v} PSI — not saved until you confirm.`;
+  } catch (e) { console.error(e); }
+}
+
+async function calPsiSavePermanent() {
+  const v = +$('cal-target-psi').value;
+  if (!confirm(`Save as permanent?\n\nTarget PSI ${v} will be written to settings.json and restored on every boot.`)) return;
+  await _saveTargetPsi(v);
+  $('cal-psi-note').textContent = `Saved permanently: ${v} PSI`;
+  showToast('💾 Saved', `Target PSI ${v} → settings.json`);
+}
+
+async function calPsiReload() {
+  const d = await fetch('/api/settings').then(r => r.json());
+  const v = d.settings.target_psi;
+  $('cal-target-psi').value = v;
+  await calPsiOnInput(v);
+  showToast('🔄 Reloaded', `Target PSI ${v} from settings.json`);
+}
+
+async function calPsiPromptSaveAfterSession() {
+  if (_calPsiPrompted) return;
+  _calPsiPrompted = true;
+  const v = +$('cal-target-psi').value;
+  if (confirm(`Save as permanent?\n\nCalibration finished. Save Target PSI ${v} to settings.json?`)) {
+    await _saveTargetPsi(v);
+    showToast('💾 Saved', `Target PSI ${v} → settings.json`);
+  }
+}
+
+async function setPsiLoad() {
+  try {
+    const d = await fetch('/api/settings').then(r => r.json());
+    const v = d.settings.target_psi;
+    $('set-target-psi').value = v;
+    $('set-target-psi-v').textContent = v + ' PSI';
+  } catch (e) { console.error(e); }
+}
+
+async function setPsiSavePermanent() {
+  const v = +$('set-target-psi').value;
+  await _saveTargetPsi(v);
+  // Keep Calibration slider in sync if present
+  if ($('cal-target-psi')) {
+    $('cal-target-psi').value = v;
+    $('cal-target-psi-v').textContent = v + ' PSI';
+  }
+  showToast('💾 Saved', `Target PSI ${v} → settings.json`);
+}
+
+async function _saveTargetPsi(v) {
+  await fetch('/api/settings', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({target_psi: +v})
+  });
+}
+
+function psiLiveStart(which) {
+  psiLiveStop();
+  const tick = async () => {
+    try {
+      const p = await fetch('/api/pressure').then(r => r.json());
+      const label = (p.connected && p.psi != null) ? p.psi.toFixed(1) + ' PSI' : '—';
+      const meta = p.connected ? ((p.volts != null) ? p.volts.toFixed(2) + ' V' : 'connected') : 'disconnected';
+      if (which === 'cal' && $('cal-live-psi')) {
+        $('cal-live-psi').textContent = label;
+        $('cal-live-psi-meta').textContent = meta;
+      }
+      if (which === 'set' && $('set-live-psi')) {
+        $('set-live-psi').textContent = label;
+      }
+    } catch (e) {}
+  };
+  tick();
+  _psiLiveTimer = setInterval(tick, 500);
+}
+
+function psiLiveStop() {
+  if (_psiLiveTimer) { clearInterval(_psiLiveTimer); _psiLiveTimer = null; }
+}
+
 // ---- Settings ----
 async function loadSettings(){
   try{
@@ -1112,6 +1265,7 @@ async function loadSettings(){
       `Pitch Limit:   ±${d.pitch_limit}°\n`+
       `\nMax Step/Tick:  ${(d.speed/d.rate_hz).toFixed(2)}°\n`+
       `Settle Time:   ${(90/d.speed*1000).toFixed(0)}ms for 90°`;
+    setPsiLoad();
   }catch(e){$('set-status').textContent='❌ Error';console.error(e)}
 }
 async function applySettings(){
@@ -1509,6 +1663,13 @@ async function acConfigLoad() {
     const d = await fetch('/api/accumulator/status').then(r => r.json());
     const c = d.config;
     if ('target_psi' in c) { $('ac-target-psi').value = c.target_psi; $('ac-target-psi-v').textContent = c.target_psi + ' PSI'; }
+    else {
+      // Fall back to permanent settings.json
+      fetch('/api/settings').then(r=>r.json()).then(s=>{
+        const v = s.settings.target_psi;
+        $('ac-target-psi').value = v; $('ac-target-psi-v').textContent = v + ' PSI';
+      }).catch(()=>{});
+    }
     $('ac-charge').value = c.initial_charge_sec; $('ac-charge-v').textContent = c.initial_charge_sec + 's';
     $('ac-topup-charge').value = c.topup_charge_sec; $('ac-topup-charge-v').textContent = c.topup_charge_sec + 's';
     $('ac-topup-shots').value = c.topup_interval_shots; $('ac-topup-shots-v').textContent = c.topup_interval_shots + ' shots';
