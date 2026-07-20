@@ -465,11 +465,16 @@
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">⚙️ Accumulator Configuration</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Tune charge timing, top-up intervals, and default pulse. Changes take effect immediately.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b> (pump runs until that pressure). Timed charge values are fallbacks only if the ADS1115 is disconnected. Start at 15 PSI; 2–5 PSI is too weak for useful throw.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div>
             <div class="sl">
-              <label>Initial Charge</label>
+              <label>Target PSI</label>
+              <input type="range" id="ac-target-psi" min="5" max="40" step="1" value="15" oninput="$('ac-target-psi-v').textContent=this.value+' PSI'">
+              <div class="v" id="ac-target-psi-v">15 PSI</div>
+            </div>
+            <div class="sl">
+              <label>Initial Charge (fallback)</label>
               <input type="range" id="ac-charge" min="0.5" max="10" step="0.5" value="3" oninput="$('ac-charge-v').textContent=this.value+'s'">
               <div class="v" id="ac-charge-v">3s</div>
             </div>
@@ -1320,13 +1325,16 @@ function ptToggleLive() {
 }
 
 async function solArm() {
-  $('sol-afd-log').innerHTML = '<span class="info">⚡ Charging accumulator (~3s)...</span>';
+  $('sol-afd-log').innerHTML = '<span class="info">⚡ Charging accumulator to target PSI...</span>';
   try {
     const d = await fetch('/api/accumulator/arm', {method:'POST'}).then(r => r.json());
     if (d.status === 'armed') {
+      const psiLine = (d.psi != null)
+        ? `${d.psi} PSI (target ${d.target_psi} PSI, mode=${d.charge_mode})`
+        : `timed ${d.charge_sec}s (no pressure reading)`;
       $('sol-afd-log').innerHTML =
         `<span class="ok">✅ ARMED at ${d.timestamp}</span>\n` +
-        `Charged for ${d.charge_sec}s — accumulator at ~30 PSI\n` +
+        `Charged in ${d.charge_sec}s → ${psiLine}\n` +
         `Ready to fire. Press FIRE to pulse the solenoid.`;
     } else {
       $('sol-afd-log').innerHTML = `<span class="err">❌ ARM failed: ${d.status}</span>\n${d.error||''}`;
@@ -1521,6 +1529,7 @@ async function acConfigLoad() {
   try {
     const d = await fetch('/api/accumulator/status').then(r => r.json());
     const c = d.config;
+    if ('target_psi' in c) { $('ac-target-psi').value = c.target_psi; $('ac-target-psi-v').textContent = c.target_psi + ' PSI'; }
     $('ac-charge').value = c.initial_charge_sec; $('ac-charge-v').textContent = c.initial_charge_sec + 's';
     $('ac-topup-charge').value = c.topup_charge_sec; $('ac-topup-charge-v').textContent = c.topup_charge_sec + 's';
     $('ac-topup-shots').value = c.topup_interval_shots; $('ac-topup-shots-v').textContent = c.topup_interval_shots + ' shots';
@@ -1531,6 +1540,7 @@ async function acConfigLoad() {
 
 async function acConfigApply() {
   const body = {
+    target_psi: +$('ac-target-psi').value,
     initial_charge_sec: +$('ac-charge').value,
     topup_charge_sec: +$('ac-topup-charge').value,
     topup_interval_shots: +$('ac-topup-shots').value,
@@ -1539,7 +1549,7 @@ async function acConfigApply() {
   };
   await fetch('/api/accumulator/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
   const mode = body.charge_per_shot ? 'charge-per-shot' : `burst/${body.topup_interval_shots}-shot`;
-  showToast('⚙️ Accumulator Config', `Mode: ${mode} · Charge: ${body.initial_charge_sec}s · Pulse: ${body.default_pulse_ms}ms`);
+  showToast('⚙️ Accumulator Config', `Mode: ${mode} · Target: ${body.target_psi} PSI · Pulse: ${body.default_pulse_ms}ms`);
 }
 </script>
 </body>

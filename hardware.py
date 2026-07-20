@@ -415,10 +415,10 @@ class RelayController:
 # The R385 pump CANNOT deadhead (run continuously against closed valve).
 # It has no built-in pressure switch and will overheat/burn out.
 #
-# Strategy:
-#   1. ARM:   Pump charges accumulator for ~3s → pump OFF → system holds ~30 PSI
-#   2. FIRE:  Pulse solenoid MOSFET for 10ms → pump stays OFF → accumulator provides pressure
-#   3. TOPUP: After N shots or T seconds, brief 1s pump burst to recharge
+# Strategy (SW-001 §2.7):
+#   1. ARM:   Pump until target_psi (or timed fallback) → pump OFF → hold pressure
+#   2. FIRE:  Pulse solenoid MOSFET → pump stays OFF → accumulator provides pressure
+#   3. TOPUP: Charge-per-shot (or every N shots / T sec) back to target_psi
 #   4. DISARM: Everything OFF, solenoid closed, pump cold
 # ============================================================================
 
@@ -430,23 +430,22 @@ class AccumulatorManager:
     The R385 brushed motor pump has NO pressure switch and CANNOT run
     continuously against a closed solenoid (deadheading → overheat → burn out).
 
-    Instead, we treat the accumulator like a battery:
-    - Charge it with a timed pump burst (solenoid closed)
-    - Fire by pulsing the solenoid (pump off, stored pressure does the work)
-    - Top up after N shots to maintain consistent pressure
+    With a connected PressureSensor, arm/top-up pump until TARGET_PSI is reached
+    (closed-loop). Without a sensor, fall back to timed bursts — never fabricate PSI.
 
     State machine: IDLE → CHARGING → ARMED → FIRING → ARMED → ...
     """
 
     # -- Configurable charge parameters (tunable via API / calibration) --------
-    INITIAL_CHARGE_SEC = 3.0     # Pump run time when first arming (fills from empty)
-    TOPUP_CHARGE_SEC = 1.0       # Brief pump burst to recharge (also used per-shot)
+    TARGET_PSI = 15.0            # Closed-loop charge setpoint (SW-001 §2.7)
+    INITIAL_CHARGE_SEC = 3.0     # Timed fallback when first arming (sensor absent)
+    TOPUP_CHARGE_SEC = 1.0       # Timed fallback for top-up (sensor absent)
     TOPUP_INTERVAL_SHOTS = 10    # Burst mode: top up every N shots
     TOPUP_INTERVAL_SEC = 60.0    # Or top up every T seconds of armed time
-    MAX_PUMP_RUN_SEC = 5.0       # Absolute max pump run time (deadhead protection)
+    MAX_PUMP_RUN_SEC = 8.0       # Absolute max pump run time (deadhead protection)
     DEFAULT_PULSE_SEC = 0.010    # Default solenoid pulse (10ms)
-    # SW-001 §2.7: charge-per-shot recharges to the pump's pressure ceiling after
-    # EVERY shot so each shot fires from the same pressure → consistent distance.
+    # SW-001 §2.7: charge-per-shot recharges to TARGET_PSI after EVERY shot
+    # so each shot fires from the same pressure → consistent distance.
     # Set False for burst/N-shot mode (faster cadence, distance fades on drawdown).
     CHARGE_PER_SHOT = True
 
@@ -456,12 +455,14 @@ class AccumulatorManager:
     STATE_ARMED = "armed"
     STATE_FIRING = "firing"
 
-    def __init__(self, relay: RelayController):
+    def __init__(self, relay: RelayController, pressure=None):
         """
         Args:
             relay: RelayController instance (manages GPIO for pump + solenoid)
+            pressure: optional PressureSensor for closed-loop charge-to-PSI
         """
         self._relay = relay
+        self._pressure = pressure
         self._state = self.STATE_IDLE
         self._shot_count = 0           # Shots since last charge/top-up
         self._total_shots = 0          # Total shots since arming
@@ -469,9 +470,97 @@ class AccumulatorManager:
         self._last_charge_time = 0.0
         self._last_fire_time = 0.0
         self._arm_time = 0.0
+        self._last_psi = None
         self._lock = threading.Lock()
         self._topup_timer = None
         print("[AccumulatorManager] Initialized (IDLE state)")
+
+    def _read_psi(self):
+        """Latest PSI from the pressure sensor, or None if unavailable."""
+        if self._pressure is None:
+            return None
+        try:
+            return self._pressure.read_psi()
+        except Exception:
+            return None
+
+    def _pressure_connected(self) -> bool:
+        if self._pressure is None:
+            return False
+        try:
+            return bool(self._pressure.get_status().get("connected"))
+        except Exception:
+            return False
+
+    def _charge(self, timed_fallback_sec: float, label: str) -> dict:
+        """
+        Charge the accumulator with solenoid CLOSED.
+
+        Prefer closed-loop: pump until PSI >= TARGET_PSI (or MAX_PUMP_RUN_SEC).
+        If the pressure sensor is disconnected, fall back to a timed burst.
+        Always turns the pump OFF before returning.
+        """
+        self._relay._set_solenoid(False)
+        time.sleep(0.05)
+
+        timeout = min(max(timed_fallback_sec, 0.5), self.MAX_PUMP_RUN_SEC)
+        psi_before = self._read_psi()
+        use_pressure = self._pressure_connected() and psi_before is not None
+
+        if use_pressure and psi_before >= self.TARGET_PSI:
+            self._last_psi = psi_before
+            print(f"[AccumulatorManager] {label}: already at {psi_before:.1f} PSI "
+                  f"(target {self.TARGET_PSI:.1f}) — skip pump")
+            return {
+                "charge_sec": 0.0,
+                "psi": round(psi_before, 1),
+                "target_psi": self.TARGET_PSI,
+                "charge_mode": "already_at_target",
+                "reached_target": True,
+            }
+
+        mode = "pressure" if use_pressure else "timed"
+        target_note = (f"to {self.TARGET_PSI:.1f} PSI (timeout {timeout:.1f}s)"
+                       if use_pressure else f"for {timeout:.1f}s (no pressure sensor)")
+        print(f"[AccumulatorManager] {label}: charging {target_note}...")
+
+        start = time.time()
+        reached = False
+        psi = psi_before
+        self._relay._set_pump(True)
+        try:
+            if use_pressure:
+                while (time.time() - start) < timeout:
+                    psi = self._read_psi()
+                    if psi is not None and psi >= self.TARGET_PSI:
+                        reached = True
+                        break
+                    time.sleep(0.05)
+            else:
+                time.sleep(timeout)
+                reached = True  # timed path has no PSI criterion
+        finally:
+            self._relay._set_pump(False)
+
+        time.sleep(0.1)  # brief settle before final reading
+        psi = self._read_psi()
+        if psi is not None:
+            self._last_psi = psi
+            if psi >= self.TARGET_PSI:
+                reached = True
+
+        elapsed = round(time.time() - start, 2)
+        result = {
+            "charge_sec": elapsed,
+            "psi": round(psi, 1) if psi is not None else None,
+            "target_psi": self.TARGET_PSI,
+            "charge_mode": mode,
+            "reached_target": bool(reached) if use_pressure else None,
+        }
+        psi_str = f"{psi:.1f} PSI" if psi is not None else "PSI n/a"
+        print(f"[AccumulatorManager] {label}: done in {elapsed:.2f}s → {psi_str} "
+              f"(mode={mode}, reached={result['reached_target']})")
+        return result
 
     def arm(self) -> dict:
         """
@@ -479,33 +568,24 @@ class AccumulatorManager:
 
         Sequence:
         1. Ensure solenoid is CLOSED (valve shut)
-        2. Run pump for INITIAL_CHARGE_SEC (accumulator fills to ~30 PSI)
+        2. Pump until TARGET_PSI (or timed fallback if no sensor)
         3. Turn pump OFF
         4. System is now passively holding pressure — ready to fire
 
         Returns:
-            dict with arm status, charge duration, timestamp
+            dict with arm status, charge duration, PSI, timestamp
         """
         with self._lock:
             if self._state == self.STATE_CHARGING:
                 return {"status": "already_charging"}
             self._state = self.STATE_CHARGING
 
-        result = {"status": "arming", "charge_sec": self.INITIAL_CHARGE_SEC}
+        result = {"status": "arming"}
 
         try:
-            # Step 1: Ensure solenoid is CLOSED (safety: never pump into open valve)
-            self._relay._set_solenoid(False)
-            time.sleep(0.05)  # Brief settle for solenoid spring to close
+            charge = self._charge(self.INITIAL_CHARGE_SEC, "⚡ ARMING")
+            result.update(charge)
 
-            # Step 2: Run pump to charge accumulator
-            charge_duration = min(self.INITIAL_CHARGE_SEC, self.MAX_PUMP_RUN_SEC)
-            print(f"[AccumulatorManager] ⚡ ARMING: Charging accumulator for {charge_duration:.1f}s...")
-            self._relay._set_pump(True)
-            time.sleep(charge_duration)
-            self._relay._set_pump(False)
-
-            # Step 3: Enter ARMED state
             with self._lock:
                 self._state = self.STATE_ARMED
                 self._armed = True
@@ -514,15 +594,15 @@ class AccumulatorManager:
                 self._last_charge_time = time.time()
                 self._arm_time = time.time()
 
-            # Step 4: Start top-up monitoring timer
             self._start_topup_timer()
 
             result["status"] = "armed"
             result["timestamp"] = time.strftime("%H:%M:%S")
-            print(f"[AccumulatorManager] ✅ ARMED — accumulator at ~30 PSI, ready to fire")
+            psi = result.get("psi")
+            psi_note = f"{psi:.1f} PSI" if psi is not None else f"target {self.TARGET_PSI:.1f} PSI"
+            print(f"[AccumulatorManager] ✅ ARMED — accumulator at {psi_note}, ready to fire")
 
         except Exception as e:
-            # Safety: ensure pump is OFF on any error
             self._relay._set_pump(False)
             self._relay._set_solenoid(False)
             with self._lock:
@@ -590,9 +670,10 @@ class AccumulatorManager:
         duration_sec = max(0.001, min(duration_sec, 2.0))
 
         try:
-            # Pulse solenoid (blocking in this thread for timing precision)
+            psi_before = self._read_psi()
             print(f"[AccumulatorManager] 🔫 FIRE! Solenoid pulse: {duration_sec*1000:.1f}ms "
-                  f"(shot #{self._total_shots + 1})")
+                  f"(shot #{self._total_shots + 1}"
+                  f"{f', {psi_before:.1f} PSI' if psi_before is not None else ''})")
             self._relay._set_solenoid(True)
             time.sleep(duration_sec)
             self._relay._set_solenoid(False)
@@ -609,12 +690,16 @@ class AccumulatorManager:
             # Check if top-up needed
             self._topup_if_needed()
 
+            psi_after = self._read_psi()
             return {
                 "status": "fired",
                 "duration_ms": duration_sec * 1000,
                 "shot_number": shot_num,
                 "shots_since_charge": since_charge,
-                "topup_in": max(0, self.TOPUP_INTERVAL_SHOTS - since_charge)
+                "topup_in": max(0, self.TOPUP_INTERVAL_SHOTS - since_charge),
+                "psi_before": round(psi_before, 1) if psi_before is not None else None,
+                "psi_after": round(psi_after, 1) if psi_after is not None else None,
+                "target_psi": self.TARGET_PSI,
             }
 
         except Exception as e:
@@ -659,31 +744,24 @@ class AccumulatorManager:
 
     def _topup(self):
         """
-        Run a brief pump burst to recharge the accumulator.
+        Recharge the accumulator to TARGET_PSI (or timed fallback).
         Solenoid stays closed during charging.
         """
         with self._lock:
             if self._state == self.STATE_CHARGING:
                 return  # Already charging
             self._state = self.STATE_CHARGING
+            after_shots = self._shot_count
 
         try:
-            charge_duration = min(self.TOPUP_CHARGE_SEC, self.MAX_PUMP_RUN_SEC)
-            print(f"[AccumulatorManager] 🔄 TOP-UP: Recharging for {charge_duration:.1f}s "
-                  f"(after {self._shot_count} shots)")
-
-            self._relay._set_solenoid(False)  # Ensure closed
-            time.sleep(0.02)
-            self._relay._set_pump(True)
-            time.sleep(charge_duration)
-            self._relay._set_pump(False)
+            self._charge(self.TOPUP_CHARGE_SEC, f"🔄 TOP-UP (after {after_shots} shots)")
 
             with self._lock:
                 self._shot_count = 0  # Reset shot counter
                 self._last_charge_time = time.time()
                 self._state = self.STATE_ARMED
 
-            print(f"[AccumulatorManager] ✅ TOP-UP complete — pressure restored")
+            print("[AccumulatorManager] ✅ TOP-UP complete — pressure restored")
 
         except Exception as e:
             self._relay._set_pump(False)
@@ -724,6 +802,10 @@ class AccumulatorManager:
             since_fire = time.time() - self._last_fire_time if self._last_fire_time else None
             armed_duration = time.time() - self._arm_time if self._arm_time and self._armed else None
 
+            psi = self._read_psi()
+            if psi is not None:
+                self._last_psi = psi
+
             return {
                 "state": self._state,
                 "armed": self._armed,
@@ -733,18 +815,24 @@ class AccumulatorManager:
                 "since_charge_sec": round(since_charge, 1) if since_charge else None,
                 "since_fire_sec": round(since_fire, 1) if since_fire else None,
                 "armed_duration_sec": round(armed_duration, 1) if armed_duration else None,
+                "psi": round(self._last_psi, 1) if self._last_psi is not None else None,
+                "pressure_connected": self._pressure_connected(),
                 "config": {
+                    "target_psi": self.TARGET_PSI,
                     "initial_charge_sec": self.INITIAL_CHARGE_SEC,
                     "topup_charge_sec": self.TOPUP_CHARGE_SEC,
                     "topup_interval_shots": self.TOPUP_INTERVAL_SHOTS,
                     "topup_interval_sec": self.TOPUP_INTERVAL_SEC,
                     "default_pulse_ms": self.DEFAULT_PULSE_SEC * 1000,
                     "charge_per_shot": self.CHARGE_PER_SHOT,
+                    "max_pump_run_sec": self.MAX_PUMP_RUN_SEC,
                 }
             }
 
     def update_config(self, config: dict):
         """Update charge/fire configuration at runtime."""
+        if "target_psi" in config:
+            self.TARGET_PSI = max(2.0, min(float(config["target_psi"]), 50.0))
         if "initial_charge_sec" in config:
             self.INITIAL_CHARGE_SEC = max(0.5, min(float(config["initial_charge_sec"]), 10.0))
         if "topup_charge_sec" in config:
@@ -758,8 +846,9 @@ class AccumulatorManager:
         if "charge_per_shot" in config:
             self.CHARGE_PER_SHOT = bool(config["charge_per_shot"])
         mode = "charge-per-shot" if self.CHARGE_PER_SHOT else f"burst/{self.TOPUP_INTERVAL_SHOTS}-shot"
-        print(f"[AccumulatorManager] Config updated: mode={mode}, charge={self.INITIAL_CHARGE_SEC}s, "
-              f"topup={self.TOPUP_CHARGE_SEC}s, pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
+        print(f"[AccumulatorManager] Config updated: mode={mode}, target={self.TARGET_PSI:.1f} PSI, "
+              f"timed_fallback={self.INITIAL_CHARGE_SEC}s/{self.TOPUP_CHARGE_SEC}s, "
+              f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
 
     def cleanup(self):
         """Emergency shutdown: everything OFF."""

@@ -91,26 +91,34 @@ The following stages execute **in sequence** for every fire decision:
 
 The GOODRIG 12V solenoid is fed from a 0.75L pre-charged accumulator (ECO-2026-004).
 The R385 pump has **no pressure switch** and must not run continuously against a
-closed solenoid (deadhead → overheat), so the accumulator is charged in timed bursts
+closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
-requires firing from a **consistent pressure**, not a longer pulse. No electronic
-pressure sensor is used; the pump's natural dead-head ceiling (the pressure where
-output stops rising) is the repeatable reference. Charging to that ceiling every
-time yields repeatable shots without instrumentation.
+requires firing from a **consistent pressure**, not a longer pulse.
+
+**Charge control (ECO-004 pressure loop):**
+- When `PressureSensor` is connected (`connected: true`), arm/top-up run the pump
+  until measured PSI ≥ `target_psi` (default **15 PSI**), then stop. This replaces
+  timed-only charging as the primary path.
+- `MAX_PUMP_RUN_SEC` remains a hard timeout (deadhead protection) if the setpoint
+  is never reached.
+- If the pressure sensor is absent/disconnected, fall back to timed bursts
+  (`initial_charge_sec` / `topup_charge_sec`) — never fabricate PSI.
+- **Setpoint guidance:** 2–5 PSI is too low for useful throw; start at **15 PSI**
+  for consistency tests, then raise toward 20–30 after observing the pump's
+  live plateau. Keep `target_psi` below the pump's dead-head ceiling so charges
+  finish quickly and repeatably.
 
 **Modes (selectable at runtime via `charge_per_shot`):**
-- **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** the accumulator is
-  recharged to the ceiling after every shot, so each shot fires from the same
-  pressure → consistent distance. Trade-off: a short recharge pause between shots.
+- **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** recharge to `target_psi`
+  after every shot → consistent distance. Trade-off: short recharge pause between shots.
 - **Burst / N-shot (`CHARGE_PER_SHOT = False`):** fire up to `TOPUP_INTERVAL_SHOTS`
-  shots from one charge, then top up. Faster cadence but distance fades across the
-  accumulator drawdown curve.
+  shots from one charge, then top up. Faster cadence but distance fades on drawdown.
 
 **Key tunables** (runtime via `POST /api/accumulator/config`):
-`initial_charge_sec`, `topup_charge_sec`, `topup_interval_shots`,
+`target_psi`, `initial_charge_sec`, `topup_charge_sec`, `topup_interval_shots`,
 `topup_interval_sec`, `default_pulse_ms`, `charge_per_shot`.
 `MAX_PUMP_RUN_SEC` caps every pump burst (deadhead protection).
 

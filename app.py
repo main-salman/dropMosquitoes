@@ -41,10 +41,10 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
-accum = AccumulatorManager(relay)  # ECO-2026-004: Charge-on-demand accumulator
 gimbal = create_turret_controller()
 lidar = LiDARController()
 pressure = PressureSensor()  # ECO-004: accumulator pressure via ADS1115 (SW-001 §2.9)
+accum = AccumulatorManager(relay, pressure)  # ECO-004: charge-to-PSI when sensor connected
 
 # Velocity tracker for predictive lead — SW-001 §2.7.1
 velocity_tracker = VelocityTracker()
@@ -445,11 +445,13 @@ def api_accum_config_set():
     """
     Update accumulator configuration at runtime.
     Body: {
+        "target_psi": float,
         "initial_charge_sec": float,
         "topup_charge_sec": float,
         "topup_interval_shots": int,
         "topup_interval_sec": float,
-        "default_pulse_ms": float
+        "default_pulse_ms": float,
+        "charge_per_shot": bool
     }
     """
     data = request.get_json(force=True)
