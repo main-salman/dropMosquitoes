@@ -23,6 +23,12 @@ Type=simple
 User=root
 WorkingDirectory=/home/jetson/dropMosquitoes
 
+# --- FIRST: pinmux + SIG LOW (before slow nvargus wait) ---
+# Rev J jumpered module 12V: boot firmware drives PR.05 HIGH → FETs heat until
+# userspace claims SIG. This shortens that window. Full safety = series switch
+# on module 12V (HW-001 §5.5) — open during power-on, close after dashboard up.
+ExecStartPre=-/usr/bin/python3 /home/jetson/dropMosquitoes/scripts/claim_sig_low.py
+
 # --- Pre-start: maximize performance ---
 ExecStartPre=-/bin/bash -c '/usr/sbin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
 
@@ -30,13 +36,10 @@ ExecStartPre=-/bin/bash -c '/usr/sbin/nvpmodel -m 0 && /usr/bin/jetson_clocks'
 # NOTE: Do NOT modprobe -r/modprobe nv_imx219 here. The MIPI CSI-2 PHY retains
 # lane sync state that modprobe cannot clear, causing garbled video on sensor-1.
 # Clean camera state requires a full Jetson reboot (handled by run-ai.sh).
-# On a fresh boot, the kernel loads nv_imx219 with clean CSI state automatically.
 ExecStartPre=-/bin/bash -c 'systemctl restart nvargus-daemon; sleep 3'
 
-# --- Pre-start: configure GPIO pinmux (push-pull for pump / solenoid / CH2) ---
-# PR.04=pump, PR.05=solenoid SIG, PY.00=Relay CH2 (module 12V). App keeps CH2 OFF
-# at idle (pulse-power); pinmux alone does not energize the SSR input.
-ExecStartPre=-/usr/bin/python3 -c 'import mmap, struct; f=open("/dev/mem","r+b"); m=mmap.mmap(f.fileno(),0x10000,offset=0x02430000); m[0x98:0x9c]=struct.pack("<I",0x5); m[0x90:0x94]=struct.pack("<I",0x5); m[0xD030:0xD034]=struct.pack("<I",0x5); m.close()'
+# --- Re-assert SIG LOW after nvargus wait (app claims next) ---
+ExecStartPre=-/usr/bin/python3 /home/jetson/dropMosquitoes/scripts/claim_sig_low.py
 
 # --- Main: start the sentry server ---
 ExecStart=/usr/bin/python3 -u app.py --port 8000

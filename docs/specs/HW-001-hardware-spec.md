@@ -187,8 +187,22 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 > 3. Idle watchdog still forces SIG LOW. Optional gated mode
 >    (`module_12v_hardwired=false`) uses Jetson.GPIO BCM 27 + PADCTL for experiments.
 >
-> Current note: the solenoid's ~2A draw flows through channel B only during valve-open pulses
-> (≤0.4s) — within the 2A max; the 1.5A continuous limit is not exercised.
+> **⚠ BOOT HEAT (Rev J.1 — mandatory operator procedure):**
+> With Channel B jumpered, module **12V is present during Jetson boot**. Boot firmware
+> **drives PR.05 HIGH** until userspace claims it → dual-MOSFET module and/or coil can
+> run **hot**. Software (`scripts/claim_sig_low.py` in `sentry.service` ExecStartPre)
+> only shortens the *userspace* window — it cannot cover the firmware window.
+>
+> **Do one of the following:**
+> A. **Preferred:** Put an **SPST switch** in series with the CH2 jumper (or in the
+>    fused +12V feed to module DC IN+). Leave **OFF** while powering the Jetson; turn
+>    **ON** only after the dashboard is up and the MOSFET SIG LED is dark at idle.
+> B. Remove the jumper before each reboot; re-fit after sentry is running; then Click Test.
+> C. Long-term hardware: buffer PY.00 → CH2 IN (NPN/N-FET) so CH2 gating works again
+>    without a load jumper (restores boot-safe unpowered module).
+>
+> Current note: with a load jumper the solenoid's ~2A draw no longer passes through the
+> SSR channel during shots — the jumper carries it. SSR 1.5A continuous limit is N/A.
 >
 > **Why BCM 27 is boot-safe here:** at boot PY.00 only *floats* (~2.8V, sourcing no current).
 > The relay IN is a current-driven input (kΩ-range), so a floating pad cannot energize it —

@@ -1050,3 +1050,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[ROOT CAUSE]** (1) `/api/relay/fire` still called legacy `fire_pump`. (2) `_set_pump` closed SIG whenever valve was open — broke DRAIN (OPEN then immediate CLOSE). (3) Solenoid FIRE slider defaulted to **10ms** (inaudible) while post-shot recharge pump was loud.
 - **[FIX]** TEST FIRE → `accum.fire()` (auto-arm); DRAIN uses direct pump GPIO with valve held OPEN; pump start never closes intentional open; Solenoid FIRE default **100ms**; Click Test always `recover_solenoid` first; cal `fire_test` uses accum.
 - **[GUI]** Labels clarify pump=charge, FIRE=solenoid (2 clicks).
+
+## 2026-07-22 — [SAFE] MOSFET hot at boot with Channel B jumpered (Rev J.1)
+- **[OBSERVED]** After jumpering CH2 load for reliable clicks, dual-MOSFET module gets hot during Jetson boot.
+- **[ROOT CAUSE]** Expected: jumper removes CH2 boot interlock; Orin firmware drives PR.05 (SIG) HIGH before `app.py` claims it → FETs conduct with 12V present.
+- **[OPS]** Prefer **SPST switch in series with jumper** (OFF at power-on, ON after dashboard / SIG LED dark). Or remove jumper for each reboot.
+- **[CODE]** `scripts/claim_sig_low.py` + `sentry.service` ExecStartPre (before and after nvargus wait) to shorten userspace HIGH window. Cannot cover firmware window.
+- **[SPEC]** HW-001 §5.5 Rev J.1 + SAFE-001 updated; GUI Step 0 boot-heat warning.
