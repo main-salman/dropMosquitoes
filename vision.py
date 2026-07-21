@@ -210,6 +210,11 @@ class CameraStream:
         self._running = False
         self._thread = None
         self._cap = None
+        # Health: CSI-1 (Sniper) often opens after soft restart but delivers 0 frames
+        # (NvBufSurfaceFromFd Failed). Only a full Jetson reboot clears the PHY.
+        self.healthy = False
+        self.flush_count = 0
+        self.error = None  # e.g. "csi_phy_dead", "open_failed"
 
     def _build_gstreamer_pipeline(self) -> str:
         """
@@ -231,9 +236,11 @@ class CameraStream:
             return
 
         import os
-        import platform
         device_path = f"/dev/video{self.sensor_id}"
         is_jetson = os.path.exists("/etc/nv_tegra_release") or os.path.exists("/proc/device-tree/compatible")
+        self.healthy = False
+        self.flush_count = 0
+        self.error = None
 
         if is_jetson and os.path.exists(device_path):
             # Jetson path: use GStreamer nvarguscamerasrc for hardware ISP
@@ -259,18 +266,35 @@ class CameraStream:
             if not self._cap.isOpened():
                 print(f"[{self.name}] ERROR: Cannot open camera. Using test pattern.")
                 self._cap = None
+                self.error = "open_failed"
             else:
                 # Allow sensor hardware to settle after daemon restart
-
                 time.sleep(5)
                 # Flush stale ISP frames left over from previous unclean shutdown.
-                # Increased to 200 frames for deep warm‑up.
                 flushed = 0
                 for _ in range(200):
                     ret, _ = self._cap.read()
                     if ret:
                         flushed += 1
+                self.flush_count = flushed
                 print(f"[{self.name}] Flushed {flushed} startup frames (ISP warmup).")
+                # Soft restart leaves CSI-1 openable but producing zero frames
+                # (NvBufSurfaceFromFd Failed). Holding that dead pipeline open
+                # makes the stream look blank; release and flag for reboot.
+                if flushed == 0:
+                    self.error = "csi_phy_dead"
+                    print(
+                        f"[{self.name}] CRITICAL: 0 frames after open — CSI PHY "
+                        f"stale (sensor-id={self.sensor_id}). Full Jetson reboot "
+                        f"required; nvargus/modprobe cannot clear this."
+                    )
+                    try:
+                        self._cap.release()
+                    except Exception:
+                        pass
+                    self._cap = None
+                else:
+                    self.healthy = True
         else:
             # Dev machine (macOS/Windows): try system camera via OS backend
             print(f"[{self.name}] Non-Jetson detected. Trying system camera index {self.sensor_id}...")
@@ -280,14 +304,32 @@ class CameraStream:
                 self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
                 self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
                 print(f"[{self.name}] System camera {self.sensor_id} opened successfully.")
+                self.healthy = True
+                self.flush_count = 1
             else:
                 print(f"[{self.name}] No camera at index {self.sensor_id}. Using test pattern.")
                 self._cap = None
+                self.error = "open_failed"
 
         self._running = True
         self._thread = threading.Thread(target=self._capture_loop, daemon=True)
         self._thread.start()
         print(f"[{self.name}] Capture thread started.")
+
+    def get_status(self) -> dict:
+        """Health snapshot for /api/cameras/status and deploy verify."""
+        with self._lock:
+            has_frame = self._frame is not None
+        return {
+            "name": self.name,
+            "sensor_id": self.sensor_id,
+            # healthy reflects successful ISP warmup (flush>0), not just open()
+            "healthy": bool(self.healthy),
+            "running": self._running,
+            "flush_count": self.flush_count,
+            "has_frame": has_frame,
+            "error": self.error,
+        }
 
     def _capture_loop(self):
         """Background thread: continuously reads frames and encodes JPEG."""
@@ -321,7 +363,7 @@ class CameraStream:
         # Note: cap.release() is handled by stop(), not here.
 
     def _generate_test_pattern(self) -> np.ndarray:
-        """Generate a labeled test pattern when no camera hardware is present."""
+        """Generate a labeled placeholder when no usable camera feed is present."""
         frame = np.zeros((self.height, self.width, 3), dtype=np.uint8)
         # Grid lines
         for x in range(0, self.width, 80):
@@ -332,11 +374,20 @@ class CameraStream:
         cx, cy = self.width // 2, self.height // 2
         cv2.line(frame, (cx - 30, cy), (cx + 30, cy), (0, 255, 0), 2)
         cv2.line(frame, (cx, cy - 30), (cx, cy + 30), (0, 255, 0), 2)
-        # Label
-        cv2.putText(frame, f"{self.name} — NO CAMERA",
-                    (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-        cv2.putText(frame, f"{self.width}x{self.height} @ {self.fps}fps",
-                    (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 1)
+        if self.error == "csi_phy_dead":
+            cv2.putText(frame, f"{self.name} — CSI DEAD",
+                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            cv2.putText(frame, "Soft restart poisoned CSI PHY (sensor-id)",
+                        (20, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 165, 255), 1)
+            cv2.putText(frame, "Fix: ./run-ai.sh  (full reboot)",
+                        (20, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 1)
+            cv2.putText(frame, "nvargus restart / modprobe cannot clear this",
+                        (20, 140), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (180, 180, 180), 1)
+        else:
+            cv2.putText(frame, f"{self.name} — NO CAMERA",
+                        (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+            cv2.putText(frame, f"{self.width}x{self.height} @ {self.fps}fps",
+                        (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (128, 128, 128), 1)
         # Simulated timestamp
         ts = time.strftime("%H:%M:%S")
         cv2.putText(frame, ts, (self.width - 120, 30),

@@ -1,11 +1,13 @@
 #!/bin/bash
-# run-ai.sh — Deploy and start Sniper Messy Mortar on the Jetson
+# run-ai.sh — Deploy and (re)start Sniper Messy Mortar on the Jetson
 #
 # Usage:
-#   ./run-ai.sh              # Deploy + start on Jetson (default)
+#   ./run-ai.sh              # Deploy + full Jetson reboot (default — clean CSI)
+#   ./run-ai.sh --restart    # Deploy + systemctl restart only (Sniper may stay black)
+#   ./run-ai.sh --no-deploy  # Reboot only (no rsync); add --restart for soft restart
 #   ./run-ai.sh --local      # Start locally on this machine (dev testing only)
-#   ./run-ai.sh --no-deploy  # Start on Jetson without re-deploying code
 #
+# Uses JETSON_IP / JETSON_USER / JETSON_PASSWORD from .env for non-interactive sudo.
 # The server runs ON THE JETSON so it can access the CSI cameras.
 # Access the dashboard from your browser at http://<JETSON_IP>:8000
 
@@ -15,14 +17,10 @@ PID_FILE="$SCRIPT_DIR/.sentry.pid"
 LOG_FILE="$SCRIPT_DIR/sentry.log"
 PORT=8000
 
-# Load .env for Jetson connection details
-if [ -f "$SCRIPT_DIR/.env" ]; then
-    export $(grep -v '^#' "$SCRIPT_DIR/.env" | grep -v '^\s*$' | xargs)
-fi
-
-JETSON_USER="${JETSON_USER:-jetson}"
-JETSON_HOST="${JETSON_IP:-jetson.local}"
-JETSON_PATH="/home/${JETSON_USER}/dropMosquitoes"
+DO_DEPLOY=1
+# Default FULL REBOOT: Orin CSI-1 PHY retains lane sync across systemctl restart;
+# only a reboot restores Sniper video (docs/HISTORY 2026-06-03).
+DO_REBOOT=1
 
 # ---- LOCAL MODE (dev testing on Mac/PC with webcam) ----
 if [[ "${1:-}" == "--local" ]]; then
@@ -46,11 +44,35 @@ if [[ "${1:-}" == "--local" ]]; then
     exit 0
 fi
 
+for arg in "$@"; do
+    case "$arg" in
+        --no-deploy) DO_DEPLOY=0 ;;
+        --reboot) DO_REBOOT=1 ;;
+        --restart) DO_REBOOT=0 ;;
+        *) echo "Unknown flag: $arg"; exit 1 ;;
+    esac
+done
+
+# Load .env for Jetson connection details
+if [ -f "$SCRIPT_DIR/.env" ]; then
+    # shellcheck disable=SC2046
+    export $(grep -v '^#' "$SCRIPT_DIR/.env" | grep -v '^\s*$' | xargs)
+fi
+
+JETSON_USER="${JETSON_USER:-jetson}"
+JETSON_HOST="${JETSON_IP:-jetson.local}"
+JETSON_PATH="/home/${JETSON_USER}/dropMosquitoes"
+
 # ---- JETSON MODE (default — runs on the actual hardware) ----
 echo "══════════════════════════════════════════════"
 echo "  Sniper Messy Mortar — Jetson Deployment"
 echo "  Target: ${JETSON_USER}@${JETSON_HOST}"
 echo "══════════════════════════════════════════════"
+
+if [ -z "${JETSON_PASSWORD:-}" ]; then
+    echo "❌ JETSON_PASSWORD not set. Add it to .env (same as before)."
+    exit 1
+fi
 
 # Check Jetson is reachable
 if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "${JETSON_USER}@${JETSON_HOST}" "echo ok" > /dev/null 2>&1; then
@@ -61,20 +83,46 @@ if ! ssh -o ConnectTimeout=5 -o BatchMode=yes "${JETSON_USER}@${JETSON_HOST}" "e
 fi
 
 # Step 1: Deploy code (unless --no-deploy)
-if [[ "${1:-}" != "--no-deploy" ]]; then
+if [ "$DO_DEPLOY" -eq 1 ]; then
     echo ""
-    echo "📦 Step 1/3: Deploying code to Jetson..."
-    "$SCRIPT_DIR/deploy.sh" "$JETSON_HOST"
+    if [ "$DO_REBOOT" -eq 1 ]; then
+        echo "📦 Step 1: Deploying code to Jetson (restart deferred to reboot)..."
+        "$SCRIPT_DIR/deploy.sh" --no-restart "$JETSON_HOST"
+    else
+        echo "📦 Step 1: Deploying code + restarting sentry..."
+        echo "   (deploy.sh will auto-reboot if Sniper CSI-1 comes up dead)"
+        "$SCRIPT_DIR/deploy.sh" "$JETSON_HOST"
+        echo ""
+        echo "══════════════════════════════════════════════"
+        echo "  ✅ Updated on Jetson"
+        echo "  Dashboard: http://${JETSON_HOST}:${PORT}"
+        echo "  Prefer full reboot next time: ./run-ai.sh"
+        echo "══════════════════════════════════════════════"
+        exit 0
+    fi
 else
     echo ""
-    echo "⏭  Skipping deploy (--no-deploy flag)"
+    echo "⏭  Skipping deploy (--no-deploy)"
 fi
 
-# Step 2: Reboot the Jetson for clean CSI camera state
+# Restart-only (no reboot, no deploy)
+if [ "$DO_REBOOT" -eq 0 ]; then
+    echo ""
+    echo "🔄 Restarting sentry.service..."
+    ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH
+        echo '${JETSON_PASSWORD}' | sudo -S systemctl restart sentry
+ENDSSH
+    sleep 3
+    HTTP_CODE=$(ssh "${JETSON_USER}@${JETSON_HOST}" "curl -s -o /dev/null -w '%{http_code}' http://localhost:${PORT}/ 2>/dev/null" || echo "000")
+    echo "✅ sentry restarted (HTTP ${HTTP_CODE}). Dashboard: http://${JETSON_HOST}:${PORT}"
+    exit 0
+fi
+
+# Step 2: Full reboot for clean CSI camera state
 # The MIPI CSI-2 PHY retains lane sync state that `modprobe -r` cannot clear.
 # Only a full reboot guarantees clean video on both sensors (especially sensor-1/Sniper).
 echo ""
-echo "🔄 Step 2/3: Rebooting Jetson for clean camera state..."
+echo "🔄 Step 2: Rebooting Jetson for clean camera state..."
 ssh "${JETSON_USER}@${JETSON_HOST}" bash <<ENDSSH || true
     cd /home/jetson/dropMosquitoes 2>/dev/null || true
 
@@ -97,7 +145,7 @@ ENDSSH
 
 # Step 3: Wait for Jetson to come back up and verify dashboard
 echo ""
-echo "⏳ Step 3/3: Waiting for Jetson to reboot..."
+echo "⏳ Step 3: Waiting for Jetson to reboot..."
 
 # Wait for SSH to become available (up to 120 seconds)
 WAIT_MAX=120
@@ -147,4 +195,3 @@ echo ""
 echo "  To stop:   ./stop.sh"
 echo "  To view logs: ssh ${JETSON_USER}@${JETSON_HOST} 'tail -f ${JETSON_PATH}/sentry.log'"
 echo "══════════════════════════════════════════════"
-
