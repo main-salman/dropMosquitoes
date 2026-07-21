@@ -149,6 +149,7 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump) [Jetson.GPIO]
+RELAY_SOL12V_PIN = 27     # BCM 27 = Pin 13 → IDC40P Terminal 13 → Relay CH2 IN (module 12V)
 SOLENOID_PIN = 16         # BCM 16 = Pin 36 (informational; solenoid driven via libgpiod below)
 
 # Solenoid trigger (dual-MOSFET module SIG) — driven via libgpiod (see Rev E note above).
@@ -157,10 +158,9 @@ SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by p
 SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 
 # Solenoid 12V interlock — Relay CH2 gates the MOSFET module's DC IN+ (Rev H/I).
-# Boot: CH2 open (PY.00 floats, cannot energize SSR IN). Runtime: CH2 OFF except
-# during intentional valve pulses so a SIG glitch cannot cook the MOSFETs.
-SOLENOID_12V_LINE_NAME = "PY.00"   # BCM 27 / Pin 13 / Terminal 13 → Relay CH2 IN
-SOLENOID_12V_LINE_OFFSET = 122     # Fallback line offset if name lookup fails
+# Driven via Jetson.GPIO (same stack as pump CH1). libgpiod readback on PY.00 was
+# reporting HIGH while the Monk Makes CH2 LED stayed dark — Yahboom PY.00 is a
+# weak pad. Prefer module_12v_hardwired=True (jumper CH2 load / direct fused 12V).
 # =======================================================================================================
 
 
@@ -208,6 +208,15 @@ class _LibGpiodSolenoid:
         if self._line is not None:
             self._line.set_value(1 if state else 0)
 
+    def get(self):
+        """Read back driven line value (0/1), or None if unavailable."""
+        if self._line is None:
+            return None
+        try:
+            return int(self._line.get_value())
+        except Exception:
+            return None
+
     def release(self):
         if self._line is not None:
             try:
@@ -216,6 +225,46 @@ class _LibGpiodSolenoid:
             except Exception:
                 pass
             self._line = None
+
+
+class _JetsonGpioOut:
+    """Jetson.GPIO output (used for pump + Relay CH2)."""
+
+    def __init__(self, bcm_pin: int, label: str = "GPIO"):
+        self._pin = int(bcm_pin)
+        self._label = label
+        self._ok = False
+        if JETSON_AVAILABLE:
+            try:
+                GPIO.setup(self._pin, GPIO.OUT, initial=GPIO.LOW)
+                self._ok = True
+                print(f"[{label}] Jetson.GPIO BCM{self._pin} ready — LOW.")
+            except Exception as e:
+                print(f"[{label}] Jetson.GPIO BCM{self._pin} init failed: {e}")
+
+    @property
+    def available(self) -> bool:
+        return self._ok
+
+    def set(self, state: bool):
+        if self._ok:
+            GPIO.output(self._pin, GPIO.HIGH if state else GPIO.LOW)
+
+    def get(self):
+        if not self._ok:
+            return None
+        try:
+            return int(GPIO.input(self._pin))
+        except Exception:
+            return None
+
+    def release(self):
+        if self._ok:
+            try:
+                GPIO.output(self._pin, GPIO.LOW)
+            except Exception:
+                pass
+            self._ok = False
 
 
 class RelayController:
@@ -237,16 +286,22 @@ class RelayController:
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
     """
 
-    # Solid-state CH2 settle before asserting SIG (ms).
-    _SOL12V_SETTLE_SEC = 0.015
+    # Solid-state Relay CH2 settle before asserting SIG.
+    # 15ms was too short after cold boot / SSR wake — clicks silently fail.
+    _SOL12V_SETTLE_SEC = 0.080
 
     def __init__(self):
         global JETSON_AVAILABLE
         self._pump_state = False
         self._solenoid_state = False
+        self._module_power_hold = False  # True while ARMED — CH2 stays ON
+        # True = module DC IN+ hardwired / CH2 load jumpered; SIG-only control.
+        # Default ON: Yahboom PY.00 does not reliably close Monk Makes CH2.
+        self._module_12v_hardwired = True
         self._lock = threading.Lock()
 
-        # PADCTL pinmux must be in GPIO mode before either backend drives the pads.
+        # PADCTL pinmux MUST run before claiming lines.
+        # Never rewrite PR.05 again while libgpiod owns it (glitches SIG).
         configure_push_pull()
 
         if JETSON_AVAILABLE:
@@ -268,44 +323,94 @@ class RelayController:
         self._solenoid = _LibGpiodSolenoid()
         self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
 
-        # Rev I: claim CH2 and keep it OFF. Module 12V is enabled only around
-        # intentional open pulses — never latched for the session lifetime.
-        self._sol_12v = _LibGpiodSolenoid(line_name=SOLENOID_12V_LINE_NAME,
-                                          line_offset=SOLENOID_12V_LINE_OFFSET,
-                                          consumer="sentry-sol12v",
-                                          label="Sol12V")
+        # CH2 via Jetson.GPIO BCM 27 (same path as pump). Kept LOW when hardwired.
+        self._sol_12v = _JetsonGpioOut(RELAY_SOL12V_PIN, label="Sol12V")
         self._sol_12v_state = False
-        self.set_solenoid_power(False)
-        # Boot firmware drives PR.05 HIGH until we claim it — module SIG LED can
-        # stay lit through that window. Re-assert LOW after CH2 claim, then keep
-        # an idle watchdog so a stuck-HIGH SIG (LED on, no heat when CH2 off)
-        # cannot linger until the next click test.
         self._force_solenoid_safe()
         self._solenoid.set(False)
-        print("[RelayController] Solenoid 12V gated OFF (pulse-power mode).")
+        if not self._module_12v_hardwired:
+            self._boot_warm_module_12v()
+            print("[RelayController] Solenoid 12V via Relay CH2 (Jetson.GPIO).")
+        else:
+            print("[RelayController] Module 12V HARDWIRED mode — CH2 GPIO idle; "
+                  "jumper CH2 load screws or feed fused 12V to module DC IN+.")
         self._idle_stop = threading.Event()
         self._idle_thread = threading.Thread(
             target=self._idle_sig_watchdog, daemon=True, name="solenoid-idle-watchdog")
         self._idle_thread.start()
 
+    def set_module_12v_hardwired(self, hardwired: bool):
+        """
+        When True: do not drive Relay CH2 — assume module has fused 12V
+        (CH2 load jumpered or DC IN+ wired direct). Shots are SIG-only.
+        """
+        with self._lock:
+            self._module_12v_hardwired = bool(hardwired)
+            self._module_power_hold = False
+            self._solenoid.set(False)
+            self._solenoid_state = False
+            self._sol_12v.set(False)
+            self._sol_12v_state = False
+            mode = "HARDWIRED (SIG-only)" if self._module_12v_hardwired else "Relay CH2 gated"
+            print(f"[RelayController] Module 12V mode → {mode}")
+
+    def _boot_warm_module_12v(self):
+        """Brief CH2 ON with SIG LOW after boot — wakes SSR/module caps."""
+        if self._module_12v_hardwired:
+            return
+        with self._lock:
+            try:
+                self._solenoid.set(False)
+                self._solenoid_state = False
+                self._drive_module_12v_on(settle=False)
+                time.sleep(0.15)
+            finally:
+                self._force_solenoid_safe()
+                self._solenoid.set(False)
+        print("[RelayController] Boot warm: CH2 pulsed 150ms (SIG LOW).")
+
     def _idle_sig_watchdog(self):
         """
-        While idle, periodically force SIG LOW + CH2 OFF.
-        Does NOT rewrite PADCTL (that can glitch PR.05 high).
-        Module SIG LED = logic trigger indicator; with CH2 off it can light
-        without heating the FETs (Rev I).
+        Periodic SIG/CH2 hygiene. Does NOT rewrite PADCTL (can glitch PR.05).
+
+        Hardwired 12V: only keep SIG LOW when idle.
+        Relay-gated + ARMED hold: re-drive CH2 HIGH every tick.
+        Idle gated: SIG LOW + CH2 OFF.
         """
-        while not self._idle_stop.wait(1.0):
+        while not self._idle_stop.wait(0.5):
             with self._lock:
                 if self._solenoid_state:
-                    continue  # intentional open / gate-hold in progress
-                # Re-drive LOW even if software state already says closed —
-                # catches stuck-HIGH after boot or a missed close.
+                    continue  # intentional valve open
                 self._solenoid.set(False)
+                if self._module_12v_hardwired:
+                    continue
+                if self._module_power_hold:
+                    prev = self._sol_12v.get()
+                    self._drive_module_12v_on(settle=False)
+                    now = self._sol_12v.get()
+                    if prev == 0 or now == 0:
+                        print(f"[RelayController] HOLD RE-ASSERT CH2 "
+                              f"(readback was {prev} → {now})")
+                    continue
                 if self._sol_12v_state:
                     print("[RelayController] IDLE WATCHDOG: CH2 was ON while idle — cutting 12V")
                     self._sol_12v.set(False)
                     self._sol_12v_state = False
+
+    def _drive_module_12v_on(self, settle: bool = False):
+        """
+        Drive CH2 HIGH unless hardwired. Caller MUST hold self._lock.
+        """
+        if self._module_12v_hardwired:
+            self._sol_12v_state = True  # logical "powered" for status
+            return
+        # Refresh PY.00 padmux occasionally — do NOT touch PR.05 here
+        if settle:
+            configure_push_pull(only=("PY.00",))
+        self._sol_12v.set(True)
+        self._sol_12v_state = True
+        if settle:
+            time.sleep(self._SOL12V_SETTLE_SEC)
 
     # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
     # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
@@ -355,86 +460,242 @@ class RelayController:
             self._set_pump(state)
 
     def _set_pump(self, state: bool):
+        """Caller should hold self._lock (via set_pump)."""
         self._pump_state = state
         if JETSON_AVAILABLE:
-            # Only touch the pump pad — never reconfigure PR.05 here (SIG glitch risk).
-            configure_push_pull(only=("PR.04",))
+            # Do NOT rewrite PADCTL on every pump edge — mmap/write of the
+            # padctl region was correlated with SIG glitches and lost clicks
+            # after a few auto-cal shots. Pinmux is set once at init/recover.
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
-        # Pump edges must never leave the valve commanded open / SIG LED latched.
+        # Soft-assert SIG LOW only — never cut CH2 here.
         if not self._solenoid_state:
-            self._force_solenoid_safe()
+            self._solenoid.set(False)
+        # Pump edges can EMI-glitch PY.00; re-drive CH2 while ARMED hold is on.
+        if self._module_power_hold and not self._module_12v_hardwired:
+            self._drive_module_12v_on(settle=False)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
     # -- Solenoid Control (ECO-2026-004) --------------------------------------
 
     def _force_solenoid_safe(self):
-        """SIG LOW then cut module 12V — safe idle regardless of prior state."""
+        """SIG LOW + cut CH2 (if gated) + clear session hold. Caller holds lock."""
         self._solenoid.set(False)
         self._solenoid_state = False
-        if self._sol_12v_state:
-            self._sol_12v.set(False)
-            self._sol_12v_state = False
+        self._module_power_hold = False
+        self._sol_12v.set(False)
+        self._sol_12v_state = False
+
+    def set_module_power_hold(self, hold: bool):
+        """
+        ARMED-session power: keep MOSFET module 12V (Relay CH2) ON continuously
+        and only pulse SIG for each shot. No-op for CH2 when hardwired.
+        """
+        with self._lock:
+            self._module_power_hold = bool(hold) and not self._module_12v_hardwired
+            if hold:
+                self._solenoid.set(False)
+                self._solenoid_state = False
+                if self._module_12v_hardwired:
+                    self._sol_12v_state = True
+                    print("[RelayController] Module 12V HARDWIRED — ARMED (SIG-only pulses)")
+                else:
+                    self._drive_module_12v_on(settle=True)
+                    rb = self._sol_12v.get()
+                    print("[RelayController] Module 12V HOLD ON (ARMED session — SIG-only pulses)"
+                          f" ch2_readback={rb}")
+            else:
+                self._solenoid.set(False)
+                self._solenoid_state = False
+                self._sol_12v.set(False)
+                self._sol_12v_state = False
+                print("[RelayController] Module 12V HOLD OFF")
 
     def set_solenoid(self, state: bool):
         """
         Open (HIGH) or close (LOW) the solenoid valve via the MOSFET gate.
-        Module 12V (Relay CH2) is enabled only while commanded OPEN.
+        Always takes the relay lock (safe vs idle watchdog).
         """
         with self._lock:
             self._set_solenoid(state)
 
     def _set_solenoid(self, state: bool):
+        """Caller MUST hold self._lock."""
         if state:
-            # Power the MOSFET module only for the open command.
-            if not self._sol_12v_state:
-                self._solenoid.set(False)  # never apply 12V with SIG already high
-                self._sol_12v.set(True)
-                self._sol_12v_state = True
-                time.sleep(self._SOL12V_SETTLE_SEC)
+            need_settle = (
+                not self._module_12v_hardwired
+                and (not self._sol_12v_state or not self._module_power_hold)
+            )
+            self._solenoid.set(False)  # never apply 12V with SIG already high
+            self._drive_module_12v_on(settle=need_settle)
             self._solenoid.set(True)
             self._solenoid_state = True
-            print("[RelayController] Solenoid OPEN (12V gated ON)")
+            if self._module_12v_hardwired:
+                power = "hardwired"
+            elif self._module_power_hold:
+                power = "hold"
+            else:
+                power = "pulse-power"
+            print(f"[RelayController] Solenoid OPEN (SIG HIGH, 12V={power}"
+                  f", ch2_rb={self._sol_12v.get()})")
         else:
-            self._force_solenoid_safe()
-            print("[RelayController] Solenoid CLOSED (12V gated OFF)")
+            self._solenoid.set(False)
+            self._solenoid_state = False
+            if self._module_12v_hardwired:
+                print("[RelayController] Solenoid CLOSED (SIG LOW, 12V=hardwired)")
+            elif self._module_power_hold:
+                self._drive_module_12v_on(settle=False)
+                print("[RelayController] Solenoid CLOSED (SIG LOW, CH2 hold ON"
+                      f", ch2_rb={self._sol_12v.get()})")
+            else:
+                self._sol_12v.set(False)
+                self._sol_12v_state = False
+                print("[RelayController] Solenoid CLOSED (SIG LOW, CH2 OFF)")
 
-    def fire_solenoid(self, duration_sec: float = 0.010):
+    def pulse_solenoid(self, duration_sec: float = 0.025) -> dict:
         """
-        Pulse the solenoid valve open for duration_sec, then close.
-        This is the precision firing mechanism — pump stays OFF,
-        accumulator provides stored pressure.
+        Synchronous solenoid pulse under the relay lock for the entire open
+        window. Hardwired / hold: SIG-only open window; gated pulse-power:
+        CH2 re-driven around the pulse.
+        """
+        duration_sec = max(0.001, min(float(duration_sec), 2.0))
+        t0 = time.time()
+        ch2_held = False
+        ch2_rb = None
+        ch2_rb_after = None
+        hardwired = False
+        with self._lock:
+            hardwired = self._module_12v_hardwired
+            try:
+                self._set_solenoid(True)
+                ch2_rb = self._sol_12v.get()
+                ch2_held = bool(self._module_power_hold) or hardwired
+                time.sleep(duration_sec)
+            finally:
+                self._set_solenoid(False)
+                ch2_rb_after = self._sol_12v.get()
+        elapsed_ms = (time.time() - t0) * 1000.0
+        print(f"[RelayController] SOLENOID PULSE done: cmd={duration_sec*1000:.1f}ms "
+              f"elapsed={elapsed_ms:.1f}ms hardwired={hardwired} ch2_held={ch2_held} "
+              f"ch2_rb={ch2_rb}/{ch2_rb_after}")
+        return {
+            "status": "complete",
+            "duration_ms": round(duration_sec * 1000.0, 1),
+            "elapsed_ms": round(elapsed_ms, 1),
+            "solenoid_state": self._solenoid_state,
+            "solenoid_12v": self._sol_12v_state,
+            "ch2_held": ch2_held,
+            "ch2_readback": ch2_rb,
+            "ch2_readback_after": ch2_rb_after,
+            "module_power_hold": self._module_power_hold,
+            "module_12v_hardwired": hardwired,
+        }
 
-        Args:
-            duration_sec: Valve open time in seconds (0.001 to 2.0).
+    def recover_solenoid(self, re_pinmux: bool = False) -> dict:
+        """
+        Force SIG LOW + CH2 OFF + clear session hold.
+
+        IMPORTANT: default re_pinmux=False. Rewriting PR.05 PADCTL while
+        libgpiod owns the line glitches SIG. Pinmux is applied once at init.
+        """
+        with self._lock:
+            if re_pinmux:
+                configure_push_pull(only=("PR.05", "PY.00"))
+            self._force_solenoid_safe()
+            self._solenoid.set(False)
+            print("[RelayController] Solenoid drive recovered (SIG LOW, CH2 OFF"
+                  f"{', pinmux rewritten' if re_pinmux else ''})")
+            return {
+                "solenoid": False,
+                "solenoid_12v": False,
+                "re_pinmux": bool(re_pinmux),
+            }
+
+    def fire_solenoid(self, duration_sec: float = 0.025):
+        """
+        Async wrapper around pulse_solenoid() for legacy non-blocking callers.
+        Prefer pulse_solenoid() for fire paths that need a guaranteed pulse.
         """
         duration_sec = max(0.001, min(duration_sec, 2.0))
-        print(f"[RelayController] SOLENOID PULSE: {duration_sec*1000:.1f}ms")
+        print(f"[RelayController] SOLENOID PULSE (async): {duration_sec*1000:.1f}ms")
 
         def _pulse():
-            with self._lock:
-                try:
-                    self._set_solenoid(True)
-                    time.sleep(duration_sec)
-                finally:
-                    self._set_solenoid(False)
+            self.pulse_solenoid(duration_sec)
 
-        threading.Thread(target=_pulse, daemon=True).start()
+        threading.Thread(target=_pulse, daemon=True, name="solenoid-pulse").start()
+
+    def drain_line(self, duration_sec: float = 15.0) -> dict:
+        """
+        Maintenance: solenoid OPEN + pump ON for duration_sec to flush the line.
+        Holds the relay lock so the idle watchdog cannot cut CH2 mid-drain.
+        Always ends with pump OFF and solenoid CLOSED.
+        """
+        duration_sec = max(1.0, min(float(duration_sec), 30.0))
+        t0 = time.time()
+        print(f"[RelayController] 🚰 DRAIN LINE: solenoid OPEN + pump ON for "
+              f"{duration_sec:.1f}s")
+        with self._lock:
+            try:
+                self._set_solenoid(True)
+                self._set_pump(True)
+                time.sleep(duration_sec)
+            finally:
+                self._set_pump(False)
+                self._set_solenoid(False)
+        elapsed = time.time() - t0
+        print(f"[RelayController] 🚰 DRAIN complete in {elapsed:.1f}s — safe idle")
+        return {
+            "status": "complete",
+            "duration_sec": round(duration_sec, 1),
+            "elapsed_sec": round(elapsed, 1),
+            "pump": self._pump_state,
+            "solenoid": self._solenoid_state,
+        }
 
     def set_solenoid_power(self, state: bool):
         """
-        Manual override for Relay CH2 (module 12V). Normal fire paths gate
-        this automatically; leave OFF at idle (Rev I pulse-power mode).
+        Manual override for Relay CH2 (module 12V). Ignored when hardwired.
         """
-        if state:
-            # Never power the module with the valve commanded open.
+        with self._lock:
             self._solenoid.set(False)
             self._solenoid_state = False
-        else:
+            if self._module_12v_hardwired:
+                print("[RelayController] Solenoid 12V override ignored (hardwired mode)")
+                return
+            self._sol_12v.set(bool(state))
+            self._sol_12v_state = bool(state)
+            print(f"[RelayController] Solenoid 12V (Relay CH2) {'ON' if state else 'OFF'}")
+
+    def hold_ch2(self, seconds: float = 5.0) -> dict:
+        """
+        Drive Relay CH2 IN (BCM 27 / T13) HIGH for measurement — SIG stays LOW.
+        Use to watch Monk Makes Channel B LED and meter Terminal 13 (~3.3V).
+        """
+        seconds = max(1.0, min(float(seconds), 30.0))
+        if self._module_12v_hardwired:
+            return {
+                "status": "skipped",
+                "error": "module_12v_hardwired=True — CH2 GPIO idle; jumper load or disable hardwired",
+                "module_12v_hardwired": True,
+            }
+        with self._lock:
             self._solenoid.set(False)
             self._solenoid_state = False
-        self._sol_12v.set(state)
-        self._sol_12v_state = state
-        print(f"[RelayController] Solenoid 12V (Relay CH2) {'ON' if state else 'OFF'}")
+            configure_push_pull(only=("PY.00",))
+            self._sol_12v.set(True)
+            self._sol_12v_state = True
+            rb = self._sol_12v.get()
+        time.sleep(seconds)
+        with self._lock:
+            self._sol_12v.set(False)
+            self._sol_12v_state = False
+            rb_after = self._sol_12v.get()
+        return {
+            "status": "complete",
+            "held_sec": seconds,
+            "ch2_readback": rb,
+            "ch2_readback_after": rb_after,
+            "pin": f"BCM{RELAY_SOL12V_PIN}/T13",
+        }
 
     # -- Backward compatibility -----------------------------------------------
 
@@ -453,6 +714,10 @@ class RelayController:
             "pump": self._pump_state,
             "solenoid": self._solenoid_state,
             "solenoid_12v": self._sol_12v_state,  # Rev H boot interlock (Relay CH2)
+            "module_power_hold": self._module_power_hold,
+            "module_12v_hardwired": self._module_12v_hardwired,
+            "ch2_readback": self._sol_12v.get() if hasattr(self, "_sol_12v") else None,
+            "sig_readback": self._solenoid.get() if hasattr(self, "_solenoid") else None,
             "gimbal_power": True  # Always on (backward compat)
         }
 
@@ -493,30 +758,28 @@ class RelayController:
 
 class AccumulatorManager:
     """
-    Manages the R385 pump + 0.75L Swess accumulator + GOODRIG solenoid
-    using a charge-on-demand strategy.
+    Manages the R385 pump + 0.75L Swess accumulator + GOODRIG solenoid.
 
-    The R385 brushed motor pump has NO pressure switch and CANNOT run
-    continuously against a closed solenoid (deadheading → overheat → burn out).
-
-    With a connected PressureSensor, arm/top-up pump until TARGET_PSI is reached
-    (closed-loop). Without a sensor, fall back to timed bursts — never fabricate PSI.
+    Contract (SW-001 §2.7):
+      - Pump only charges (solenoid CLOSED) until TARGET_PSI
+      - Shots are solenoid-only; pump OFF for the whole open pulse
+      - Every shot waits for pressure ready, then recharges before return
+      - Maintain loop (ARMED only) polls every PRESSURE_POLL_SEC, no hysteresis
+      - Sensor fault while armed → disarm + alarm
 
     State machine: IDLE → CHARGING → ARMED → FIRING → ARMED → ...
     """
 
-    # -- Configurable charge parameters (tunable via API / calibration) --------
-    TARGET_PSI = 5.0             # Closed-loop charge + maintain; overridden by settings.json (SW-001 §2.11)
-    MAINTAIN_HYSTERESIS_PSI = 1.0  # Recharge when PSI < target − this (while armed)
+    # -- Configurable charge parameters (tunable via settings.json §2.11) ------
+    TARGET_PSI = 5.0             # Closed-loop charge + maintain
+    MAINTAIN_HYSTERESIS_PSI = 0.0  # No hysteresis — recharge if PSI < target
+    PRESSURE_POLL_SEC = 60.0     # Maintain loop poll interval while ARMED
     INITIAL_CHARGE_SEC = 3.0     # Timed fallback when first arming (sensor absent)
     TOPUP_CHARGE_SEC = 1.0       # Timed fallback for top-up (sensor absent)
-    TOPUP_INTERVAL_SHOTS = 10    # Burst mode: top up every N shots (if no sensor)
+    TOPUP_INTERVAL_SHOTS = 10    # Legacy burst counter (pressure path always recharge-after-shot)
     MAX_PUMP_RUN_SEC = 8.0       # Absolute max pump run time (deadhead protection)
-    DEFAULT_PULSE_SEC = 0.010    # Default solenoid pulse (10ms)
-    # SW-001 §2.7: charge-per-shot recharges to TARGET_PSI after EVERY shot
-    # so each shot fires from the same pressure → consistent distance.
-    # Set False for burst/N-shot mode (faster cadence, distance fades on drawdown).
-    CHARGE_PER_SHOT = True
+    DEFAULT_PULSE_SEC = 0.100    # Standard solenoid pulse (shared live + auto-cal)
+    CHARGE_PER_SHOT = True       # Always recharge after shot when pressure-gated
 
     # States
     STATE_IDLE = "idle"
@@ -524,14 +787,16 @@ class AccumulatorManager:
     STATE_ARMED = "armed"
     STATE_FIRING = "firing"
 
-    def __init__(self, relay: RelayController, pressure=None):
+    def __init__(self, relay: RelayController, pressure=None, on_alarm=None):
         """
         Args:
             relay: RelayController instance (manages GPIO for pump + solenoid)
             pressure: optional PressureSensor for closed-loop charge-to-PSI
+            on_alarm: optional callable(reason: str) for sensor-fault alarm
         """
         self._relay = relay
         self._pressure = pressure
+        self._on_alarm = on_alarm
         self._state = self.STATE_IDLE
         self._shot_count = 0           # Shots since last charge/top-up
         self._total_shots = 0          # Total shots since arming
@@ -540,6 +805,9 @@ class AccumulatorManager:
         self._last_fire_time = 0.0
         self._arm_time = 0.0
         self._last_psi = None
+        self._alarm = False
+        self._alarm_reason = ""
+        self._pressure_gated = False   # True once we successfully used live PSI
         self._lock = threading.Lock()
         self._maintain_thread = None
         print("[AccumulatorManager] Initialized (IDLE state)")
@@ -569,7 +837,7 @@ class AccumulatorManager:
         If the pressure sensor is disconnected, fall back to a timed burst.
         Always turns the pump OFF before returning.
         """
-        self._relay._set_solenoid(False)
+        self._relay.set_solenoid(False)
         time.sleep(0.05)
 
         timeout = min(max(timed_fallback_sec, 0.5), self.MAX_PUMP_RUN_SEC)
@@ -596,7 +864,7 @@ class AccumulatorManager:
         start = time.time()
         reached = False
         psi = psi_before
-        self._relay._set_pump(True)
+        self._relay.set_pump(True)
         try:
             if use_pressure:
                 while (time.time() - start) < timeout:
@@ -609,7 +877,7 @@ class AccumulatorManager:
                 time.sleep(timeout)
                 reached = True  # timed path has no PSI criterion
         finally:
-            self._relay._set_pump(False)
+            self._relay.set_pump(False)
 
         time.sleep(0.1)  # brief settle before final reading
         psi = self._read_psi()
@@ -652,8 +920,22 @@ class AccumulatorManager:
         result = {"status": "arming"}
 
         try:
-            charge = self._charge(self.INITIAL_CHARGE_SEC, "⚡ ARMING")
+            self.clear_alarm()
+            # Prefer closed-loop to TARGET; timed fallback only if sensor absent
+            charge_budget = (self.MAX_PUMP_RUN_SEC if self._pressure_connected()
+                             else self.INITIAL_CHARGE_SEC)
+            charge = self._charge(charge_budget, "⚡ ARMING")
             result.update(charge)
+
+            if self._pressure_connected() and not charge.get("reached_target"):
+                with self._lock:
+                    self._state = self.STATE_IDLE
+                    self._armed = False
+                result["status"] = "pressure_not_ready"
+                result["error"] = (f"Arm refused — PSI did not reach "
+                                   f"{self.TARGET_PSI:.1f} within {charge_budget:.1f}s")
+                print(f"[AccumulatorManager] ❌ ARM REFUSED: {result['error']}")
+                return result
 
             with self._lock:
                 self._state = self.STATE_ARMED
@@ -662,6 +944,12 @@ class AccumulatorManager:
                 self._total_shots = 0
                 self._last_charge_time = time.time()
                 self._arm_time = time.time()
+                if self._pressure_connected() and charge.get("psi") is not None:
+                    self._pressure_gated = True
+
+            # Keep MOSFET module 12V ON for the whole ARMED session — pulse SIG
+            # only. Per-shot CH2 SSR cycling was killing clicks after ~3 fires.
+            self._relay.set_module_power_hold(True)
 
             self._start_pressure_maintain()
 
@@ -672,8 +960,8 @@ class AccumulatorManager:
             print(f"[AccumulatorManager] ✅ ARMED — accumulator at {psi_note}, ready to fire")
 
         except Exception as e:
-            self._relay._set_pump(False)
-            self._relay._set_solenoid(False)
+            self._relay.set_pump(False)
+            self._relay.set_solenoid(False)
             with self._lock:
                 self._state = self.STATE_IDLE
                 self._armed = False
@@ -681,19 +969,32 @@ class AccumulatorManager:
             result["error"] = str(e)
             print(f"[AccumulatorManager] ❌ ARM ERROR: {e}")
 
+        try:
+            from activity_log import log_event
+            log_event("ARM", status=result.get("status"), psi=result.get("psi"),
+                      target=self.TARGET_PSI, reached=result.get("reached_target"))
+        except Exception:
+            pass
         return result
 
-    def disarm(self) -> dict:
+    def disarm(self, reason: str = "") -> dict:
         """
         Disarm the system: pump OFF, solenoid CLOSED, reset all state.
 
         Returns:
             dict with disarm status and shot statistics
         """
-        # Stop pressure-maintain loop (exits when _armed clears)
-        # Ensure everything is off
-        self._relay._set_pump(False)
-        self._relay._set_solenoid(False)
+        self._relay.set_pump(False)
+        # Drop ARMED-session CH2 hold, then full safe idle (no PR.05 remap)
+        try:
+            self._relay.set_module_power_hold(False)
+            self._relay.recover_solenoid(re_pinmux=False)
+        except Exception as e:
+            print(f"[AccumulatorManager] recover_solenoid: {e}")
+            try:
+                self._relay.set_solenoid(False)
+            except Exception:
+                pass
 
         with self._lock:
             total = self._total_shots
@@ -701,26 +1002,106 @@ class AccumulatorManager:
             self._armed = False
             self._shot_count = 0
             self._total_shots = 0
+            self._pressure_gated = False
 
-        print(f"[AccumulatorManager] 🔒 DISARMED — total shots fired: {total}")
+        note = f" ({reason})" if reason else ""
+        print(f"[AccumulatorManager] 🔒 DISARMED{note} — total shots fired: {total}")
+        try:
+            from activity_log import log_event
+            log_event("DISARM", reason=reason or "operator", total_shots=total)
+        except Exception:
+            pass
         return {
             "status": "disarmed",
             "total_shots_fired": total,
+            "reason": reason or None,
             "timestamp": time.strftime("%H:%M:%S")
         }
 
+    def clear_alarm(self):
+        """Clear sticky sensor-fault alarm (operator acknowledge)."""
+        with self._lock:
+            self._alarm = False
+            self._alarm_reason = ""
+
+    def _fail_sensor(self, reason: str) -> dict:
+        """Disarm + alarm on pressure sensor fault (SW-001 §2.7)."""
+        print(f"[AccumulatorManager] 🚨 SENSOR FAULT: {reason}")
+        with self._lock:
+            self._alarm = True
+            self._alarm_reason = reason
+        result = self.disarm(reason=f"sensor_fault: {reason}")
+        result["status"] = "sensor_fault"
+        result["alarm"] = True
+        result["error"] = reason
+        if self._on_alarm:
+            try:
+                self._on_alarm(reason)
+            except Exception as e:
+                print(f"[AccumulatorManager] alarm callback error: {e}")
+        return result
+
+    def _ensure_pressure_ready(self, label: str = "ready") -> dict:
+        """
+        Block until PSI >= TARGET_PSI (charge if needed).
+        Returns {"ok": True, ...} or {"ok": False, "status": ..., "error": ...}.
+        """
+        if not self._pressure_connected():
+            if self._pressure_gated:
+                return self._fail_sensor("pressure sensor disconnected")
+            # Bench/stub: timed charge once, then treat as ready
+            charge = self._charge(self.INITIAL_CHARGE_SEC, f"⚡ {label} (timed)")
+            return {"ok": True, "charge": charge, "mode": "timed"}
+
+        psi = self._read_psi()
+        if psi is None:
+            if self._pressure_gated:
+                return self._fail_sensor("pressure reading unavailable")
+            charge = self._charge(self.INITIAL_CHARGE_SEC, f"⚡ {label} (timed)")
+            return {"ok": True, "charge": charge, "mode": "timed"}
+
+        self._pressure_gated = True
+        if psi >= self.TARGET_PSI:
+            self._last_psi = psi
+            return {"ok": True, "psi": psi, "charge": None, "mode": "already_ready"}
+
+        with self._lock:
+            if self._state == self.STATE_CHARGING:
+                return {"ok": False, "status": "charging",
+                        "error": "Already charging"}
+            self._state = self.STATE_CHARGING
+
+        try:
+            charge = self._charge(self.MAX_PUMP_RUN_SEC, f"⚡ {label}")
+            reached = bool(charge.get("reached_target"))
+            with self._lock:
+                self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
+                if reached:
+                    self._shot_count = 0
+                    self._last_charge_time = time.time()
+            if not reached:
+                return {
+                    "ok": False,
+                    "status": "pressure_not_ready",
+                    "error": f"PSI did not reach {self.TARGET_PSI:.1f} within "
+                             f"{self.MAX_PUMP_RUN_SEC:.1f}s",
+                    "charge": charge,
+                }
+            return {"ok": True, "psi": charge.get("psi"), "charge": charge, "mode": "charged"}
+        except Exception as e:
+            self._relay.set_pump(False)
+            with self._lock:
+                self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
+            return {"ok": False, "status": "error", "error": str(e)}
+
     def fire(self, duration_sec: float = None) -> dict:
         """
-        Fire a precision water pulse by opening the solenoid valve.
+        Pressure-gated solenoid shot (SW-001 §2.7).
 
-        The pump stays OFF — accumulated pressure in the tank does the work.
-        After firing, checks if a top-up is needed.
-
-        Args:
-            duration_sec: Solenoid open time (default: DEFAULT_PULSE_SEC = 10ms)
-
-        Returns:
-            dict with fire status, shot count, pressure estimate
+        1. Wait until PSI >= TARGET_PSI (pump if needed; solenoid closed)
+        2. Ensure pump OFF — no overlap with valve open
+        3. Solenoid pulse only (standard pulse by default)
+        4. Recharge back to TARGET_PSI before returning (next shot waits)
         """
         if duration_sec is None:
             duration_sec = self.DEFAULT_PULSE_SEC
@@ -732,48 +1113,103 @@ class AccumulatorManager:
                 return {"status": "charging", "error": "Cannot fire while charging"}
             if self._state == self.STATE_FIRING:
                 return {"status": "busy", "error": "Already firing"}
-            self._state = self.STATE_FIRING
 
         duration_sec = max(0.001, min(duration_sec, 2.0))
 
         try:
-            psi_before = self._read_psi()
-            print(f"[AccumulatorManager] 🔫 FIRE! Solenoid pulse: {duration_sec*1000:.1f}ms "
-                  f"(shot #{self._total_shots + 1}"
-                  f"{f', {psi_before:.1f} PSI' if psi_before is not None else ''})")
-            self._relay._set_solenoid(True)
-            time.sleep(duration_sec)
-            self._relay._set_solenoid(False)
+            # Gate: charge to target BEFORE claiming FIRING (pump, valve closed)
+            ready = self._ensure_pressure_ready("pre-shot")
+            if not ready.get("ok"):
+                return {
+                    "status": ready.get("status", "pressure_not_ready"),
+                    "error": ready.get("error", "Pressure not ready"),
+                    "alarm": ready.get("alarm", False),
+                    "charge": ready.get("charge"),
+                }
 
-            # Update counters
+            with self._lock:
+                if not self._armed:
+                    return {"status": "not_armed", "error": "Disarmed during pre-charge"}
+                if self._state == self.STATE_FIRING:
+                    return {"status": "busy", "error": "Already firing"}
+                self._state = self.STATE_FIRING
+
+            # Hard guarantee: pump OFF before valve opens (no overlap)
+            self._relay.set_pump(False)
+            time.sleep(0.02)
+
+            psi_before = self._read_psi()
+            if self._pressure_gated and (not self._pressure_connected() or psi_before is None):
+                return self._fail_sensor("lost pressure before solenoid open")
+
+            print(f"[AccumulatorManager] 🔫 FIRE! Solenoid-only pulse: "
+                  f"{duration_sec*1000:.1f}ms (shot #{self._total_shots + 1}"
+                  f"{f', {psi_before:.1f} PSI' if psi_before is not None else ''})")
+            # Locked pulse — idle watchdog cannot cut CH2 mid-open
+            pulse = self._relay.pulse_solenoid(duration_sec)
+
             with self._lock:
                 self._shot_count += 1
                 self._total_shots += 1
                 self._last_fire_time = time.time()
                 shot_num = self._total_shots
-                since_charge = self._shot_count
                 self._state = self.STATE_ARMED
 
-            # Check if top-up needed
-            self._topup_if_needed()
-
             psi_after = self._read_psi()
+            try:
+                from activity_log import log_event
+                log_event(
+                    "FIRE",
+                    shot=shot_num,
+                    pulse_ms=pulse.get("duration_ms"),
+                    elapsed_ms=pulse.get("elapsed_ms"),
+                    ch2_held=pulse.get("ch2_held"),
+                    ch2_rb=pulse.get("ch2_readback"),
+                    ch2_rb_after=pulse.get("ch2_readback_after"),
+                    hardwired=pulse.get("module_12v_hardwired"),
+                    psi_before=round(psi_before, 1) if psi_before is not None else None,
+                    psi_after=round(psi_after, 1) if psi_after is not None else None,
+                    target=self.TARGET_PSI,
+                )
+            except Exception:
+                pass
+
+            if self._pressure_gated and (not self._pressure_connected() or psi_after is None):
+                fault = self._fail_sensor("lost pressure after shot")
+                fault["shot_number"] = shot_num
+                fault["psi_before"] = round(psi_before, 1) if psi_before is not None else None
+                return fault
+
+            # Post-shot: always restore target before next shot may proceed
+            recharge = self._ensure_pressure_ready("post-shot")
+            if not recharge.get("ok") and recharge.get("status") == "sensor_fault":
+                recharge["shot_number"] = shot_num
+                return recharge
+
             return {
                 "status": "fired",
-                "duration_ms": duration_sec * 1000,
+                "duration_ms": pulse.get("duration_ms", duration_sec * 1000),
+                "elapsed_ms": pulse.get("elapsed_ms"),
                 "shot_number": shot_num,
-                "shots_since_charge": since_charge,
-                "topup_in": max(0, self.TOPUP_INTERVAL_SHOTS - since_charge),
                 "psi_before": round(psi_before, 1) if psi_before is not None else None,
                 "psi_after": round(psi_after, 1) if psi_after is not None else None,
+                "psi_ready": recharge.get("psi"),
+                "recharge_ok": bool(recharge.get("ok")),
                 "target_psi": self.TARGET_PSI,
+                "pump_during_shot": False,
             }
 
         except Exception as e:
-            self._relay._set_solenoid(False)
+            self._relay.set_pump(False)
+            self._relay.set_solenoid(False)
             with self._lock:
                 self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
             print(f"[AccumulatorManager] ❌ FIRE ERROR: {e}")
+            try:
+                from activity_log import log_event
+                log_event("FIRE_ERROR", error=str(e))
+            except Exception:
+                pass
             return {"status": "error", "error": str(e)}
 
     def fire_blocking(self, duration_sec: float = None) -> dict:
@@ -794,71 +1230,68 @@ class AccumulatorManager:
         threading.Thread(target=_do_fire, daemon=True, name="accum-fire").start()
         return {"status": "queued", "duration_ms": duration_sec * 1000}
 
-    def _topup_if_needed(self):
-        """
-        Check if the accumulator needs a top-up charge.
-        Triggers if shot count exceeds TOPUP_INTERVAL_SHOTS.
-        """
-        with self._lock:
-            if not self._armed:
-                return
-            # Charge-per-shot (SW-001 §2.7): recharge to the ceiling after every
-            # shot for consistent pressure. Otherwise top up every N shots.
-            needs_topup = self.CHARGE_PER_SHOT or (self._shot_count >= self.TOPUP_INTERVAL_SHOTS)
-
-        if needs_topup:
-            self._topup()
-
     def _topup(self):
         """
         Recharge the accumulator to TARGET_PSI (or timed fallback).
         Solenoid stays closed during charging.
         """
         with self._lock:
-            if self._state == self.STATE_CHARGING:
-                return  # Already charging
+            if self._state in (self.STATE_CHARGING, self.STATE_FIRING):
+                return
+            if not self._armed:
+                return
             self._state = self.STATE_CHARGING
             after_shots = self._shot_count
 
         try:
-            self._charge(self.TOPUP_CHARGE_SEC, f"🔄 TOP-UP (after {after_shots} shots)")
+            self._charge(self.MAX_PUMP_RUN_SEC if self._pressure_connected()
+                         else self.TOPUP_CHARGE_SEC,
+                         f"🔄 TOP-UP (after {after_shots} shots)")
 
             with self._lock:
-                self._shot_count = 0  # Reset shot counter
+                self._shot_count = 0
                 self._last_charge_time = time.time()
-                self._state = self.STATE_ARMED
+                self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
 
             print("[AccumulatorManager] ✅ TOP-UP complete — pressure restored")
 
         except Exception as e:
-            self._relay._set_pump(False)
-            self._relay._set_solenoid(False)
+            self._relay.set_pump(False)
+            self._relay.set_solenoid(False)
             with self._lock:
                 self._state = self.STATE_ARMED if self._armed else self.STATE_IDLE
             print(f"[AccumulatorManager] ❌ TOP-UP ERROR: {e}")
 
     def _start_pressure_maintain(self):
         """
-        While ARMED, recharge if PSI droops below target − hysteresis.
-        Replaces the old timed top-up timer and PrimingSystem keep-alive.
-        Inactive when the pressure sensor is disconnected.
+        While ARMED only: every PRESSURE_POLL_SEC, recharge if PSI < TARGET
+        (no hysteresis). Sensor loss → disarm + alarm.
         """
         def _maintain_loop():
             print(f"[AccumulatorManager] Pressure maintain ON — hold "
-                  f"{self.TARGET_PSI:.1f} PSI (−{self.MAINTAIN_HYSTERESIS_PSI:.1f} hyst)")
+                  f"{self.TARGET_PSI:.1f} PSI, poll every {self.PRESSURE_POLL_SEC:.0f}s "
+                  f"(hysteresis={self.MAINTAIN_HYSTERESIS_PSI:.1f})")
             while self._armed:
-                time.sleep(0.5)
+                # Sleep in small slices so disarm is responsive
+                deadline = time.time() + max(1.0, float(self.PRESSURE_POLL_SEC))
+                while self._armed and time.time() < deadline:
+                    time.sleep(0.25)
                 if not self._armed:
                     break
                 with self._lock:
                     if self._state in (self.STATE_CHARGING, self.STATE_FIRING):
                         continue
                 if not self._pressure_connected():
-                    continue
+                    if self._pressure_gated:
+                        self._fail_sensor("pressure sensor disconnected (maintain)")
+                    break
                 psi = self._read_psi()
                 if psi is None:
-                    continue
-                floor = self.TARGET_PSI - self.MAINTAIN_HYSTERESIS_PSI
+                    if self._pressure_gated:
+                        self._fail_sensor("pressure reading unavailable (maintain)")
+                    break
+                self._pressure_gated = True
+                floor = self.TARGET_PSI - max(0.0, self.MAINTAIN_HYSTERESIS_PSI)
                 if psi < floor:
                     print(f"[AccumulatorManager] 📉 PSI {psi:.1f} < {floor:.1f} — maintain recharge")
                     self._topup()
@@ -890,14 +1323,18 @@ class AccumulatorManager:
                 "armed_duration_sec": round(armed_duration, 1) if armed_duration else None,
                 "psi": round(self._last_psi, 1) if self._last_psi is not None else None,
                 "pressure_connected": self._pressure_connected(),
+                "pressure_gated": self._pressure_gated,
+                "alarm": self._alarm,
+                "alarm_reason": self._alarm_reason or None,
                 "config": {
                     "target_psi": self.TARGET_PSI,
                     "maintain_hysteresis_psi": self.MAINTAIN_HYSTERESIS_PSI,
+                    "pressure_poll_sec": self.PRESSURE_POLL_SEC,
                     "initial_charge_sec": self.INITIAL_CHARGE_SEC,
                     "topup_charge_sec": self.TOPUP_CHARGE_SEC,
                     "topup_interval_shots": self.TOPUP_INTERVAL_SHOTS,
                     "default_pulse_ms": self.DEFAULT_PULSE_SEC * 1000,
-                    "charge_per_shot": self.CHARGE_PER_SHOT,
+                    "charge_per_shot": True,
                     "max_pump_run_sec": self.MAX_PUMP_RUN_SEC,
                 }
             }
@@ -907,7 +1344,10 @@ class AccumulatorManager:
         if "target_psi" in config:
             self.TARGET_PSI = max(1.0, min(float(config["target_psi"]), 40.0))
         if "maintain_hysteresis_psi" in config:
-            self.MAINTAIN_HYSTERESIS_PSI = max(0.2, min(float(config["maintain_hysteresis_psi"]), 10.0))
+            # Allow 0 (no hysteresis) per SW-001 §2.7
+            self.MAINTAIN_HYSTERESIS_PSI = max(0.0, min(float(config["maintain_hysteresis_psi"]), 10.0))
+        if "pressure_poll_sec" in config:
+            self.PRESSURE_POLL_SEC = max(5.0, min(float(config["pressure_poll_sec"]), 300.0))
         if "initial_charge_sec" in config:
             self.INITIAL_CHARGE_SEC = max(0.5, min(float(config["initial_charge_sec"]), 10.0))
         if "topup_charge_sec" in config:
@@ -916,19 +1356,24 @@ class AccumulatorManager:
             self.TOPUP_INTERVAL_SHOTS = max(1, min(int(config["topup_interval_shots"]), 50))
         if "default_pulse_ms" in config:
             self.DEFAULT_PULSE_SEC = max(0.001, min(float(config["default_pulse_ms"]) / 1000.0, 2.0))
+        if "max_pump_run_sec" in config:
+            self.MAX_PUMP_RUN_SEC = max(1.0, min(float(config["max_pump_run_sec"]), 30.0))
         if "charge_per_shot" in config:
-            self.CHARGE_PER_SHOT = bool(config["charge_per_shot"])
-        mode = "charge-per-shot" if self.CHARGE_PER_SHOT else f"burst/{self.TOPUP_INTERVAL_SHOTS}-shot"
-        print(f"[AccumulatorManager] Config updated: mode={mode}, target={self.TARGET_PSI:.1f} PSI "
-              f"(hyst {self.MAINTAIN_HYSTERESIS_PSI:.1f}), "
-              f"timed_fallback={self.INITIAL_CHARGE_SEC}s/{self.TOPUP_CHARGE_SEC}s, "
-              f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms")
+            # Pressure-gated path always recharges after shot; keep flag True
+            self.CHARGE_PER_SHOT = True
+        print(f"[AccumulatorManager] Config updated: target={self.TARGET_PSI:.1f} PSI, "
+              f"poll={self.PRESSURE_POLL_SEC:.0f}s, hyst={self.MAINTAIN_HYSTERESIS_PSI:.1f}, "
+              f"pulse={self.DEFAULT_PULSE_SEC*1000:.1f}ms, max_pump={self.MAX_PUMP_RUN_SEC:.1f}s")
 
     def cleanup(self):
         """Emergency shutdown: everything OFF."""
         self._armed = False
-        self._relay._set_pump(False)
-        self._relay._set_solenoid(False)
+        self._relay.set_pump(False)
+        self._relay.set_solenoid(False)
+        try:
+            self._relay.recover_solenoid(re_pinmux=False)
+        except Exception:
+            pass
         print("[AccumulatorManager] Emergency cleanup — all OFF")
 
 

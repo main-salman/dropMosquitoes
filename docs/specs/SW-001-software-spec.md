@@ -21,7 +21,7 @@ All agents run as threaded modules coordinated by the asyncio orchestrator in `m
 - **Input:** `/dev/video0` (IMX219 NoIR @ 60FPS via GStreamer `nvarguscamerasrc sensor-id=0`)
 - **Pipeline:** `appsink drop=true max-buffers=1` (mandatory for 8GB memory constraint)
 - **Processing:** OpenCV MOG2 Background Subtraction
-- **Config:** Reads tuning parameters from `scout_config.json` (exported by Sentry Control Center)
+- **Config:** Prefers `settings.json` → `scout` section (SW-001 §2.11); falls back to legacy `scout_config.json`
 - **Output:** `(x, y)` pixel coordinates + `(vx, vy)` velocity vector (px/sec) via `get_target_with_velocity()`
 - **Trajectory:** Ring buffer of last 5 positions calculates smoothed velocity for predictive targeting
 - **Threading:** Dedicated background thread; main loop polls via thread-safe lock
@@ -94,48 +94,62 @@ The R385 pump has **no pressure switch** and must not run continuously against a
 closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
-**MOSFET module 12V (Relay CH2, HW-001 §5.5 Rev I):** `RelayController` keeps
-CH2 **OFF at idle**. On every solenoid open command it sequences
-CH2 ON → settle → SIG HIGH → … → SIG LOW → CH2 OFF. Never latch module 12V for
-the session — a SIG glitch with 12V present cooks the dual-MOSFET module.
+**MOSFET module 12V (HW-001 §5.5 Rev J):** Factory
+`module_12v_hardwired=true` — CH2 GPIO idle; module must have fused 12V via
+jumpered CH2 load or direct DC IN+. Shots are **SIG-only**. Gated mode
+(`hardwired=false`): Jetson.GPIO BCM 27 drives CH2; while ARMED re-drive CH2
+every pulse/pump/watchdog tick. Idle: SIG LOW (+ CH2 OFF if gated).
 
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
 requires firing from a **consistent pressure**, not a longer pulse.
 
-**Charge control (ECO-004 pressure loop):**
-- When `PressureSensor` is connected (`connected: true`), arm/top-up run the pump
-  until measured PSI ≥ `target_psi` (default **15 PSI**), then stop. This replaces
-  timed-only charging as the primary path.
-- **Pressure maintain (while ARMED):** a background loop recharges if PSI falls
-  below `target_psi − maintain_hysteresis_psi` (default hysteresis **1.0 PSI**).
-  This replaces the old timed accumulator top-up timer (~60s) and the PrimingSystem
-  5‑minute pump keep-alive. Calibrate via GUI **Target PSI**.
-- `MAX_PUMP_RUN_SEC` remains a hard timeout (deadhead protection) if the setpoint
-  is never reached.
-- If the pressure sensor is absent/disconnected, fall back to timed bursts
-  (`initial_charge_sec` / `topup_charge_sec`) — never fabricate PSI. Pressure
-  maintain is inactive without a live sensor.
-- **Setpoint guidance:** Start low (factory default in `settings.json` is **5 PSI**)
-  and raise while calibrating throw/consistency. Keep `target_psi` below the pump's
-  dead-head ceiling so charges finish quickly. GUI range: **1–40 PSI**.
-- **Persistence:** permanent `target_psi` lives in project-root `settings.json`
-  (SW-001 §2.11). Calibration tab may override at runtime; **Save to Settings**
-  (with confirm) writes permanently.
+**Charge / fire contract (ECO-004 — live fire AND auto-cal):**
+1. **Pump = pressure only.** Pump runs only with solenoid **CLOSED**, until PSI ≥
+   `target_psi`. Never use the pump to propel a shot.
+2. **Shot = solenoid only.** Open the solenoid for the **standard pulse**
+   (`default_pulse_ms`). Pump must be **OFF** for the entire open pulse (no overlap).
+3. **Gate every shot:** do not open the solenoid until PSI ≥ `target_psi`
+   (“pressure ready”). If `MAX_PUMP_RUN_SEC` expires without reaching target,
+   refuse the shot (`pressure_not_ready`).
+4. **After every shot:** re-read PSI and recharge to `target_psi` **before** the
+   next shot may proceed (auto-cal and live mosquito fire).
+5. **Maintain (ARMED only):** poll every `pressure_poll_sec` (factory **60 s**) and
+   recharge if PSI &lt; `target_psi`. **No hysteresis** (`maintain_hysteresis_psi = 0`).
+   Inactive when disarmed.
+6. **Sensor fault:** disconnect / no readings while armed or firing → **disarm** and
+   **alarm** (buzzer error + status `alarm`). Do not silently timed-charge shots
+   after pressure-gated operation has started.
+7. **Arm:** charge to `target_psi`, then start maintain. Timed
+   `initial_charge_sec` / `topup_charge_sec` are arm-time fallbacks only when the
+   sensor was never connected (bench/stub).
 
-**Modes (selectable at runtime via `charge_per_shot`):**
-- **Charge-per-shot (default, `CHARGE_PER_SHOT = True`):** recharge to `target_psi`
-  after every shot → consistent distance. Trade-off: short recharge pause between shots.
-- **Burst / N-shot (`CHARGE_PER_SHOT = False`):** fire up to `TOPUP_INTERVAL_SHOTS`
-  shots from one charge, then rely on pressure maintain (if sensor live) or a
-  shot-count top-up. Faster cadence; distance may still fade slightly between
-  maintain cycles.
+**Setpoint / persistence:** factory `target_psi` = **5 PSI** (GUI 1–40) in
+`settings.json` (§2.11). Pressure tunables on Settings tab with **Save as permanent**.
 
-**Key tunables** (runtime via `POST /api/accumulator/config`):
-`target_psi`, `maintain_hysteresis_psi`, `initial_charge_sec`, `topup_charge_sec`,
-`topup_interval_shots`, `default_pulse_ms`, `charge_per_shot`.
-`MAX_PUMP_RUN_SEC` caps every pump burst (deadhead protection).
-**Removed:** timed Priming keep-alive; timed `topup_interval_sec` pump timer.
+**Key tunables** (`settings.accumulator` / `POST /api/accumulator/config`):
+`target_psi`, `pressure_poll_sec` (default 60), `maintain_hysteresis_psi` (default 0),
+`default_pulse_ms` (shared live + auto-cal; factory **100 ms**), `max_pump_run_sec`,
+timed fallbacks. Charge-after-shot is always on.
+**Solenoid drive:** every open pulse must run under `RelayController.pulse_solenoid()`
+(lock held for the open window). While **ARMED**, Relay CH2 (module 12V) stays
+**ON for the session** (`set_module_power_hold(True)`); shots only toggle SIG.
+CH2 GPIO is re-asserted on each fire/pump/watchdog tick (PY.00/SSR can drop
+while cached state still says ON — LED off, silent shots). Idle: CH2 OFF;
+watchdog keeps SIG LOW. Do **not** rewrite PR.05 PADCTL after libgpiod claims
+the line. Disarm / auto-cal end: drop hold + `recover_solenoid()`.
+Pump edges must not cut CH2 or rewrite padmux.
+**Maintenance drain:** `POST /api/line/drain` (Control tab **DRAIN PIPE**) runs
+solenoid OPEN + pump ON for N seconds (default **15**, clamp 1–30) under the
+relay lock, then pump OFF / valve CLOSED + `recover_solenoid()`. Disarms
+accumulator first. This is the only intentional pump+open-valve overlap.
+**Removed:** pump-as-shot for engagements; timed Priming keep-alive.
+
+### 2.12 Activity Log (`activity_log.py`)
+
+Rotating field log for post-run troubleshooting: project-root `activity.log`,
+**10 MB** per file, **5** backups (`activity.log.1` …). Records ARM / FIRE /
+CLICK_TEST / AUTOCAL_* (and related) with PSI and pulse timing. Gitignored.
 
 ### 2.9 Pressure Sensing (`hardware.py — PressureSensor`)
 
@@ -188,21 +202,37 @@ a terminal.
 
 ### 2.11 Central Settings (`settings.json` / `settings_store.py`)
 
-Single project-root file for persistent operator tunables that must survive reboot.
+Single project-root file for **all** operator tunables that must survive reboot.
+Grouped schema (not flat). Legacy `scout_config.json` / `calibration_visual.json` /
+flat `{"target_psi": N}` are migrated on first load.
 
-- **Path:** `settings.json` next to `app.py`. Created automatically with defaults
-  if missing (`settings_store.DEFAULTS`).
-- **Initial keys:** `target_psi` (float, factory default **5.0**, GUI range 1–40).
+- **Path:** `settings.json` next to `app.py`.
+- **Load order:** `settings.json` → latest file in `settings_backups/` → factory
+  `DEFAULTS` (then write a fresh `settings.json`).
+- **Backups:** every permanent save copies the previous `settings.json` into
+  `settings_backups/settings_YYYYMMDD_HHMMSS_*.json` and keeps the **last 30**.
+- **Groups:** `accumulator`, `servo`, `pulse`, `prime`, `stabilize`,
+  `calibration` (offsets + points), `scout` (MOG2). Factory `accumulator.target_psi`
+  = **5.0** (GUI range 1–40).
+- **Apply vs Save:**
+  - Legacy endpoints (`/api/accumulator/config`, `/api/servo/settings`, etc.) and
+    GUI **Apply (runtime)** buttons change live hardware only — lost on reboot.
+  - `POST /api/settings` (GUI **Save as permanent** / **Save All**) deep-merges,
+    rotates a backup, writes `settings.json`, then applies to runtime.
 - **API:**
-  - `GET /api/settings` → current persisted settings (+ `path`, `runtime` mirrors)
-  - `POST /api/settings` body partial patch → merge, write disk, apply to hardware
+  - `GET /api/settings` → `{settings, runtime, backups, path, backup_dir}`
+  - `POST /api/settings` body partial or full tree (also accepts legacy flat
+    `target_psi`) → merge → backup → write → apply
 - **GUI:**
-  - **Calibration** tab: Target PSI slider applies **immediately** to
-    `AccumulatorManager` (runtime only). Live transducer PSI shown beside it.
-    **Save to Settings** prompts *"Save as permanent?"* then POSTs to `/api/settings`.
-  - **Settings** tab: permanent Target PSI control; Apply writes `settings.json`.
-- **Startup:** `app.py` loads `settings.json` and applies `target_psi` before serving.
-- **Git:** `settings.json` is machine-local (gitignored); code ships the store + defaults.
+  - **Calibration:** Target PSI immediate runtime; Save prompts permanent confirm.
+    Offset Save → `settings.calibration`.
+  - **Solenoid:** Accumulator Apply = runtime; Save as Permanent →
+    `settings.accumulator`.
+  - **Settings:** per-card Apply = runtime; **Save All as Permanent** collects the
+    full GUI tree into one POST.
+- **Startup:** `app.py` loads store and `apply_settings_to_runtime()` before serving.
+  `ScoutVision` / `main.py` read `settings.scout` (fallback: `scout_config.json`).
+- **Git:** `settings.json` and `settings_backups/` are machine-local (gitignored).
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 

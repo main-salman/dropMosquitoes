@@ -249,6 +249,7 @@
         </div>
         <button class="btn btn-red" style="width:100%;padding:14px;font-size:15px;margin-top:8px" onclick="fire()">🔥 TEST FIRE</button>
         <button class="btn btn-blue" style="width:100%;padding:10px;font-size:13px;margin-top:6px" onclick="primeFromFireControl()">💧 PRIME LINE</button>
+        <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:6px;background:#5a3a1a;color:#ffcc88;border:1px solid #8a5a2a" onclick="drainPipe()" id="btn-drain">🚰 DRAIN PIPE (15s)</button>
         <div id="fire-prime-status" style="font-size:11px;color:var(--dim);text-align:center;margin-top:4px"></div>
       </div>
     </div>
@@ -293,11 +294,36 @@
   </div>
   <div class="cal-section"><div class="cal-grid">
 
+    <!-- Step 0: Module 12V (CH2) — required for clicks -->
+    <div class="card">
+      <div class="card-title">⚡ Step 0 — Module 12V (Relay CH2)</div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">
+          Dual-MOSFET <b>SIG LED</b> can light with <b>no click</b> if Channel B is open — module has no 12V.
+          Yahboom <b>T13 / PY.00</b> does not reliably close Monk Makes CH2 (dim LEDs = weak drive).
+          <b>Fix:</b> short the two Channel B screw terminals together (or wire fused +12V straight to module DC IN+), then keep hardwired mode ON.
+        </p>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0">
+          <input type="checkbox" id="sol-hardwired" checked onchange="solHardwiredToggle()">
+          Module 12V hardwired (bypass CH2 GPIO)
+        </label>
+        <div class="sl">
+          <label>CH2 Hold (gated mode only)</label>
+          <input type="range" id="sol-ch2-dur" min="1" max="30" step="1" value="5" oninput="$('sol-ch2-dur-v').textContent=this.value+'s'">
+          <div class="v" id="sol-ch2-dur-v">5s</div>
+        </div>
+        <button class="btn btn-amber" style="width:100%;padding:10px;font-size:13px;margin-top:6px" onclick="solCh2Hold()">
+          🔌 Hold CH2 IN HIGH (watch Channel B LED / meter T13)
+        </button>
+        <div class="cal-result" id="sol-ch2-log" style="margin-top:8px">Jumper CH2 load first if SIG LED lights but there is no solenoid click.</div>
+      </div>
+    </div>
+
     <!-- Step 1: MOSFET Smoke Test -->
     <div class="card">
-      <div class="card-title">🔧 Step 1 — MOSFET Smoke Test</div>
+      <div class="card-title">🔧 Step 1 — Solenoid Click Test</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Toggles BCM 27 HIGH then LOW without pump or accumulator. Listen for <b>TWO clicks</b> (open → close). If no click, check 12V supply and MOSFET wiring per HW-001 §5.4.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Pulses module <b>SIG</b> (BCM 16 / T36). Needs module <b>12V</b> present (Step 0). Listen for <b>TWO clicks</b> (open → close). SIG LED alone ≠ coil powered.</p>
         <div class="sl">
           <label>Hold Time</label>
           <input type="range" id="sol-test-dur" min="50" max="2000" step="50" value="500" oninput="$('sol-test-dur-v').textContent=this.value+'ms'">
@@ -310,20 +336,20 @@
       </div>
     </div>
 
-    <!-- Step 1b: Gate Voltage Hold Test -->
+    <!-- Step 1b: SIG Hold Test -->
     <div class="card">
-      <div class="card-title">🔌 Gate Voltage Test (libgpiod)</div>
+      <div class="card-title">🔌 SIG Hold Test (T36)</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Drives BCM 27 (PY.00) HIGH via libgpiod and <b>holds</b> it so you can measure the gate (G) with a multimeter. Expect <b>~3.3V</b> at the gate junction during the hold, then back to ~0V.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Holds module <b>SIG</b> HIGH (BCM 16 / T36). MOSFET SIG LED should stay on. Does <b>not</b> prove Channel B / coil 12V.</p>
         <div class="sl">
           <label>Hold Duration</label>
           <input type="range" id="sol-hold-dur" min="1" max="30" step="1" value="5" oninput="$('sol-hold-dur-v').textContent=this.value+'s'">
           <div class="v" id="sol-hold-dur-v">5s</div>
         </div>
         <button class="btn btn-amber" style="width:100%;padding:12px;font-size:14px;margin-top:8px" onclick="solGateHold()">
-          🔌 Hold Gate HIGH (measure)
+          🔌 Hold SIG HIGH (measure)
         </button>
-        <div class="cal-result" id="sol-hold-log" style="margin-top:8px">Ready — probe G, then press to hold the gate HIGH.</div>
+        <div class="cal-result" id="sol-hold-log" style="margin-top:8px">Ready — watch MOSFET SIG LED, then press.</div>
       </div>
     </div>
 
@@ -465,7 +491,7 @@
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">⚙️ Accumulator Configuration</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b> (1–40). Everyday tuning: <b>Calibration</b> (immediate) / <b>Settings</b> (permanent <code>settings.json</code>). Timed charge values are fallbacks only if the ADS1115 is disconnected.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Primary control is <b>Target PSI</b> (1–40) in <b>Settings → Pressure Maintain</b>. Arm → pump to target → solenoid-only shots → recharge after each shot. Timed charge values are fallbacks only if the sensor was never connected.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div>
             <div class="sl">
@@ -502,7 +528,8 @@
           <span><b>Charge-per-shot</b> — recharge to full pressure after every shot for consistent shot distance (uncheck for faster burst/N-shot firing).</span>
         </label>
         <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-blue" style="flex:1" onclick="acConfigApply()">✅ Apply Config</button>
+          <button class="btn btn-blue" style="flex:1" onclick="acConfigApply()">✅ Apply (runtime)</button>
+          <button class="btn btn-green" style="flex:1" onclick="acConfigSavePermanent()">💾 Save as Permanent</button>
           <button class="btn" style="flex:1" onclick="acConfigLoad()">🔄 Load Current</button>
         </div>
       </div>
@@ -692,17 +719,25 @@
 
 <!-- ===================== SETTINGS TAB ===================== -->
 <div class="tab-pane" id="p-settings">
-  <div style="padding:14px 14px 6px;display:flex;align-items:center;gap:12px">
-    <span style="font-size:15px;font-weight:600">⚙️ Servo Turret Settings</span>
+  <div style="padding:14px 14px 6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:15px;font-weight:600">⚙️ Settings</span>
     <span style="flex:1"></span>
     <span class="cal-stat" id="set-status">Loading…</span>
+    <button class="btn btn-green" onclick="saveAllSettingsPermanent()">💾 Save All as Permanent</button>
   </div>
+  <p style="padding:0 14px 8px;font-size:11px;color:var(--dim2);margin:0">
+    <b>Apply</b> = runtime only (lost on reboot). <b>Save as permanent</b> writes <code>settings.json</code>, keeps the last 30 backups, and restores on boot.
+  </p>
   <div class="cal-section"><div class="cal-grid">
-    <!-- Accumulator Target PSI (permanent) -->
+    <!-- Pressure / Accumulator (permanent) — SW-001 §2.7 -->
     <div class="card" style="grid-column:1/-1">
-      <div class="card-title">💧 Accumulator Target PSI (Permanent)</div>
+      <div class="card-title">💧 Pressure Maintain (Permanent)</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:12px">Saved to <code>settings.json</code> and restored on every boot. Range 1–40 PSI.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:12px">
+          Pump charges to Target PSI (solenoid closed). Shots are <b>solenoid-only</b>.
+          While ARMED, pressure is polled every N seconds and recharged if below target (no hysteresis).
+          Sensor fault → disarm + alarm. Save writes <code>settings.json</code> (+ backup).
+        </p>
         <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
           <div style="flex:1;min-width:220px">
             <div class="sl">
@@ -710,13 +745,34 @@
               <input type="range" id="set-target-psi" min="1" max="40" step="1" value="5" oninput="$('set-target-psi-v').textContent=this.value+' PSI'">
               <div class="v" id="set-target-psi-v">5 PSI</div>
             </div>
+            <div class="sl">
+              <label>Pressure poll interval (while armed)</label>
+              <input type="range" id="set-psi-poll" min="5" max="300" step="5" value="60" oninput="$('set-psi-poll-v').textContent=this.value+'s'">
+              <div class="v" id="set-psi-poll-v">60s</div>
+            </div>
+            <div class="sl">
+              <label>Standard solenoid pulse (live + auto-cal)</label>
+              <input type="range" id="set-std-pulse" min="10" max="500" step="10" value="100" oninput="$('set-std-pulse-v').textContent=this.value+'ms'">
+              <div class="v" id="set-std-pulse-v">100ms</div>
+            </div>
+            <p style="font-size:10px;color:var(--dim);margin:0 0 8px">Shared for mosquito fire and auto-cal. Below ~50ms is often inaudible even when the valve opens.</p>
+            <div class="sl">
+              <label>Max pump run (deadhead timeout)</label>
+              <input type="range" id="set-max-pump" min="1" max="30" step="1" value="8" oninput="$('set-max-pump-v').textContent=this.value+'s'">
+              <div class="v" id="set-max-pump-v">8s</div>
+            </div>
+            <p style="font-size:10px;color:var(--dim);margin:4px 0 0">Hysteresis: <b>0 PSI</b> (recharge whenever below target). Maintain runs only while ARMED.</p>
           </div>
           <div style="min-width:140px;padding-top:4px">
             <div style="font-size:11px;color:var(--dim)">Live pressure</div>
             <div style="font-size:22px;font-weight:700;color:var(--orange)" id="set-live-psi">—</div>
+            <div class="cal-result" id="set-psi-alarm" style="margin-top:8px;display:none;color:var(--red)">🚨 Sensor alarm</div>
           </div>
         </div>
-        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="setPsiSavePermanent()">✅ Save Permanent Target PSI</button>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-blue" style="flex:1" onclick="applyPressureSettingsRuntime()">✅ Apply (runtime)</button>
+          <button class="btn btn-green" style="flex:1" onclick="savePressureSettingsPermanent()">💾 Save as Permanent</button>
+        </div>
       </div>
     </div>
     <!-- Smoothness / Speed -->
@@ -739,7 +795,7 @@
           <input type="range" id="set-nudge" min="0.5" max="20" step="0.5" value="2" oninput="$('set-nudge-v').textContent=this.value+'°'">
           <div class="v" id="set-nudge-v">2°</div>
         </div>
-        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Motion Settings</button>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Motion (runtime)</button>
       </div>
     </div>
     <!-- Endstops -->
@@ -757,7 +813,7 @@
           <input type="range" id="set-pitch-lim" min="10" max="90" step="5" value="90" oninput="$('set-pitch-lim-v').textContent='±'+this.value+'°'">
           <div class="v" id="set-pitch-lim-v">±90°</div>
         </div>
-        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Endstop Limits</button>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applySettings()">✅ Apply Endstops (runtime)</button>
       </div>
     </div>
     <!-- Quick Presets -->
@@ -797,7 +853,7 @@
           <input type="range" id="set-prime-dur2" min="500" max="10000" step="100" value="3000" oninput="$('set-prime-dur2-v').textContent=this.value+'ms'">
           <div class="v" id="set-prime-dur2-v">3000ms</div>
         </div>
-        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyPulseConfig()">✅ Apply Pulse Config</button>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyPulseConfig()">✅ Apply Pulse (runtime)</button>
         <p style="font-size:10px;color:var(--dim);margin-top:8px">Operational pulse is used for live mosquito targeting. Calibration uses longer pulses for visible splash detection.</p>
       </div>
     </div>
@@ -825,7 +881,7 @@
           </label>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-blue" style="flex:1" onclick="applyPrimeSettings()">✅ Apply</button>
+          <button class="btn btn-blue" style="flex:1" onclick="applyPrimeSettings()">✅ Apply (runtime)</button>
           <button class="btn btn-green" style="flex:1" onclick="primeNow()">💧 Prime Now</button>
         </div>
         <div class="cal-result" id="prime-status" style="margin-top:8px;font-size:11px">Ready</div>
@@ -851,7 +907,7 @@
           <input type="range" id="set-stab-settle" min="0" max="300" step="5" value="80" oninput="$('set-stab-settle-v').textContent=this.value+'ms'">
           <div class="v" id="set-stab-settle-v">80ms</div>
         </div>
-        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyStabSettings()">✅ Apply Stabilization</button>
+        <button class="btn btn-blue" style="width:100%;margin-top:10px" onclick="applyStabSettings()">✅ Apply Stabilization (runtime)</button>
         <p style="font-size:10px;color:var(--dim);margin-top:8px">Sequence: Burst → Settle → Fire. Total delay before shot = burst + settle.</p>
       </div>
     </div>
@@ -909,6 +965,30 @@ async function primeFromFireControl() {
     }
     setTimeout(() => $('fire-prime-status').textContent = '', 5000);
   } catch(e) { $('fire-prime-status').textContent = '❌ ' + e.message; }
+}
+
+async function drainPipe() {
+  if (!confirm('Drain pipe for 15 seconds?\n\nSolenoid will OPEN and pump will RUN. Point nozzle into a safe drain. System will disarm if armed.')) return;
+  const btn = $('btn-drain');
+  btn.disabled = true;
+  $('fire-prime-status').textContent = '🚰 Draining — solenoid open + pump on (15s)...';
+  try {
+    const d = await fetch('/api/line/drain', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({duration_sec: 15})
+    }).then(r => r.json());
+    if (d.status === 'complete') {
+      $('fire-prime-status').textContent = `✅ Drain done (${d.elapsed_sec}s) — pump off, valve closed`;
+      showToast('🚰 Drain complete', `Ran ${d.elapsed_sec}s · safe idle`);
+    } else {
+      $('fire-prime-status').textContent = '❌ ' + (d.error || d.status || 'Drain failed');
+    }
+  } catch(e) {
+    $('fire-prime-status').textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { if ($('fire-prime-status').textContent.startsWith('✅')) $('fire-prime-status').textContent = ''; }, 6000);
+  }
 }
 
 // ---- Toast ----
@@ -1098,8 +1178,9 @@ async function calApplyOffset() {
   showToast('✅ Offset Applied', `Pitch: ${$('cal-off-pitch').value}° Yaw: ${$('cal-off-yaw').value}°`);
 }
 async function calSaveOffset() {
+  if (!confirm('Save as permanent?\n\nCalibration offsets will be written to settings.json (backup kept).')) return;
   await fetch('/api/calibration/offset/save', {method:'POST'});
-  showToast('💾 Saved', 'Calibration saved to calibration_visual.json');
+  showToast('💾 Saved', 'Calibration → settings.json');
 }
 async function calLoadOffset() {
   const d = await fetch('/api/calibration/offset').then(r => r.json());
@@ -1146,13 +1227,21 @@ function toggleCrosshair(){
 let _psiLiveTimer = null;
 let _calPsiPrompted = false;
 
+function settingsTargetPsi(d) {
+  const s = (d && d.settings) || {};
+  if (s.accumulator && s.accumulator.target_psi != null) return +s.accumulator.target_psi;
+  if (s.target_psi != null) return +s.target_psi;
+  return 5;
+}
+
 async function calPsiInit() {
   try {
     const d = await fetch('/api/settings').then(r => r.json());
-    const runtime = (d.runtime && d.runtime.target_psi != null) ? d.runtime.target_psi : (d.settings.target_psi || 5);
+    const permanent = settingsTargetPsi(d);
+    const runtime = (d.runtime && d.runtime.target_psi != null) ? d.runtime.target_psi : permanent;
     $('cal-target-psi').value = runtime;
     $('cal-target-psi-v').textContent = runtime + ' PSI';
-    $('cal-psi-note').textContent = `Permanent settings.json = ${d.settings.target_psi} PSI · runtime = ${runtime} PSI`;
+    $('cal-psi-note').textContent = `Permanent settings.json = ${permanent} PSI · runtime = ${runtime} PSI`;
   } catch (e) { console.error(e); }
 }
 
@@ -1178,7 +1267,7 @@ async function calPsiSavePermanent() {
 
 async function calPsiReload() {
   const d = await fetch('/api/settings').then(r => r.json());
-  const v = d.settings.target_psi;
+  const v = settingsTargetPsi(d);
   $('cal-target-psi').value = v;
   await calPsiOnInput(v);
   showToast('🔄 Reloaded', `Target PSI ${v} from settings.json`);
@@ -1197,28 +1286,141 @@ async function calPsiPromptSaveAfterSession() {
 async function setPsiLoad() {
   try {
     const d = await fetch('/api/settings').then(r => r.json());
-    const v = d.settings.target_psi;
+    const acc = (d.settings && d.settings.accumulator) || {};
+    const v = settingsTargetPsi(d);
     $('set-target-psi').value = v;
     $('set-target-psi-v').textContent = v + ' PSI';
+    const poll = acc.pressure_poll_sec != null ? acc.pressure_poll_sec : 60;
+    if ($('set-psi-poll')) { $('set-psi-poll').value = poll; $('set-psi-poll-v').textContent = poll + 's'; }
+    const pulse = acc.default_pulse_ms != null ? acc.default_pulse_ms : 25;
+    if ($('set-std-pulse')) { $('set-std-pulse').value = pulse; $('set-std-pulse-v').textContent = pulse + 'ms'; }
+    const maxp = acc.max_pump_run_sec != null ? acc.max_pump_run_sec : 8;
+    if ($('set-max-pump')) { $('set-max-pump').value = maxp; $('set-max-pump-v').textContent = maxp + 's'; }
+    const n = (d.backups || []).length;
+    $('set-status').textContent = n ? `✅ ${n} backup(s)` : '✅ defaults';
+    // Alarm mirror from runtime
+    const al = d.runtime && d.runtime.accumulator && d.runtime.accumulator.alarm;
+    if ($('set-psi-alarm')) $('set-psi-alarm').style.display = al ? 'block' : 'none';
   } catch (e) { console.error(e); }
 }
 
-async function setPsiSavePermanent() {
-  const v = +$('set-target-psi').value;
-  await _saveTargetPsi(v);
-  // Keep Calibration slider in sync if present
+function pressureSettingsBody() {
+  return {
+    accumulator: {
+      target_psi: +$('set-target-psi').value,
+      pressure_poll_sec: +$('set-psi-poll').value,
+      maintain_hysteresis_psi: 0,
+      default_pulse_ms: +$('set-std-pulse').value,
+      max_pump_run_sec: +$('set-max-pump').value,
+      charge_per_shot: true,
+    },
+    pulse: {
+      operational_pulse: +$('set-std-pulse').value / 1000.0,
+    },
+  };
+}
+
+async function applyPressureSettingsRuntime() {
+  const body = pressureSettingsBody().accumulator;
+  await fetch('/api/accumulator/config', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
   if ($('cal-target-psi')) {
-    $('cal-target-psi').value = v;
-    $('cal-target-psi-v').textContent = v + ' PSI';
+    $('cal-target-psi').value = body.target_psi;
+    $('cal-target-psi-v').textContent = body.target_psi + ' PSI';
   }
-  showToast('💾 Saved', `Target PSI ${v} → settings.json`);
+  showToast('⚙️ Pressure (runtime)', `Target ${body.target_psi} PSI · poll ${body.pressure_poll_sec}s`);
+}
+
+async function savePressureSettingsPermanent() {
+  const body = pressureSettingsBody();
+  if (!confirm(`Save as permanent?\n\nTarget ${body.accumulator.target_psi} PSI, poll ${body.accumulator.pressure_poll_sec}s, pulse ${body.accumulator.default_pulse_ms}ms → settings.json`)) return;
+  await fetch('/api/settings', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  });
+  if ($('cal-target-psi')) {
+    $('cal-target-psi').value = body.accumulator.target_psi;
+    $('cal-target-psi-v').textContent = body.accumulator.target_psi + ' PSI';
+  }
+  showToast('💾 Saved', `Pressure settings → settings.json`);
+  setPsiLoad();
+}
+
+async function setPsiSavePermanent() {
+  await savePressureSettingsPermanent();
 }
 
 async function _saveTargetPsi(v) {
   await fetch('/api/settings', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({target_psi: +v})
+    body: JSON.stringify({accumulator: {target_psi: +v}})
   });
+}
+
+function collectAllSettingsFromGui() {
+  const out = {
+    accumulator: {
+      target_psi: +($('set-target-psi') || $('ac-target-psi')).value,
+      pressure_poll_sec: $('set-psi-poll') ? +$('set-psi-poll').value : 60,
+      maintain_hysteresis_psi: 0,
+      default_pulse_ms: $('set-std-pulse') ? +$('set-std-pulse').value : 25,
+      max_pump_run_sec: $('set-max-pump') ? +$('set-max-pump').value : 8,
+      charge_per_shot: true,
+    },
+    servo: {
+      speed: +$('set-speed').value,
+      rate_hz: +$('set-rate').value,
+      nudge_step: +$('set-nudge').value,
+      yaw_limit: +$('set-yaw-lim').value,
+      pitch_limit: +$('set-pitch-lim').value,
+    },
+    pulse: {
+      operational_pulse: +$('set-op-pulse').value,
+      cal_pulse: +$('set-cal-pulse').value,
+      cal_retry_pulse: +$('set-cal-retry').value,
+      prime_duration_ms: +$('set-prime-dur2').value,
+    },
+    prime: {
+      prime_duration_ms: +$('set-prime-dur').value,
+      auto_detect: $('set-auto-detect').checked,
+    },
+    stabilize: {
+      pre_pressurize: $('set-stab-on').checked,
+      stabilize_ms: +$('set-stab-burst').value,
+      settle_ms: +$('set-stab-settle').value,
+    },
+  };
+  if ($('ac-charge')) {
+    Object.assign(out.accumulator, {
+      initial_charge_sec: +$('ac-charge').value,
+      topup_charge_sec: +$('ac-topup-charge').value,
+      topup_interval_shots: +$('ac-topup-shots').value,
+      default_pulse_ms: +$('ac-def-pulse').value,
+      charge_per_shot: $('ac-charge-per-shot').checked,
+      target_psi: +($('set-target-psi') ? $('set-target-psi').value : $('ac-target-psi').value),
+    });
+  }
+  if ($('cal-off-pitch')) {
+    out.calibration = {
+      offset_pitch: +$('cal-off-pitch').value,
+      offset_yaw: +$('cal-off-yaw').value,
+    };
+  }
+  return out;
+}
+
+async function saveAllSettingsPermanent() {
+  if (!confirm('Save as permanent?\n\nAll Settings-tab values (and Solenoid accumulator / calibration offsets if present) will be written to settings.json. Previous file kept in settings_backups/ (max 30).')) return;
+  const body = collectAllSettingsFromGui();
+  const d = await fetch('/api/settings', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  }).then(r => r.json());
+  const n = (d.backups || []).length;
+  $('set-status').textContent = `💾 Saved · ${n} backup(s)`;
+  showToast('💾 Saved All', `settings.json updated · ${n} backup(s)`);
 }
 
 function psiLiveStart(which) {
@@ -1392,13 +1594,12 @@ async function solTest() {
     const d = await fetch('/api/solenoid/test', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({duration_ms: +$('sol-test-dur').value})}).then(r => r.json());
     $('sol-test-log').innerHTML =
-      `<span class="ok">✅ Solenoid toggled for ${d.duration_ms}ms</span>\n` +
+      `<span class="ok">✅ SIG pulsed ${d.duration_ms}ms</span> (12V hardwired=${d.solenoid_12v != null ? 'see Step 0' : '?'})\n` +
       `State after: ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}\n\n` +
       `<span class="info">Did you hear TWO clicks?</span>\n` +
-      `  Click 1 = solenoid OPENS (plunger retracts)\n` +
-      `  Click 2 = solenoid CLOSES (spring returns)\n\n` +
-      `If no clicks: check 12V supply, MOSFET wiring,\n` +
-      `gate junction (4.7kΩ pull-up T17→Gate), probe G not T13 per HW-001 §5.4`;
+      `  Click 1 = solenoid OPENS · Click 2 = CLOSES\n\n` +
+      `SIG LED on + no click → module has no 12V (jumper CH2 load).\n` +
+      `Channel B LED never bright → keep hardwired mode + jumper.`;
   } catch(e) {
     $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
@@ -1406,16 +1607,50 @@ async function solTest() {
 
 async function solGateHold() {
   const sec = +$('sol-hold-dur').value;
-  $('sol-hold-log').innerHTML = `<span class="info">🔌 Holding gate HIGH for ${sec}s — measure G now...</span>`;
+  $('sol-hold-log').innerHTML = `<span class="info">🔌 Holding SIG HIGH for ${sec}s — watch MOSFET LED...</span>`;
   try {
     const d = await fetch('/api/solenoid/gate_hold', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({seconds: sec})}).then(r => r.json());
     $('sol-hold-log').innerHTML =
-      `<span class="ok">✅ Held gate HIGH for ${d.held_sec}s, now ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}</span>\n\n` +
-      `Expected ~3.3V at the gate junction during the hold.\n` +
-      `Backend: ${d.backend}`;
+      `<span class="ok">✅ Held SIG HIGH for ${d.held_sec}s, now ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}</span>\n` +
+      `Backend: ${d.backend} · hardwired=${d.module_12v_hardwired}`;
   } catch(e) {
     $('sol-hold-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function solCh2Hold() {
+  const sec = +$('sol-ch2-dur').value;
+  $('sol-ch2-log').innerHTML = `<span class="info">🔌 Holding CH2 IN HIGH for ${sec}s — watch Channel B LED / meter T13...</span>`;
+  try {
+    const d = await fetch('/api/solenoid/ch2_hold', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({seconds: sec})}).then(r => r.json());
+    if (d.status === 'skipped') {
+      $('sol-ch2-log').innerHTML = `<span class="info">⏭ ${d.error || 'skipped'}</span>`;
+      return;
+    }
+    $('sol-ch2-log').innerHTML =
+      `<span class="ok">✅ Held ${d.pin} HIGH ${d.held_sec}s</span>\n` +
+      `ch2_rb during=${d.ch2_readback} after=${d.ch2_readback_after}\n` +
+      `If Channel B LED stayed dim/off, jumper CH2 load and use hardwired mode.`;
+  } catch(e) {
+    $('sol-ch2-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
+  }
+}
+
+async function solHardwiredToggle() {
+  const on = !!$('sol-hardwired').checked;
+  $('sol-ch2-log').innerHTML = `<span class="info">Saving module_12v_hardwired=${on}...</span>`;
+  try {
+    const d = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({accumulator: {module_12v_hardwired: on}})}).then(r => r.json());
+    const hw = d.applied?.accumulator?.module_12v_hardwired ?? on;
+    $('sol-hardwired').checked = !!hw;
+    $('sol-ch2-log').innerHTML = hw
+      ? `<span class="ok">✅ Hardwired mode ON — jumper CH2 load / feed fused 12V to module. SIG-only shots.</span>`
+      : `<span class="ok">✅ Relay CH2 gated mode — Channel B LED must light when armed/firing.</span>`;
+  } catch(e) {
+    $('sol-ch2-log').innerHTML = `<span class="err">❌ ${e.message}</span>`;
   }
 }
 
@@ -1664,9 +1899,8 @@ async function acConfigLoad() {
     const c = d.config;
     if ('target_psi' in c) { $('ac-target-psi').value = c.target_psi; $('ac-target-psi-v').textContent = c.target_psi + ' PSI'; }
     else {
-      // Fall back to permanent settings.json
       fetch('/api/settings').then(r=>r.json()).then(s=>{
-        const v = s.settings.target_psi;
+        const v = settingsTargetPsi(s);
         $('ac-target-psi').value = v; $('ac-target-psi-v').textContent = v + ' PSI';
       }).catch(()=>{});
     }
@@ -1678,8 +1912,8 @@ async function acConfigLoad() {
   } catch(e) {}
 }
 
-async function acConfigApply() {
-  const body = {
+function acConfigBody() {
+  return {
     target_psi: +$('ac-target-psi').value,
     initial_charge_sec: +$('ac-charge').value,
     topup_charge_sec: +$('ac-topup-charge').value,
@@ -1687,9 +1921,23 @@ async function acConfigApply() {
     default_pulse_ms: +$('ac-def-pulse').value,
     charge_per_shot: $('ac-charge-per-shot').checked,
   };
+}
+
+async function acConfigApply() {
+  const body = acConfigBody();
   await fetch('/api/accumulator/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
   const mode = body.charge_per_shot ? 'charge-per-shot' : `burst/${body.topup_interval_shots}-shot`;
-  showToast('⚙️ Accumulator Config', `Mode: ${mode} · Target: ${body.target_psi} PSI · Pulse: ${body.default_pulse_ms}ms`);
+  showToast('⚙️ Accumulator Config', `Runtime: ${mode} · ${body.target_psi} PSI (not saved)`);
+}
+
+async function acConfigSavePermanent() {
+  const body = acConfigBody();
+  if (!confirm(`Save as permanent?\n\nAccumulator config (Target ${body.target_psi} PSI) → settings.json`)) return;
+  await fetch('/api/settings', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({accumulator: body})
+  });
+  showToast('💾 Saved', `Accumulator → settings.json · ${body.target_psi} PSI`);
 }
 </script>
 </body>

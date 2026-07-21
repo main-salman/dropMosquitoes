@@ -32,6 +32,8 @@ from hardware import (
 from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
 from settings_store import SettingsStore
+from status_indicator import StatusIndicator
+from activity_log import init_activity_log, log_event
 import diagnostics
 
 # ============================================================================
@@ -40,17 +42,30 @@ import diagnostics
 app = Flask(__name__)
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Central persistent settings (SW-001 §2.11) — creates settings.json if missing
-settings = SettingsStore(os.path.join(APP_DIR, "settings.json"))
+# Rotating activity log (10 MB) for post-run troubleshooting — SW-001 §2.12
+init_activity_log(APP_DIR)
+
+# Central persistent settings (SW-001 §2.11) — settings.json + settings_backups/
+settings = SettingsStore(os.path.join(APP_DIR, "settings.json"), project_dir=APP_DIR)
 
 # Hardware controllers (initialized at module level for atexit cleanup)
 relay = RelayController()
 gimbal = create_turret_controller()
 lidar = LiDARController()
 pressure = PressureSensor()  # ECO-004: accumulator pressure via ADS1115 (SW-001 §2.9)
-accum = AccumulatorManager(relay, pressure)  # ECO-004: charge-to-PSI when sensor connected
-# Apply persisted target PSI (and any future accum keys) at boot
-accum.update_config({"target_psi": float(settings.get_value("target_psi", 5.0))})
+buzzer = StatusIndicator()
+
+
+def _accum_alarm(reason: str):
+    """SW-001 §2.7: audible alarm on pressure sensor fault."""
+    print(f"[ALARM] Pressure system: {reason}")
+    try:
+        buzzer.error()
+    except Exception as e:
+        print(f"[ALARM] buzzer failed: {e}")
+
+
+accum = AccumulatorManager(relay, pressure, on_alarm=_accum_alarm)
 
 # Velocity tracker for predictive lead — SW-001 §2.7.1
 velocity_tracker = VelocityTracker()
@@ -68,15 +83,129 @@ detector = None
 # Arc Compensation — pitch offset to compensate for stream trajectory drop over distance
 ARC_COMPENSATION_DEG = 12.0
 
-# Visual Calibration System — SW-001 §2.8
-cal_table = CalibrationTable(filepath=os.path.join(APP_DIR, "calibration_visual.json"))
-cal_table.load()  # Load previous calibration if exists
+# Visual Calibration System — SW-001 §2.8 (offsets/points live in settings.json)
+cal_table = CalibrationTable(
+    filepath=os.path.join(APP_DIR, "calibration_visual.json"),
+    settings_store=settings,
+)
 hit_detector = HitDetector()
 auto_cal = AutoCalibrator(cal_table, hit_detector)
 
 # Water Line Priming System
 primer = PrimingSystem(relay)
 # Timed priming keep-alive removed — pressure maintain is AccumulatorManager (SW-001 §2.7)
+
+
+def apply_settings_to_runtime(data: dict | None = None) -> dict:
+    """
+    Push a settings tree (default: current settings.json) onto live hardware/software.
+    Does NOT write disk — caller persists separately via settings.update(..., persist=True).
+    """
+    import hardware as hw
+    from hardware import ServoTurretController
+
+    data = data if data is not None else settings.get()
+    applied = {}
+
+    acc = data.get("accumulator") or {}
+    if acc:
+        accum.update_config(acc)
+    # Always sync 12V mode (default hardwired — PY.00 cannot close Monk Makes CH2)
+    relay.set_module_12v_hardwired(bool(acc.get("module_12v_hardwired", True)))
+    applied["accumulator"] = {
+        **(accum.get_status().get("config") or {}),
+        "module_12v_hardwired": relay.get_status().get("module_12v_hardwired"),
+    }
+
+    servo = data.get("servo") or {}
+    if servo and isinstance(gimbal, ServoTurretController):
+        if "speed" in servo:
+            gimbal.INTERP_SPEED = max(10.0, min(500.0, float(servo["speed"])))
+        if "rate_hz" in servo:
+            gimbal.INTERP_RATE_HZ = max(20, min(200, int(servo["rate_hz"])))
+        if "nudge_step" in servo:
+            gimbal._nudge_step = max(0.5, min(20.0, float(servo["nudge_step"])))
+        if "yaw_limit" in servo:
+            hw.SERVO_YAW_LIMIT = max(10.0, min(90.0, float(servo["yaw_limit"])))
+        if "pitch_limit" in servo:
+            hw.SERVO_PITCH_LIMIT = max(10.0, min(90.0, float(servo["pitch_limit"])))
+        applied["servo"] = {
+            "speed": gimbal.INTERP_SPEED,
+            "rate_hz": gimbal.INTERP_RATE_HZ,
+            "nudge_step": getattr(gimbal, "_nudge_step", 2.0),
+            "yaw_limit": hw.SERVO_YAW_LIMIT,
+            "pitch_limit": hw.SERVO_PITCH_LIMIT,
+        }
+
+    pulse = data.get("pulse") or {}
+    if pulse:
+        if "operational_pulse" in pulse:
+            op = max(0.001, min(float(pulse["operational_pulse"]), 2.0))
+            relay.fire_pump.__func__.__defaults__ = (op,)
+            # Standard shot pulse for AccumulatorManager (live + auto-cal)
+            accum.update_config({"default_pulse_ms": op * 1000.0})
+        if "cal_pulse" in pulse:
+            auto_cal.FIRE_DURATION = max(0.01, min(float(pulse["cal_pulse"]), 2.0))
+        if "cal_retry_pulse" in pulse:
+            auto_cal.RETRY_DURATION = max(0.01, min(float(pulse["cal_retry_pulse"]), 2.0))
+        if "prime_duration_ms" in pulse and hasattr(primer, "prime_duration_ms"):
+            primer.prime_duration_ms = max(500, min(int(pulse["prime_duration_ms"]), 10000))
+        applied["pulse"] = {
+            "operational_pulse": accum.DEFAULT_PULSE_SEC,
+            "cal_pulse": auto_cal.FIRE_DURATION,
+            "cal_retry_pulse": auto_cal.RETRY_DURATION,
+            "prime_duration_ms": getattr(primer, "prime_duration_ms", 3000),
+        }
+
+    prime = data.get("prime") or {}
+    if prime:
+        primer.update_settings(prime)
+        applied["prime"] = primer.get_status().get("settings")
+
+    stab = data.get("stabilize") or {}
+    if stab:
+        if "pre_pressurize" in stab:
+            relay.pre_pressurize = bool(stab["pre_pressurize"])
+        if "stabilize_ms" in stab:
+            relay.stabilize_ms = max(0, min(int(stab["stabilize_ms"]), 500))
+        if "settle_ms" in stab:
+            relay.settle_ms = max(0, min(int(stab["settle_ms"]), 500))
+        applied["stabilize"] = {
+            "pre_pressurize": relay.pre_pressurize,
+            "stabilize_ms": relay.stabilize_ms,
+            "settle_ms": relay.settle_ms,
+        }
+
+    cal = data.get("calibration") or {}
+    if cal:
+        if "offset_pitch" in cal:
+            cal_table.offset_pitch = float(cal["offset_pitch"])
+        if "offset_yaw" in cal:
+            cal_table.offset_yaw = float(cal["offset_yaw"])
+        if "last_updated" in cal:
+            cal_table.last_updated = cal.get("last_updated") or ""
+        if "points" in cal and isinstance(cal["points"], list):
+            try:
+                from calibration_engine import CalibrationPoint
+                cal_table.points = [CalibrationPoint(**p) for p in cal["points"]]
+            except Exception as e:
+                print(f"[app] calibration points apply skip: {e}")
+        applied["calibration"] = {
+            "offset_pitch": cal_table.offset_pitch,
+            "offset_yaw": cal_table.offset_yaw,
+            "point_count": len(cal_table.points),
+        }
+
+    # Scout section is consumed by ScoutVision / main.py; dashboard notes it only.
+    if data.get("scout"):
+        applied["scout"] = data["scout"]
+
+    print(f"[app] Applied settings to runtime: {list(applied.keys())}")
+    return applied
+
+
+# Boot: push persisted settings onto all subsystems
+apply_settings_to_runtime()
 
 
 # ============================================================================
@@ -150,6 +279,24 @@ def stream_sniper():
         _mjpeg_generator(sniper_cam),
         mimetype='multipart/x-mixed-replace; boundary=frame'
     )
+
+
+@app.route('/api/cameras/status')
+def api_cameras_status():
+    """
+    Camera health for deploy verify / dashboard.
+    Sniper healthy=false + error=csi_phy_dead means soft restart poisoned CSI-1;
+    only a full Jetson reboot restores video (SW-001 / HISTORY 2026-06-03).
+    """
+    scout = scout_cam.get_status()
+    sniper = sniper_cam.get_status()
+    return jsonify({
+        "scout": scout,
+        "sniper": sniper,
+        "ok": bool(scout.get("healthy") and sniper.get("healthy")),
+        "reboot_required": sniper.get("error") == "csi_phy_dead"
+            or scout.get("error") == "csi_phy_dead",
+    })
 
 
 # ============================================================================
@@ -333,45 +480,81 @@ def api_pressure():
 
 @app.route('/api/settings', methods=['GET'])
 def api_settings_get():
-    """Return persisted settings.json plus live runtime mirrors."""
+    """Return persisted settings.json, backup list, and live runtime mirrors."""
+    import hardware as hw
+    from hardware import ServoTurretController
     data = settings.get()
+    runtime = {
+        "accumulator": accum.get_status().get("config"),
+        "pressure": pressure.get_status(),
+        "prime": primer.get_status().get("settings"),
+        "stabilize": {
+            "pre_pressurize": relay.pre_pressurize,
+            "stabilize_ms": relay.stabilize_ms,
+            "settle_ms": relay.settle_ms,
+        },
+        "pulse": {
+            "operational_pulse": relay.fire_pump.__defaults__[0] if relay.fire_pump.__defaults__ else 0.025,
+            "cal_pulse": auto_cal.FIRE_DURATION,
+            "cal_retry_pulse": auto_cal.RETRY_DURATION,
+            "prime_duration_ms": getattr(primer, "prime_duration_ms", 3000),
+        },
+        "calibration": {
+            "offset_pitch": cal_table.offset_pitch,
+            "offset_yaw": cal_table.offset_yaw,
+        },
+        "target_psi": accum.TARGET_PSI,  # convenience for Calibration slider
+    }
+    if isinstance(gimbal, ServoTurretController):
+        runtime["servo"] = {
+            "speed": gimbal.INTERP_SPEED,
+            "rate_hz": gimbal.INTERP_RATE_HZ,
+            "nudge_step": getattr(gimbal, "_nudge_step", 2.0),
+            "yaw_limit": hw.SERVO_YAW_LIMIT,
+            "pitch_limit": hw.SERVO_PITCH_LIMIT,
+        }
     return jsonify({
         "path": settings.path,
+        "backup_dir": settings.backup_dir,
+        "backups": [os.path.basename(p) for p in settings.list_backups()],
         "settings": data,
-        "runtime": {
-            "target_psi": accum.TARGET_PSI,
-            "pressure": pressure.get_status(),
-        },
+        "runtime": runtime,
     })
 
 
 @app.route('/api/settings', methods=['POST'])
 def api_settings_set():
     """
-    Merge a partial patch into settings.json and apply to hardware.
-    Body examples: {"target_psi": 8}
-    Always persists to disk (this is the permanent path).
+    Permanent save path (SW-001 §2.11).
+    Body: full or partial grouped settings tree, e.g.
+      {"accumulator": {"target_psi": 8}, "servo": {"speed": 120}}
+    Also accepts legacy flat {"target_psi": 8}.
+    Always: deep-merge → rotate backup → write settings.json → apply runtime.
     """
     patch = request.get_json(force=True) or {}
     if not isinstance(patch, dict):
         return jsonify({"error": "body must be a JSON object"}), 400
 
-    # Clamp / normalize known keys before save
-    applied = {}
-    if "target_psi" in patch:
-        psi = max(1.0, min(float(patch["target_psi"]), 40.0))
-        applied["target_psi"] = psi
-        accum.update_config({"target_psi": psi})
+    # Legacy flat target_psi → grouped
+    if "target_psi" in patch and "accumulator" not in patch:
+        patch = {"accumulator": {"target_psi": patch["target_psi"]},
+                 **{k: v for k, v in patch.items() if k != "target_psi"}}
 
-    if not applied:
-        return jsonify({"error": "no recognized keys", "allowed": ["target_psi"]}), 400
+    # Clamp accumulator target if present
+    if "accumulator" in patch and isinstance(patch["accumulator"], dict):
+        if "target_psi" in patch["accumulator"]:
+            patch["accumulator"]["target_psi"] = max(
+                1.0, min(float(patch["accumulator"]["target_psi"]), 40.0))
 
-    saved = settings.update(applied, persist=True)
-    print(f"[app] settings.json updated: {applied}")
+    saved = settings.update(patch, persist=True)
+    applied = apply_settings_to_runtime(saved)
+    print(f"[app] settings.json saved (+backup). keys={list(patch.keys())}")
     return jsonify({
         "status": "saved",
         "path": settings.path,
+        "backups": [os.path.basename(p) for p in settings.list_backups()],
         "settings": saved,
+        "applied": applied,
         "runtime": {"target_psi": accum.TARGET_PSI},
     })
 
@@ -467,6 +650,13 @@ def api_accum_disarm():
     return jsonify(result)
 
 
+@app.route('/api/accumulator/alarm/clear', methods=['POST'])
+def api_accum_alarm_clear():
+    """Acknowledge / clear sticky pressure sensor alarm."""
+    accum.clear_alarm()
+    return jsonify({"status": "cleared", **accum.get_status()})
+
+
 @app.route('/api/accumulator/fire', methods=['POST'])
 def api_accum_fire():
     """
@@ -514,35 +704,66 @@ def api_accum_config_set():
     return jsonify(accum.get_status())
 
 
+@app.route('/api/line/drain', methods=['POST'])
+def api_line_drain():
+    """
+    Maintenance drain: solenoid OPEN + pump ON for N seconds (default 15).
+    Disarms accumulator first, then recovers solenoid drive afterward.
+    Body: {"duration_sec": float}  (clamped 1–30, default 15)
+    """
+    data = request.get_json(force=True) if request.data else {}
+    duration_sec = float(data.get('duration_sec', 15.0))
+    duration_sec = max(1.0, min(duration_sec, 30.0))
+
+    if accum.get_status().get("armed"):
+        accum.disarm(reason="line-drain")
+
+    result = relay.drain_line(duration_sec)
+    recover = relay.recover_solenoid(re_pinmux=False)
+    log_event("LINE_DRAIN", duration_sec=result.get("duration_sec"),
+              elapsed_sec=result.get("elapsed_sec"),
+              recover=recover.get("re_pinmux"))
+    return jsonify({**result, "recovered": True})
+
+
 @app.route('/api/solenoid/test', methods=['POST'])
 def api_solenoid_test():
     """
     Quick solenoid MOSFET smoke test: open for duration_ms, then close.
-    No pump, no accumulator — just toggles the MOSFET gate to verify the
-    solenoid clicks. Listen for TWO clicks (open + close).
+    Recovers drive first (SIG LOW + CH2 OFF, no PADCTL rewrite). Uses locked
+    pulse_solenoid() so the idle watchdog cannot cut CH2 mid-open.
     Body: {"duration_ms": float}  (default 500ms)
     """
     data = request.get_json(force=True) if request.data else {}
     duration_ms = float(data.get('duration_ms', 500))
     duration_sec = max(0.01, min(duration_ms / 1000.0, 2.0))
 
-    relay.set_solenoid(True)
-    time.sleep(duration_sec)
-    relay.set_solenoid(False)
+    # If accumulator left the system armed, disarm so maintain cannot fight us
+    if accum.get_status().get("armed"):
+        accum.disarm(reason="click-test")
+
+    recover = relay.recover_solenoid(re_pinmux=False)
+    pulse = relay.pulse_solenoid(duration_sec)
+    log_event("CLICK_TEST", duration_ms=pulse.get("duration_ms"),
+              elapsed_ms=pulse.get("elapsed_ms"),
+              ch2_held=pulse.get("ch2_held"),
+              recover=recover.get("re_pinmux"))
 
     return jsonify({
         "status": "complete",
-        "duration_ms": round(duration_sec * 1000, 1),
+        "duration_ms": pulse.get("duration_ms"),
+        "elapsed_ms": pulse.get("elapsed_ms"),
         "solenoid_state": relay.get_status()["solenoid"],
+        "solenoid_12v": relay.get_status().get("solenoid_12v"),
+        "recovered": True,
     })
 
 
 @app.route('/api/solenoid/gate_hold', methods=['POST'])
 def api_solenoid_gate_hold():
     """
-    Drive the solenoid MOSFET gate HIGH and HOLD it for `seconds` so the gate
-    voltage can be measured with a multimeter (expect ~3.3V at the gate junction),
-    then return it LOW. Uses the same libgpiod path as normal solenoid control.
+    Drive module SIG (PR.05 / T36) HIGH and HOLD for `seconds` so the MOSFET
+    SIG LED / voltage can be measured, then return LOW.
     Body: {"seconds": int}  (default 5, clamped 1-30)
     """
     data = request.get_json(force=True) if request.data else {}
@@ -559,7 +780,24 @@ def api_solenoid_gate_hold():
         "held_sec": seconds,
         "backend": backend,
         "solenoid_state": relay.get_status()["solenoid"],
+        "module_12v_hardwired": relay.get_status().get("module_12v_hardwired"),
     })
+
+
+@app.route('/api/solenoid/ch2_hold', methods=['POST'])
+def api_solenoid_ch2_hold():
+    """
+    Drive Relay CH2 IN (BCM 27 / T13) HIGH for `seconds` with SIG LOW.
+    Watch Monk Makes Channel B LED; meter T13 for ~3.3V.
+    Skipped when module_12v_hardwired=True.
+    Body: {"seconds": int}  (default 5, clamped 1-30)
+    """
+    data = request.get_json(force=True) if request.data else {}
+    seconds = max(1, min(int(data.get('seconds', 5)), 30))
+    result = relay.hold_ch2(seconds)
+    log_event("CH2_HOLD", **{k: result.get(k) for k in
+                              ("status", "held_sec", "ch2_readback", "error")})
+    return jsonify(result)
 
 
 @app.route('/api/solenoid/drawdown', methods=['POST'])
@@ -990,7 +1228,8 @@ def api_cal_auto_start():
         sniper_cam=sniper_cam,
         relay=relay,
         lidar=lidar,
-        primer=primer
+        primer=primer,
+        accum=accum,
     )
     return jsonify(result)
 
@@ -1031,9 +1270,10 @@ def api_cal_offset_set():
 
 @app.route('/api/calibration/offset/save', methods=['POST'])
 def api_cal_offset_save():
-    """Save visual calibration data to JSON."""
-    cal_table.save()
-    return jsonify({"saved": True, **cal_table.to_dict()})
+    """Save visual calibration offsets/points into settings.json (permanent)."""
+    cal_table.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
+    cal_table.save()  # settings.json (+ backup) + legacy calibration_visual.json
+    return jsonify({"saved": True, "path": settings.path, **cal_table.to_dict()})
 
 
 @app.route('/api/calibration/snapshot')
@@ -1063,13 +1303,12 @@ def api_cal_snapshot_before():
 
 @app.route('/api/calibration/freefire', methods=['POST'])
 def api_cal_freefire():
-    """Free-form calibration: aim → fire → detect hit → return offset.
-    Body: {"pitch": float, "yaw": float, "duration": float,
-           "aim_px": int, "aim_py": int}"""
+    """Free-form calibration: aim → pressure-gated solenoid fire → detect hit.
+    Body: {"pitch": float, "yaw": float, "aim_px": int, "aim_py": int}
+    Uses standard AccumulatorManager pulse (ignores legacy duration / pump)."""
     data = request.get_json(force=True)
     pitch = float(data.get('pitch', 0))
     yaw = float(data.get('yaw', 0))
-    duration = float(data.get('duration', 0.4))
     aim_px = int(data.get('aim_px', 640))
     aim_py = int(data.get('aim_py', 360))
 
@@ -1080,9 +1319,16 @@ def api_cal_freefire():
     # Capture before
     hit_detector.capture_before(sniper_cam)
 
-    # Fire
-    relay.fire_pump(duration)
-    time.sleep(duration + 0.2)
+    if not accum.get_status().get("armed"):
+        arm_result = accum.arm()
+        if arm_result.get("status") != "armed":
+            return jsonify({"error": "arm_failed", "arm": arm_result}), 400
+
+    # Pressure-gated solenoid-only shot (+ post-shot recharge)
+    fire_result = accum.fire()
+    if fire_result.get("status") != "fired":
+        return jsonify({"error": fire_result.get("status"), "fire": fire_result}), 400
+    time.sleep(0.15)
 
     # Capture after frames
     for delay in [0.3, 0.6, 1.0]:
@@ -1097,6 +1343,7 @@ def api_cal_freefire():
         "aimed": {"pitch": pitch, "yaw": yaw, "px": aim_px, "py": aim_py},
         "distance_m": round(distance, 2),
         "detection": hit_detector.get_state(),
+        "fire": fire_result,
     }
 
     if hit:
@@ -1378,6 +1625,20 @@ if __name__ == '__main__':
     scout_cam.start()
     time.sleep(2)  # Let Scout's ISP pipeline fully initialize before Sniper
     sniper_cam.start()
+
+    # Soft systemctl restart often leaves Sniper with 0 frames (CSI PHY).
+    # Surface it immediately — deploy.sh will auto-reboot when it sees this.
+    if not sniper_cam.healthy:
+        print(
+            "[app] CRITICAL: Sniper camera unhealthy after start "
+            f"(error={sniper_cam.error}, flushed={sniper_cam.flush_count}). "
+            "Full Jetson reboot required — use ./run-ai.sh (not --restart)."
+        )
+    if not scout_cam.healthy:
+        print(
+            f"[app] WARNING: Scout camera unhealthy "
+            f"(error={scout_cam.error}, flushed={scout_cam.flush_count})."
+        )
 
     # Center gimbal to forward-facing home position on startup
     gimbal.center()

@@ -149,13 +149,23 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 - **1N5408 (3A) flyback is MANDATORY** — the 2A coil kills the module without it (two modules lost).
 - **3A inline fuse** in the +12V feed: a shorted output FET blows the fuse instead of browning out the shared rail.
 - **VCC header pin is LED-only** — leave open.
+- **SIG LED meaning:** the module's indicator lights when **SIG is HIGH** (logic
+  trigger), independent of whether DC IN has 12V. With Rev I pulse-power (CH2 OFF
+  at idle), a lit LED + cold module means “SIG stuck/high but load unpowered” —
+  uncomfortable but thermally safe. Boot firmware drives PR.05 HIGH until
+  `RelayController` claims it; expect the LED during early boot. Idle watchdog
+  re-asserts SIG LOW every 1s while not firing.
 - Failure signature of a dead module: **OUT+ ↔ OUT− ≈ 9Ω** (healthy = open).
 
-### 5.5 Solenoid 12V Boot Interlock — Relay CH2 (ECO-2026-004 Rev H)
+### 5.5 Solenoid 12V Boot + Runtime Interlock — Relay CH2 (ECO-2026-004 Rev H/I)
 
-> **Problem:** The Orin Nano boot firmware actively DRIVES PR.05 HIGH during the boot window
-> (before `app.py` claims the line). A driven pin defeats any pull-down → the MOSFET module
-> turns on and the valve opens for the whole boot. Software cannot close this window.
+> **Problem (boot):** The Orin Nano boot firmware actively DRIVES PR.05 HIGH during the boot
+> window (before `app.py` claims the line). A driven pin defeats any pull-down → the MOSFET
+> module turns on if it has 12V. Software cannot close this window.
+>
+> **Problem (runtime, Rev I):** Leaving module 12V latched ON for the whole `app.py` session
+> means any later SIG glitch (PADCTL remux, unclean SIGKILL, pinmux fight) turns the dual-MOSFET
+> module on and it runs hot — observed after ~10–12 minutes with no operator input.
 >
 > **Fix:** The module's **+12V feed is gated through Monk Makes Dual Relay channel B** ("CH2",
 > free since the gimbal moved to its own 5V buck). The board is **solid-state** (2A/16V max,
@@ -164,8 +174,19 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 > (**no COM/NO**; screws are interchangeable).
 > Wiring: `+12V bus → 3A fuse → screw B①`, `screw B② → module DC IN+`, header `GND → GND bus`
 > (already present if the pump input shares the board).
-> **IN B ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)** — energized by
-> `RelayController` only AFTER PR.05 is claimed and driven LOW; released first on cleanup.
+> **IN B ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)**.
+>
+> **Software policy (Rev J — hardwired default):**
+> Yahboom **PY.00 / T13 cannot reliably close Monk Makes CH2** (GPIO readback HIGH,
+> Channel B LED stays dim/off, SIG LED still lights, **no solenoid click**). Until a
+> stronger drive path exists:
+> 1. **Jumper CH2 load screws** (B①–B② short) **or** wire fused +12V straight to
+>    module DC IN+ (boot interlock removed).
+> 2. `settings.accumulator.module_12v_hardwired = true` (factory default) → software
+>    leaves CH2 GPIO LOW and fires **SIG-only**.
+> 3. Idle watchdog still forces SIG LOW. Optional gated mode
+>    (`module_12v_hardwired=false`) uses Jetson.GPIO BCM 27 + PADCTL for experiments.
+>
 > Current note: the solenoid's ~2A draw flows through channel B only during valve-open pulses
 > (≤0.4s) — within the 2A max; the 1.5A continuous limit is not exercised.
 >

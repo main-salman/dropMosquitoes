@@ -82,8 +82,9 @@ class CalibrationTable:
     fine-grained interpolation at specific distances/angles.
     """
 
-    def __init__(self, filepath: str = "calibration.json"):
+    def __init__(self, filepath: str = "calibration.json", settings_store=None):
         self.filepath = filepath
+        self._settings_store = settings_store  # SW-001 §2.11 — preferred persistence
         self.points: List[CalibrationPoint] = []
         self.offset_pitch: float = 0.0   # Global pitch correction (degrees)
         self.offset_yaw: float = 0.0     # Global yaw correction (degrees)
@@ -133,24 +134,42 @@ class CalibrationTable:
         self.last_updated = ""
 
     def save(self):
-        """Persist calibration data to JSON."""
+        """Persist calibration data to settings.json (preferred) and legacy file."""
         data = {
             "offset_pitch": self.offset_pitch,
             "offset_yaw": self.offset_yaw,
             "last_updated": self.last_updated,
             "points": [asdict(p) for p in self.points],
         }
-        with open(self.filepath, 'w') as f:
-            json.dump(data, f, indent=2)
-        print(f"[Calibration] Saved {len(self.points)} points to {self.filepath}")
+        if self._settings_store is not None:
+            self._settings_store.update({"calibration": data}, persist=True)
+            print(f"[Calibration] Saved {len(self.points)} points to settings.json")
+        try:
+            with open(self.filepath, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"[Calibration] Legacy file write skip: {e}")
 
     def load(self) -> bool:
-        """Load calibration data from JSON. Returns True if loaded."""
-        if not os.path.exists(self.filepath):
+        """Load from settings.json calibration section, else legacy filepath."""
+        data = None
+        if self._settings_store is not None:
+            try:
+                sec = self._settings_store.section("calibration")
+                if sec and (sec.get("offset_pitch") is not None or sec.get("points")):
+                    data = sec
+            except Exception as e:
+                print(f"[Calibration] settings load skip: {e}")
+        if data is None and os.path.exists(self.filepath):
+            try:
+                with open(self.filepath, 'r') as f:
+                    data = json.load(f)
+            except Exception as e:
+                print(f"[Calibration] Load error: {e}")
+                return False
+        if not data:
             return False
         try:
-            with open(self.filepath, 'r') as f:
-                data = json.load(f)
             self.offset_pitch = data.get("offset_pitch", 0.0)
             self.offset_yaw = data.get("offset_yaw", 0.0)
             self.last_updated = data.get("last_updated", "")
@@ -572,8 +591,9 @@ class AutoCalibrator:
         self._relay = None
         self._lidar = None
         self._primer = None
+        self._accum = None
 
-    def start(self, gimbal, scout_cam, sniper_cam, relay, lidar, primer=None):
+    def start(self, gimbal, scout_cam, sniper_cam, relay, lidar, primer=None, accum=None):
         """
         Start autonomous calibration in a background thread.
 
@@ -584,6 +604,7 @@ class AutoCalibrator:
             relay: RelayController instance
             lidar: LiDARController instance
             primer: PrimingSystem instance (optional, for auto-priming)
+            accum: AccumulatorManager — required for pressure-gated solenoid shots
         """
         with self._lock:
             if self._running:
@@ -595,6 +616,7 @@ class AutoCalibrator:
             self._relay = relay
             self._lidar = lidar
             self._primer = primer
+            self._accum = accum
 
             self.table.clear()
             self._phase = "scanning"
@@ -669,6 +691,13 @@ class AutoCalibrator:
             if not self._running:
                 return
 
+            # Phase 1.6: Arm accumulator — charge to Target PSI (solenoid shots only)
+            if not self._phase_arm_accumulator():
+                return
+
+            if not self._running:
+                return
+
             # Phase 2: Calibrate each target
             self._phase_calibrate()
 
@@ -685,6 +714,23 @@ class AutoCalibrator:
             import traceback
             traceback.print_exc()
         finally:
+            if self._accum is not None:
+                try:
+                    self._accum.disarm(reason="auto-cal end")
+                except Exception:
+                    pass
+            # Extra recover even if accum was None — Click Test must work next
+            if self._relay is not None:
+                try:
+                    self._relay.recover_solenoid(re_pinmux=False)
+                except Exception:
+                    pass
+            try:
+                from activity_log import log_event
+                log_event("AUTOCAL_END", phase=self._phase,
+                          success=self._success_count, skipped=self._skip_count)
+            except Exception:
+                pass
             with self._lock:
                 self._running = False
 
@@ -714,6 +760,29 @@ class AutoCalibrator:
             "message": f"Found {len(targets)} calibration targets",
             "targets": [(t["pitch"], t["yaw"]) for t in targets]
         })
+
+    def _phase_arm_accumulator(self) -> bool:
+        """Charge to Target PSI and arm — required before any solenoid shot."""
+        if self._accum is None:
+            self._update("Error: AccumulatorManager not available", phase="error")
+            self._add_log({"type": "error",
+                           "message": "Auto-cal requires AccumulatorManager for solenoid shots"})
+            return False
+        self._update("Charging accumulator to Target PSI...", phase="arming")
+        result = self._accum.arm()
+        if result.get("status") != "armed":
+            err = result.get("error") or result.get("status")
+            self._update(f"Arm failed: {err}", phase="error")
+            self._add_log({"type": "error", "message": f"Arm failed: {err}"})
+            return False
+        psi = result.get("psi")
+        self._add_log({
+            "type": "armed",
+            "message": f"Armed at {psi} PSI (target {result.get('target_psi')} PSI) — "
+                       f"shots are solenoid-only"
+        })
+        self._update(f"Armed at {psi} PSI — starting calibration shots...")
+        return True
 
     def _phase_prime(self):
         """Phase 1.5: Prime the water line if needed."""
@@ -789,12 +858,11 @@ class AutoCalibrator:
                                      pitch: float, yaw: float,
                                      aim_px: int, aim_py: int) -> dict:
         """
-        Fire at a target with 3-tier retry logic.
+        Fire at a target with retry logic (SW-001 §2.7).
 
-        Tier 1: Normal fire (0.4s)
-        Tier 2: Longer burst (0.8s)
-        Tier 3: Lower detection threshold (15 instead of 30)
-        If all fail: skip point.
+        Every attempt uses the same standard solenoid pulse via AccumulatorManager
+        (wait for Target PSI → solenoid-only shot → recharge before return).
+        Retries only lower the hit-detection threshold — never a longer pump burst.
         """
         original_threshold = self.detector.DIFF_THRESHOLD
 
@@ -802,28 +870,56 @@ class AutoCalibrator:
             if not self._running:
                 return {"success": False, "skipped": True}
 
-            # Configure retry parameters
             if attempt == 0:
-                duration = self.FIRE_DURATION
                 self.detector.DIFF_THRESHOLD = original_threshold
-                attempt_desc = "standard"
+                attempt_desc = "standard pulse"
             elif attempt == 1:
-                duration = self.RETRY_DURATION
                 self.detector.DIFF_THRESHOLD = original_threshold
-                attempt_desc = "longer burst"
+                attempt_desc = "retry same pulse"
             else:
-                duration = self.RETRY_DURATION
                 self.detector.DIFF_THRESHOLD = max(15, original_threshold // 2)
                 attempt_desc = "lower threshold"
 
-            self._update(f"Point {point_idx+1}: Firing ({attempt_desc})...")
+            self._update(f"Point {point_idx+1}: Waiting for PSI / firing ({attempt_desc})...")
 
             # Capture before frame
             self.detector.capture_before(self._sniper_cam)
 
-            # Fire
-            self._relay.fire_pump(duration)
-            time.sleep(duration + 0.2)
+            # Pressure-gated solenoid shot (blocks until recharged)
+            pulse_ms = self._accum.DEFAULT_PULSE_SEC * 1000.0
+            self._update(
+                f"Point {point_idx+1}: Solenoid pulse {pulse_ms:.0f}ms ({attempt_desc})...")
+            fire_result = self._accum.fire()  # shared standard pulse from settings
+            try:
+                from activity_log import log_event
+                log_event("AUTOCAL_FIRE", point=point_idx + 1, attempt=attempt + 1,
+                          status=fire_result.get("status"),
+                          pulse_ms=fire_result.get("duration_ms"),
+                          elapsed_ms=fire_result.get("elapsed_ms"),
+                          psi_before=fire_result.get("psi_before"),
+                          psi_after=fire_result.get("psi_after"))
+            except Exception:
+                pass
+            if fire_result.get("status") == "sensor_fault":
+                self._update(f"Sensor fault: {fire_result.get('error')}", phase="error")
+                self._add_log({"type": "error",
+                               "message": f"🚨 Sensor fault — disarmed: {fire_result.get('error')}"})
+                self._running = False
+                return {"success": False, "skipped": True}
+            if fire_result.get("status") != "fired":
+                self._add_log({
+                    "type": "miss",
+                    "point": point_idx + 1,
+                    "attempt": attempt + 1,
+                    "message": f"❌ Point {point_idx+1}: Fire refused "
+                               f"({fire_result.get('status')}: {fire_result.get('error')})"
+                })
+                if attempt >= self.MAX_RETRIES:
+                    break
+                time.sleep(0.5)
+                continue
+
+            time.sleep(0.15)  # brief settle after solenoid close
 
             # Capture after frames
             for delay in self.POST_FIRE_DELAYS:
