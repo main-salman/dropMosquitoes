@@ -25,3 +25,4 @@
 # 8 CH2 re-assert+ch2_rb  9 Rev J hardwire jumper CH2 load
 2026-07-21 | [TROUBLESHOOT] | Auto-cal silent hardwired=True — need CH2 load jumper; block start without confirm
 2026-07-21 | [BUG FIX] | Intermittent clicks after CH2 jumper — stop SIG LOW hammering; pulse busy; cal retries=1
+2026-07-21 | [VERIFY] | CH2 jumper: Click Test + auto-cal clicks reliable; keep jumpered (do not restore CH2 gating)

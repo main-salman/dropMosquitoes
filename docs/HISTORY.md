@@ -1039,3 +1039,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[ROOT CAUSE]** With module 12V latched ON, idle watchdog + pump edges **re-wrote SIG LOW every 0.5s / every pump edge** even when already LOW — Yahboom PR.05 glitches → phantom / missed clicks. Rapid Click Test double-submit overlapped pulses. Auto-cal retries amplified “multiple clicks”.
 - **[FIX]** Watchdog/pump only clear SIG if stuck HIGH; hardwired open = clean rising edge (no pre-LOW toggle); idempotent close; `pulse_busy` rejects overlap; skip recover before Click Test when hardwired; 40ms post-close settle; auto-cal `MAX_RETRIES=1` + 350ms settle.
 - **[OPERATOR]** One Click Test press → expect **two** clicks (open+close). Auto-cal: up to **two** pulses per point if miss. Keep jumper solid (no intermittent contact).
+
+## 2026-07-21 — [VERIFY] CH2 jumper: reliable clicks; keep Rev J hardwired
+- **[OPERATOR]** With Channel B load jumpered: Click Test and auto-cal clicks are reliable.
+- **[DECISION]** Do **not** restore CH2 SSR gating via PY.00 — Yahboom pad cannot drive Monk Makes IN B. Leave jumper (or fused 12V → module DC IN+) and `module_12v_hardwired=true`.
+- **[NOTE]** Multiple clicks per auto-cal “shot” are mostly intended: 2 per pulse (open+close); up to 2 pulses/point on miss → up to 4 clicks/point. GUI Calibration panel notes this.
