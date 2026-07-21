@@ -20,11 +20,13 @@ class ScoutVision:
     # Number of past positions to keep for velocity smoothing
     VELOCITY_WINDOW = 5
 
-    def __init__(self, config_path="scout_config.json"):
+    def __init__(self, config_path="scout_config.json", settings_path="settings.json"):
         self.config_path = config_path
+        self.settings_path = settings_path
         self.history = 500
         self.threshold = 16
         self.min_area = 500
+        self.detect_shadows = False
 
         self.load_config()
 
@@ -45,18 +47,37 @@ class ScoutVision:
         self.backSub = cv2.createBackgroundSubtractorMOG2(
             history=self.history,
             varThreshold=self.threshold,
-            detectShadows=False
+            detectShadows=self.detect_shadows
         )
 
+    def _apply_scout_dict(self, config: dict):
+        self.history = int(config.get("history", 500))
+        self.threshold = int(config.get("threshold", 16))
+        self.min_area = int(config.get("min_area", 500))
+        self.detect_shadows = bool(config.get("detect_shadows", False))
+
     def load_config(self):
+        """Prefer settings.json scout section (SW-001 §2.11); else scout_config.json."""
+        if os.path.exists(self.settings_path):
+            try:
+                with open(self.settings_path, 'r') as f:
+                    data = json.load(f)
+                scout = data.get("scout") if isinstance(data, dict) else None
+                if isinstance(scout, dict) and scout:
+                    self._apply_scout_dict(scout)
+                    print(f"[ScoutVision] Loaded settings.scout: "
+                          f"H={self.history}, T={self.threshold}, A={self.min_area}")
+                    return
+            except Exception as e:
+                print(f"[ScoutVision] settings.json skip: {e}")
+
         if os.path.exists(self.config_path):
             try:
                 with open(self.config_path, 'r') as f:
                     config = json.load(f)
-                    self.history = config.get("history", 500)
-                    self.threshold = config.get("threshold", 16)
-                    self.min_area = config.get("min_area", 500)
-                print(f"[ScoutVision] Loaded config: H={self.history}, T={self.threshold}, A={self.min_area}")
+                self._apply_scout_dict(config)
+                print(f"[ScoutVision] Loaded {self.config_path}: "
+                      f"H={self.history}, T={self.threshold}, A={self.min_area}")
             except Exception as e:
                 print(f"[ScoutVision] Failed to load config: {e}")
         else:

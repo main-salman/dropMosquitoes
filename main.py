@@ -115,7 +115,7 @@ async def watchdog_ping_loop():
 async def orchestrator_loop():
     log.info("Initializing subsystems...")
 
-    scout = ScoutVision("scout_config.json")
+    scout = ScoutVision("scout_config.json", settings_path="settings.json")
     sniper = SniperVision("best.pt")
     gimbal = GimbalController()
     weapon = WeaponSystem()

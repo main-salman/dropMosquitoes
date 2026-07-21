@@ -28,6 +28,9 @@ engagements.jsonl
 calibration.json
 settings.json
 settings.json.tmp
+settings_backups/
+activity.log
+activity.log.*
 .sentry.pid
 *.engine
 *.onnx
