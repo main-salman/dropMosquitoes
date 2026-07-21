@@ -1,0 +1,21 @@
+# Project history mirror (agents.md)
+# Canonical detailed log: docs/HISTORY.md — APPEND ONLY; never delete prior lines.
+# Format: YYYY-MM-DD | [CATEGORY] | short note
+
+2026-07-20 | [PROCESS] | run-ai.sh deploy/restart; full reboot default for CSI
+2026-07-20 | [FIX] | Rev I pulse-power CH2 — stop latched module 12V cooking FETs
+2026-07-20 | [CODE] | MOSFET SIG LED at idle — idle watchdog SIG LOW + CH2 OFF
+2026-07-20 | [FEATURE] | Unify GUI tunables → settings.json + 30 backups; Apply vs Save permanent
+2026-07-20 | [BUG FIX] | Sniper black after soft restart — csi_phy_dead detect; deploy.sh auto-reboot
+2026-07-20 | [FEATURE] | Pressure-gated solenoid-only fire; maintain 60s; hyst=0; sensor fault disarm+alarm
+2026-07-20 | [BUG FIX] | Auto-cal no-click: locked pulse_solenoid; watchdog CH2 race; activity.log 10MB; pulse 100ms
+2026-07-20 | [FEATURE] | Control tab DRAIN PIPE 15s (only intentional pump+open overlap)
+2026-07-20 | [BUG FIX] | Auto-cal clicks die after ~3 shots — ARMED module_power_hold; no pump-edge CH2 cut
+2026-07-20 | [BUG FIX] | CH2 hold ON in software but LED off — re-assert PY.00; log ch2_rb
+2026-07-20 | [HW/SW] | Rev J: CH2 never closes — hardwire module 12V (jumper CH2 load); SIG LED≠coil
+2026-07-20 | [PROCESS] | Catch-up commits + HISTORY for missed solenoid troubleshooting steps
+
+# TROUBLESHOOTING INDEX — details in docs/HISTORY.md § 2026-07-20 PROCESS catch-up
+# 1 Rev I pulse-power  2 SIG LED≠power  3 CSI PHY dead  4 pressure-gated fire
+# 5 pulse lock+100ms+activity.log  6 DRAIN PIPE  7 module_power_hold
+# 8 CH2 re-assert+ch2_rb  9 Rev J hardwire jumper CH2 load

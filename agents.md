@@ -8,7 +8,7 @@ The system is divided into four asynchronous agents communicating via thread-saf
 1. **ScoutAgent (`scout_vision.py`):**
    - Reads `/dev/video0` via GStreamer `nvarguscamerasrc sensor-id=0`.
    - Uses OpenCV Background Subtraction (MOG2).
-   - Loads tuning parameters from `scout_config.json`.
+   - Loads tuning parameters from `settings.json` (`scout` section); falls back to legacy `scout_config.json`.
    - Outputs `(x, y)` pixel coordinates + `(vx, vy)` velocity vector of the highest-confidence moving blob.
    - **Mount: FIXED to IP67 enclosure (does NOT ride on gimbal).**
    
@@ -34,9 +34,10 @@ The system is divided into four asynchronous agents communicating via thread-saf
 ## Spec-Driven Development Rules
 
 1. **Spec Before Code:** No new agent or feature may be implemented without a corresponding spec in `docs/specs/`. Create or update the spec first, then implement.
-2. **History Logging:** Every code change, architectural decision, or procurement action MUST be appended to `docs/HISTORY.md` with a `[CATEGORY]` tag and timestamp.
-3. **Spec Traceability:** All code files should reference their governing spec in a docstring header (e.g., `# Implements: SW-001 §2.1`).
-4. **No Dummy Data:** NEVER create dummy data (videos, datasets, etc.) for testing or training. Always ask the user for real data if needed.
+2. **History Logging:** Every code change, architectural decision, procurement action, or **troubleshooting step** MUST be appended to `docs/HISTORY.md` with a `[CATEGORY]` tag and timestamp. Mirror the same entry in `history.txt` (do not delete prior `history.txt` content).
+3. **Commit Every Step:** After each discrete step (spec update, feature, bug fix, deploy-related ops note), create a **git commit**. Do not leave multi-step work uncommitted across sessions. Prefer small commits that match HISTORY entries.
+4. **Spec Traceability:** All code files should reference their governing spec in a docstring header (e.g., `# Implements: SW-001 §2.1`).
+5. **No Dummy Data:** NEVER create dummy data (videos, datasets, etc.) for testing or training. Always ask the user for real data if needed.
 
 
 # Jetson Hardware Setup & TensorRT Export Guide

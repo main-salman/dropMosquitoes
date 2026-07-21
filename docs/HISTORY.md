@@ -961,3 +961,67 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OBSERVED]** Dual-MOSFET SIG LED on while module stayed cold; click test turned LED off. Duration unknown.
 - **[ANALYSIS]** LED tracks SIG HIGH, not FET load current. Rev I CH2-off explains cold+LED: trigger asserted, 12V gated away. Click close re-drove SIG LOW.
 - **[CODE]** Idle watchdog every 1s re-asserts SIG LOW + CH2 OFF when not intentionally open; re-assert after pump edges; HW-001 notes SIG LED semantics.
+
+## 2026-07-20 — [FEATURE] Unify all GUI tunables into settings.json + 30 backups
+- **[DECISION]** Everything in the GUI persists to one file; Apply = temporary runtime; Save as permanent = disk. Solenoid accumulator + calibration offsets + scout MOG2 merge into the same tree. Last 30 saves backed up; corrupt/missing `settings.json` restores from latest backup; no backups → factory defaults then create `settings.json`.
+- **[SPEC]** SW-001 §2.11 rewritten for grouped schema, backup policy, Apply vs Save. ScoutAgent §2.1 prefers `settings.scout`.
+- **[CODE]** `settings_store.py`: groups `accumulator/servo/pulse/prime/stabilize/calibration/scout`; migrate legacy flat `target_psi`, `scout_config.json`, `calibration_visual.json`; `settings_backups/` rotate max 30. `app.py` `apply_settings_to_runtime()` at boot; `GET/POST /api/settings` full tree. `CalibrationTable` persists via store. `ScoutVision`/`main.py` load `settings.scout`.
+- **[GUI]** Settings **Save All as Permanent**; Apply buttons labeled runtime; Solenoid accum Save as Permanent; Calibration offset Save confirms → settings.json. Nested `settings.accumulator.target_psi` reads fixed.
+- **[GIT]** `.gitignore`: `settings_backups/`.
+
+## 2026-07-20 — [BUG FIX] Sniper black after soft update — detect CSI PHY death + auto-reboot
+- **[BUG]** After `./run-ai.sh --restart` / `deploy.sh` soft restart, Sniper (CSI-1) showed no video: `NvBufSurfaceFromFd Failed`, flushed 0 frames. Scout OK. Confirmed soft recovery (stop sentry + restart nvargus + sniper-only gst-launch) **cannot** clear Orin CSI-1 PHY — only full reboot works (same root cause as 2026-06-03).
+- **[CODE]** `vision.py`: if Jetson open succeeds but flush==0 → release dead pipeline, `error=csi_phy_dead`, overlay "CSI DEAD — ./run-ai.sh"; `get_status()`.
+- **[CODE]** `app.py`: `GET /api/cameras/status` (`ok`, `reboot_required`); CRITICAL log when Sniper unhealthy at start.
+- **[OPS]** `deploy.sh`: after soft restart, poll camera status; if `reboot_required`, auto-reboot and wait for dashboard. Prevents the persistent “updated but Sniper invisible” loop.
+
+## 2026-07-20 — [FEATURE] Pressure-gated solenoid-only fire (live + auto-cal)
+- **[DECISION]** Pump only maintains Target PSI (solenoid closed). Every shot waits until pressure ready, fires **solenoid-only** (pump OFF, no overlap), then recharges before the next shot. Maintain polls every **60 s** while ARMED, **no hysteresis**. Sensor fault → disarm + alarm. Same path for auto-cal and live mosquito fire; one standard pulse.
+- **[SPEC]** SW-001 §2.7 rewritten to the charge/fire contract above.
+- **[CODE]** `AccumulatorManager`: `_ensure_pressure_ready`, fire gate + post-shot recharge, `PRESSURE_POLL_SEC`, hyst=0, `_fail_sensor` + `on_alarm`, arm refuses if target not reached with live sensor.
+- **[CODE]** `AutoCalibrator` / freefire: use `accum.fire()` (no `fire_pump` shots); arm before cal, disarm after.
+- **[GUI]** Settings → Pressure Maintain card: target PSI, poll interval, standard pulse, max pump run; Apply runtime + Save as permanent.
+- **[SETTINGS]** Defaults: `pressure_poll_sec=60`, `maintain_hysteresis_psi=0`, `default_pulse_ms=25`.
+
+## 2026-07-20 — [BUG FIX] Auto-cal “no click” + Click Test broken after cal + activity.log
+- **[ROOT CAUSE]** Logs showed auto-cal *did* command OPEN/CLOSE at **25ms** — often inaudible. Worse: `AccumulatorManager.fire()` called unlocked `_set_solenoid()`; during the 15ms CH2 settle the idle watchdog saw `_solenoid_state=False` but `_sol_12v_state=True` and **cut module 12V mid-pulse**, so the coil never got a clean open. After many cycles Click Test became unreliable until hold-time fiddling / recover.
+- **[CODE]** `RelayController.pulse_solenoid()` — entire open window under lock; watchdog skips when CH2 ON; `recover_solenoid()` re-pinmux + SIG/CH2 safe. Fire + Click Test use locked pulse; disarm/auto-cal end always recover.
+- **[CODE]** `activity_log.py` — rotating **10 MB** `activity.log` (5 backups) for ARM/FIRE/CLICK_TEST/AUTOCAL_*.
+- **[SETTINGS]** Shared pulse default **100ms** (migrate ≤25ms → 100); Settings slider 10–500ms with audible hint.
+- **[NOTE]** Pressure not holding with a 10 PSI air pre-charge also needs a sealed valve; race above could flutter the valve. Re-test hold after this fix.
+
+## 2026-07-20 — [FEATURE] Control tab DRAIN PIPE (15s)
+- **[CODE]** `RelayController.drain_line()`: solenoid OPEN + pump ON for N seconds under lock, then safe idle. `POST /api/line/drain` disarms first, drains, `recover_solenoid()`. GUI Control → Fire Control **DRAIN PIPE (15s)** with confirm.
+- **[SPEC]** SW-001 §2.7 notes maintenance drain as the only intentional pump+open-valve overlap.
+
+## 2026-07-20 — [BUG FIX] Auto-cal clicks die after ~3 shots (CH2 SSR thrash)
+- **[OBSERVED]** Second auto-cal: audible click on first ~3 of ~30 shots; software still logged OPEN/CLOSE every time.
+- **[ROOT CAUSE]** Every pump charge edge called `_force_solenoid_safe()` (cut CH2) and/or PADCTL rewrite on PR.04. Combined with per-shot CH2 pulse-power, the Monk Makes SSR was cycled dozens of times per cal → intermittent no-click while libgpiod still “succeeded”.
+- **[FIX]** While ARMED: `set_module_power_hold(True)` keeps CH2 ON; shots are SIG-only. Pump edges only soft-assert SIG LOW (never cut CH2 / no padmux). Settle 80ms for cold CH2. Click/drain recover without PR.05 remap.
+- **[SPEC]** SW-001 §2.7 updated for ARMED-session module power.
+
+## 2026-07-20 — [BUG FIX] CH2 hold “ON in software” but LED off / ~4 clicks
+- **[OBSERVED]** Auto-cal with hold: sentry.log showed `ch2_held=True` and `CH2 hold ON` for every shot; operator saw Monk Makes CH2 LED not staying on; only ~4 audible solenoid clicks; PSI barely dropped on most shots.
+- **[ROOT CAUSE]** Software cached `_sol_12v_state=True` and skipped re-driving PY.00. If the SSR/GPIO dropped after a few shots, SIG still pulsed (module SIG LED blinks) with no module 12V → silent “fires”.
+- **[FIX]** Always `_drive_module_12v_on()` before SIG open, after SIG close (while hold), on every pump edge while armed, and every 0.5s watchdog tick while hold. Log CH2 libgpiod readback on FIRE (`ch2_rb`).
+- **[NOTE]** Monk Makes CH2 is a silent SSR — listen for the **solenoid** click, watch **Relay CH2 IN LED** (not the MOSFET SIG LED).
+
+## 2026-07-20 — [HW/SW] Rev J: CH2 never closes — hardwire module 12V
+- **[OBSERVED]** Auto-cal: MOSFET SIG LED lights on every shot, **zero** solenoid clicks; Monk Makes Channel B never turns on; both relay LEDs dim/flicker. Logs: `ch2_rb=1` every FIRE.
+- **[ROOT CAUSE]** Yahboom **PY.00** reports HIGH to software but does not drive enough current into Monk Makes SSR IN B — Channel B stays open → module DC IN+ dead → SIG LED (logic) still works, coil never moves.
+- **[FIX]** Default `module_12v_hardwired=true`: leave CH2 GPIO idle; operator **jumpers CH2 load screws** (or feeds fused 12V to module). CH2 drive moved to Jetson.GPIO for gated experiments. GUI Step 0 + `/api/solenoid/ch2_hold`. Specs HW/SW/SAFE updated Rev J.
+
+## 2026-07-20 — [PROCESS] Catch-up: HISTORY + commits for solenoid troubleshooting saga
+- **[MISS]** Multi-step ECO-004 solenoid/auto-cal work was documented in HISTORY but **not git-committed** after each step (violates agents.md Commit Every Step).
+- **[ACTION]** Expanded this log with the index below; created/updated `history.txt` mirror; split catch-up into discrete commits matching the steps.
+- **[TROUBLESHOOTING INDEX — solenoid click / CH2 / auto-cal]**
+  1. Rev I pulse-power CH2 (module hot when 12V latched) → CH2 OFF at idle.
+  2. SIG LED on while cold → idle SIG watchdog; LED ≠ coil power.
+  3. Soft restart → Sniper CSI PHY dead → detect + `deploy.sh` auto-reboot.
+  4. Pressure-gated solenoid-only fire (pump ≠ shot); 60s maintain; no hysteresis.
+  5. Auto-cal “no click”: 25ms inaudible + idle watchdog cut CH2 mid-settle → locked `pulse_solenoid`, 100ms default, `activity.log`.
+  6. DRAIN PIPE (15s) intentional pump+open overlap.
+  7. Clicks die after ~3 shots: pump-edge CH2/padmux thrash → ARMED `module_power_hold`.
+  8. Hold ON in logs / LED off / ~4 clicks: cached `_sol_12v_state` skipped re-drive → always re-assert CH2 + `ch2_rb` log.
+  9. Zero clicks; SIG LED on; Channel B never on; `ch2_rb=1`: PY.00 too weak for SSR → **Rev J hardwire** (jumper CH2 load).
+- **[OPERATOR]** Until Channel B can be driven strongly: jumper Monk Makes CH2 load screws (or fused 12V → module DC IN+); keep `module_12v_hardwired=true`; Click Test should then click.
