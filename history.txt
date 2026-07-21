@@ -14,6 +14,10 @@
 2026-07-20 | [BUG FIX] | CH2 hold ON in software but LED off — re-assert PY.00; log ch2_rb
 2026-07-20 | [HW/SW] | Rev J: CH2 never closes — hardwire module 12V (jumper CH2 load); SIG LED≠coil
 2026-07-20 | [PROCESS] | Catch-up commits + HISTORY for missed solenoid troubleshooting steps
+2026-07-20 | [GIT] | d7dd381 docs(process) HISTORY+history.txt+commit-per-step rule
+2026-07-20 | [GIT] | 5cc7f55 feat(settings) settings.json + 30 backups
+2026-07-20 | [GIT] | e2f5248 fix(deploy) CSI PHY death detect + auto-reboot
+2026-07-20 | [GIT] | 04ef3f6 fix(ECO-004) pressure-gated fire through Rev J hardwired 12V
 
 # TROUBLESHOOTING INDEX — details in docs/HISTORY.md § 2026-07-20 PROCESS catch-up
 # 1 Rev I pulse-power  2 SIG LED≠power  3 CSI PHY dead  4 pressure-gated fire
