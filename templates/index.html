@@ -304,6 +304,10 @@
           Yahboom <b>T13 / PY.00</b> does not reliably close Monk Makes CH2 (dim LEDs = weak drive).
           <b>Fix:</b> short the two Channel B screw terminals together (or wire fused +12V straight to module DC IN+), then keep hardwired mode ON.
         </p>
+        <p style="font-size:11px;color:var(--orange);margin-bottom:10px;font-weight:600">
+          ⚠ BOOT HEAT: with Channel B jumpered, the module has 12V while Jetson firmware drives SIG HIGH — FETs get hot.
+          Put a switch in series with the jumper: OFF during power-on, ON only after the dashboard is up and SIG LED is off.
+        </p>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0">
           <input type="checkbox" id="sol-hardwired" checked onchange="solHardwiredToggle()">
           Module 12V hardwired (bypass CH2 GPIO)
