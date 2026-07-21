@@ -21,7 +21,7 @@ def _pinmux() -> None:
 
     with open("/dev/mem", "r+b") as f:
         mem = mmap.mmap(f.fileno(), 0x10000, offset=0x02430000)
-        for offset in (0x98, 0x90, 0xD030):  # PR.04, PR.05, PY.00
+        for offset in (0x98, 0x90, 0x68):  # PR.04, PR.05, PQ.05 (CH2 / T29)
             mem[offset : offset + 4] = struct.pack("<I", 0x05)
         mem.close()
 
@@ -29,7 +29,7 @@ def _pinmux() -> None:
 def main() -> int:
     try:
         _pinmux()
-        print("[claim_sig_low] PADCTL 0x05 on PR.04/PR.05/PY.00", flush=True)
+        print("[claim_sig_low] PADCTL 0x05 on PR.04/PR.05/PQ.05", flush=True)
     except Exception as e:
         print(f"[claim_sig_low] PADCTL failed: {e}", flush=True)
 

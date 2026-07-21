@@ -115,7 +115,7 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **Relay V- (GND)** | Pin 9 | — | Terminal 9 | BLACK | Monk Makes relay ground |
 | **Relay CH1 (Pump)** | Pin 11 | BCM 17 | Terminal 11 | YELLOW | Trigger line → Relay IN A (Pump On/Off — continuous run mode) |
 | **Solenoid Trigger (SIG)** | Pin 36 | BCM 16 | Terminal 36 | GREEN | PR.05 → MOSFET module SIG (+10kΩ pull-down to GND — ECO-2026-004 Rev E/F) |
-| **Relay CH2 (Solenoid 12V interlock)** | Pin 13 | BCM 27 | Terminal 13 | GREEN | PY.00 → Relay CH2 IN — gates module DC IN+ (ECO-2026-004 Rev H, §5.5) |
+| **Relay CH2 (Solenoid 12V interlock)** | Pin 29 | BCM 5 | Terminal 29 | GREEN | PQ.05 → Relay CH2 IN — gates module DC IN+ (ECO-2026-004 Rev L, §5.5) |
 | **LiDAR I2C SDA** | Pin 3 | BCM 2 | Terminal 3 | BLUE | TF-Luna data line |
 | **LiDAR I2C SCL** | Pin 5 | BCM 3 | Terminal 5 | YELLOW | TF-Luna clock line |
 | **LiDAR V+ (5V)** | Pin 4 | — | Terminal 4 | RED | TF-Luna 5V power |
@@ -174,47 +174,32 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 > (**no COM/NO**; screws are interchangeable).
 > Wiring: `+12V bus → 3A fuse → screw B①`, `screw B② → module DC IN+`, header `GND → GND bus`
 > (already present if the pump input shares the board).
-> **IN B ← Terminal 13 (BCM 27 / PY.00, libgpiod + PADCTL 0xD030)**.
+> **IN B GPIO drive abandoned on Yahboom (Rev M):** T13/PY.00, T22/PY.01, and
+> T29/PQ.05 all report software HIGH (`ch2_rb=1`) but **never light Channel B LED**
+> / never close the SSR. Pump CH1 (T11/PR.04 → IN A) still works — the board is fine;
+> CH2 input current demand exceeds what these pads source into IN B.
 >
-> **Software policy (Rev J — hardwired default):**
-> Yahboom **PY.00 / T13 cannot reliably close Monk Makes CH2** (GPIO readback HIGH,
-> Channel B LED stays dim/off, SIG LED still lights, **no solenoid click**). Until a
-> stronger drive path exists:
+> **Software policy (Rev M — hardwired default):**
 > 1. **Jumper CH2 load screws** (B①–B② short) **or** wire fused +12V straight to
->    module DC IN+ (boot interlock removed).
-> 2. `settings.accumulator.module_12v_hardwired = true` (factory default) → software
->    leaves CH2 GPIO LOW and fires **SIG-only**.
-> 3. Idle watchdog still forces SIG LOW. Optional gated mode
->    (`module_12v_hardwired=false`) uses Jetson.GPIO BCM 27 + PADCTL for experiments.
+>    module DC IN+.
+> 2. `settings.accumulator.module_12v_hardwired = true` (factory default) → SIG-only.
+> 3. **Rev N (preferred gated restore):** 2N3904 emitter follower —
+>    `T29 → 1kΩ → Base`, `T17(+3.3V) → Collector`, `Emitter → IN B` + `10kΩ → GND`.
+>    Wiring guide: `diagrams/eco004_mosfet_module_option.drawio`. Then
+>    `module_12v_hardwired=false`.
 >
-> **⚠ BOOT HEAT (Rev J.1 — mandatory operator procedure):**
-> With Channel B jumpered, module **12V is present during Jetson boot**. Boot firmware
-> **drives PR.05 HIGH** until userspace claims it → dual-MOSFET module and/or coil can
-> run **hot**. Software (`scripts/claim_sig_low.py` in `sentry.service` ExecStartPre)
-> only shortens the *userspace* window — it cannot cover the firmware window.
->
-> **Do one of the following:**
-> A. **Preferred:** Put an **SPST switch** in series with the CH2 jumper (or in the
->    fused +12V feed to module DC IN+). Leave **OFF** while powering the Jetson; turn
->    **ON** only after the dashboard is up and the MOSFET SIG LED is dark at idle.
-> B. Remove the jumper before each reboot; re-fit after sentry is running; then Click Test.
-> C. Long-term hardware: buffer PY.00 → CH2 IN (NPN/N-FET) so CH2 gating works again
->    without a load jumper (restores boot-safe unpowered module).
->
-> Current note: with a load jumper the solenoid's ~2A draw no longer passes through the
-> SSR channel during shots — the jumper carries it. SSR 1.5A continuous limit is N/A.
->
-> **Why BCM 27 is boot-safe here:** at boot PY.00 only *floats* (~2.8V, sourcing no current).
-> The relay IN is a current-driven input (kΩ-range), so a floating pad cannot energize it —
-> unlike the MOSFET SIG gate it previously drove. With CH2 open, the module is unpowered
-> during boot regardless of what PR.05 does.
+> **⚠ BOOT HEAT (mandatory with jumper):**
+> Module **12V is present during Jetson boot**. Boot firmware **drives PR.05 HIGH**
+> → FETs can run hot. Put an **SPST switch** in series with the jumper (OFF at
+> power-on, ON after dashboard / SIG LED dark). `claim_sig_low.py` only shortens
+> the userspace window.
 
 
 ## 6. Isolation & Safety Hardware
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
   - CH1: Pump On/Off control (GPIO 17 → continuous run mode with accumulator)
-  - CH2: Solenoid 12V boot interlock (BCM 27 → gates MOSFET module DC IN+, §5.5)
+  - CH2: Solenoid 12V boot interlock (BCM 5 / T29 → gates MOSFET module DC IN+, §5.5)
 - **Solenoid Valve:** GOODRIG 12V DC Direct-Acting NC, 1/4" FNPT (fluid gating, replaces relay-timed pump pulses)
 - **MOSFET Switch:** D4184-class dual-MOSFET trigger module (SIG via BCM 16/PR.05 + 10kΩ pull-down; supersedes discrete IRLB8721)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)

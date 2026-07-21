@@ -1057,3 +1057,22 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPS]** Prefer **SPST switch in series with jumper** (OFF at power-on, ON after dashboard / SIG LED dark). Or remove jumper for each reboot.
 - **[CODE]** `scripts/claim_sig_low.py` + `sentry.service` ExecStartPre (before and after nvargus wait) to shorten userspace HIGH window. Cannot cover firmware window.
 - **[SPEC]** HW-001 §5.5 Rev J.1 + SAFE-001 updated; GUI Step 0 boot-heat warning.
+
+## 2026-07-21 — [HW/SW] Rev K: CH2 IN moved T13 → T22 (restore gated 12V)
+- **[HW]** Operator moved Monk Makes **IN B** from **T13 (BCM 27 / PY.00)** to **T22 (BCM 25 / PY.01)** and removed Channel B load jumper (SSR gating restored).
+- **[CODE]** `hardware.py`: `RELAY_SOL12V_PIN=25`; PADCTL `PY.01` @ `0xD000` (was PY.00 @ `0xD030`); default `module_12v_hardwired=False`. `claim_sig_low.py`, settings default, GUI Step 0 / auto-cal confirm (gated path skips jumper checkbox).
+- **[SPEC]** HW-001 §5.3/§5.5, SW-001 §2.7, SAFE-001 — Rev K gated default; hardwired remains fallback.
+- **[TEST]** Deploy + force settings hardwired=false; CH2 hold → Channel B LED bright; Click Test → 2 clicks; MOSFET cold at idle.
+
+## 2026-07-21 — [ROOT CAUSE] T22/PY.01 also too weak for Monk Makes CH2 → Rev L T29
+- **[OBSERVED]** After Rev K: CH2 hold reports `ch2_rb=1` / `BCM25/T22` but **Channel B LED stays off**; Click Test silent (same signature as PY.00/T13).
+- **[ROOT CAUSE]** Entire Yahboom **PY.*** SPI bank is too weak to source Monk Makes IN B current; moving T13→T22 stayed in that bank.
+- **[FIX — Rev L]** Move CH2 IN to **T29 / BCM 5 / PQ.05** (PADCTL `0x68`, same PADCTL_A0 block as proven PR.04/PR.05). Software + specs updated; operator must move IN B wire T22→T29 (Channel B still not jumpered).
+
+## 2026-07-21 — [DECISION] Rev M: abandon CH2 GPIO gating; restore hardwired jumper
+- **[OBSERVED]** T29/PQ.05 also fails: Hold CH2 → `pin=BCM5/T29` `ch2_rb=1`, Channel B LED off, Click Test silent. Three pads exhausted (T13/T22/T29).
+- **[DECISION]** Stop pin-hopping. Restore **Rev J hardwired**: jumper Channel B load + `module_12v_hardwired=true` (factory default). Boot-heat mitigation = series MODULE 12V switch. Long-term gated CH2 needs **transistor buffer** on IN B, not another header pin.
+- **[CODE/SPEC]** Defaults/GUI/HW-001/SW-001/SAFE-001 → Rev M hardwired.
+
+## 2026-07-21 — [DIAGRAM] Rev N 2N3904 CH2 buffer wiring guide
+- **[DIAGRAM]** Rewrote `diagrams/eco004_mosfet_module_option.drawio` for **2N3904 emitter follower**: T29→1k→Base, T17→Collector, Emitter→IN B + 10k→GND. Explicit REMOVE jumper / MOVE IN B wire / ADD parts checklist. SIG path unchanged.

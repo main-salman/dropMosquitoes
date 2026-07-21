@@ -110,7 +110,7 @@ def apply_settings_to_runtime(data: dict | None = None) -> dict:
     acc = data.get("accumulator") or {}
     if acc:
         accum.update_config(acc)
-    # Always sync 12V mode (default hardwired — PY.00 cannot close Monk Makes CH2)
+    # Always sync 12V mode (Rev J/M default: hardwired — Yahboom GPIO can't close CH2)
     relay.set_module_12v_hardwired(bool(acc.get("module_12v_hardwired", True)))
     applied["accumulator"] = {
         **(accum.get_status().get("config") or {}),
@@ -824,8 +824,8 @@ def api_solenoid_gate_hold():
 @app.route('/api/solenoid/ch2_hold', methods=['POST'])
 def api_solenoid_ch2_hold():
     """
-    Drive Relay CH2 IN (BCM 27 / T13) HIGH for `seconds` with SIG LOW.
-    Watch Monk Makes Channel B LED; meter T13 for ~3.3V.
+    Drive Relay CH2 IN (BCM 5 / T29) HIGH for `seconds` with SIG LOW.
+    Watch Monk Makes Channel B LED; meter T29 for ~3.3V.
     Skipped when module_12v_hardwired=True.
     Body: {"seconds": int}  (default 5, clamped 1-30)
     """
@@ -1266,8 +1266,8 @@ def api_cal_auto_start():
     """
     Start autonomous one-button calibration in a background thread.
 
-    When module_12v_hardwired=true (Rev J), require body
-    {"confirm_module_12v_jumper": true} — CH2 SSR cannot close on Yahboom PY.00;
+    When module_12v_hardwired=true (Rev J fallback), require body
+    {"confirm_module_12v_jumper": true} — CH2 SSR bypassed; operator must confirm jumper;
     operator must jumper CH2 load screws or feed fused 12V to module DC IN+
     or every SIG pulse is silent (no coil click).
     """

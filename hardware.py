@@ -57,7 +57,7 @@ _PADCTL_GPIO_OUTPUT = 0x05
 _PADCTL_REGS = (
     ("PR.04", 0x98),    # BCM 17 / Pin 11 / Terminal 11 — pump relay
     ("PR.05", 0x90),    # BCM 16 / Pin 36 / Terminal 36 — solenoid trigger (module SIG)
-    ("PY.00", 0xD030),  # BCM 27 / Pin 13 / Terminal 13 — Relay CH2 (solenoid 12V boot interlock, Rev H)
+    ("PQ.05", 0x68),    # BCM 5 / Pin 29 / Terminal 29 — Relay CH2 (solenoid 12V interlock, Rev L)
 )
 # reg_addr (Jetson.GPIO): PR.04=0x2430098, PR.05=0x2430090 → offsets from base 0x02430000.
 # Both pads boot tristated; without the 0x05 PADCTL write the pin outputs 0V even
@@ -149,7 +149,7 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump) [Jetson.GPIO]
-RELAY_SOL12V_PIN = 27     # BCM 27 = Pin 13 → IDC40P Terminal 13 → Relay CH2 IN (module 12V)
+RELAY_SOL12V_PIN = 5      # BCM 5 = Pin 29 → IDC40P Terminal 29 → Relay CH2 IN (module 12V)
 SOLENOID_PIN = 16         # BCM 16 = Pin 36 (informational; solenoid driven via libgpiod below)
 
 # Solenoid trigger (dual-MOSFET module SIG) — driven via libgpiod (see Rev E note above).
@@ -157,10 +157,12 @@ SOLENOID_GPIOCHIP = "gpiochip0"
 SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by pad name
 SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 
-# Solenoid 12V interlock — Relay CH2 gates the MOSFET module's DC IN+ (Rev H/I).
-# Driven via Jetson.GPIO (same stack as pump CH1). libgpiod readback on PY.00 was
-# reporting HIGH while the Monk Makes CH2 LED stayed dark — Yahboom PY.00 is a
-# weak pad. Prefer module_12v_hardwired=True (jumper CH2 load / direct fused 12V).
+# Solenoid 12V interlock — Relay CH2 was meant to gate MOSFET module DC IN+.
+# Yahboom pads T13/PY.00, T22/PY.01, and T29/PQ.05 all report GPIO HIGH but
+# never light Monk Makes Channel B LED (rb=1, LED off, silent coil). Until an
+# NPN/N-FET buffer drives IN B, factory default is hardwired CH2 load jumper
+# (module_12v_hardwired=True) — SIG-only shots; use a series MODULE 12V switch
+# for boot-heat safety (SAFE-001 / HW-001 §5.5).
 # =======================================================================================================
 
 
@@ -276,11 +278,11 @@ class RelayController:
     is driven via libgpiod (clean push-pull 3.3V); pump stays on Jetson.GPIO. The
     module switches the solenoid low side; a 1N5408 flyback sits across the coil.
 
-    ECO-2026-004 Rev H / Rev I: Relay CH2 (BCM 27 / PY.00 / T13) gates the
-    module's 12V feed. Boot firmware drives PR.05 HIGH during boot — CH2 stays
-    OPEN so the module is unpowered. At runtime CH2 is also OFF by default and
-    only closes for intentional valve pulses (HW-001 §5.5). Leaving module 12V
-    latched ON for the whole session lets any SIG glitch cook the MOSFETs.
+    ECO-2026-004 Rev L: Relay CH2 (BCM 5 / PQ.05 / T29) gates the module's
+    12V feed (moved off weak PY.00/T13 and PY.01/T22). Boot firmware drives
+    PR.05 HIGH during boot — CH2 stays OPEN so the module is unpowered. At
+    runtime CH2 is OFF by default and only closes for intentional valve
+    pulses (HW-001 §5.5). Latched module 12V lets any SIG glitch cook FETs.
 
     SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
     SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
@@ -296,7 +298,7 @@ class RelayController:
         self._solenoid_state = False
         self._module_power_hold = False  # True while ARMED — CH2 stays ON
         # True = module DC IN+ hardwired / CH2 load jumpered; SIG-only control.
-        # Default ON: Yahboom PY.00 does not reliably close Monk Makes CH2.
+        # Default ON: Yahboom GPIO cannot close Monk Makes CH2 (T13/T22/T29).
         self._module_12v_hardwired = True
         self._pulse_busy = False  # reject overlapping click-test / fire pulses
         self._lock = threading.Lock()
@@ -324,14 +326,15 @@ class RelayController:
         self._solenoid = _LibGpiodSolenoid()
         self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
 
-        # CH2 via Jetson.GPIO BCM 27 (same path as pump). Kept LOW when hardwired.
+        # CH2 via Jetson.GPIO BCM 5 / T29 (same path as pump). Kept LOW when hardwired.
         self._sol_12v = _JetsonGpioOut(RELAY_SOL12V_PIN, label="Sol12V")
         self._sol_12v_state = False
         self._force_solenoid_safe()
         self._solenoid.set(False)
         if not self._module_12v_hardwired:
             self._boot_warm_module_12v()
-            print("[RelayController] Solenoid 12V via Relay CH2 (Jetson.GPIO).")
+            print("[RelayController] Solenoid 12V via Relay CH2 "
+                  f"(Jetson.GPIO BCM{RELAY_SOL12V_PIN}/T29).")
         else:
             print("[RelayController] Module 12V HARDWIRED mode — CH2 GPIO idle; "
                   "jumper CH2 load screws or feed fused 12V to module DC IN+.")
@@ -410,9 +413,9 @@ class RelayController:
         if self._module_12v_hardwired:
             self._sol_12v_state = True  # logical "powered" for status
             return
-        # Refresh PY.00 padmux occasionally — do NOT touch PR.05 here
+        # Refresh PQ.05 padmux occasionally — do NOT touch PR.05 here
         if settle:
-            configure_push_pull(only=("PY.00",))
+            configure_push_pull(only=("PQ.05",))
         self._sol_12v.set(True)
         self._sol_12v_state = True
         if settle:
@@ -489,7 +492,7 @@ class RelayController:
             if self._solenoid.get() == 1:
                 self._solenoid.set(False)
                 print("[RelayController] Pump start: cleared stuck SIG HIGH")
-        # Pump edges can EMI-glitch PY.00; re-drive CH2 while ARMED hold is on.
+        # Pump edges can EMI-glitch PQ.05; re-drive CH2 while ARMED hold is on.
         if self._module_power_hold and not self._module_12v_hardwired:
             self._drive_module_12v_on(settle=False)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
@@ -644,7 +647,7 @@ class RelayController:
         """
         with self._lock:
             if re_pinmux:
-                configure_push_pull(only=("PR.05", "PY.00"))
+                configure_push_pull(only=("PR.05", "PQ.05"))
             self._force_solenoid_safe()
             self._solenoid.set(False)
             print("[RelayController] Solenoid drive recovered (SIG LOW, CH2 OFF"
@@ -721,8 +724,8 @@ class RelayController:
 
     def hold_ch2(self, seconds: float = 5.0) -> dict:
         """
-        Drive Relay CH2 IN (BCM 27 / T13) HIGH for measurement — SIG stays LOW.
-        Use to watch Monk Makes Channel B LED and meter Terminal 13 (~3.3V).
+        Drive Relay CH2 IN (BCM 5 / T29) HIGH for measurement — SIG stays LOW.
+        Use to watch Monk Makes Channel B LED and meter Terminal 29 (~3.3V).
         """
         seconds = max(1.0, min(float(seconds), 30.0))
         if self._module_12v_hardwired:
@@ -734,7 +737,7 @@ class RelayController:
         with self._lock:
             self._solenoid.set(False)
             self._solenoid_state = False
-            configure_push_pull(only=("PY.00",))
+            configure_push_pull(only=("PQ.05",))
             self._sol_12v.set(True)
             self._sol_12v_state = True
             rb = self._sol_12v.get()
@@ -748,7 +751,7 @@ class RelayController:
             "held_sec": seconds,
             "ch2_readback": rb,
             "ch2_readback_after": rb_after,
-            "pin": f"BCM{RELAY_SOL12V_PIN}/T13",
+            "pin": f"BCM{RELAY_SOL12V_PIN}/T29",
         }
 
     # -- Backward compatibility -----------------------------------------------

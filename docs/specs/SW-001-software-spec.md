@@ -94,11 +94,10 @@ The R385 pump has **no pressure switch** and must not run continuously against a
 closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
-**MOSFET module 12V (HW-001 §5.5 Rev J):** Factory
+**MOSFET module 12V (HW-001 §5.5 Rev M):** Factory
 `module_12v_hardwired=true` — CH2 GPIO idle; module must have fused 12V via
-jumpered CH2 load or direct DC IN+. Shots are **SIG-only**. Gated mode
-(`hardwired=false`): Jetson.GPIO BCM 27 drives CH2; while ARMED re-drive CH2
-every pulse/pump/watchdog tick. Idle: SIG LOW (+ CH2 OFF if gated).
+jumpered CH2 load or direct DC IN+. Shots are **SIG-only**. Yahboom cannot drive
+Monk Makes IN B (T13/T22/T29 failed). Gated mode reserved for buffered IN B.
 
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
@@ -134,7 +133,7 @@ timed fallbacks. Charge-after-shot is always on.
 **Solenoid drive:** every open pulse must run under `RelayController.pulse_solenoid()`
 (lock held for the open window). While **ARMED**, Relay CH2 (module 12V) stays
 **ON for the session** (`set_module_power_hold(True)`); shots only toggle SIG.
-CH2 GPIO is re-asserted on each fire/pump/watchdog tick (PY.00/SSR can drop
+CH2 GPIO is re-asserted on each fire/pump/watchdog tick (PQ.05/SSR can drop
 while cached state still says ON — LED off, silent shots). Idle: CH2 OFF;
 watchdog keeps SIG LOW. Do **not** rewrite PR.05 PADCTL after libgpiod claims
 the line. Disarm / auto-cal end: drop hold + `recover_solenoid()`.

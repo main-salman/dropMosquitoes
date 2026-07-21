@@ -26,7 +26,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PADCTL_BASE = 0x02430000
 REGS = {
     "PR.04 / BCM 17 / Terminal 11 (pump relay)": 0x98,
-    "PY.00 / BCM 27 / Terminal 13 (solenoid MOSFET gate)": 0xD030,
+    "PR.05 / BCM 16 / Terminal 36 (solenoid SIG)": 0x90,
+    "PQ.05 / BCM 5 / Terminal 29 (Relay CH2 / module 12V)": 0x68,
 }
 GPIO_OUTPUT = 0x05
 

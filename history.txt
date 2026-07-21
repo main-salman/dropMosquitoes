@@ -28,3 +28,7 @@
 2026-07-21 | [VERIFY] | CH2 jumper: Click Test + auto-cal clicks reliable; keep jumpered (do not restore CH2 gating)
 2026-07-22 | [BUG FIX] | TEST FIRE→solenoid; DRAIN keep valve open; sol FIRE default 100ms; click recover
 2026-07-22 | [SAFE] | Rev J.1 boot heat with CH2 jumper — series MODULE 12V switch; claim_sig_low early in sentry.service
+2026-07-21 | [HW/SW] | Rev K: CH2 IN T13→T22 (BCM25/PY.01); hardwired=false default; jumper removed; gated SSR restored
+2026-07-21 | [ROOT CAUSE] | T22/PY.01 also weak (rb=1 LED off) — Rev L CH2→T29/BCM5/PQ.05 (PADCTL 0x68)
+2026-07-21 | [DECISION] | Rev M: T29 also fails — abandon CH2 GPIO gating; hardwired jumper default + series 12V switch
+2026-07-21 | [DIAGRAM] | eco004_mosfet_module_option.drawio Rev N — 2N3904 buffer wire-move guide (T29/T17/IN B)

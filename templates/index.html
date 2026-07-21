@@ -300,17 +300,17 @@
       <div class="card-title">⚡ Step 0 — Module 12V (Relay CH2)</div>
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">
-          Dual-MOSFET <b>SIG LED</b> can light with <b>no click</b> if Channel B is open — module has no 12V.
-          Yahboom <b>T13 / PY.00</b> does not reliably close Monk Makes CH2 (dim LEDs = weak drive).
-          <b>Fix:</b> short the two Channel B screw terminals together (or wire fused +12V straight to module DC IN+), then keep hardwired mode ON.
+          Dual-MOSFET <b>SIG LED</b> can light with <b>no click</b> if module has no 12V.
+          Yahboom GPIO <b>cannot close Monk Makes CH2</b> (T13/T22/T29 all failed: software HIGH, Channel B LED off).
+          <b>Required:</b> short the two Channel B screw terminals (or fused +12V → module DC IN+) and keep hardwired ON.
         </p>
         <p style="font-size:11px;color:var(--orange);margin-bottom:10px;font-weight:600">
-          ⚠ BOOT HEAT: with Channel B jumpered, the module has 12V while Jetson firmware drives SIG HIGH — FETs get hot.
-          Put a switch in series with the jumper: OFF during power-on, ON only after the dashboard is up and SIG LED is off.
+          ⚠ BOOT HEAT: with Channel B jumpered, module has 12V while boot firmware drives SIG HIGH — FETs get hot.
+          Put a switch in series with the jumper: OFF at power-on, ON only after dashboard is up and SIG LED is dark.
         </p>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0">
           <input type="checkbox" id="sol-hardwired" checked onchange="solHardwiredToggle()">
-          Module 12V hardwired (bypass CH2 GPIO)
+          Module 12V hardwired (bypass CH2 GPIO) — required until buffered drive
         </label>
         <div class="sl">
           <label>CH2 Hold (gated mode only)</label>
@@ -318,9 +318,9 @@
           <div class="v" id="sol-ch2-dur-v">5s</div>
         </div>
         <button class="btn btn-amber" style="width:100%;padding:10px;font-size:13px;margin-top:6px" onclick="solCh2Hold()">
-          🔌 Hold CH2 IN HIGH (watch Channel B LED / meter T13)
+          🔌 Hold CH2 IN HIGH (watch Channel B LED / meter T29)
         </button>
-        <div class="cal-result" id="sol-ch2-log" style="margin-top:8px">Jumper CH2 load first if SIG LED lights but there is no solenoid click.</div>
+        <div class="cal-result" id="sol-ch2-log" style="margin-top:8px">Gated mode: Channel B LED must light on CH2 hold before Click Test.</div>
       </div>
     </div>
 
@@ -586,11 +586,11 @@
       <div class="card-title">🚀 One-Button Calibration</div>
       <div class="card-body">
         <p style="font-size:12px;color:var(--dim);margin-bottom:14px">Press the button below. The system will automatically scan the scene, pick 10 targets, fire water at each, verify hits, and calibrate itself.</p>
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px"><b>Clicks:</b> each solenoid pulse = <b>2 clicks</b> (open + close). Auto-cal may fire up to <b>2 pulses per target</b> if the first miss is detected — that can sound like 4 clicks for one point. Keep Channel B <b>jumpered</b> (Rev J).</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px"><b>Clicks:</b> each solenoid pulse = <b>2 clicks</b> (open + close). Auto-cal may fire up to <b>2 pulses per target</b> if the first miss is detected — that can sound like 4 clicks for one point. Keep Channel B <b>jumpered</b> (hardwired).</p>
 
         <div id="ac-hardwired-box" style="background:rgba(255,159,10,0.12);border:1px solid rgba(255,159,10,0.45);border-radius:10px;padding:12px;margin-bottom:14px">
-          <p style="font-size:12px;color:var(--orange);margin:0 0 8px;font-weight:600">⚠ Module 12V hardwired mode (Rev J)</p>
-          <p style="font-size:11px;color:var(--dim);margin:0 0 10px">Software pulses SIG only. If Channel B was never jumpered, you get <b>SIG LED + zero clicks</b>. Short the <b>two Channel B screw terminals</b> on the Monk Makes board (or fused +12V → module DC IN+), then check the box.</p>
+          <p style="font-size:12px;color:var(--orange);margin:0 0 8px;font-weight:600">⚠ Module 12V hardwired mode</p>
+          <p style="font-size:11px;color:var(--dim);margin:0 0 10px">Software pulses SIG only. Confirm Channel B load is jumpered (or fused 12V → module DC IN+) before starting.</p>
           <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--fg)">
             <input type="checkbox" id="ac-jumper-confirm" style="margin-top:2px">
             I jumpered Channel B load (or hardwired module 12V) — start auto-cal
@@ -1106,7 +1106,8 @@ let acPolling = null;
 
 async function acStart() {
   _calPsiPrompted = false;
-  if (!$('ac-jumper-confirm') || !$('ac-jumper-confirm').checked) {
+  const hardwired = !!$('sol-hardwired')?.checked;
+  if (hardwired && (!$('ac-jumper-confirm') || !$('ac-jumper-confirm').checked)) {
     $('ac-status').textContent =
       'Blocked: jumper Monk Makes Channel B load screws (or hardwire module 12V), then check the confirm box.';
     $('ac-bar-text').textContent = 'Need CH2 jumper confirm';
@@ -1119,10 +1120,11 @@ async function acStart() {
   $('ac-bar').style.width = '0%';
   $('ac-bar-text').textContent = 'Starting...';
 
+  const body = hardwired ? {confirm_module_12v_jumper: true} : {};
   const resp = await fetch('/api/calibration/auto/start', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({confirm_module_12v_jumper: true}),
+    body: JSON.stringify(body),
   });
   const start = await resp.json().catch(() => ({}));
   if (!resp.ok || start.status === 'blocked') {
@@ -1656,7 +1658,7 @@ async function solTest() {
       `<span class="ok">✅ SIG pulsed ${d.duration_ms}ms</span> (hardwired=${d.module_12v_hardwired})\n` +
       `State after: ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}\n\n` +
       `<span class="info">Expect TWO clicks</span> (open → close). One press = one pulse.\n` +
-      `No click: check CH2 jumper / module 12V. Extra clicks: wait between presses.`;
+      `No click: check Channel B LED (T29 CH2) / module 12V. Extra clicks: wait between presses.`;
   } catch(e) {
     $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
@@ -1678,7 +1680,7 @@ async function solGateHold() {
 
 async function solCh2Hold() {
   const sec = +$('sol-ch2-dur').value;
-  $('sol-ch2-log').innerHTML = `<span class="info">🔌 Holding CH2 IN HIGH for ${sec}s — watch Channel B LED / meter T13...</span>`;
+  $('sol-ch2-log').innerHTML = `<span class="info">🔌 Holding CH2 IN HIGH for ${sec}s — watch Channel B LED / meter T29...</span>`;
   try {
     const d = await fetch('/api/solenoid/ch2_hold', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({seconds: sec})}).then(r => r.json());
@@ -1689,10 +1691,16 @@ async function solCh2Hold() {
     $('sol-ch2-log').innerHTML =
       `<span class="ok">✅ Held ${d.pin} HIGH ${d.held_sec}s</span>\n` +
       `ch2_rb during=${d.ch2_readback} after=${d.ch2_readback_after}\n` +
-      `If Channel B LED stayed dim/off, jumper CH2 load and use hardwired mode.`;
+      `If Channel B LED stayed dim/off, try hardwired fallback or buffer the GPIO.`;
   } catch(e) {
     $('sol-ch2-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }
+}
+
+function syncHardwiredUi(hw) {
+  if ($('sol-hardwired')) $('sol-hardwired').checked = !!hw;
+  const box = $('ac-hardwired-box');
+  if (box) box.style.display = hw ? '' : 'none';
 }
 
 async function solHardwiredToggle() {
@@ -1702,10 +1710,10 @@ async function solHardwiredToggle() {
     const d = await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({accumulator: {module_12v_hardwired: on}})}).then(r => r.json());
     const hw = d.applied?.accumulator?.module_12v_hardwired ?? on;
-    $('sol-hardwired').checked = !!hw;
+    syncHardwiredUi(hw);
     $('sol-ch2-log').innerHTML = hw
       ? `<span class="ok">✅ Hardwired mode ON — jumper CH2 load / feed fused 12V to module. SIG-only shots.</span>`
-      : `<span class="ok">✅ Relay CH2 gated mode — Channel B LED must light when armed/firing.</span>`;
+      : `<span class="ok">✅ Relay CH2 gated via T29 — Channel B LED must light when armed/firing.</span>`;
   } catch(e) {
     $('sol-ch2-log').innerHTML = `<span class="err">❌ ${e.message}</span>`;
   }
@@ -1968,6 +1976,11 @@ async function acConfigLoad() {
     $('ac-topup-shots').value = c.topup_interval_shots; $('ac-topup-shots-v').textContent = c.topup_interval_shots + ' shots';
     $('ac-def-pulse').value = c.default_pulse_ms; $('ac-def-pulse-v').textContent = c.default_pulse_ms + 'ms';
     if ('charge_per_shot' in c) $('ac-charge-per-shot').checked = !!c.charge_per_shot;
+  } catch(e) {}
+  try {
+    const st = await fetch('/api/status').then(r => r.json());
+    if (st.relay && 'module_12v_hardwired' in st.relay)
+      syncHardwiredUi(!!st.relay.module_12v_hardwired);
   } catch(e) {}
 }
 
