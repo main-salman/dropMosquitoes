@@ -1044,3 +1044,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPERATOR]** With Channel B load jumpered: Click Test and auto-cal clicks are reliable.
 - **[DECISION]** Do **not** restore CH2 SSR gating via PY.00 — Yahboom pad cannot drive Monk Makes IN B. Leave jumper (or fused 12V → module DC IN+) and `module_12v_hardwired=true`.
 - **[NOTE]** Multiple clicks per auto-cal “shot” are mostly intended: 2 per pulse (open+close); up to 2 pulses/point on miss → up to 4 clicks/point. GUI Calibration panel notes this.
+
+## 2026-07-22 — [BUG FIX] Control TEST FIRE / DRAIN / Solenoid FIRE paths
+- **[OBSERVED]** Checklist: Solenoid ARM/FIRE seemed to run pump not solenoid; Control TEST FIRE ran pump and left solenoid stuck OPEN until Click Test; DRAIN kept pump on but valve clicked open/closed repeatedly; Click Test then failed.
+- **[ROOT CAUSE]** (1) `/api/relay/fire` still called legacy `fire_pump`. (2) `_set_pump` closed SIG whenever valve was open — broke DRAIN (OPEN then immediate CLOSE). (3) Solenoid FIRE slider defaulted to **10ms** (inaudible) while post-shot recharge pump was loud.
+- **[FIX]** TEST FIRE → `accum.fire()` (auto-arm); DRAIN uses direct pump GPIO with valve held OPEN; pump start never closes intentional open; Solenoid FIRE default **100ms**; Click Test always `recover_solenoid` first; cal `fire_test` uses accum.
+- **[GUI]** Labels clarify pump=charge, FIRE=solenoid (2 clicks).

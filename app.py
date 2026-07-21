@@ -597,14 +597,42 @@ def api_velocity_reset():
 @app.route('/api/relay/fire', methods=['POST'])
 def api_relay_fire():
     """
-    Fire the water pump for a specified duration.
-    Body: {"duration": float}  (seconds, 0.01–2.0)
+    Control-tab TEST FIRE — pressure-gated solenoid shot (ECO-004).
+    Body: {"duration": float} seconds (maps to solenoid pulse; NOT pump-as-shot).
+    Arms accumulator if needed, then AccumulatorManager.fire().
     """
-    data = request.get_json(force=True)
-    duration = float(data.get('duration', 0.025))
-    relay.fire_pump(duration)
+    data = request.get_json(force=True) if request.data else {}
+    duration = float(data.get('duration', accum.DEFAULT_PULSE_SEC))
+    duration = max(0.01, min(duration, 2.0))
+
+    armed = accum.get_status().get("armed")
+    arm_result = None
+    if not armed:
+        arm_result = accum.arm()
+        if arm_result.get("status") != "armed":
+            log_event("TEST_FIRE", status="arm_failed", error=arm_result.get("error"))
+            return jsonify({
+                "fired": False,
+                "status": "arm_failed",
+                "error": arm_result.get("error", "Could not arm"),
+                "arm": arm_result,
+            }), 400
+
+    result = accum.fire(duration)
     primer.mark_fired()
-    return jsonify({"fired": True, "duration": duration})
+    log_event("TEST_FIRE", status=result.get("status"),
+              pulse_ms=result.get("duration_ms"),
+              psi_before=result.get("psi_before"),
+              psi_after=result.get("psi_after"),
+              auto_armed=not armed)
+    ok = result.get("status") == "fired"
+    return jsonify({
+        "fired": ok,
+        "mode": "solenoid",
+        "duration": duration,
+        "auto_armed": not armed,
+        **result,
+    }), (200 if ok else 400)
 
 
 @app.route('/api/relay/pump', methods=['POST'])
@@ -730,8 +758,8 @@ def api_line_drain():
 def api_solenoid_test():
     """
     Quick solenoid MOSFET smoke test: open for duration_ms, then close.
-    Uses locked pulse_solenoid(); rejects overlap (busy). When hardwired,
-    skips recover_solenoid() (redundant SIG hammering caused intermittent clicks).
+    Uses locked pulse_solenoid(); rejects overlap (busy). Always asserts SIG
+    LOW first (clears stuck-HIGH left by other UI paths) without PADCTL rewrite.
     Body: {"duration_ms": float}  (default 500ms)
     """
     data = request.get_json(force=True) if request.data else {}
@@ -743,9 +771,9 @@ def api_solenoid_test():
         accum.disarm(reason="click-test")
 
     hardwired = bool(relay.get_status().get("module_12v_hardwired"))
-    recover = {"re_pinmux": False, "skipped": hardwired}
-    if not hardwired:
-        recover = relay.recover_solenoid(re_pinmux=False)
+    # Always safe-idle SIG first (no pinmux rewrite) — clears stuck OPEN after
+    # Control-tab mishaps; when gated also drops CH2.
+    recover = relay.recover_solenoid(re_pinmux=False)
 
     pulse = relay.pulse_solenoid(duration_sec)
     log_event("CLICK_TEST", duration_ms=pulse.get("duration_ms"),
@@ -764,7 +792,7 @@ def api_solenoid_test():
         "solenoid_state": relay.get_status()["solenoid"],
         "solenoid_12v": relay.get_status().get("solenoid_12v"),
         "module_12v_hardwired": hardwired,
-        "recovered": not hardwired,
+        "recovered": True,
     }), code
 
 
@@ -1117,14 +1145,19 @@ def api_cal_fire_test():
     # Compute what ballistic offset WOULD be
     _, _, offset_info = compute_ballistic_offset(pitch, yaw, distance)
 
-    # Fire
-    relay.fire_pump(duration)
+    # Fire — solenoid-only (ECO-004); arm if needed
+    if not accum.get_status().get("armed"):
+        arm = accum.arm()
+        if arm.get("status") != "armed":
+            return jsonify({"error": arm.get("error", "arm failed"), "arm": arm}), 400
+    fire_result = accum.fire(max(0.05, min(duration, 2.0)))
 
     entry = {
         "type": "fire_test",
         "pitch": pitch,
         "yaw": yaw,
         "duration": duration,
+        "fire": fire_result,
         "distance_m": round(distance, 2),
         "predicted_offset": offset_info,
         "note": note,

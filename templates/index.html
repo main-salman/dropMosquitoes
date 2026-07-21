@@ -238,15 +238,16 @@
       <div class="card-title">💧 Fire Control</div>
       <div class="card-body">
         <div class="sl">
-          <label>Pulse</label>
-          <input type="range" id="fd" min="0.001" max="2.0" step="0.001" value="0.025" oninput="$('fdv').textContent=fmtPulse(this.value)">
-          <div class="v" id="fdv">25ms</div>
+          <label>Solenoid pulse</label>
+          <input type="range" id="fd" min="0.05" max="0.5" step="0.01" value="0.10" oninput="$('fdv').textContent=fmtPulse(this.value)">
+          <div class="v" id="fdv">100ms</div>
         </div>
         <div class="sl">
           <label>Airburst Pitch</label>
           <input type="range" id="ao" min="0" max="30" step="1" value="12" oninput="$('aov').textContent='+'+this.value+'°';api('/api/airburst/set',{offset:this.value})">
           <div class="v" id="aov">+12°</div>
         </div>
+        <p style="font-size:11px;color:var(--dim2);margin:0 0 8px">TEST FIRE = pressure-gated <b>solenoid</b> shot (auto-arms if needed). Pump only charges the tank — it is not the shot.</p>
         <button class="btn btn-red" style="width:100%;padding:14px;font-size:15px;margin-top:8px" onclick="fire()">🔥 TEST FIRE</button>
         <button class="btn btn-blue" style="width:100%;padding:10px;font-size:13px;margin-top:6px" onclick="primeFromFireControl()">💧 PRIME LINE</button>
         <button class="btn" style="width:100%;padding:10px;font-size:13px;margin-top:6px;background:#5a3a1a;color:#ffcc88;border:1px solid #8a5a2a" onclick="drainPipe()" id="btn-drain">🚰 DRAIN PIPE (15s)</button>
@@ -388,8 +389,8 @@
 
         <div class="sl">
           <label>Solenoid Pulse</label>
-          <input type="range" id="sol-fire-dur" min="1" max="500" step="1" value="10" oninput="$('sol-fire-dur-v').textContent=this.value+'ms'">
-          <div class="v" id="sol-fire-dur-v">10ms</div>
+          <input type="range" id="sol-fire-dur" min="50" max="500" step="10" value="100" oninput="$('sol-fire-dur-v').textContent=this.value+'ms'">
+          <div class="v" id="sol-fire-dur-v">100ms</div>
         </div>
 
         <div style="display:flex;gap:8px;margin-top:8px">
@@ -397,6 +398,8 @@
           <button class="btn btn-red" style="flex:2;padding:12px;font-size:14px;font-weight:700" onclick="solFire()">🔫 FIRE</button>
           <button class="btn" style="flex:1;padding:12px;font-size:13px" onclick="solDisarm()">🔒 DISARM</button>
         </div>
+
+        <p style="font-size:11px;color:var(--dim2);margin-top:8px">ARM may run the pump to reach Target PSI (that is charge, not the shot). FIRE = solenoid only (2 clicks). Post-shot recharge may run the pump again.</p>
 
         <div class="cal-result" id="sol-afd-log" style="margin-top:8px">Not armed. Press ARM to charge the accumulator.</div>
       </div>
@@ -960,7 +963,25 @@ async function aim(e,c,fw,fh){
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const m={w:[-1,0],s:[1,0],a:[0,-1],d:[0,1]};if(m[e.key])nd(...m[e.key]);if(e.key===' '){e.preventDefault();fire()}});
 
 // ---- Fire ----
-function fire(){api('/api/relay/fire',{duration:+$('fd').value})}
+function fire(){
+  const sec = +$('fd').value;
+  $('fire-prime-status').textContent = '🔥 Solenoid test fire...';
+  fetch('/api/relay/fire', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({duration: sec})
+  }).then(r => r.json()).then(d => {
+    if (d.fired) {
+      const psi = (d.psi_before != null) ? ` · PSI ${d.psi_before}→${d.psi_after}` : '';
+      $('fire-prime-status').textContent =
+        `✅ Solenoid ${d.duration_ms || Math.round(sec*1000)}ms${psi}` +
+        (d.auto_armed ? ' (auto-armed)' : '');
+      showToast('🔥 Test fire', `Solenoid pulse${psi}`);
+    } else {
+      $('fire-prime-status').textContent = '❌ ' + (d.error || d.status || 'Fire failed');
+    }
+    setTimeout(() => { if ($('fire-prime-status').textContent.startsWith('✅')) $('fire-prime-status').textContent = ''; }, 5000);
+  }).catch(e => { $('fire-prime-status').textContent = '❌ ' + e.message; });
+}
 
 async function primeFromFireControl() {
   $('fire-prime-status').textContent = '💧 Priming... aiming down & pumping';
@@ -1743,15 +1764,17 @@ async function solArm() {
 }
 
 async function solFire() {
-  const ms = +$('sol-fire-dur').value;
-  $('sol-afd-log').innerHTML += `\n<span class="info">🔫 Firing ${ms}ms pulse...</span>`;
+  const ms = Math.max(50, +$('sol-fire-dur').value);
+  $('sol-afd-log').innerHTML += `\n<span class="info">🔫 Solenoid pulse ${ms}ms (pump should stay off during open)...</span>`;
   try {
     const d = await fetch('/api/accumulator/fire', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({duration_ms: ms})}).then(r => r.json());
     if (d.status === 'fired') {
+      const psi = (d.psi_before != null)
+        ? `PSI ${d.psi_before}→${d.psi_after}` : 'PSI n/a';
       $('sol-afd-log').innerHTML +=
-        `\n<span class="ok">✅ Shot #${d.shot_number} — ${d.duration_ms}ms pulse</span>` +
-        `\n   Shots since charge: ${d.shots_since_charge}  |  Top-up in: ${d.topup_in} shots`;
+        `\n<span class="ok">✅ Shot #${d.shot_number} — ${d.duration_ms}ms solenoid · ${psi}</span>` +
+        `\n   Expect 2 clicks. Pump may run after to recharge.`;
     } else {
       $('sol-afd-log').innerHTML += `\n<span class="err">❌ ${d.status}: ${d.error||''}</span>`;
     }

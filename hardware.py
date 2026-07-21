@@ -481,11 +481,14 @@ class RelayController:
             # padctl region was correlated with SIG glitches and lost clicks
             # after a few auto-cal shots. Pinmux is set once at init/recover.
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
-        # Soft-assert SIG LOW only when it was commanded open — never hammer
-        # set(False) on every pump edge while already closed (glitches SIG when
-        # module 12V is hardwired ON).
-        if self._solenoid_state:
-            self._assert_sig_low()
+        # Charge safety only: if starting pump with valve commanded CLOSED,
+        # clear a stuck SIG HIGH. Never close an intentional open (DRAIN PIPE
+        # keeps solenoid OPEN + pump ON — closing SIG here caused multi-click
+        # chatter and left the drain path wrong).
+        if state and not self._solenoid_state and not self._pulse_busy:
+            if self._solenoid.get() == 1:
+                self._solenoid.set(False)
+                print("[RelayController] Pump start: cleared stuck SIG HIGH")
         # Pump edges can EMI-glitch PY.00; re-drive CH2 while ARMED hold is on.
         if self._module_power_hold and not self._module_12v_hardwired:
             self._drive_module_12v_on(settle=False)
@@ -668,7 +671,7 @@ class RelayController:
     def drain_line(self, duration_sec: float = 15.0) -> dict:
         """
         Maintenance: solenoid OPEN + pump ON for duration_sec to flush the line.
-        Holds the relay lock so the idle watchdog cannot cut CH2 mid-drain.
+        Holds the relay lock so the idle watchdog cannot cut mid-drain.
         Always ends with pump OFF and solenoid CLOSED.
         """
         duration_sec = max(1.0, min(float(duration_sec), 30.0))
@@ -676,13 +679,22 @@ class RelayController:
         print(f"[RelayController] 🚰 DRAIN LINE: solenoid OPEN + pump ON for "
               f"{duration_sec:.1f}s")
         with self._lock:
+            self._pulse_busy = True  # block click-test / watchdog during drain
             try:
                 self._set_solenoid(True)
-                self._set_pump(True)
+                # Direct pump GPIO — do not use paths that can touch SIG
+                self._pump_state = True
+                if JETSON_AVAILABLE:
+                    GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH)
+                print("[RelayController] Pump ON (drain — valve stays OPEN)")
                 time.sleep(duration_sec)
             finally:
-                self._set_pump(False)
+                self._pump_state = False
+                if JETSON_AVAILABLE:
+                    GPIO.output(RELAY_PUMP_PIN, GPIO.LOW)
+                print("[RelayController] Pump OFF")
                 self._set_solenoid(False)
+                self._pulse_busy = False
         elapsed = time.time() - t0
         print(f"[RelayController] 🚰 DRAIN complete in {elapsed:.1f}s — safe idle")
         return {
