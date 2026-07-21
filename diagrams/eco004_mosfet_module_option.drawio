@@ -6,98 +6,103 @@
         <mxCell id="1" parent="0"/>
 
         <!-- TITLE -->
-        <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;ECO-004 Rev N — 2N3904 Buffer for Relay CH2 (IN B)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#555'&gt;Yahboom GPIO alone cannot close Monk Makes CH2 (T13/T22/T29 all failed). Emitter-follower buffer sources IN B current from T17 (+3.3V). SIG / MOSFET module wiring unchanged.&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+        <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;ECO-004 Rev N — Automated CH2 12V interlock (2N3904 buffer)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#555'&gt;&lt;b style='color:#1B5E20'&gt;GOAL: power Jetson on/off only — no manual MODULE 12V switch.&lt;/b&gt; Relay CH2 gates module 12V in software. Buffer makes Yahboom GPIO strong enough to drive IN B. SIG path unchanged.&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
           <mxGeometry x="40" y="16" width="1100" height="48" as="geometry"/>
         </mxCell>
 
+        <!-- AUTOMATION BANNER -->
+        <mxCell id="auto_banner" value="&lt;b style='color:#FFFFFF;font-size:13px'&gt;FULLY AUTOMATED (steady state)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:11px'&gt;Boot: CH2 OPEN → module has 0V even while firmware drives SIG HIGH (FETs stay cold). App up: software closes CH2 when armed/firing, opens at idle. &lt;b&gt;No operator switch after power-on.&lt;/b&gt; Hardwired jumper + series switch = temporary only — remove after this buffer works.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#004D40;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="40" y="68" width="1100" height="52" as="geometry"/>
+        </mxCell>
+
         <!-- MOVE BANNER -->
-        <mxCell id="move_banner" value="&lt;b style='color:#FFFFFF;font-size:14px'&gt;WIRES TO MOVE / ADD — do this with 12V unplugged + Jetson OFF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFECB3;font-size:11px'&gt;1) REMOVE Channel B load jumper (B①↔B②) if still fitted · 2) DISCONNECT any IN B wire from T13 / T22 / T29 · 3) ADD the 2N3904 + 2 resistors as drawn below · 4) Set software hardwired=false after Channel B LED works&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="40" y="72" width="1100" height="56" as="geometry"/>
+        <mxCell id="move_banner" value="&lt;b style='color:#FFFFFF;font-size:13px'&gt;WIRES TO MOVE / ADD — 12V unplugged + Jetson OFF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFECB3;font-size:11px'&gt;1) REMOVE Channel B load jumper (B①↔B②) · 2) DISCONNECT IN B from T13/T22/T29 · 3) ADD 2N3904 + 1k + 10k as below · 4) Set &lt;b&gt;hardwired=OFF&lt;/b&gt; (gated) — then every power cycle is automatic&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="40" y="128" width="1100" height="48" as="geometry"/>
         </mxCell>
 
         <!-- ========== JETSON ========== -->
         <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=5;" parent="1" vertex="1">
-          <mxGeometry x="40" y="150" width="220" height="340" as="geometry"/>
+          <mxGeometry x="40" y="196" width="220" height="340" as="geometry"/>
         </mxCell>
         <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson IDC40P&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;terminals used by this mod&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="50" y="158" width="200" height="34" as="geometry"/>
+          <mxGeometry x="50" y="204" width="200" height="34" as="geometry"/>
         </mxCell>
 
         <mxCell id="t29box" value="&lt;b style='color:#E1BEE7;font-size:13px'&gt;T29 · BCM 5 (PQ.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#CE93D8;font-size:10px'&gt;GPIO → 1kΩ → 2N3904 BASE&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#CE93D8;strokeWidth=3;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="200" width="190" height="48" as="geometry"/>
+          <mxGeometry x="55" y="246" width="190" height="48" as="geometry"/>
         </mxCell>
         <mxCell id="t17box" value="&lt;b style='color:#FFF9C4;font-size:13px'&gt;T17 · +3.3V&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF59D;font-size:10px'&gt;→ 2N3904 COLLECTOR&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F57F17;strokeColor=#FBC02D;strokeWidth=3;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="260" width="190" height="48" as="geometry"/>
+          <mxGeometry x="55" y="306" width="190" height="48" as="geometry"/>
         </mxCell>
         <mxCell id="gndbox" value="&lt;b style='color:#E0E0E0;font-size:13px'&gt;GND · T6 / T9 / T14&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;→ emitter 10kΩ + relay GND&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212121;strokeColor=#757575;strokeWidth=2;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="320" width="190" height="48" as="geometry"/>
+          <mxGeometry x="55" y="366" width="190" height="48" as="geometry"/>
         </mxCell>
         <mxCell id="t36box" value="&lt;b style='color:#FFE0B2;font-size:12px'&gt;T36 · BCM 16 (PR.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCC80;font-size:10px'&gt;SIG — NO CHANGE&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#FF6D00;strokeWidth=2;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="380" width="190" height="42" as="geometry"/>
+          <mxGeometry x="55" y="426" width="190" height="42" as="geometry"/>
         </mxCell>
         <mxCell id="old_note" value="&lt;b style='color:#FFCDD2'&gt;DO NOT&lt;/b&gt; land IN B on T13/T22/T29 directly anymore" style="text;html=1;align=center;fontSize=10;fontColor=#FFCDD2;" parent="1" vertex="1">
-          <mxGeometry x="50" y="430" width="200" height="40" as="geometry"/>
+          <mxGeometry x="50" y="476" width="200" height="40" as="geometry"/>
         </mxCell>
 
         <!-- ========== BUFFER ========== -->
         <mxCell id="buf" value="" style="rounded=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=3;shadow=1;arcSize=6;" parent="1" vertex="1">
-          <mxGeometry x="320" y="170" width="320" height="300" as="geometry"/>
+          <mxGeometry x="320" y="196" width="320" height="300" as="geometry"/>
         </mxCell>
         <mxCell id="buf_title" value="&lt;b style='font-size:14px;color:#4A148C'&gt;★ NEW — 2N3904 emitter follower&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#6A1B9A'&gt;TO-92 · flat face toward you · pins left→right: &lt;b&gt;E · B · C&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="330" y="178" width="300" height="36" as="geometry"/>
+          <mxGeometry x="330" y="204" width="300" height="36" as="geometry"/>
         </mxCell>
 
         <!-- TO-92 sketch -->
         <mxCell id="to92" value="" style="shape=trapezoid;perimeter=trapezoidPerimeter;fillColor=#ECEFF1;strokeColor=#37474F;strokeWidth=2;direction=south;" parent="1" vertex="1">
-          <mxGeometry x="430" y="230" width="90" height="70" as="geometry"/>
+          <mxGeometry x="430" y="256" width="90" height="70" as="geometry"/>
         </mxCell>
         <mxCell id="pinE" value="" style="rounded=0;fillColor=#1565C0;strokeColor=#0D47A1;" parent="1" vertex="1">
-          <mxGeometry x="440" y="300" width="8" height="28" as="geometry"/>
+          <mxGeometry x="440" y="326" width="8" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="pinB" value="" style="rounded=0;fillColor=#6A1B9A;strokeColor=#4A148C;" parent="1" vertex="1">
-          <mxGeometry x="471" y="300" width="8" height="28" as="geometry"/>
+          <mxGeometry x="471" y="326" width="8" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="pinC" value="" style="rounded=0;fillColor=#F57F17;strokeColor=#E65100;" parent="1" vertex="1">
-          <mxGeometry x="502" y="300" width="8" height="28" as="geometry"/>
+          <mxGeometry x="502" y="326" width="8" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="pinlbl" value="&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; &amp;nbsp;&amp;nbsp; &lt;b style='color:#6A1B9A'&gt;B&lt;/b&gt; &amp;nbsp;&amp;nbsp; &lt;b style='color:#E65100'&gt;C&lt;/b&gt;" style="text;html=1;align=center;fontSize=12;" parent="1" vertex="1">
-          <mxGeometry x="430" y="332" width="90" height="18" as="geometry"/>
+          <mxGeometry x="430" y="358" width="90" height="18" as="geometry"/>
         </mxCell>
         <mxCell id="to92note" value="&lt;span style='font-size:9px;color:#5D4037'&gt;2N2222 from the same kit also OK&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="400" y="350" width="150" height="16" as="geometry"/>
+          <mxGeometry x="400" y="376" width="150" height="16" as="geometry"/>
         </mxCell>
 
         <!-- Resistors -->
         <mxCell id="r1" value="&lt;b&gt;1 kΩ&lt;/b&gt;&lt;br&gt;base" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="340" y="240" width="70" height="40" as="geometry"/>
+          <mxGeometry x="340" y="266" width="70" height="40" as="geometry"/>
         </mxCell>
         <mxCell id="r2" value="&lt;b&gt;10 kΩ&lt;/b&gt;&lt;br&gt;pull-down" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="340" y="390" width="70" height="40" as="geometry"/>
+          <mxGeometry x="340" y="416" width="70" height="40" as="geometry"/>
         </mxCell>
 
         <!-- Buffer connection labels -->
         <mxCell id="buf_map" value="&lt;b style='color:#4A148C;font-size:11px'&gt;Connections&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#333'&gt;&lt;b style='color:#E65100'&gt;C&lt;/b&gt; ← T17 (+3.3V) direct&lt;br&gt;&lt;b style='color:#6A1B9A'&gt;B&lt;/b&gt; ← T29 via &lt;b&gt;1 kΩ&lt;/b&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; → Monk Makes &lt;b&gt;IN B&lt;/b&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; → GND via &lt;b&gt;10 kΩ&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=6;" parent="1" vertex="1">
-          <mxGeometry x="530" y="230" width="100" height="100" as="geometry"/>
+          <mxGeometry x="530" y="256" width="100" height="100" as="geometry"/>
         </mxCell>
 
         <!-- ========== RELAY ========== -->
         <mxCell id="relay" value="" style="rounded=1;fillColor=#212121;strokeColor=#AB47BC;strokeWidth=3;shadow=1;" parent="1" vertex="1">
-          <mxGeometry x="720" y="170" width="280" height="200" as="geometry"/>
+          <mxGeometry x="720" y="196" width="280" height="200" as="geometry"/>
         </mxCell>
         <mxCell id="relay_t" value="&lt;b style='color:#E1BEE7;font-size:12px'&gt;Monk Makes Dual Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BCAAA4;font-size:9px'&gt;solid-state · IN needs ~4mA @ 3.3V&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="730" y="178" width="260" height="32" as="geometry"/>
+          <mxGeometry x="730" y="204" width="260" height="32" as="geometry"/>
         </mxCell>
         <mxCell id="inA" value="&lt;b&gt;IN A&lt;/b&gt; ← T11 (pump) — no change" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#9E9E9E;fontColor=#EEE;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="220" width="240" height="28" as="geometry"/>
+          <mxGeometry x="740" y="246" width="240" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="inB" value="&lt;b style='color:#CE93D8'&gt;IN B&lt;/b&gt; ← ★ from 2N3904 &lt;b&gt;EMITTER&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#CE93D8;strokeWidth=3;fontColor=#FFF;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="258" width="240" height="32" as="geometry"/>
+          <mxGeometry x="740" y="284" width="240" height="32" as="geometry"/>
         </mxCell>
         <mxCell id="inG" value="&lt;b&gt;GND&lt;/b&gt; ← GND bus — keep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#9E9E9E;fontColor=#EEE;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="300" width="240" height="28" as="geometry"/>
+          <mxGeometry x="740" y="326" width="240" height="28" as="geometry"/>
         </mxCell>
         <mxCell id="load" value="&lt;b style='color:#FFF59D'&gt;Load screws B① / B② — NOT jumpered&lt;/b&gt;&lt;br&gt;&lt;span style='color:#CFD8DC;font-size:9px'&gt;+12V→fuse→B① · B②→module DC IN+&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#81C784;fontColor=#FFF;fontSize=10;align=center;" parent="1" vertex="1">
-          <mxGeometry x="740" y="340" width="240" height="44" as="geometry"/>
+          <mxGeometry x="740" y="366" width="240" height="44" as="geometry"/>
         </mxCell>
 
         <!-- ARROWS / WIRES -->
@@ -169,7 +174,7 @@
         </mxCell>
 
         <!-- STEP LIST -->
-        <mxCell id="steps" value="&lt;b style='font-size:14px;color:#4A148C'&gt;Build order — wire moves&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;0.&lt;/b&gt; Power OFF. Unplug 12V. Pull solenoid spades if you want extra safety.&lt;br&gt;&lt;b&gt;1. REMOVE&lt;/b&gt; Channel B load jumper between screws &lt;b&gt;B① ↔ B②&lt;/b&gt; (if present).&lt;br&gt;&lt;b&gt;2. FIND&lt;/b&gt; the wire currently on Monk Makes &lt;b&gt;IN B&lt;/b&gt;. Its other end is on &lt;b&gt;T13 or T22 or T29&lt;/b&gt; — &lt;b style='color:#B71C1C'&gt;unscrew that Jetson end only&lt;/b&gt;. Leave the IN B header end attached.&lt;br&gt;&lt;b&gt;3. ADD 2N3904&lt;/b&gt; (flat face toward you): legs &lt;b&gt;E · B · C&lt;/b&gt; left to right. Use Wagos or a small proto board.&lt;br&gt;&lt;b&gt;4. ADD&lt;/b&gt; &lt;b&gt;1 kΩ&lt;/b&gt;: one leg → &lt;b&gt;T29&lt;/b&gt;, other leg → transistor &lt;b&gt;Base&lt;/b&gt;.&lt;br&gt;&lt;b&gt;5. ADD&lt;/b&gt; wire: &lt;b&gt;T17 (+3.3V) → Collector&lt;/b&gt;.&lt;br&gt;&lt;b&gt;6. MOVE&lt;/b&gt; the free end of the IN B wire (from step 2) onto the transistor &lt;b&gt;Emitter&lt;/b&gt; (same node as step 7).&lt;br&gt;&lt;b&gt;7. ADD&lt;/b&gt; &lt;b&gt;10 kΩ&lt;/b&gt;: Emitter node → &lt;b&gt;GND&lt;/b&gt; (T6/T9/T14).&lt;br&gt;&lt;b&gt;8. CONFIRM&lt;/b&gt; relay load path still: &lt;b&gt;+12V → fuse → B①&lt;/b&gt; and &lt;b&gt;B② → module DC IN+&lt;/b&gt; (not jumpered).&lt;br&gt;&lt;br&gt;&lt;b style='color:#1B5E20'&gt;Verify (solenoid optional):&lt;/b&gt;&lt;br&gt;&lt;b&gt;V1.&lt;/b&gt; Dashboard: hardwired checkbox &lt;b&gt;OFF&lt;/b&gt; (gated mode). Soft-restart if you just changed it.&lt;br&gt;&lt;b&gt;V2.&lt;/b&gt; Solenoid tab → &lt;b&gt;Hold CH2&lt;/b&gt;: Channel B LED must go &lt;b&gt;bright&lt;/b&gt;. Meter Emitter / IN B ≈ &lt;b&gt;2.4–2.8V&lt;/b&gt; (Vbe drop from 3.3V) while held.&lt;br&gt;&lt;b&gt;V3.&lt;/b&gt; &lt;b&gt;Click Test&lt;/b&gt;: two clicks (open+close). MOSFET cold at idle.&lt;br&gt;&lt;b&gt;V4.&lt;/b&gt; Boot test: module / FETs stay cold during Jetson boot (CH2 open until app arms 12V).&lt;br&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:11px'&gt;&lt;b&gt;Software:&lt;/b&gt; already on BCM 5 / T29 for CH2 (`RELAY_SOL12V_PIN=5`). After buffer works: set &lt;b&gt;module_12v_hardwired=false&lt;/b&gt;. If LED still dark: check 2N3904 orientation (E/B/C), T17 really +3.3V, and common GND.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;fontSize=11;fontColor=#222;" parent="1" vertex="1">
+        <mxCell id="steps" value="&lt;b style='font-size:14px;color:#4A148C'&gt;Build order — wire moves&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;0.&lt;/b&gt; Power OFF. Unplug 12V. Pull solenoid spades if you want extra safety.&lt;br&gt;&lt;b&gt;1. REMOVE&lt;/b&gt; Channel B load jumper between screws &lt;b&gt;B① ↔ B②&lt;/b&gt; (if present).&lt;br&gt;&lt;b&gt;2. FIND&lt;/b&gt; the wire currently on Monk Makes &lt;b&gt;IN B&lt;/b&gt;. Its other end is on &lt;b&gt;T13 or T22 or T29&lt;/b&gt; — &lt;b style='color:#B71C1C'&gt;unscrew that Jetson end only&lt;/b&gt;. Leave the IN B header end attached.&lt;br&gt;&lt;b&gt;3. ADD 2N3904&lt;/b&gt; (flat face toward you): legs &lt;b&gt;E · B · C&lt;/b&gt; left to right. Use Wagos or a small proto board.&lt;br&gt;&lt;b&gt;4. ADD&lt;/b&gt; &lt;b&gt;1 kΩ&lt;/b&gt;: one leg → &lt;b&gt;T29&lt;/b&gt;, other leg → transistor &lt;b&gt;Base&lt;/b&gt;.&lt;br&gt;&lt;b&gt;5. ADD&lt;/b&gt; wire: &lt;b&gt;T17 (+3.3V) → Collector&lt;/b&gt;.&lt;br&gt;&lt;b&gt;6. MOVE&lt;/b&gt; the free end of the IN B wire (from step 2) onto the transistor &lt;b&gt;Emitter&lt;/b&gt; (same node as step 7).&lt;br&gt;&lt;b&gt;7. ADD&lt;/b&gt; &lt;b&gt;10 kΩ&lt;/b&gt;: Emitter node → &lt;b&gt;GND&lt;/b&gt; (T6/T9/T14).&lt;br&gt;&lt;b&gt;8. CONFIRM&lt;/b&gt; relay load path still: &lt;b&gt;+12V → fuse → B①&lt;/b&gt; and &lt;b&gt;B② → module DC IN+&lt;/b&gt; (not jumpered).&lt;br&gt;&lt;br&gt;&lt;b style='color:#1B5E20'&gt;Verify (solenoid optional):&lt;/b&gt;&lt;br&gt;&lt;b&gt;V1.&lt;/b&gt; Dashboard: hardwired checkbox &lt;b&gt;OFF&lt;/b&gt; (gated mode). Soft-restart if you just changed it.&lt;br&gt;&lt;b&gt;V2.&lt;/b&gt; Solenoid tab → &lt;b&gt;Hold CH2&lt;/b&gt;: Channel B LED must go &lt;b&gt;bright&lt;/b&gt;. Meter Emitter / IN B ≈ &lt;b&gt;2.4–2.8V&lt;/b&gt; (Vbe drop from 3.3V) while held.&lt;br&gt;&lt;b&gt;V3.&lt;/b&gt; &lt;b&gt;Click Test&lt;/b&gt;: two clicks (open+close). MOSFET cold at idle.&lt;br&gt;&lt;b&gt;V4.&lt;/b&gt; Boot test: FETs stay cold with &lt;b&gt;no manual switch&lt;/b&gt; — CH2 opens itself at boot. Steady state = power Jetson only.&lt;br&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:11px'&gt;&lt;b&gt;Software:&lt;/b&gt; already on BCM 5 / T29 for CH2 (`RELAY_SOL12V_PIN=5`). After buffer works: set &lt;b&gt;module_12v_hardwired=false&lt;/b&gt;. If LED still dark: check 2N3904 orientation (E/B/C), T17 really +3.3V, and common GND.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;fontSize=11;fontColor=#222;" parent="1" vertex="1">
           <mxGeometry x="40" y="540" width="960" height="420" as="geometry"/>
         </mxCell>
 

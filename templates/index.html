@@ -300,17 +300,18 @@
       <div class="card-title">⚡ Step 0 — Module 12V (Relay CH2)</div>
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">
-          Dual-MOSFET <b>SIG LED</b> can light with <b>no click</b> if module has no 12V.
-          Yahboom GPIO <b>cannot close Monk Makes CH2</b> (T13/T22/T29 all failed: software HIGH, Channel B LED off).
-          <b>Required:</b> short the two Channel B screw terminals (or fused +12V → module DC IN+) and keep hardwired ON.
+          <b>Steady state (automated):</b> build the <b>2N3904 buffer</b> (see
+          <code>diagrams/eco004_mosfet_module_option.drawio</code>), leave Channel B
+          <b>not jumpered</b>, hardwired <b>OFF</b>. Software gates module 12V via Relay CH2 —
+          power Jetson on/off only; <b>no manual MODULE 12V switch</b>.
         </p>
         <p style="font-size:11px;color:var(--orange);margin-bottom:10px;font-weight:600">
-          ⚠ BOOT HEAT: with Channel B jumpered, module has 12V while boot firmware drives SIG HIGH — FETs get hot.
-          Put a switch in series with the jumper: OFF at power-on, ON only after dashboard is up and SIG LED is dark.
+          Interim only (no buffer yet): jumper Channel B + hardwired ON. That needs a series
+          switch for boot heat — not the production setup. Remove jumper after buffer works.
         </p>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0">
           <input type="checkbox" id="sol-hardwired" checked onchange="solHardwiredToggle()">
-          Module 12V hardwired (bypass CH2 GPIO) — required until buffered drive
+          Module 12V hardwired (interim — OFF after 2N3904 buffer installed)
         </label>
         <div class="sl">
           <label>CH2 Hold (gated mode only)</label>

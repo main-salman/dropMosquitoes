@@ -179,20 +179,21 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 > / never close the SSR. Pump CH1 (T11/PR.04 → IN A) still works — the board is fine;
 > CH2 input current demand exceeds what these pads source into IN B.
 >
-> **Software policy (Rev M — hardwired default):**
-> 1. **Jumper CH2 load screws** (B①–B② short) **or** wire fused +12V straight to
->    module DC IN+.
-> 2. `settings.accumulator.module_12v_hardwired = true` (factory default) → SIG-only.
-> 3. **Rev N (preferred gated restore):** 2N3904 emitter follower —
->    `T29 → 1kΩ → Base`, `T17(+3.3V) → Collector`, `Emitter → IN B` + `10kΩ → GND`.
->    Wiring guide: `diagrams/eco004_mosfet_module_option.drawio`. Then
->    `module_12v_hardwired=false`.
+> **Requirement — fully automated (no post-boot operator switch):**
+> Power the Jetson on/off only. Module 12V must gate itself via Relay CH2 under
+> software control. A manual series MODULE 12V switch is **interim-only**, not
+> the production operating mode.
 >
-> **⚠ BOOT HEAT (mandatory with jumper):**
-> Module **12V is present during Jetson boot**. Boot firmware **drives PR.05 HIGH**
-> → FETs can run hot. Put an **SPST switch** in series with the jumper (OFF at
-> power-on, ON after dashboard / SIG LED dark). `claim_sig_low.py` only shortens
-> the userspace window.
+> **Software / wiring policy (Rev N — gated production):**
+> 1. **Build 2N3904 emitter follower** (see `diagrams/eco004_mosfet_module_option.drawio`):
+>    `T29 → 1kΩ → Base`, `T17(+3.3V) → Collector`, `Emitter → IN B` + `10kΩ → GND`.
+>    Remove any Channel B load jumper.
+> 2. `settings.accumulator.module_12v_hardwired = false` → software opens/closes CH2.
+> 3. Boot: CH2 open → module unpowered while firmware drives SIG HIGH (FETs cold).
+>    Runtime: app closes CH2 when armed/firing; opens at idle.
+>
+> **Interim (no buffer yet — Rev M):** jumper B①–B② + `hardwired=true` + optional
+> series switch for boot heat. Replace with Rev N buffer ASAP so the switch goes away.
 
 
 ## 6. Isolation & Safety Hardware

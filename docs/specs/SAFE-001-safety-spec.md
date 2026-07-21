@@ -11,7 +11,7 @@
 |:-------|:-----------|:---------------|
 | 12V back-EMF from pump | Monk Makes relay provides opto-isolation between Jetson 3.3V GPIO and 12V motor circuit | HW-001 §5 |
 | Gimbal boot instability | Gimbal is directly powered via 2A fuse and boots independently of the Jetson. | HW-001 §5 |
-| Solenoid MOSFET hot / stuck ON | **Rev M hardwired CH2 jumper:** module 12V always on → boot PR.05 HIGH heats FETs. Operator: series MODULE 12V switch OFF until dashboard up. Software: `claim_sig_low.py` + idle SIG watchdog. Long-term: buffer GPIO→IN B to restore gating. | HW-001 §5.5 |
+| Solenoid MOSFET hot / stuck ON | **Production (Rev N):** 2N3904 buffer + Relay CH2 gated (`hardwired=false`) — module 12V OFF at boot/idle automatically; no operator switch. **Interim only:** CH2 jumper + series switch until buffer built. Software: `claim_sig_low.py` + idle SIG watchdog. | HW-001 §5.5 |
 | Ground loops & 5V clash | Direct USB-A to Mini-USB cable is strictly forbidden during live operation. Communication runs over isolated 3-wire UART (TX, RX, GND) with no 5V power wire. | HW-001 §3 |
 | Water siphon on downward pitch | Feelers 1/4" spring check valve inline prevents gravity drain | HW-001 §6 |
 | Dew/rain infiltration | IP67 enclosure + silicone-sealed cable glands + Park Mode | HW-001 §7 |
