@@ -580,6 +580,15 @@
       <div class="card-body">
         <p style="font-size:12px;color:var(--dim);margin-bottom:14px">Press the button below. The system will automatically scan the scene, pick 10 targets, fire water at each, verify hits, and calibrate itself.</p>
 
+        <div id="ac-hardwired-box" style="background:rgba(255,159,10,0.12);border:1px solid rgba(255,159,10,0.45);border-radius:10px;padding:12px;margin-bottom:14px">
+          <p style="font-size:12px;color:var(--orange);margin:0 0 8px;font-weight:600">⚠ Module 12V hardwired mode (Rev J)</p>
+          <p style="font-size:11px;color:var(--dim);margin:0 0 10px">Software pulses SIG only. If Channel B was never jumpered, you get <b>SIG LED + zero clicks</b>. Short the <b>two Channel B screw terminals</b> on the Monk Makes board (or fused +12V → module DC IN+), then check the box.</p>
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--fg)">
+            <input type="checkbox" id="ac-jumper-confirm" style="margin-top:2px">
+            I jumpered Channel B load (or hardwired module 12V) — start auto-cal
+          </label>
+        </div>
+
         <!-- Progress bar -->
         <div style="background:rgba(255,255,255,0.05);border-radius:8px;height:32px;overflow:hidden;margin-bottom:10px;position:relative">
           <div id="ac-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:8px;transition:width 0.5s ease"></div>
@@ -1071,13 +1080,32 @@ let acPolling = null;
 
 async function acStart() {
   _calPsiPrompted = false;
+  if (!$('ac-jumper-confirm') || !$('ac-jumper-confirm').checked) {
+    $('ac-status').textContent =
+      'Blocked: jumper Monk Makes Channel B load screws (or hardwire module 12V), then check the confirm box.';
+    $('ac-bar-text').textContent = 'Need CH2 jumper confirm';
+    return;
+  }
+
   $('ac-start-btn').style.display = 'none';
   $('ac-stop-btn').style.display = '';
   $('ac-log').innerHTML = '';
   $('ac-bar').style.width = '0%';
   $('ac-bar-text').textContent = 'Starting...';
 
-  await fetch('/api/calibration/auto/start', {method:'POST'});
+  const resp = await fetch('/api/calibration/auto/start', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({confirm_module_12v_jumper: true}),
+  });
+  const start = await resp.json().catch(() => ({}));
+  if (!resp.ok || start.status === 'blocked') {
+    $('ac-start-btn').style.display = '';
+    $('ac-stop-btn').style.display = 'none';
+    $('ac-bar-text').textContent = 'Blocked';
+    $('ac-status').textContent = start.error || 'Auto-cal blocked (module 12V jumper required).';
+    return;
+  }
 
   // Start polling status every 500ms
   acPolling = setInterval(acPoll, 500);

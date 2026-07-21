@@ -1025,3 +1025,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
   8. Hold ON in logs / LED off / ~4 clicks: cached `_sol_12v_state` skipped re-drive → always re-assert CH2 + `ch2_rb` log.
   9. Zero clicks; SIG LED on; Channel B never on; `ch2_rb=1`: PY.00 too weak for SSR → **Rev J hardwire** (jumper CH2 load).
 - **[OPERATOR]** Until Channel B can be driven strongly: jumper Monk Makes CH2 load screws (or fused 12V → module DC IN+); keep `module_12v_hardwired=true`; Click Test should then click.
+
+## 2026-07-21 — [TROUBLESHOOT] Auto-cal still silent under hardwired=True
+- **[OBSERVED]** Latest auto-cal: 28 FIRE events, `hardwired=True`, `ch2_rb=0`, SIG OPEN/CLOSE logged; PSI barely moves (e.g. 2.0→1.9); operator reports no clicks.
+- **[ANALYSIS]** Software path is correct for Rev J (SIG-only). Silent coil + flat PSI means **module DC IN+ still has no 12V** — Channel B load was almost certainly **not jumpered** (or jumper on wrong channel / open fuse). SIG LED can still light.
+- **[CODE]** Auto-cal start now **blocks** unless `confirm_module_12v_jumper=true`; GUI checkbox + amber warning on Calibration tab.
+- **[OPERATOR]** On Monk Makes: short the **two Channel B screw terminals** together (B①↔B②), or bypass relay and land fused +12V on module DC IN+. Then Click Test → expect two clicks → auto-cal with checkbox checked.
+- **[IF STILL SILENT AFTER JUMPER]** Meter module DC IN+ (~12V), then OUT+/OUT− during Click Test; check 3A fuse and solenoid coil wiring.

@@ -1221,7 +1221,32 @@ def api_cal_clear():
 
 @app.route('/api/calibration/auto/start', methods=['POST'])
 def api_cal_auto_start():
-    """Start autonomous one-button calibration in a background thread."""
+    """
+    Start autonomous one-button calibration in a background thread.
+
+    When module_12v_hardwired=true (Rev J), require body
+    {"confirm_module_12v_jumper": true} — CH2 SSR cannot close on Yahboom PY.00;
+    operator must jumper CH2 load screws or feed fused 12V to module DC IN+
+    or every SIG pulse is silent (no coil click).
+    """
+    data = request.get_json(force=True) if request.data else {}
+    hardwired = bool(relay.get_status().get("module_12v_hardwired"))
+    if hardwired and not data.get("confirm_module_12v_jumper"):
+        msg = (
+            "Module 12V is in HARDWIRED mode. Channel B (Relay CH2) does not "
+            "close on this Jetson — SIG LED can light with ZERO solenoid clicks. "
+            "Physically short the two Monk Makes Channel B screw terminals "
+            "(or wire fused +12V to module DC IN+), then restart auto-cal with "
+            "confirm_module_12v_jumper=true."
+        )
+        log_event("AUTOCAL_BLOCKED", reason="hardwired_no_jumper_confirm")
+        return jsonify({
+            "status": "blocked",
+            "error": msg,
+            "module_12v_hardwired": True,
+            "need_confirm": "confirm_module_12v_jumper",
+        }), 400
+
     result = auto_cal.start(
         gimbal=gimbal,
         scout_cam=scout_cam,
@@ -1231,6 +1256,8 @@ def api_cal_auto_start():
         primer=primer,
         accum=accum,
     )
+    log_event("AUTOCAL_START", hardwired=hardwired,
+              jumper_confirmed=bool(data.get("confirm_module_12v_jumper")))
     return jsonify(result)
 
 

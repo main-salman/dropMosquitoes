@@ -23,3 +23,4 @@
 # 1 Rev I pulse-power  2 SIG LED≠power  3 CSI PHY dead  4 pressure-gated fire
 # 5 pulse lock+100ms+activity.log  6 DRAIN PIPE  7 module_power_hold
 # 8 CH2 re-assert+ch2_rb  9 Rev J hardwire jumper CH2 load
+2026-07-21 | [TROUBLESHOOT] | Auto-cal silent hardwired=True — need CH2 load jumper; block start without confirm
