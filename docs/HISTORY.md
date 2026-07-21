@@ -1032,3 +1032,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** Auto-cal start now **blocks** unless `confirm_module_12v_jumper=true`; GUI checkbox + amber warning on Calibration tab.
 - **[OPERATOR]** On Monk Makes: short the **two Channel B screw terminals** together (B①↔B②), or bypass relay and land fused +12V on module DC IN+. Then Click Test → expect two clicks → auto-cal with checkbox checked.
 - **[IF STILL SILENT AFTER JUMPER]** Meter module DC IN+ (~12V), then OUT+/OUT− during Click Test; check 3A fuse and solenoid coil wiring.
+
+## 2026-07-21 — [BUG FIX] Intermittent clicks after CH2 jumper (SIG hammering)
+- **[OBSERVED]** After jumpering Channel B: clicks sometimes work in a row, sometimes absent, sometimes multiple per “shot”; Click Test flaky.
+- **[EVIDENCE]** Auto-cal logs clean single 100ms OPEN/CLOSE per FIRE; points retry up to **3** attempts (sounds like multi-click). PSI sometimes dumps 1.7→0.1 (real open), sometimes flat (missed actuation). Extra `Solenoid CLOSED` lines from redundant writes.
+- **[ROOT CAUSE]** With module 12V latched ON, idle watchdog + pump edges **re-wrote SIG LOW every 0.5s / every pump edge** even when already LOW — Yahboom PR.05 glitches → phantom / missed clicks. Rapid Click Test double-submit overlapped pulses. Auto-cal retries amplified “multiple clicks”.
+- **[FIX]** Watchdog/pump only clear SIG if stuck HIGH; hardwired open = clean rising edge (no pre-LOW toggle); idempotent close; `pulse_busy` rejects overlap; skip recover before Click Test when hardwired; 40ms post-close settle; auto-cal `MAX_RETRIES=1` + 350ms settle.
+- **[OPERATOR]** One Click Test press → expect **two** clicks (open+close). Auto-cal: up to **two** pulses per point if miss. Keep jumper solid (no intermittent contact).

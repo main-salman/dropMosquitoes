@@ -730,33 +730,42 @@ def api_line_drain():
 def api_solenoid_test():
     """
     Quick solenoid MOSFET smoke test: open for duration_ms, then close.
-    Recovers drive first (SIG LOW + CH2 OFF, no PADCTL rewrite). Uses locked
-    pulse_solenoid() so the idle watchdog cannot cut CH2 mid-open.
+    Uses locked pulse_solenoid(); rejects overlap (busy). When hardwired,
+    skips recover_solenoid() (redundant SIG hammering caused intermittent clicks).
     Body: {"duration_ms": float}  (default 500ms)
     """
     data = request.get_json(force=True) if request.data else {}
     duration_ms = float(data.get('duration_ms', 500))
-    duration_sec = max(0.01, min(duration_ms / 1000.0, 2.0))
+    duration_sec = max(0.05, min(duration_ms / 1000.0, 2.0))
 
     # If accumulator left the system armed, disarm so maintain cannot fight us
     if accum.get_status().get("armed"):
         accum.disarm(reason="click-test")
 
-    recover = relay.recover_solenoid(re_pinmux=False)
+    hardwired = bool(relay.get_status().get("module_12v_hardwired"))
+    recover = {"re_pinmux": False, "skipped": hardwired}
+    if not hardwired:
+        recover = relay.recover_solenoid(re_pinmux=False)
+
     pulse = relay.pulse_solenoid(duration_sec)
     log_event("CLICK_TEST", duration_ms=pulse.get("duration_ms"),
               elapsed_ms=pulse.get("elapsed_ms"),
+              status=pulse.get("status"),
               ch2_held=pulse.get("ch2_held"),
+              hardwired=hardwired,
               recover=recover.get("re_pinmux"))
 
+    code = 200 if pulse.get("status") == "complete" else 409
     return jsonify({
-        "status": "complete",
+        "status": pulse.get("status", "complete"),
+        "error": pulse.get("error"),
         "duration_ms": pulse.get("duration_ms"),
         "elapsed_ms": pulse.get("elapsed_ms"),
         "solenoid_state": relay.get_status()["solenoid"],
         "solenoid_12v": relay.get_status().get("solenoid_12v"),
-        "recovered": True,
-    })
+        "module_12v_hardwired": hardwired,
+        "recovered": not hardwired,
+    }), code
 
 
 @app.route('/api/solenoid/gate_hold', methods=['POST'])

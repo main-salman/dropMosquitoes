@@ -1619,15 +1619,18 @@ let solPollTimer = null;
 async function solTest() {
   $('sol-test-log').innerHTML = '<span class="info">⚡ Toggling solenoid...</span>';
   try {
-    const d = await fetch('/api/solenoid/test', {method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({duration_ms: +$('sol-test-dur').value})}).then(r => r.json());
+    const resp = await fetch('/api/solenoid/test', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({duration_ms: +$('sol-test-dur').value})});
+    const d = await resp.json();
+    if (d.status === 'busy') {
+      $('sol-test-log').innerHTML = `<span class="err">⏳ Busy — wait for the previous pulse to finish, then try once.</span>`;
+      return;
+    }
     $('sol-test-log').innerHTML =
-      `<span class="ok">✅ SIG pulsed ${d.duration_ms}ms</span> (12V hardwired=${d.solenoid_12v != null ? 'see Step 0' : '?'})\n` +
+      `<span class="ok">✅ SIG pulsed ${d.duration_ms}ms</span> (hardwired=${d.module_12v_hardwired})\n` +
       `State after: ${d.solenoid_state ? 'OPEN ⚠️' : 'CLOSED ✅'}\n\n` +
-      `<span class="info">Did you hear TWO clicks?</span>\n` +
-      `  Click 1 = solenoid OPENS · Click 2 = CLOSES\n\n` +
-      `SIG LED on + no click → module has no 12V (jumper CH2 load).\n` +
-      `Channel B LED never bright → keep hardwired mode + jumper.`;
+      `<span class="info">Expect TWO clicks</span> (open → close). One press = one pulse.\n` +
+      `No click: check CH2 jumper / module 12V. Extra clicks: wait between presses.`;
   } catch(e) {
     $('sol-test-log').innerHTML = `<span class="err">❌ Error: ${e.message}</span>`;
   }

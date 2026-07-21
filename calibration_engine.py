@@ -561,7 +561,7 @@ class AutoCalibrator:
     RETRY_DURATION = 0.8      # Longer burst for retry
     SETTLE_TIME = 1.5         # Seconds to wait after servo move
     POST_FIRE_DELAYS = [0.3, 0.6, 1.0]  # Capture intervals after firing
-    MAX_RETRIES = 2           # Max retries per point (total 3 attempts)
+    MAX_RETRIES = 1           # Max retries per point (total 2 attempts — was 3; multi-click noise)
 
     def __init__(self, cal_table: CalibrationTable, hit_detector: HitDetector):
         self.table = cal_table
@@ -919,7 +919,8 @@ class AutoCalibrator:
                 time.sleep(0.5)
                 continue
 
-            time.sleep(0.15)  # brief settle after solenoid close
+            time.sleep(0.35)  # settle after close before after-frames / next retry
+
 
             # Capture after frames
             for delay in self.POST_FIRE_DELAYS:

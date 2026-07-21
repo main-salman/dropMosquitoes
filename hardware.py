@@ -298,6 +298,7 @@ class RelayController:
         # True = module DC IN+ hardwired / CH2 load jumpered; SIG-only control.
         # Default ON: Yahboom PY.00 does not reliably close Monk Makes CH2.
         self._module_12v_hardwired = True
+        self._pulse_busy = False  # reject overlapping click-test / fire pulses
         self._lock = threading.Lock()
 
         # PADCTL pinmux MUST run before claiming lines.
@@ -373,15 +374,20 @@ class RelayController:
         """
         Periodic SIG/CH2 hygiene. Does NOT rewrite PADCTL (can glitch PR.05).
 
-        Hardwired 12V: only keep SIG LOW when idle.
-        Relay-gated + ARMED hold: re-drive CH2 HIGH every tick.
-        Idle gated: SIG LOW + CH2 OFF.
+        CRITICAL (Rev J hardwired 12V): do NOT hammer SIG LOW every tick when
+        already LOW — redundant libgpiod writes on PR.05 were correlated with
+        intermittent phantom clicks / missed clicks while module 12V is latched.
+        Only clear SIG when readback shows HIGH (stuck).
         """
         while not self._idle_stop.wait(0.5):
             with self._lock:
-                if self._solenoid_state:
-                    continue  # intentional valve open
-                self._solenoid.set(False)
+                if self._solenoid_state or self._pulse_busy:
+                    continue  # intentional open / pulse in progress
+                rb = self._solenoid.get()
+                if rb == 1:
+                    self._solenoid.set(False)
+                    self._solenoid_state = False
+                    print("[RelayController] IDLE WATCHDOG: cleared stuck SIG HIGH")
                 if self._module_12v_hardwired:
                     continue
                 if self._module_power_hold:
@@ -411,6 +417,14 @@ class RelayController:
         self._sol_12v_state = True
         if settle:
             time.sleep(self._SOL12V_SETTLE_SEC)
+
+    def _assert_sig_low(self):
+        """Drive SIG LOW only if not already commanded closed. Caller holds lock."""
+        if self._solenoid_state or self._solenoid.get() == 1:
+            self._solenoid.set(False)
+            self._solenoid_state = False
+            return True
+        return False
 
     # -- Legacy pre-pressurization (DEPRECATED by AccumulatorManager) ---------
     # Kept for backward compatibility; AccumulatorManager.fire() is preferred.
@@ -467,9 +481,11 @@ class RelayController:
             # padctl region was correlated with SIG glitches and lost clicks
             # after a few auto-cal shots. Pinmux is set once at init/recover.
             GPIO.output(RELAY_PUMP_PIN, GPIO.HIGH if state else GPIO.LOW)
-        # Soft-assert SIG LOW only — never cut CH2 here.
-        if not self._solenoid_state:
-            self._solenoid.set(False)
+        # Soft-assert SIG LOW only when it was commanded open — never hammer
+        # set(False) on every pump edge while already closed (glitches SIG when
+        # module 12V is hardwired ON).
+        if self._solenoid_state:
+            self._assert_sig_low()
         # Pump edges can EMI-glitch PY.00; re-drive CH2 while ARMED hold is on.
         if self._module_power_hold and not self._module_12v_hardwired:
             self._drive_module_12v_on(settle=False)
@@ -525,7 +541,12 @@ class RelayController:
                 not self._module_12v_hardwired
                 and (not self._sol_12v_state or not self._module_power_hold)
             )
-            self._solenoid.set(False)  # never apply 12V with SIG already high
+            # Hardwired: clean rising edge only (no pre-LOW toggle — that can
+            # chatter the coil when 12V is latched). Gated: ensure SIG low
+            # before enabling CH2.
+            if not self._module_12v_hardwired:
+                self._solenoid.set(False)
+                self._solenoid_state = False
             self._drive_module_12v_on(settle=need_settle)
             self._solenoid.set(True)
             self._solenoid_state = True
@@ -538,6 +559,11 @@ class RelayController:
             print(f"[RelayController] Solenoid OPEN (SIG HIGH, 12V={power}"
                   f", ch2_rb={self._sol_12v.get()})")
         else:
+            if not self._solenoid_state and self._solenoid.get() != 1:
+                # Already closed — skip redundant write (avoids glitch / double click)
+                if self._module_power_hold and not self._module_12v_hardwired:
+                    self._drive_module_12v_on(settle=False)
+                return
             self._solenoid.set(False)
             self._solenoid_state = False
             if self._module_12v_hardwired:
@@ -554,8 +580,7 @@ class RelayController:
     def pulse_solenoid(self, duration_sec: float = 0.025) -> dict:
         """
         Synchronous solenoid pulse under the relay lock for the entire open
-        window. Hardwired / hold: SIG-only open window; gated pulse-power:
-        CH2 re-driven around the pulse.
+        window. Rejects overlapping pulses (rapid Click Test double-submit).
         """
         duration_sec = max(0.001, min(float(duration_sec), 2.0))
         t0 = time.time()
@@ -564,6 +589,19 @@ class RelayController:
         ch2_rb_after = None
         hardwired = False
         with self._lock:
+            if self._pulse_busy:
+                print("[RelayController] SOLENOID PULSE rejected — busy")
+                return {
+                    "status": "busy",
+                    "error": "solenoid pulse already in progress",
+                    "duration_ms": round(duration_sec * 1000.0, 1),
+                    "elapsed_ms": 0.0,
+                    "solenoid_state": self._solenoid_state,
+                    "solenoid_12v": self._sol_12v_state,
+                    "ch2_held": False,
+                    "module_12v_hardwired": self._module_12v_hardwired,
+                }
+            self._pulse_busy = True
             hardwired = self._module_12v_hardwired
             try:
                 self._set_solenoid(True)
@@ -572,7 +610,11 @@ class RelayController:
                 time.sleep(duration_sec)
             finally:
                 self._set_solenoid(False)
+                # Brief settle with SIG held LOW before releasing lock — reduces
+                # pump-start EMI chatter right after a shot.
+                time.sleep(0.04)
                 ch2_rb_after = self._sol_12v.get()
+                self._pulse_busy = False
         elapsed_ms = (time.time() - t0) * 1000.0
         print(f"[RelayController] SOLENOID PULSE done: cmd={duration_sec*1000:.1f}ms "
               f"elapsed={elapsed_ms:.1f}ms hardwired={hardwired} ch2_held={ch2_held} "
