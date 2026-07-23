@@ -35,7 +35,7 @@ DEFAULTS: dict[str, Any] = {
         "charge_per_shot": True,
         # Yahboom PY.00 cannot reliably close Monk Makes CH2 — jumper CH2 load
         # (or hardwire fused 12V to module DC IN+) and keep this True.
-        "module_12v_hardwired": True,
+        "module_12v_hardwired": False,
     },
     "servo": {
         "speed": 120.0,

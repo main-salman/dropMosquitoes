@@ -1077,7 +1077,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-21 — [DIAGRAM] Rev N 2N3904 CH2 buffer wiring guide
 - **[DIAGRAM]** Rewrote `diagrams/eco004_mosfet_module_option.drawio` for **2N3904 emitter follower**: T29→1k→Base, T17→Collector, Emitter→IN B + 10k→GND. Explicit REMOVE jumper / MOVE IN B wire / ADD parts checklist. SIG path unchanged.
 
-## 2026-07-21 — [REQUIREMENT] Automated CH2 — no post-boot MODULE 12V switch
-- **[REQ]** Production must be power-on/off only; operator must not toggle a series MODULE 12V switch each boot.
-- **[DESIGN]** Rev N buffer + Relay CH2 gated (`hardwired=false`) satisfies this: CH2 open at boot (FETs cold), software controls 12V at runtime.
-- **[DOCS]** Diagram automation banner; HW-001/SAFE-001/SW-001/GUI — series switch demoted to interim-only until buffer is built.
+## 2026-07-23 — [OPS] Gated CH2 for T29 bench test (jumper removed; pre-transistor)
+- **[OPERATOR]** Channel B load jumper removed. Suspect intermittent clicks were a **loose T29↔IN B wire**, not necessarily weak-pad alone. Will Click Test / auto-cal on direct T29 drive before installing 2N3904.
+- **[CODE]** Default `module_12v_hardwired=false` again (settings_store / RelayController / app.py sync). GUI Step 0: gated/T29 primary; auto-cal jumper box hidden unless hardwired.
+- **[DEPLOY]** Force Jetson settings hardwired=false; soft-restart for gated CH2 on BCM 5 / T29.

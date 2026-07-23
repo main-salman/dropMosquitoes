@@ -33,3 +33,4 @@
 2026-07-21 | [DECISION] | Rev M: T29 also fails — abandon CH2 GPIO gating; hardwired jumper default + series 12V switch
 2026-07-21 | [DIAGRAM] | eco004_mosfet_module_option.drawio Rev N — 2N3904 buffer wire-move guide (T29/T17/IN B)
 2026-07-21 | [REQUIREMENT] | Automated CH2 only — no post-boot MODULE 12V switch; buffer+gated is production path
+2026-07-23 | [OPS] | Jumper off; gated hardwired=false for T29 direct-wire Click Test / auto-cal before 2N3904

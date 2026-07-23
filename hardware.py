@@ -161,8 +161,9 @@ SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 # Yahboom pads T13/PY.00, T22/PY.01, and T29/PQ.05 all report GPIO HIGH but
 # never light Monk Makes Channel B LED (rb=1, LED off, silent coil). Until an
 # NPN/N-FET buffer drives IN B, factory default is hardwired CH2 load jumper
-# (module_12v_hardwired=True) — SIG-only shots; use a series MODULE 12V switch
-# for boot-heat safety (SAFE-001 / HW-001 §5.5).
+# Prefer gated mode (module_12v_hardwired=False) when Channel B is NOT jumpered
+# and IN B is driven from T29 (direct wire for bench, or 2N3904 buffer for prod).
+# Hardwired jumper remains an interim fallback only.
 # =======================================================================================================
 
 
@@ -298,8 +299,8 @@ class RelayController:
         self._solenoid_state = False
         self._module_power_hold = False  # True while ARMED — CH2 stays ON
         # True = module DC IN+ hardwired / CH2 load jumpered; SIG-only control.
-        # Default ON: Yahboom GPIO cannot close Monk Makes CH2 (T13/T22/T29).
-        self._module_12v_hardwired = True
+        # Default OFF: Channel B not jumpered — drive CH2 via T29 (BCM 5).
+        self._module_12v_hardwired = False
         self._pulse_busy = False  # reject overlapping click-test / fire pulses
         self._lock = threading.Lock()
 

@@ -110,8 +110,8 @@ def apply_settings_to_runtime(data: dict | None = None) -> dict:
     acc = data.get("accumulator") or {}
     if acc:
         accum.update_config(acc)
-    # Always sync 12V mode (Rev J/M default: hardwired — Yahboom GPIO can't close CH2)
-    relay.set_module_12v_hardwired(bool(acc.get("module_12v_hardwired", True)))
+    # Sync 12V mode (default gated — Channel B not jumpered; T29 → IN B)
+    relay.set_module_12v_hardwired(bool(acc.get("module_12v_hardwired", False)))
     applied["accumulator"] = {
         **(accum.get_status().get("config") or {}),
         "module_12v_hardwired": relay.get_status().get("module_12v_hardwired"),
