@@ -35,3 +35,4 @@
 2026-07-21 | [REQUIREMENT] | Automated CH2 only — no post-boot MODULE 12V switch; buffer+gated is production path
 2026-07-23 | [OPS] | Jumper off; gated hardwired=false for T29 direct-wire Click Test / auto-cal before 2N3904
 2026-07-23 | [DIAG] | Mixed LEDs: fix gate_hold=SIG-only; no-click with CH2 lit → load path or still need 2N3904
+2026-07-23 | [VERIFY] | T29 gated works without transistor after reseat; hardwired=false persisted for reboot test

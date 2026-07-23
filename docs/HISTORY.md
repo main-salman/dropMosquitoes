@@ -1087,3 +1087,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[ANALYSIS]** Logs show both `ch2_hold` and `gate_hold`. Old `gate_hold` called `set_solenoid(True)` which also enables CH2 — confused LED diagnosis. Click Test pulse-power = brief CH2 flash (expected). Auto-cal CH2 hold + SIG pulse with silence ⇒ SSR/load not delivering coil 12V (weak T29 and/or B①/B② feed after un-jumper).
 - **[FIX]** `hold_sig()` = SIG only, CH2 forced OFF; `hold_ch2()` uses pulse_busy + clear logs. GUI clarifies which button is which.
 - **[NEXT]** Verify load: +12V→fuse→B①, B②→DC IN+. Meter DC IN+ during auto-cal (expect ~12V). If LED on but DC IN+=0 or no click → **2N3904 still needed** (or restore jumper temporarily to confirm).
+
+## 2026-07-23 — [VERIFY] Gated T29 works without transistor (after reseat)
+- **[OPERATOR]** Click Test + auto-cal clicks succeed with Channel B **not jumpered**, `hardwired=false`, **no 2N3904** — after reseating T29↔IN B (loose-wire theory).
+- **[STATE]** Jetson `settings.json` has `module_12v_hardwired=false` (survives reboot). Code on `main` / origin at `fb608f2` + this note.
+- **[NOTE]** Keep 2N3904 kit for later if flaky again; not required while T29 drive stays solid.
