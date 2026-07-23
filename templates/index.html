@@ -301,11 +301,13 @@
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">
           <b>Gated mode (default):</b> Channel B <b>not jumpered</b>. Software drives
-          <b>T29 → IN B</b> (direct wire for bench, or 2N3904 buffer later). Use
-          <b>Hold CH2</b> — Channel B LED must light — then Click Test / auto-cal.
+          <b>T29 → IN B</b>. Use <b>Hold CH2</b> only (not Gate/SIG Hold) — Channel B LED
+          must stay bright for the full duration. Click Test = brief Channel B flash
+          (normal). Auto-cal keeps Channel B on while armed.
         </p>
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:10px">
-          Interim fallback only: jumper B①↔B② + hardwired ON (boot-heat risk).
+        <p style="font-size:11px;color:var(--orange);margin-bottom:10px;font-weight:600">
+          No clicks with Channel B LED on → check load path
+          (+12V→fuse→B①, B②→module DC IN+) or install 2N3904 buffer (weak T29).
         </p>
         <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:10px 0">
           <input type="checkbox" id="sol-hardwired" onchange="solHardwiredToggle()">
@@ -344,7 +346,7 @@
     <div class="card">
       <div class="card-title">🔌 SIG Hold Test (T36)</div>
       <div class="card-body">
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Holds module <b>SIG</b> HIGH (BCM 16 / T36). MOSFET SIG LED should stay on. Does <b>not</b> prove Channel B / coil 12V.</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px">Holds module <b>SIG</b> HIGH (BCM 16 / T36) with <b>CH2 OFF</b>. MOSFET SIG LED should stay on for the full duration; Channel B must stay <b>dark</b>. Does <b>not</b> fire the coil.</p>
         <div class="sl">
           <label>Hold Duration</label>
           <input type="range" id="sol-hold-dur" min="1" max="30" step="1" value="5" oninput="$('sol-hold-dur-v').textContent=this.value+'s'">

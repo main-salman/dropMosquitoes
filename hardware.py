@@ -727,6 +727,7 @@ class RelayController:
         """
         Drive Relay CH2 IN (BCM 5 / T29) HIGH for measurement — SIG stays LOW.
         Use to watch Monk Makes Channel B LED and meter Terminal 29 (~3.3V).
+        Holds pulse_busy so the idle watchdog cannot cut CH2 mid-hold.
         """
         seconds = max(1.0, min(float(seconds), 30.0))
         if self._module_12v_hardwired:
@@ -736,23 +737,62 @@ class RelayController:
                 "module_12v_hardwired": True,
             }
         with self._lock:
+            self._pulse_busy = True
             self._solenoid.set(False)
             self._solenoid_state = False
             configure_push_pull(only=("PQ.05",))
             self._sol_12v.set(True)
             self._sol_12v_state = True
             rb = self._sol_12v.get()
-        time.sleep(seconds)
-        with self._lock:
-            self._sol_12v.set(False)
-            self._sol_12v_state = False
-            rb_after = self._sol_12v.get()
+            print(f"[RelayController] CH2 HOLD ON {seconds:.0f}s "
+                  f"(SIG LOW, pin=BCM{RELAY_SOL12V_PIN}/T29, ch2_rb={rb})")
+        try:
+            time.sleep(seconds)
+        finally:
+            with self._lock:
+                self._sol_12v.set(False)
+                self._sol_12v_state = False
+                rb_after = self._sol_12v.get()
+                self._pulse_busy = False
+                print(f"[RelayController] CH2 HOLD OFF (ch2_rb_after={rb_after})")
         return {
             "status": "complete",
             "held_sec": seconds,
             "ch2_readback": rb,
             "ch2_readback_after": rb_after,
             "pin": f"BCM{RELAY_SOL12V_PIN}/T29",
+            "sig_held": False,
+        }
+
+    def hold_sig(self, seconds: float = 5.0) -> dict:
+        """
+        Drive module SIG HIGH for measurement — CH2 stays OFF (no module 12V).
+        MOSFET SIG LED can light without coil power; safer than set_solenoid().
+        """
+        seconds = max(1.0, min(float(seconds), 30.0))
+        with self._lock:
+            self._pulse_busy = True
+            self._sol_12v.set(False)
+            self._sol_12v_state = False
+            self._module_power_hold = False
+            self._solenoid.set(True)
+            self._solenoid_state = True
+            print(f"[RelayController] SIG HOLD ON {seconds:.0f}s (CH2 OFF)")
+        try:
+            time.sleep(seconds)
+        finally:
+            with self._lock:
+                self._solenoid.set(False)
+                self._solenoid_state = False
+                self._pulse_busy = False
+                print("[RelayController] SIG HOLD OFF")
+        return {
+            "status": "complete",
+            "held_sec": seconds,
+            "solenoid_state": False,
+            "ch2_off": True,
+            "backend": "libgpiod" if self._solenoid.available else "stub",
+            "module_12v_hardwired": self._module_12v_hardwired,
         }
 
     # -- Backward compatibility -----------------------------------------------

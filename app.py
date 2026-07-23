@@ -799,26 +799,14 @@ def api_solenoid_test():
 @app.route('/api/solenoid/gate_hold', methods=['POST'])
 def api_solenoid_gate_hold():
     """
-    Drive module SIG (PR.05 / T36) HIGH and HOLD for `seconds` so the MOSFET
-    SIG LED / voltage can be measured, then return LOW.
+    Drive module SIG (PR.05 / T36) HIGH and HOLD for `seconds` — CH2 stays OFF.
+    MOSFET SIG LED can light with no coil 12V (safe diagnostic).
     Body: {"seconds": int}  (default 5, clamped 1-30)
     """
     data = request.get_json(force=True) if request.data else {}
     seconds = max(1, min(int(data.get('seconds', 5)), 30))
-
-    backend = "libgpiod" if getattr(relay, "_solenoid", None) and relay._solenoid.available else "stub"
-
-    relay.set_solenoid(True)
-    time.sleep(seconds)
-    relay.set_solenoid(False)
-
-    return jsonify({
-        "status": "complete",
-        "held_sec": seconds,
-        "backend": backend,
-        "solenoid_state": relay.get_status()["solenoid"],
-        "module_12v_hardwired": relay.get_status().get("module_12v_hardwired"),
-    })
+    result = relay.hold_sig(seconds)
+    return jsonify(result)
 
 
 @app.route('/api/solenoid/ch2_hold', methods=['POST'])

@@ -1081,3 +1081,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPERATOR]** Channel B load jumper removed. Suspect intermittent clicks were a **loose T29↔IN B wire**, not necessarily weak-pad alone. Will Click Test / auto-cal on direct T29 drive before installing 2N3904.
 - **[CODE]** Default `module_12v_hardwired=false` again (settings_store / RelayController / app.py sync). GUI Step 0: gated/T29 primary; auto-cal jumper box hidden unless hardwired.
 - **[DEPLOY]** Force Jetson settings hardwired=false; soft-restart for gated CH2 on BCM 5 / T29.
+
+## 2026-07-23 — [DIAG] Mixed LEDs; fix Gate Hold; transistor still likely
+- **[OBSERVED]** Hold duration: MOSFET LED tracks full time; Channel B only flashes on Click Test; auto-cal Channel B stays lit, SIG flashes, **no clicks**.
+- **[ANALYSIS]** Logs show both `ch2_hold` and `gate_hold`. Old `gate_hold` called `set_solenoid(True)` which also enables CH2 — confused LED diagnosis. Click Test pulse-power = brief CH2 flash (expected). Auto-cal CH2 hold + SIG pulse with silence ⇒ SSR/load not delivering coil 12V (weak T29 and/or B①/B② feed after un-jumper).
+- **[FIX]** `hold_sig()` = SIG only, CH2 forced OFF; `hold_ch2()` uses pulse_busy + clear logs. GUI clarifies which button is which.
+- **[NEXT]** Verify load: +12V→fuse→B①, B②→DC IN+. Meter DC IN+ during auto-cal (expect ~12V). If LED on but DC IN+=0 or no click → **2N3904 still needed** (or restore jumper temporarily to confirm).
