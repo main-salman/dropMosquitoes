@@ -1092,3 +1092,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPERATOR]** Click Test + auto-cal clicks succeed with Channel B **not jumpered**, `hardwired=false`, **no 2N3904** — after reseating T29↔IN B (loose-wire theory).
 - **[STATE]** Jetson `settings.json` has `module_12v_hardwired=false` (survives reboot). Code on `main` / origin at `fb608f2` + this note.
 - **[NOTE]** Keep 2N3904 kit for later if flaky again; not required while T29 drive stays solid.
+
+## 2026-07-23 — [PROCUREMENT] Option B Pico solenoid path → parts.csv
+- **[BOM]** `parts.csv`: to-order Pico W SCO918 ($15.90), 8-value diode kit w/ 1N5408 ($10), USB-A↔Micro-B ($8); ON HAND IRLB8721 5-pack ($9), BOJACK transistor kit ($14.99). Prior 1N4007 already on BOM (no double-count). Grand total 1985 → **2034.89** CAD.
+- **[INTENT]** Option B: Jetson→USB→Pico→IRLB8721→solenoid (drop dual-MOS module + CH2 for valve); pump stays on Monk Makes CH1.
