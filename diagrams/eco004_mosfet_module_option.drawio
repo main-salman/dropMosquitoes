@@ -1,195 +1,251 @@
-<mxfile host="app.diagrams.net" modified="2026-07-21T17:48:00.000Z" agent="Cursor" version="22.1.0">
-  <diagram id="mosfetmod" name="2N3904 CH2 buffer">
-    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" background="#FFFFFF" math="0" shadow="0">
+<mxfile host="app.diagrams.net" modified="2026-07-24T18:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="optionb" name="Option B cable map">
+    <mxGraphModel dx="1400" dy="900" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1580" background="#FFFFFF" math="0" shadow="0">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
 
-        <!-- TITLE -->
-        <mxCell id="title" value="&lt;b style='font-size:20px;color:#0D47A1'&gt;ECO-004 Rev N — Automated CH2 12V interlock (2N3904 buffer)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#555'&gt;&lt;b style='color:#1B5E20'&gt;GOAL: power Jetson on/off only — no manual MODULE 12V switch.&lt;/b&gt; Relay CH2 gates module 12V in software. Buffer makes Yahboom GPIO strong enough to drive IN B. SIG path unchanged.&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="40" y="16" width="1100" height="48" as="geometry"/>
+        <mxCell id="title" value="&lt;b style='font-size:22px;color:#0D47A1'&gt;ECO-004 Rev O — Option B CABLE MAP&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#333'&gt;Each row = one physical cable. Connect END A to END B. Power OFF + 12V unplugged first.&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+          <mxGeometry x="40" y="12" width="1100" height="44" as="geometry"/>
         </mxCell>
 
-        <!-- AUTOMATION BANNER -->
-        <mxCell id="auto_banner" value="&lt;b style='color:#FFFFFF;font-size:13px'&gt;FULLY AUTOMATED (steady state)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C8E6C9;font-size:11px'&gt;Boot: CH2 OPEN → module has 0V even while firmware drives SIG HIGH (FETs stay cold). App up: software closes CH2 when armed/firing, opens at idle. &lt;b&gt;No operator switch after power-on.&lt;/b&gt; Hardwired jumper + series switch = temporary only — remove after this buffer works.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#004D40;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="40" y="68" width="1100" height="52" as="geometry"/>
+        <!-- ========== MASTER CABLE TABLE ========== -->
+        <mxCell id="cable_table" value="&lt;b style='font-size:16px;color:#B71C1C'&gt;★ CONNECT THESE CABLES (after REMOVE list below)&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;table cellpadding='4' style='font-size:12px;color:#111;border-collapse:collapse;width:100%'&gt;&lt;tr style='background:#ECEFF1'&gt;&lt;td&gt;&lt;b&gt;#&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;Cable / part&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;END A (from)&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;END B (to)&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b style='color:#0D47A1'&gt;C1&lt;/b&gt;&lt;/td&gt;&lt;td&gt;USB-A ↔ Micro-B (data)&lt;/td&gt;&lt;td&gt;&lt;b&gt;Jetson USB-A port&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;Pico W micro-USB&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#F5F5F5'&gt;&lt;td&gt;&lt;b style='color:#212121'&gt;C2&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Black wire&lt;/td&gt;&lt;td&gt;&lt;b&gt;Pico GND pin&lt;/b&gt; (any GND: pin 3, 18, 23, 28, 33, or 38)&lt;/td&gt;&lt;td&gt;&lt;b&gt;GND bus&lt;/b&gt; (IDC40P T6 or T9 or T14 — same net)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b style='color:#6A1B9A'&gt;C3&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Purple/any + &lt;b&gt;220 Ω&lt;/b&gt; in series&lt;/td&gt;&lt;td&gt;&lt;b&gt;Pico GP15&lt;/b&gt; (physical pin 20)&lt;/td&gt;&lt;td&gt;&lt;b&gt;IRLB8721 Gate&lt;/b&gt; (left pin, label facing you)&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#F5F5F5'&gt;&lt;td&gt;&lt;b style='color:#F57F17'&gt;C4&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;10 kΩ&lt;/b&gt; resistor (legs = the two ends)&lt;/td&gt;&lt;td&gt;&lt;b&gt;IRLB8721 Gate&lt;/b&gt; (same node as C3)&lt;/td&gt;&lt;td&gt;&lt;b&gt;GND bus&lt;/b&gt; (same as C2)&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b style='color:#212121'&gt;C5&lt;/b&gt;&lt;/td&gt;&lt;td&gt;Black/heavy wire&lt;/td&gt;&lt;td&gt;&lt;b&gt;IRLB8721 Source&lt;/b&gt; (right pin)&lt;/td&gt;&lt;td&gt;&lt;b&gt;GND bus&lt;/b&gt; (same as C2)&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FFEBEE'&gt;&lt;td&gt;&lt;b style='color:#C62828'&gt;C6&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;MOVE&lt;/b&gt; BLUE solenoid wire&lt;/td&gt;&lt;td&gt;&lt;b&gt;Solenoid (−) BLUE&lt;/b&gt; terminal&lt;/td&gt;&lt;td&gt;&lt;b&gt;IRLB8721 Drain&lt;/b&gt; (middle pin) — was on module OUT−&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FFEBEE'&gt;&lt;td&gt;&lt;b style='color:#B71C1C'&gt;C7&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;MOVE&lt;/b&gt; RED solenoid wire + &lt;b&gt;3A fuse&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;+12V bus&lt;/b&gt; → fuse → &lt;/td&gt;&lt;td&gt;&lt;b&gt;Solenoid (+) RED&lt;/b&gt; — was on module OUT+&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b style='color:#E91E63'&gt;C8&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;1N5408 diode&lt;/b&gt; (not a wire — legs)&lt;/td&gt;&lt;td&gt;&lt;b&gt;Band / cathode&lt;/b&gt; → Solenoid (+) RED / +12V side&lt;/td&gt;&lt;td&gt;&lt;b&gt;No-band / anode&lt;/b&gt; → Solenoid (−) BLUE / Drain side&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#555'&gt;C3 tip: wire from GP15 to one leg of 220Ω; other leg of 220Ω to Gate. C8 is &lt;b&gt;across&lt;/b&gt; the coil (parallel), not in series.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#0D47A1;strokeWidth=3;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="40" y="64" width="1100" height="320" as="geometry"/>
         </mxCell>
 
-        <!-- MOVE BANNER -->
-        <mxCell id="move_banner" value="&lt;b style='color:#FFFFFF;font-size:13px'&gt;WIRES TO MOVE / ADD — 12V unplugged + Jetson OFF&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFECB3;font-size:11px'&gt;1) REMOVE Channel B load jumper (B①↔B②) · 2) DISCONNECT IN B from T13/T22/T29 · 3) ADD 2N3904 + 1k + 10k as below · 4) Set &lt;b&gt;hardwired=OFF&lt;/b&gt; (gated) — then every power cycle is automatic&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E65100;strokeColor=#BF360C;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="40" y="128" width="1100" height="48" as="geometry"/>
+        <mxCell id="remove_table" value="&lt;b style='font-size:14px;color:#FFFFFF'&gt;✕ UNPLUG THESE FIRST&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#FFCDD2'&gt;&lt;b&gt;R1&lt;/b&gt; Solenoid RED + BLUE off dual-MOS &lt;b&gt;OUT+ / OUT−&lt;/b&gt;&lt;br&gt;&lt;b&gt;R2&lt;/b&gt; Module &lt;b&gt;DC IN+ / DC IN−&lt;/b&gt; off 12V / CH2&lt;br&gt;&lt;b&gt;R3&lt;/b&gt; Wire &lt;b&gt;T36 → module SIG&lt;/b&gt; — remove both ends&lt;br&gt;&lt;b&gt;R4&lt;/b&gt; Wire &lt;b&gt;T29 → Relay IN B&lt;/b&gt; — remove (CH2 unused)&lt;br&gt;&lt;b&gt;KEEP&lt;/b&gt; &lt;b&gt;T11 → Relay IN A&lt;/b&gt; (pump) — do not touch&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#7F0000;strokeWidth=2;align=left;spacingLeft=12;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="1160" y="64" width="400" height="160" as="geometry"/>
         </mxCell>
 
-        <!-- ========== JETSON ========== -->
-        <mxCell id="jetson" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=5;" parent="1" vertex="1">
-          <mxGeometry x="40" y="196" width="220" height="340" as="geometry"/>
-        </mxCell>
-        <mxCell id="jlbl" value="&lt;b style='color:#C8E6C9;font-size:14px'&gt;Jetson IDC40P&lt;/b&gt;&lt;br&gt;&lt;span style='color:#A5D6A7;font-size:10px'&gt;terminals used by this mod&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="50" y="204" width="200" height="34" as="geometry"/>
+        <mxCell id="pin_hint" value="&lt;b style='font-size:13px;color:#3E2723'&gt;IRLB8721 pins (label toward you)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#333'&gt;LEFT = &lt;b style='color:#6A1B9A'&gt;Gate&lt;/b&gt; (C3+C4)&lt;br&gt;MIDDLE = &lt;b style='color:#C62828'&gt;Drain&lt;/b&gt; (C6 BLUE)&lt;br&gt;RIGHT = &lt;b style='color:#212121'&gt;Source&lt;/b&gt; (C5 GND)&lt;br&gt;&lt;br&gt;&lt;b&gt;Pico GP15&lt;/b&gt; = pin 20&lt;br&gt;(right side, 5th from bottom if USB on top)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFEBE9;strokeColor=#5D4037;strokeWidth=2;align=left;spacingLeft=12;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="1160" y="236" width="400" height="148" as="geometry"/>
         </mxCell>
 
-        <mxCell id="t29box" value="&lt;b style='color:#E1BEE7;font-size:13px'&gt;T29 · BCM 5 (PQ.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#CE93D8;font-size:10px'&gt;GPIO → 1kΩ → 2N3904 BASE&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#CE93D8;strokeWidth=3;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="246" width="190" height="48" as="geometry"/>
-        </mxCell>
-        <mxCell id="t17box" value="&lt;b style='color:#FFF9C4;font-size:13px'&gt;T17 · +3.3V&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFF59D;font-size:10px'&gt;→ 2N3904 COLLECTOR&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F57F17;strokeColor=#FBC02D;strokeWidth=3;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="306" width="190" height="48" as="geometry"/>
-        </mxCell>
-        <mxCell id="gndbox" value="&lt;b style='color:#E0E0E0;font-size:13px'&gt;GND · T6 / T9 / T14&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;→ emitter 10kΩ + relay GND&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212121;strokeColor=#757575;strokeWidth=2;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="366" width="190" height="48" as="geometry"/>
-        </mxCell>
-        <mxCell id="t36box" value="&lt;b style='color:#FFE0B2;font-size:12px'&gt;T36 · BCM 16 (PR.05)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCC80;font-size:10px'&gt;SIG — NO CHANGE&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2E7D32;strokeColor=#FF6D00;strokeWidth=2;align=center;" parent="1" vertex="1">
-          <mxGeometry x="55" y="426" width="190" height="42" as="geometry"/>
-        </mxCell>
-        <mxCell id="old_note" value="&lt;b style='color:#FFCDD2'&gt;DO NOT&lt;/b&gt; land IN B on T13/T22/T29 directly anymore" style="text;html=1;align=center;fontSize=10;fontColor=#FFCDD2;" parent="1" vertex="1">
-          <mxGeometry x="50" y="476" width="200" height="40" as="geometry"/>
+        <!-- ========== VISUAL LAYOUT ========== -->
+        <mxCell id="vis_title" value="&lt;b style='font-size:16px;color:#0D47A1'&gt;Picture — follow the colored arrows (C1–C8)&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
+          <mxGeometry x="40" y="400" width="600" height="28" as="geometry"/>
         </mxCell>
 
-        <!-- ========== BUFFER ========== -->
-        <mxCell id="buf" value="" style="rounded=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=3;shadow=1;arcSize=6;" parent="1" vertex="1">
-          <mxGeometry x="320" y="196" width="320" height="300" as="geometry"/>
+        <!-- JETSON -->
+        <mxCell id="jet" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;strokeWidth=2;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="440" width="200" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="buf_title" value="&lt;b style='font-size:14px;color:#4A148C'&gt;★ NEW — 2N3904 emitter follower&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#6A1B9A'&gt;TO-92 · flat face toward you · pins left→right: &lt;b&gt;E · B · C&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="330" y="204" width="300" height="36" as="geometry"/>
+        <mxCell id="jetl" value="&lt;b style='color:#C8E6C9;font-size:13px'&gt;JETSON&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="50" y="448" width="180" height="20" as="geometry"/>
         </mxCell>
-
-        <!-- TO-92 sketch -->
-        <mxCell id="to92" value="" style="shape=trapezoid;perimeter=trapezoidPerimeter;fillColor=#ECEFF1;strokeColor=#37474F;strokeWidth=2;direction=south;" parent="1" vertex="1">
-          <mxGeometry x="430" y="256" width="90" height="70" as="geometry"/>
+        <mxCell id="j_usb" value="&lt;b style='color:#BBDEFB'&gt;USB-A&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:10px'&gt;C1 starts here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0D47A1;strokeColor=#64B5F6;strokeWidth=3;align=center;" parent="1" vertex="1">
+          <mxGeometry x="55" y="480" width="170" height="44" as="geometry"/>
         </mxCell>
-        <mxCell id="pinE" value="" style="rounded=0;fillColor=#1565C0;strokeColor=#0D47A1;" parent="1" vertex="1">
-          <mxGeometry x="440" y="326" width="8" height="28" as="geometry"/>
+        <mxCell id="j_gnd" value="&lt;b style='color:#EEE'&gt;T6 / T9 / T14 GND&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;C2 · C4 · C5 land here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212121;strokeColor=#757575;strokeWidth=2;align=center;" parent="1" vertex="1">
+          <mxGeometry x="55" y="536" width="170" height="44" as="geometry"/>
         </mxCell>
-        <mxCell id="pinB" value="" style="rounded=0;fillColor=#6A1B9A;strokeColor=#4A148C;" parent="1" vertex="1">
-          <mxGeometry x="471" y="326" width="8" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="pinC" value="" style="rounded=0;fillColor=#F57F17;strokeColor=#E65100;" parent="1" vertex="1">
-          <mxGeometry x="502" y="326" width="8" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="pinlbl" value="&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; &amp;nbsp;&amp;nbsp; &lt;b style='color:#6A1B9A'&gt;B&lt;/b&gt; &amp;nbsp;&amp;nbsp; &lt;b style='color:#E65100'&gt;C&lt;/b&gt;" style="text;html=1;align=center;fontSize=12;" parent="1" vertex="1">
-          <mxGeometry x="430" y="358" width="90" height="18" as="geometry"/>
-        </mxCell>
-        <mxCell id="to92note" value="&lt;span style='font-size:9px;color:#5D4037'&gt;2N2222 from the same kit also OK&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="400" y="376" width="150" height="16" as="geometry"/>
+        <mxCell id="j_12v" value="&lt;b style='color:#FFF'&gt;+12V bus&lt;/b&gt;&lt;br&gt;&lt;span style='color:#FFCDD2;font-size:10px'&gt;C7 starts here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#EF9A9A;strokeWidth=2;align=center;" parent="1" vertex="1">
+          <mxGeometry x="55" y="592" width="170" height="44" as="geometry"/>
         </mxCell>
 
-        <!-- Resistors -->
-        <mxCell id="r1" value="&lt;b&gt;1 kΩ&lt;/b&gt;&lt;br&gt;base" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="340" y="266" width="70" height="40" as="geometry"/>
+        <!-- PICO -->
+        <mxCell id="pico" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=3;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="380" y="440" width="220" height="220" as="geometry"/>
         </mxCell>
-        <mxCell id="r2" value="&lt;b&gt;10 kΩ&lt;/b&gt;&lt;br&gt;pull-down" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=10;" parent="1" vertex="1">
-          <mxGeometry x="340" y="416" width="70" height="40" as="geometry"/>
+        <mxCell id="picol" value="&lt;b style='color:#0D47A1;font-size:13px'&gt;PICO W&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="390" y="448" width="200" height="20" as="geometry"/>
         </mxCell>
-
-        <!-- Buffer connection labels -->
-        <mxCell id="buf_map" value="&lt;b style='color:#4A148C;font-size:11px'&gt;Connections&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#333'&gt;&lt;b style='color:#E65100'&gt;C&lt;/b&gt; ← T17 (+3.3V) direct&lt;br&gt;&lt;b style='color:#6A1B9A'&gt;B&lt;/b&gt; ← T29 via &lt;b&gt;1 kΩ&lt;/b&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; → Monk Makes &lt;b&gt;IN B&lt;/b&gt;&lt;br&gt;&lt;b style='color:#1565C0'&gt;E&lt;/b&gt; → GND via &lt;b&gt;10 kΩ&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=left;spacingLeft=6;" parent="1" vertex="1">
-          <mxGeometry x="530" y="256" width="100" height="100" as="geometry"/>
+        <mxCell id="p_usb" value="&lt;b&gt;micro-USB&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px'&gt;C1 ends here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0D47A1;strokeColor=#64B5F6;fontColor=#FFF;strokeWidth=2;align=center;" parent="1" vertex="1">
+          <mxGeometry x="400" y="480" width="180" height="40" as="geometry"/>
         </mxCell>
-
-        <!-- ========== RELAY ========== -->
-        <mxCell id="relay" value="" style="rounded=1;fillColor=#212121;strokeColor=#AB47BC;strokeWidth=3;shadow=1;" parent="1" vertex="1">
-          <mxGeometry x="720" y="196" width="280" height="200" as="geometry"/>
+        <mxCell id="p_gp15" value="&lt;b style='color:#FFF'&gt;GP15 (pin 20)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#E1BEE7;font-size:10px'&gt;C3 starts here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;strokeColor=#CE93D8;strokeWidth=3;align=center;" parent="1" vertex="1">
+          <mxGeometry x="400" y="532" width="180" height="40" as="geometry"/>
         </mxCell>
-        <mxCell id="relay_t" value="&lt;b style='color:#E1BEE7;font-size:12px'&gt;Monk Makes Dual Relay&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BCAAA4;font-size:9px'&gt;solid-state · IN needs ~4mA @ 3.3V&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="730" y="204" width="260" height="32" as="geometry"/>
-        </mxCell>
-        <mxCell id="inA" value="&lt;b&gt;IN A&lt;/b&gt; ← T11 (pump) — no change" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#9E9E9E;fontColor=#EEE;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="246" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="inB" value="&lt;b style='color:#CE93D8'&gt;IN B&lt;/b&gt; ← ★ from 2N3904 &lt;b&gt;EMITTER&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4A148C;strokeColor=#CE93D8;strokeWidth=3;fontColor=#FFF;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="284" width="240" height="32" as="geometry"/>
-        </mxCell>
-        <mxCell id="inG" value="&lt;b&gt;GND&lt;/b&gt; ← GND bus — keep" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#37474F;strokeColor=#9E9E9E;fontColor=#EEE;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
-          <mxGeometry x="740" y="326" width="240" height="28" as="geometry"/>
-        </mxCell>
-        <mxCell id="load" value="&lt;b style='color:#FFF59D'&gt;Load screws B① / B② — NOT jumpered&lt;/b&gt;&lt;br&gt;&lt;span style='color:#CFD8DC;font-size:9px'&gt;+12V→fuse→B① · B②→module DC IN+&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1B5E20;strokeColor=#81C784;fontColor=#FFF;fontSize=10;align=center;" parent="1" vertex="1">
-          <mxGeometry x="740" y="366" width="240" height="44" as="geometry"/>
+        <mxCell id="p_gnd" value="&lt;b style='color:#EEE'&gt;GND pin&lt;/b&gt;&lt;br&gt;&lt;span style='color:#BDBDBD;font-size:10px'&gt;C2 starts here&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212121;strokeColor=#9E9E9E;strokeWidth=2;align=center;" parent="1" vertex="1">
+          <mxGeometry x="400" y="584" width="180" height="40" as="geometry"/>
         </mxCell>
 
-        <!-- ARROWS / WIRES -->
-        <mxCell id="w_t29" value="" style="endArrow=block;endFill=1;strokeColor=#6A1B9A;strokeWidth=4;rounded=1;" parent="1" edge="1">
+        <!-- 220 ohm bubble -->
+        <mxCell id="r220" value="&lt;b&gt;220Ω&lt;/b&gt;&lt;br&gt;in C3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="640" y="528" width="70" height="44" as="geometry"/>
+        </mxCell>
+
+        <!-- FET -->
+        <mxCell id="fet" value="" style="rounded=1;fillColor=#EFEBE9;strokeColor=#5D4037;strokeWidth=3;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="760" y="440" width="240" height="220" as="geometry"/>
+        </mxCell>
+        <mxCell id="fetl" value="&lt;b style='color:#3E2723;font-size:13px'&gt;IRLB8721&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#5D4037'&gt;G · D · S left→right&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="770" y="448" width="220" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_g" value="&lt;b style='color:#FFF'&gt;GATE (left)&lt;/b&gt; ← C3 + C4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6A1B9A;strokeColor=#CE93D8;strokeWidth=3;fontColor=#FFF;align=left;spacingLeft=8;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="780" y="492" width="200" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_d" value="&lt;b style='color:#FFF'&gt;DRAIN (mid)&lt;/b&gt; ← C6 BLUE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C62828;strokeColor=#EF9A9A;strokeWidth=3;fontColor=#FFF;align=left;spacingLeft=8;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="780" y="536" width="200" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="f_s" value="&lt;b style='color:#EEE'&gt;SOURCE (right)&lt;/b&gt; → C5 GND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#212121;strokeColor=#9E9E9E;strokeWidth=2;fontColor=#FFF;align=left;spacingLeft=8;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="780" y="580" width="200" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="r10k" value="&lt;b&gt;10kΩ&lt;/b&gt;&lt;br&gt;C4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;align=center;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="820" y="680" width="70" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- SOLENOID -->
+        <mxCell id="sol" value="" style="rounded=1;fillColor=#37474F;strokeColor=#90A4AE;strokeWidth=3;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="1120" y="440" width="240" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="soll" value="&lt;b style='color:#ECEFF1;font-size:13px'&gt;SOLENOID&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1130" y="448" width="220" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_p" value="&lt;b style='color:#FFF'&gt;(+) RED&lt;/b&gt; ← C7 (+12V/fuse)&lt;br&gt;+ C8 band" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B71C1C;strokeColor=#EF9A9A;strokeWidth=2;align=left;spacingLeft=8;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="1140" y="484" width="200" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="s_m" value="&lt;b style='color:#FFF'&gt;(−) BLUE&lt;/b&gt; → C6 Drain&lt;br&gt;+ C8 no-band" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#0D47A1;strokeColor=#64B5F6;strokeWidth=2;align=left;spacingLeft=8;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="1140" y="540" width="200" height="44" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="diode_box" value="&lt;b style='color:#880E4F'&gt;C8 · 1N5408&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#AD1457'&gt;BAND → RED (+) · no-band → BLUE (−)&lt;br&gt;sits across the two solenoid terminals&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE4EC;strokeColor=#E91E63;strokeWidth=3;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1120" y="640" width="240" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- ARROWS C1 -->
+        <mxCell id="a_c1" value="" style="endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=5;rounded=1;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="245" y="224" as="sourcePoint"/>
-            <mxPoint x="340" y="260" as="targetPoint"/>
+            <mxPoint x="225" y="502" as="sourcePoint"/>
+            <mxPoint x="400" y="500" as="targetPoint"/>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_t29_l" value="&lt;b style='color:#6A1B9A;font-size:11px'&gt;MOVE/ADD: T29 → 1kΩ → Base&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
-          <mxGeometry x="240" y="188" width="180" height="18" as="geometry"/>
+        <mxCell id="a_c1l" value="&lt;b style='color:#1565C0;font-size:12px'&gt;C1 USB cable&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="250" y="478" width="120" height="18" as="geometry"/>
         </mxCell>
 
-        <mxCell id="w_t17" value="" style="endArrow=block;endFill=1;strokeColor=#F57F17;strokeWidth=4;rounded=1;" parent="1" edge="1">
+        <!-- C2 Pico GND to Jetson GND -->
+        <mxCell id="a_c2" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=4;rounded=1;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="245" y="284" as="sourcePoint"/>
-            <mxPoint x="500" y="300" as="targetPoint"/>
+            <mxPoint x="400" y="604" as="sourcePoint"/>
+            <mxPoint x="225" y="558" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="300" y="284"/>
-              <mxPoint x="300" y="360"/>
-              <mxPoint x="506" y="360"/>
+              <mxPoint x="300" y="604"/>
+              <mxPoint x="300" y="558"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_t17_l" value="&lt;b style='color:#E65100;font-size:11px'&gt;ADD: T17 (+3.3V) → Collector&lt;/b&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-          <mxGeometry x="250" y="360" width="200" height="18" as="geometry"/>
+        <mxCell id="a_c2l" value="&lt;b style='color:#424242;font-size:11px'&gt;C2 GND&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="250" y="570" width="70" height="16" as="geometry"/>
         </mxCell>
 
-        <mxCell id="w_emit" value="" style="endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=5;rounded=1;dashed=1;" parent="1" edge="1">
+        <!-- C3 GP15 to Gate via 220 -->
+        <mxCell id="a_c3a" value="" style="endArrow=block;endFill=1;strokeColor=#6A1B9A;strokeWidth=5;rounded=1;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="444" y="328" as="sourcePoint"/>
-            <mxPoint x="740" y="274" as="targetPoint"/>
+            <mxPoint x="580" y="552" as="sourcePoint"/>
+            <mxPoint x="640" y="550" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_c3b" value="" style="endArrow=block;endFill=1;strokeColor=#6A1B9A;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="710" y="550" as="sourcePoint"/>
+            <mxPoint x="780" y="508" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_c3l" value="&lt;b style='color:#6A1B9A;font-size:12px'&gt;C3&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="590" y="520" width="40" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- C4 Gate to GND via 10k -->
+        <mxCell id="a_c4" value="" style="endArrow=block;endFill=1;strokeColor=#F57F17;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="880" y="524" as="sourcePoint"/>
+            <mxPoint x="855" y="680" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_c4b" value="" style="endArrow=block;endFill=1;strokeColor=#F57F17;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="820" y="700" as="sourcePoint"/>
+            <mxPoint x="140" y="636" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="444" y="460"/>
-              <mxPoint x="680" y="460"/>
-              <mxPoint x="680" y="274"/>
+              <mxPoint x="140" y="700"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_emit_l" value="&lt;b style='color:#0D47A1;font-size:12px'&gt;★ MOVE: old IN B wire end → land on EMITTER (not on T29)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#1565C0'&gt;Other end of that wire stays on Monk Makes header IN B&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-          <mxGeometry x="460" y="468" width="380" height="36" as="geometry"/>
+        <mxCell id="a_c4l" value="&lt;b style='color:#E65100;font-size:11px'&gt;C4 10kΩ Gate→GND&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="160" y="708" width="160" height="16" as="geometry"/>
         </mxCell>
 
-        <mxCell id="w_pd" value="" style="endArrow=block;endFill=1;strokeColor=#424242;strokeWidth=3;rounded=1;" parent="1" edge="1">
+        <!-- C5 Source to GND -->
+        <mxCell id="a_c5" value="" style="endArrow=block;endFill=1;strokeColor=#212121;strokeWidth=5;rounded=1;" parent="1" edge="1">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="375" y="430" as="sourcePoint"/>
-            <mxPoint x="150" y="368" as="targetPoint"/>
+            <mxPoint x="780" y="596" as="sourcePoint"/>
+            <mxPoint x="225" y="610" as="targetPoint"/>
             <Array as="points">
-              <mxPoint x="375" y="500"/>
-              <mxPoint x="150" y="500"/>
+              <mxPoint x="720" y="620"/>
+              <mxPoint x="720" y="660"/>
+              <mxPoint x="260" y="660"/>
+              <mxPoint x="260" y="610"/>
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="w_pd_l" value="&lt;b style='color:#424242;font-size:10px'&gt;ADD: Emitter —10kΩ— GND&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
-          <mxGeometry x="180" y="508" width="180" height="16" as="geometry"/>
+        <mxCell id="a_c5l" value="&lt;b style='color:#212121;font-size:11px'&gt;C5 Source→GND&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="662" width="140" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- SCHEMATIC ASCII BOX -->
-        <mxCell id="schem" value="&lt;b style='font-size:13px;color:#1A237E'&gt;Schematic (emitter follower — non-inverting)&lt;/b&gt;&lt;br&gt;&lt;font face='Courier New' style='font-size:11px;color:#111'&gt;&lt;br&gt;T17 (+3.3V) ──────────── Collector (C)&lt;br&gt;&lt;br&gt;T29 (GPIO) ──── 1 kΩ ──── Base (B)     2N3904&lt;br&gt;&lt;br&gt;                    Emitter (E) ────┬──── Monk Makes IN B&lt;br&gt;                                    │&lt;br&gt;                                  10 kΩ&lt;br&gt;                                    │&lt;br&gt;                                   GND&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3F51B5;strokeWidth=2;align=left;spacingLeft=14;spacingTop=8;" parent="1" vertex="1">
-          <mxGeometry x="1020" y="150" width="360" height="220" as="geometry"/>
+        <!-- C6 BLUE Drain -->
+        <mxCell id="a_c6" value="" style="endArrow=block;endFill=1;strokeColor=#1565C0;strokeWidth=6;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1140" y="562" as="sourcePoint"/>
+            <mxPoint x="980" y="552" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_c6l" value="&lt;b style='color:#0D47A1;font-size:12px'&gt;C6 BLUE (−)→Drain&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="990" y="568" width="150" height="16" as="geometry"/>
         </mxCell>
 
-        <!-- REMOVE / KEEP -->
-        <mxCell id="remove" value="&lt;b style='color:#B71C1C;font-size:13px'&gt;REMOVE&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;• Channel B &lt;b&gt;load jumper&lt;/b&gt; (B① shorted to B②) — restore SSR gating&lt;br&gt;• Any direct wire &lt;b&gt;T13 / T22 / T29 → IN B&lt;/b&gt; (GPIO alone is too weak)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=2;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="1020" y="390" width="360" height="90" as="geometry"/>
+        <!-- C7 +12V to RED -->
+        <mxCell id="a_c7" value="" style="endArrow=block;endFill=1;strokeColor=#C62828;strokeWidth=6;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="225" y="614" as="sourcePoint"/>
+            <mxPoint x="1140" y="506" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="320" y="760"/>
+              <mxPoint x="1200" y="760"/>
+              <mxPoint x="1200" y="528"/>
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="keep" value="&lt;b style='color:#1B5E20;font-size:13px'&gt;KEEP (no change)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;• T36 → Wago → module SIG + 10kΩ pull-down to GND&lt;br&gt;• +12V → 3A fuse → B① · B② → module DC IN+&lt;br&gt;• IN A ← T11 (pump) · relay header GND · flyback · OUT±&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="1020" y="496" width="360" height="90" as="geometry"/>
-        </mxCell>
-
-        <!-- STEP LIST -->
-        <mxCell id="steps" value="&lt;b style='font-size:14px;color:#4A148C'&gt;Build order — wire moves&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;0.&lt;/b&gt; Power OFF. Unplug 12V. Pull solenoid spades if you want extra safety.&lt;br&gt;&lt;b&gt;1. REMOVE&lt;/b&gt; Channel B load jumper between screws &lt;b&gt;B① ↔ B②&lt;/b&gt; (if present).&lt;br&gt;&lt;b&gt;2. FIND&lt;/b&gt; the wire currently on Monk Makes &lt;b&gt;IN B&lt;/b&gt;. Its other end is on &lt;b&gt;T13 or T22 or T29&lt;/b&gt; — &lt;b style='color:#B71C1C'&gt;unscrew that Jetson end only&lt;/b&gt;. Leave the IN B header end attached.&lt;br&gt;&lt;b&gt;3. ADD 2N3904&lt;/b&gt; (flat face toward you): legs &lt;b&gt;E · B · C&lt;/b&gt; left to right. Use Wagos or a small proto board.&lt;br&gt;&lt;b&gt;4. ADD&lt;/b&gt; &lt;b&gt;1 kΩ&lt;/b&gt;: one leg → &lt;b&gt;T29&lt;/b&gt;, other leg → transistor &lt;b&gt;Base&lt;/b&gt;.&lt;br&gt;&lt;b&gt;5. ADD&lt;/b&gt; wire: &lt;b&gt;T17 (+3.3V) → Collector&lt;/b&gt;.&lt;br&gt;&lt;b&gt;6. MOVE&lt;/b&gt; the free end of the IN B wire (from step 2) onto the transistor &lt;b&gt;Emitter&lt;/b&gt; (same node as step 7).&lt;br&gt;&lt;b&gt;7. ADD&lt;/b&gt; &lt;b&gt;10 kΩ&lt;/b&gt;: Emitter node → &lt;b&gt;GND&lt;/b&gt; (T6/T9/T14).&lt;br&gt;&lt;b&gt;8. CONFIRM&lt;/b&gt; relay load path still: &lt;b&gt;+12V → fuse → B①&lt;/b&gt; and &lt;b&gt;B② → module DC IN+&lt;/b&gt; (not jumpered).&lt;br&gt;&lt;br&gt;&lt;b style='color:#1B5E20'&gt;Verify (solenoid optional):&lt;/b&gt;&lt;br&gt;&lt;b&gt;V1.&lt;/b&gt; Dashboard: hardwired checkbox &lt;b&gt;OFF&lt;/b&gt; (gated mode). Soft-restart if you just changed it.&lt;br&gt;&lt;b&gt;V2.&lt;/b&gt; Solenoid tab → &lt;b&gt;Hold CH2&lt;/b&gt;: Channel B LED must go &lt;b&gt;bright&lt;/b&gt;. Meter Emitter / IN B ≈ &lt;b&gt;2.4–2.8V&lt;/b&gt; (Vbe drop from 3.3V) while held.&lt;br&gt;&lt;b&gt;V3.&lt;/b&gt; &lt;b&gt;Click Test&lt;/b&gt;: two clicks (open+close). MOSFET cold at idle.&lt;br&gt;&lt;b&gt;V4.&lt;/b&gt; Boot test: FETs stay cold with &lt;b&gt;no manual switch&lt;/b&gt; — CH2 opens itself at boot. Steady state = power Jetson only.&lt;br&gt;&lt;br&gt;&lt;span style='color:#5D4037;font-size:11px'&gt;&lt;b&gt;Software:&lt;/b&gt; already on BCM 5 / T29 for CH2 (`RELAY_SOL12V_PIN=5`). After buffer works: set &lt;b&gt;module_12v_hardwired=false&lt;/b&gt;. If LED still dark: check 2N3904 orientation (E/B/C), T17 really +3.3V, and common GND.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;strokeWidth=2;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;fontSize=11;fontColor=#222;" parent="1" vertex="1">
-          <mxGeometry x="40" y="540" width="960" height="420" as="geometry"/>
-        </mxCell>
-
-        <!-- PARTS -->
-        <mxCell id="parts" value="&lt;b style='font-size:13px;color:#E65100'&gt;Parts (you have)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;• 2N3904 or 2N2222 (BOJACK kit)&lt;br&gt;• 1 kΩ ¼W&lt;br&gt;• 10 kΩ ¼W&lt;br&gt;• hookup wire / Wago 221&lt;br&gt;&lt;br&gt;&lt;b&gt;Why this works&lt;/b&gt;&lt;br&gt;GPIO only supplies base current (~mA). Collector current for IN B (~4mA) comes from T17 +3.3V — Yahboom pad no longer has to source the SSR.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#EF6C00;strokeWidth=2;align=left;spacingLeft=12;spacingTop=8;fontSize=11;" parent="1" vertex="1">
-          <mxGeometry x="1020" y="610" width="360" height="200" as="geometry"/>
+        <mxCell id="a_c7l" value="&lt;b style='color:#C62828;font-size:12px'&gt;C7 +12V → 3A fuse → RED (+)&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="700" y="740" width="240" height="18" as="geometry"/>
         </mxCell>
 
-        <!-- SIG reminder -->
-        <mxCell id="sig_keep" value="&lt;b style='color:#E65100'&gt;SIG path unchanged&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:10px;color:#5D4037'&gt;T36 → Wago #1 → module SIG&lt;br&gt;10kΩ SIG→GND · 1N5408 on coil&lt;br&gt;Module 12V still via Relay CH2 load screws&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FF8F00;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
-          <mxGeometry x="1020" y="830" width="360" height="90" as="geometry"/>
+        <!-- C8 diode across -->
+        <mxCell id="a_c8" value="" style="endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#E91E63;strokeWidth=4;rounded=1;dashed=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1240" y="528" as="sourcePoint"/>
+            <mxPoint x="1240" y="640" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a_c8l" value="&lt;b style='color:#C2185B;font-size:11px'&gt;C8 across coil&lt;/b&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1250" y="580" width="110" height="16" as="geometry"/>
         </mxCell>
 
-        <mxCell id="footer" value="&lt;span style='font-size:10px;color:#666'&gt;Spec: HW-001 §5.5 Rev N · Diagram: diagrams/eco004_mosfet_module_option.drawio · Software pin for CH2 GPIO: T29 / BCM 5 (after buffer)&lt;/span&gt;" style="text;html=1;align=left;" parent="1" vertex="1">
-          <mxGeometry x="40" y="980" width="900" height="20" as="geometry"/>
+        <!-- OHM + KEEP -->
+        <mxCell id="ohm" value="&lt;b style='font-size:13px;color:#BF360C'&gt;Before wiring: check FET (loose)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;1) Short Gate↔Source 2s.&lt;br&gt;2) G↔S and G↔D = &lt;b&gt;OL&lt;/b&gt; both ways.&lt;br&gt;3) D↔S = &lt;b&gt;OL&lt;/b&gt; (Ω mode).&lt;br&gt;4) Diode: red on S, black on D ≈ 0.3–0.7V; reverse OL.&lt;br&gt;Fail any → scrap, use fresh FET.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#EF6C00;strokeWidth=2;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="40" y="800" width="400" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="keep" value="&lt;b style='font-size:13px;color:#1B5E20'&gt;Do NOT move (pump)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;• Cable &lt;b&gt;T11 → Relay IN A&lt;/b&gt; stays&lt;br&gt;• Pump +12V / GND / flyback stays&lt;br&gt;• Relay header GND stays&lt;br&gt;• No 2N3904 on this build&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="460" y="800" width="300" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sw" value="&lt;b style='font-size:13px;color:#E65100'&gt;Software note&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#333'&gt;Code still uses T36 SIG + T29 CH2.&lt;br&gt;These cables will &lt;b&gt;not&lt;/b&gt; click the valve until Pico FIRE firmware is added. Build the cables now; Click Test later.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FF8F00;strokeWidth=2;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="780" y="800" width="360" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="order" value="&lt;b style='font-size:14px;color:#0D47A1'&gt;Order to do it&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:12px;color:#222'&gt;&lt;b&gt;1.&lt;/b&gt; Unplug 12V · do &lt;b&gt;R1–R4&lt;/b&gt; · Ω-check FET&lt;br&gt;&lt;b&gt;2.&lt;/b&gt; Plug &lt;b&gt;C1&lt;/b&gt; (USB Jetson↔Pico)&lt;br&gt;&lt;b&gt;3.&lt;/b&gt; Connect &lt;b&gt;C2&lt;/b&gt; Pico GND→T6/T9/T14&lt;br&gt;&lt;b&gt;4.&lt;/b&gt; Connect &lt;b&gt;C3&lt;/b&gt; GP15→220Ω→Gate&lt;br&gt;&lt;b&gt;5.&lt;/b&gt; Connect &lt;b&gt;C4&lt;/b&gt; 10kΩ Gate→GND&lt;br&gt;&lt;b&gt;6.&lt;/b&gt; Connect &lt;b&gt;C5&lt;/b&gt; Source→GND&lt;br&gt;&lt;b&gt;7.&lt;/b&gt; Connect &lt;b&gt;C6&lt;/b&gt; BLUE→Drain&lt;br&gt;&lt;b&gt;8.&lt;/b&gt; Connect &lt;b&gt;C7&lt;/b&gt; +12V→fuse→RED&lt;br&gt;&lt;b&gt;9.&lt;/b&gt; Install &lt;b&gt;C8&lt;/b&gt; diode across RED/BLUE (band on RED)&lt;br&gt;&lt;b&gt;10.&lt;/b&gt; Run &lt;b&gt;AFTER-WIRE Ω table&lt;/b&gt; below (12V still OFF)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#3F51B5;strokeWidth=2;align=left;spacingLeft=12;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="1160" y="800" width="400" height="240" as="geometry"/>
+        </mxCell>
+
+        <!-- AFTER-WIRE RESISTANCE TABLE -->
+        <mxCell id="ohm_after" value="&lt;b style='font-size:15px;color:#BF360C'&gt;★ AFTER WIRED — expected resistance (12V UNPLUGGED · Jetson OFF or USB only)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#B71C1C'&gt;Do NOT measure with +12V connected. Pico may stay on USB. Probes on the named pads/wires.&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;table cellpadding='5' style='font-size:12px;color:#111;border-collapse:collapse;width:100%'&gt;&lt;tr style='background:#FFE0B2'&gt;&lt;td&gt;&lt;b&gt;Probe A&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;Probe B&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;Expect (Ω / diode)&lt;/b&gt;&lt;/td&gt;&lt;td&gt;&lt;b&gt;If wrong&lt;/b&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Pico GP15&lt;/td&gt;&lt;td&gt;IRLB8721 Gate&lt;/td&gt;&lt;td&gt;&lt;b&gt;~220 Ω&lt;/b&gt; (±10%)&lt;/td&gt;&lt;td&gt;Wrong resistor / open C3&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FAFAFA'&gt;&lt;td&gt;IRLB8721 Gate&lt;/td&gt;&lt;td&gt;GND (T14 / Source)&lt;/td&gt;&lt;td&gt;&lt;b&gt;~10 kΩ&lt;/b&gt; (±10%)&lt;/td&gt;&lt;td&gt;Missing C4 pull-down / shorted Gate&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Pico GP15&lt;/td&gt;&lt;td&gt;GND&lt;/td&gt;&lt;td&gt;&lt;b&gt;~10.2 kΩ&lt;/b&gt; (220 + 10k in series to GND)&lt;/td&gt;&lt;td&gt;Gate net wiring error&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FAFAFA'&gt;&lt;td&gt;IRLB8721 Source&lt;/td&gt;&lt;td&gt;GND bus (T6/T9/T14)&lt;/td&gt;&lt;td&gt;&lt;b&gt;~0 Ω&lt;/b&gt; (continuity beep)&lt;/td&gt;&lt;td&gt;C5 not landed / bad Wago&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Pico GND pin&lt;/td&gt;&lt;td&gt;GND bus / Source&lt;/td&gt;&lt;td&gt;&lt;b&gt;~0 Ω&lt;/b&gt;&lt;/td&gt;&lt;td&gt;C2 missing — fix before 12V&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FAFAFA'&gt;&lt;td&gt;Solenoid BLUE (−)&lt;/td&gt;&lt;td&gt;IRLB8721 Drain&lt;/td&gt;&lt;td&gt;&lt;b&gt;~0 Ω&lt;/b&gt;&lt;/td&gt;&lt;td&gt;C6 open&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Solenoid RED (+)&lt;/td&gt;&lt;td&gt;+12V side of fuse (load side)&lt;/td&gt;&lt;td&gt;&lt;b&gt;~0 Ω&lt;/b&gt;&lt;/td&gt;&lt;td&gt;C7 open / fuse out&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FAFAFA'&gt;&lt;td&gt;Fuse input (+12V bus)&lt;/td&gt;&lt;td&gt;Fuse output (→ RED)&lt;/td&gt;&lt;td&gt;&lt;b&gt;~0 Ω&lt;/b&gt; (good fuse)&lt;/td&gt;&lt;td&gt;Blown fuse = OL&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Solenoid RED (+)&lt;/td&gt;&lt;td&gt;Solenoid BLUE (−)&lt;/td&gt;&lt;td&gt;&lt;b&gt;Coil ~ few Ω to tens of Ω&lt;/b&gt; (GOODRIG ~6–15 Ω typical) + diode in parallel — one polarity lower in diode mode&lt;/td&gt;&lt;td&gt;OL = open coil/wire; ~0 Ω = shorted coil or dead FET on&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FCE4EC'&gt;&lt;td&gt;1N5408 band (cathode / RED)&lt;/td&gt;&lt;td&gt;1N5408 no-band (anode / BLUE)&lt;/td&gt;&lt;td&gt;&lt;b&gt;Diode mode:&lt;/b&gt; black on band, red on no-band → ~0.5–0.8 V; reverse → OL&lt;/td&gt;&lt;td&gt;Band on wrong side / open diode&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;IRLB8721 Drain&lt;/td&gt;&lt;td&gt;IRLB8721 Source (G shorted sense: gate ~0 via 10k)&lt;/td&gt;&lt;td&gt;&lt;b&gt;Ω mode: OL or very high&lt;/b&gt; (channel OFF). Diode: red on S, black on D → ~0.3–0.7 V&lt;/td&gt;&lt;td&gt;Few Ω both ways = shorted FET — replace&lt;/td&gt;&lt;/tr&gt;&lt;tr style='background:#FAFAFA'&gt;&lt;td&gt;IRLB8721 Gate&lt;/td&gt;&lt;td&gt;IRLB8721 Drain&lt;/td&gt;&lt;td&gt;&lt;b&gt;OL / high&lt;/b&gt; (not a low-Ω path)&lt;/td&gt;&lt;td&gt;Low Ω = damaged FET or solder bridge&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;+12V bus (fuse input)&lt;/td&gt;&lt;td&gt;GND&lt;/td&gt;&lt;td&gt;&lt;b&gt;OL&lt;/b&gt; with 12V unplugged (no hard short). Coil path is through fuse→RED→coil→BLUE→Drain — not a DC short to GND when FET off&lt;/td&gt;&lt;td&gt;~0 Ω = short — stop, find fault before power&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;br&gt;&lt;span style='font-size:11px;color:#555'&gt;Tolerance: resistor values ±5–10% OK. Pico GPIO may add slight parallel paths when powered — if GP15↔GND reads much lower than ~10k with Pico on, unplug USB and recheck Gate↔GND = 10k alone.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#E65100;strokeWidth=3;align=left;spacingLeft=14;spacingRight=14;spacingTop=10;" parent="1" vertex="1">
+          <mxGeometry x="40" y="1060" width="1520" height="420" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="footer" value="&lt;span style='font-size:10px;color:#666'&gt;HW-001 §5.4 Rev O · diagrams/eco004_mosfet_module_option.drawio · C1–C8 cable map + after-wire Ω table · 12V OFF for all Ω checks&lt;/span&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="1500" width="900" height="20" as="geometry"/>
         </mxCell>
       </root>
     </mxGraphModel>
