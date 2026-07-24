@@ -37,3 +37,8 @@
 2026-07-23 | [DIAG] | Mixed LEDs: fix gate_hold=SIG-only; no-click with CH2 lit → load path or still need 2N3904
 2026-07-23 | [VERIFY] | T29 gated works without transistor after reseat; hardwired=false persisted for reboot test
 2026-07-23 | [PROCUREMENT] | parts.csv Option B: Pico W + diode kit + USB; have IRLB8721 + BOJACK; total ~2034.89 CAD
+2026-07-24 | [DIAGRAM/SPEC] | Option B Rev O: eco004_mosfet_module_option.drawio Pico+IRLB8721+1N5408 wire moves; HW-001 §5.4; parts received
+2026-07-24 | [SOFTWARE] | Still legacy T36 SIG + T29/CH2 — Pico CDC FIRE driver not landed yet
+2026-07-24 | [DIAGRAM] | Option B cable map C1–C8 END A→END B + colored arrows; clearer install view
+2026-07-24 | [DIAGRAM] | Option B after-wire Ω table on eco004_mosfet_module_option.drawio (12V OFF)
+2026-07-24 | [PROCESS] | AGENTS.md: commit+push catch-up for Option B Rev O specs/BOM/diagram

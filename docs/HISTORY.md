@@ -1096,3 +1096,15 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-23 — [PROCUREMENT] Option B Pico solenoid path → parts.csv
 - **[BOM]** `parts.csv`: to-order Pico W SCO918 ($15.90), 8-value diode kit w/ 1N5408 ($10), USB-A↔Micro-B ($8); ON HAND IRLB8721 5-pack ($9), BOJACK transistor kit ($14.99). Prior 1N4007 already on BOM (no double-count). Grand total 1985 → **2034.89** CAD.
 - **[INTENT]** Option B: Jetson→USB→Pico→IRLB8721→solenoid (drop dual-MOS module + CH2 for valve); pump stays on Monk Makes CH1.
+
+## 2026-07-24 — [DIAGRAM] Option B cable map clarity (C1–C8)
+- **[DIAGRAM]** `eco004_mosfet_module_option.drawio`: rewritten as explicit **cable map** — numbered C1–C8 with END A → END B for every connection, R1–R4 remove list, colored arrows on layout picture, build order 1–9.
+
+## 2026-07-24 — [DIAGRAM] Option B after-wire Ω table
+- **[DIAGRAM]** Same drawio: added **AFTER WIRED** resistance/diode table (GP15↔Gate ~220Ω, Gate↔GND ~10kΩ, Source/Pico GND continuity, coil/fuse/diode/FET checks). 12V must stay unplugged for Ω tests.
+
+## 2026-07-24 — [DIAGRAM/SPEC] Option B Rev O install guide (Pico + IRLB8721 + 1N5408)
+- **[PROCUREMENT]** Pico W, diode kit, USB-A↔Micro-B marked **have** in `parts.csv` (received).
+- **[SPEC]** `HW-001` §5.4 Rev O = production Option B; §5.4b/§5.5 module+CH2 marked legacy. `SW-001` §2.7 notes hardware cutover pending Pico CDC driver (live code still T36 SIG + T29/CH2).
+- **[DIAGRAM]** Rewrote `diagrams/eco004_mosfet_module_option.drawio` — wire-move guide: remove dual-MOS module / T36 / T29–CH2 from valve; add Pico USB+GP15 → 220Ω → IRLB8721 G, 10k G→GND, S→GND, D←solenoid(−), +12V fused→solenoid(+), 1N5408 across coil (band→+). Includes pre-wire FET Ω/diode health table. **No 2N3904** on this path.
+- **[SOFTWARE CHECK]** Confirmed `hardware.py`: `RELAY_SOL12V_PIN=5` (CH2), `SOLENOID_LINE_NAME=PR.05` (T36). Click Test will not drive Option B until Pico firmware/driver ships.

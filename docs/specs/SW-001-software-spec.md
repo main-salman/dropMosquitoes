@@ -94,11 +94,12 @@ The R385 pump has **no pressure switch** and must not run continuously against a
 closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
-**MOSFET module 12V (HW-001 §5.5 Rev N):** Production is **automated gated CH2**
-(`module_12v_hardwired=false`) after the 2N3904 buffer is installed — no operator
-MODULE 12V switch. Software opens CH2 at boot/idle and closes it when armed/firing.
-Interim without buffer: `hardwired=true` + jumper (manual boot switch only until
-buffer is fitted).
+**Solenoid drive hardware (HW-001 §5.4 Rev O — Option B):** Production path is
+**Jetson USB CDC → Pico W → GP15 → IRLB8721 → coil** (5 ms class pulses). Dual-MOS
+module + Relay CH2 interlock + 2N3904 buffer are **superseded for the valve**;
+pump remains on Monk Makes CH1. **Software still implements the legacy module
+path** (PR.05 SIG + BCM5/CH2) until the Pico FIRE driver lands — see diagram
+`eco004_mosfet_module_option.drawio`.
 
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance

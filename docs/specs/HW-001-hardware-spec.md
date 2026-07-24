@@ -126,14 +126,39 @@ The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses 
 | **UART GND** | Pin 14 | — | Terminal 14 | BLACK | Shared logic ground with Gimbal RC-GND |
 | **Status Buzzer** | Pin 7 | BCM 4 | Terminal 7 | WHITE | Active Piezo Buzzer signal pin |
 
-### 5.4 Solenoid Switching — Dual-MOSFET Trigger Module (ECO-2026-004 Rev G)
+### 5.4 Solenoid Switching — Option B Pico + IRLB8721 (ECO-2026-004 Rev O) — PRODUCTION
 
-> **Supersedes the discrete IRLB8721 circuit (Rev C/D).** The solenoid coil is switched by a
-> **D4184-class dual-MOSFET trigger module** (DC 5–36V, 15A, trigger 3.3–20V).
-> **SIG drive:** BCM 16 (Pin 36 / **PR.05** / Terminal 36, GREEN wire) via **libgpiod**
-> push-pull with PADCTL `0x05` written to pad register `0x90` first (Yahboom pads boot
-> tristated). A **10kΩ (or 4.7kΩ) pull-down from SIG → GND** keeps the gate low whenever
-> the pin is not actively driven.
+> **Production path (2026-07-24).** Jetson USB serial → **Raspberry Pi Pico W** → precise
+> GPIO pulse (target **5 ms**) → **IRLB8721** low-side switch → GOODRIG solenoid.
+> **Drops** the dual-MOSFET module, Jetson SIG (T36), and Relay CH2 module-12V interlock
+> for the valve. Pump stays on Monk Makes **CH1** (T11). WiFi on the Pico is unused.
+> Wiring guide: `diagrams/eco004_mosfet_module_option.drawio`.
+
+```
+Jetson USB-A ── Micro-B ── Pico W (5V + CDC serial "FIRE")
+Pico GP15 ──[220 Ω]── IRLB8721 Gate ──[10 kΩ]── GND
+Pico GND ─────────────────────────────── common GND bus
++12V ──[3A fuse]── solenoid (+) RED
+solenoid (−) BLUE ── IRLB8721 Drain
+IRLB8721 Source ── GND bus
+1N5408 across coil: band/cathode → solenoid (+); anode → solenoid (−)
+```
+
+**Component Notes:**
+- **1N5408 (3A) flyback is MANDATORY** across the coil only (not on the Pico, not on CH1).
+- **IRLB8721 TO-220** pinout (front/label toward you, tab behind): **G · D · S** left→right.
+- **Gate network:** ~220 Ω series (Pico GP15 → Gate) + **10 kΩ Gate→GND** (keeps FET off if Pico reboots).
+- **Common GND required:** Pico GND pin (or USB GND) must share the 12V PSU / Jetson GND bus.
+- **Do NOT** use 2N3904/2N2222 to switch the 2A coil — those are logic-only.
+- **Pre-install FET check** (part out of circuit, gate shorted to source first): see diagram Ω table.
+- Software still on Rev G/N module path until Pico CDC driver lands — hardware may be built first.
+
+### 5.4b Legacy — Dual-MOSFET Trigger Module (ECO-2026-004 Rev G) — SUPERSEDED by §5.4
+
+> **Superseded by Option B (§5.4 Rev O).** Kept for history / rollback.
+> The solenoid coil was switched by a **D4184-class dual-MOSFET trigger module**
+> (DC 5–36V, 15A, trigger 3.3–20V). **SIG drive:** BCM 16 (Pin 36 / **PR.05** /
+> Terminal 36, GREEN) via **libgpiod** + PADCTL. **10kΩ SIG→GND** pull-down.
 
 ```
 T36 (BCM 16 / PR.05, GREEN) ──┬── module SIG
@@ -157,9 +182,12 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
   re-asserts SIG LOW every 1s while not firing.
 - Failure signature of a dead module: **OUT+ ↔ OUT− ≈ 9Ω** (healthy = open).
 
-### 5.5 Solenoid 12V Boot + Runtime Interlock — Relay CH2 (ECO-2026-004 Rev H/I)
+### 5.5 Legacy — Relay CH2 Module 12V Interlock (ECO-2026-004 Rev H–N) — SUPERSEDED by §5.4
 
-> **Problem (boot):** The Orin Nano boot firmware actively DRIVES PR.05 HIGH during the boot
+> **Superseded by Option B (§5.4 Rev O).** CH2 is no longer required for the solenoid valve.
+> Keep Monk Makes **CH1** for the pump. Leave CH2 disconnected / unused after Option B cutover.
+>
+> **Historical problem (boot):** The Orin Nano boot firmware actively DRIVES PR.05 HIGH during the boot
 > window (before `app.py` claims the line). A driven pin defeats any pull-down → the MOSFET
 > module turns on if it has 12V. Software cannot close this window.
 >
@@ -200,9 +228,10 @@ module OUT+ ── solenoid (+) RED      module OUT− ── solenoid (−) BLU
 
 - **Relay:** Monk Makes Dual Relay Module (×2 boards ordered)
   - CH1: Pump On/Off control (GPIO 17 → continuous run mode with accumulator)
-  - CH2: Solenoid 12V boot interlock (BCM 5 / T29 → gates MOSFET module DC IN+, §5.5)
+  - CH2: unused after Option B (§5.4 Rev O); formerly module 12V interlock (§5.5 legacy)
 - **Solenoid Valve:** GOODRIG 12V DC Direct-Acting NC, 1/4" FNPT (fluid gating, replaces relay-timed pump pulses)
-- **MOSFET Switch:** D4184-class dual-MOSFET trigger module (SIG via BCM 16/PR.05 + 10kΩ pull-down; supersedes discrete IRLB8721)
+- **MOSFET Switch (production):** IRLB8721PBF low-side, gate from Pico W GP15 (§5.4 Rev O)
+- **Pulse timer:** Raspberry Pi Pico W (USB CDC from Jetson; WiFi unused)
 - **IR Illumination:** Univivi 8-LED 850nm (IP67, 90° wide angle, fixed to post)
 
 ### 6.1 Critical Electrical Safety — Flyback Diode (ECO-2026-001)
