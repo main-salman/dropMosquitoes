@@ -1103,6 +1103,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-24 — [DIAGRAM] Option B after-wire Ω table
 - **[DIAGRAM]** Same drawio: added **AFTER WIRED** resistance/diode table (GP15↔Gate ~220Ω, Gate↔GND ~10kΩ, Source/Pico GND continuity, coil/fuse/diode/FET checks). 12V must stay unplugged for Ω tests.
 
+## 2026-07-25 — [DIAGRAM] Fix C5 arrow landing on +12V (looked like Source→12V)
+- **[DIAGRAM]** `eco004_mosfet_module_option.drawio`: C5 Source arrow tip was at the red **+12V** box coords — retargeted to black **GND** (T6/T9/T14). Labels: Source → GND only (never +12V); +12V is C7→solenoid RED only.
+
 ## 2026-07-24 — [DIAGRAM/SPEC] Option B Rev O install guide (Pico + IRLB8721 + 1N5408)
 - **[PROCUREMENT]** Pico W, diode kit, USB-A↔Micro-B marked **have** in `parts.csv` (received).
 - **[SPEC]** `HW-001` §5.4 Rev O = production Option B; §5.4b/§5.5 module+CH2 marked legacy. `SW-001` §2.7 notes hardware cutover pending Pico CDC driver (live code still T36 SIG + T29/CH2).

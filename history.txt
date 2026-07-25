@@ -42,3 +42,4 @@
 2026-07-24 | [DIAGRAM] | Option B cable map C1–C8 END A→END B + colored arrows; clearer install view
 2026-07-24 | [DIAGRAM] | Option B after-wire Ω table on eco004_mosfet_module_option.drawio (12V OFF)
 2026-07-24 | [PROCESS] | AGENTS.md: commit+push catch-up for Option B Rev O specs/BOM/diagram
+2026-07-25 | [DIAGRAM] | Fix C5 Source arrow off +12V box → GND; clarify Source≠12V, C7=RED only
