@@ -1112,6 +1112,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SW]** `pico_solenoid.py` — Jetson USB CDC client (auto-detect ttyACM/by-id).
 - **[SW]** `hardware.RelayController` — pulses via Pico `FIRE <ms>`; legacy module path retained as `legacy_module`.
 - **[SETTINGS]** `settings_store` defaults: `solenoid_driver=pico`, `pico_port=""`, `pico_baud=115200`; `app.apply_settings_to_runtime` syncs driver.
+- **[DIAGRAM]** Software note on `eco004_mosfet_module_option.drawio` updated to LIVE Pico FIRE path.
 
 ## 2026-07-24 — [DIAGRAM/SPEC] Option B Rev O install guide (Pico + IRLB8721 + 1N5408)
 - **[PROCUREMENT]** Pico W, diode kit, USB-A↔Micro-B marked **have** in `parts.csv` (received).
