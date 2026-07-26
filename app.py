@@ -110,11 +110,23 @@ def apply_settings_to_runtime(data: dict | None = None) -> dict:
     acc = data.get("accumulator") or {}
     if acc:
         accum.update_config(acc)
-    # Sync 12V mode (default gated — Channel B not jumpered; T29 → IN B)
+    # Option B (default): Pico USB CDC solenoid. Legacy: module SIG + CH2.
+    _pico_port = acc.get("pico_port", None)
+    if _pico_port == "":
+        _pico_port = None  # keep auto-detect / existing connection
+    _pico_baud = acc.get("pico_baud", None)
+    relay.set_solenoid_driver(
+        acc.get("solenoid_driver", "pico"),
+        pico_port=_pico_port,
+        pico_baud=_pico_baud,
+    )
+    # Legacy-only 12V mode (ignored for valve when solenoid_driver=pico)
     relay.set_module_12v_hardwired(bool(acc.get("module_12v_hardwired", False)))
     applied["accumulator"] = {
         **(accum.get_status().get("config") or {}),
         "module_12v_hardwired": relay.get_status().get("module_12v_hardwired"),
+        "solenoid_driver": relay.get_status().get("solenoid_driver"),
+        "pico": relay.get_status().get("pico"),
     }
 
     servo = data.get("servo") or {}

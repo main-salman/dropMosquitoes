@@ -31,8 +31,8 @@ except ImportError:
     JETSON_AVAILABLE = False
     print("[hardware] WARNING: Jetson.GPIO not found. Running in STUB mode.")
 
-# ECO-2026-004 Rev E: solenoid trigger relocated from PY.00 (BCM 27 / T13) to
-# PR.05 (BCM 16 / Pin 36 / Terminal 36), driven via libgpiod.
+# ECO-2026-004 Rev O: solenoid production path = Pico W USB CDC → GP15 → IRLB8721
+# (pico_solenoid.py). Legacy Rev E path: PR.05 (T36) → dual-MOS module SIG.
 # Why: PY.00 is a weak SPI-function pad on the Yahboom carrier — even via libgpiod
 # it only sources ~1.9V into the dual-MOSFET module's internal pull-down, below the
 # 3.3V trigger threshold (module never switched). PR.05 is the sister pad of the
@@ -149,22 +149,25 @@ except ImportError:
 # See: https://www.jetsonhacks.com/nvidia-jetson-orin-nano-gpio-header-pinout/
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 RELAY_PUMP_PIN = 17       # BCM 17 = Pin 11 → IDC40P Terminal 11 → Relay CH1 (R385 Pump) [Jetson.GPIO]
-RELAY_SOL12V_PIN = 5      # BCM 5 = Pin 29 → IDC40P Terminal 29 → Relay CH2 IN (module 12V)
-SOLENOID_PIN = 16         # BCM 16 = Pin 36 (informational; solenoid driven via libgpiod below)
+RELAY_SOL12V_PIN = 5      # BCM 5 = Pin 29 → IDC40P Terminal 29 → Relay CH2 IN (legacy module 12V)
+SOLENOID_PIN = 16         # BCM 16 = Pin 36 (legacy module SIG; unused when solenoid_driver=pico)
 
-# Solenoid trigger (dual-MOSFET module SIG) — driven via libgpiod (see Rev E note above).
+# Legacy solenoid trigger (dual-MOSFET module SIG) — libgpiod when solenoid_driver=legacy_module.
 SOLENOID_GPIOCHIP = "gpiochip0"
 SOLENOID_LINE_NAME = "PR.05"   # BCM 16 / Pin 36 / Terminal 36 — resolved by pad name
 SOLENOID_LINE_OFFSET = 113     # Fallback line offset if name lookup fails
 
-# Solenoid 12V interlock — Relay CH2 was meant to gate MOSFET module DC IN+.
-# Yahboom pads T13/PY.00, T22/PY.01, and T29/PQ.05 all report GPIO HIGH but
-# never light Monk Makes Channel B LED (rb=1, LED off, silent coil). Until an
-# NPN/N-FET buffer drives IN B, factory default is hardwired CH2 load jumper
-# Prefer gated mode (module_12v_hardwired=False) when Channel B is NOT jumpered
-# and IN B is driven from T29 (direct wire for bench, or 2N3904 buffer for prod).
-# Hardwired jumper remains an interim fallback only.
+# Production (Rev O): settings.accumulator.solenoid_driver = "pico" (default).
+# Legacy fallback: "legacy_module" = T36 SIG + T29/CH2 dual-MOS path.
+SOLENOID_DRIVER_PICO = "pico"
+SOLENOID_DRIVER_LEGACY = "legacy_module"
 # =======================================================================================================
+
+try:
+    from pico_solenoid import PicoSolenoid
+except ImportError:
+    PicoSolenoid = None
+    print("[hardware] pico_solenoid import failed — Pico driver unavailable.")
 
 
 class _LibGpiodSolenoid:
@@ -272,40 +275,36 @@ class _JetsonGpioOut:
 
 class RelayController:
     """
-    Controls the R385 pump (via Monk Makes Relay CH1) and GOODRIG 12V 2A solenoid
-    valve (via a dual-MOSFET trigger module).
+    Controls the R385 pump (Monk Makes Relay CH1) and GOODRIG 12V solenoid.
 
-    ECO-2026-004 Rev E: BCM 16 / PR.05 (GREEN, T36) → module SIG pin. The trigger
-    is driven via libgpiod (clean push-pull 3.3V); pump stays on Jetson.GPIO. The
-    module switches the solenoid low side; a 1N5408 flyback sits across the coil.
+    ECO-2026-004 Rev O (production): Pico W USB CDC → GP15 → IRLB8721
+    (`solenoid_driver=pico`, default). Pump unchanged on BCM 17 / T11.
 
-    ECO-2026-004 Rev L: Relay CH2 (BCM 5 / PQ.05 / T29) gates the module's
-    12V feed (moved off weak PY.00/T13 and PY.01/T22). Boot firmware drives
-    PR.05 HIGH during boot — CH2 stays OPEN so the module is unpowered. At
-    runtime CH2 is OFF by default and only closes for intentional valve
-    pulses (HW-001 §5.5). Latched module 12V lets any SIG glitch cook FETs.
+    Legacy (`solenoid_driver=legacy_module`): T36/PR.05 → dual-MOS SIG + optional
+    Relay CH2 (T29) module-12V interlock.
 
-    SAFE-001 §1: Solenoid MUST initialize to CLOSED (GPIO LOW = valve shut).
-    SAFE-001 §2: All GPIO access uses try/finally to guarantee LOW on crash.
+    SAFE-001 §1: Solenoid MUST initialize CLOSED.
+    SAFE-001 §2: recover / cleanup guarantee closed on crash.
     """
 
-    # Solid-state Relay CH2 settle before asserting SIG.
-    # 15ms was too short after cold boot / SSR wake — clicks silently fail.
+    # Solid-state Relay CH2 settle before asserting SIG (legacy path only).
     _SOL12V_SETTLE_SEC = 0.080
 
-    def __init__(self):
+    def __init__(self, solenoid_driver: str = SOLENOID_DRIVER_PICO,
+                 pico_port: str = "", pico_baud: int = 115200):
         global JETSON_AVAILABLE
         self._pump_state = False
         self._solenoid_state = False
-        self._module_power_hold = False  # True while ARMED — CH2 stays ON
-        # True = module DC IN+ hardwired / CH2 load jumpered; SIG-only control.
-        # Default OFF: Channel B not jumpered — drive CH2 via T29 (BCM 5).
+        self._module_power_hold = False  # ARMED CH2 hold (legacy only)
         self._module_12v_hardwired = False
-        self._pulse_busy = False  # reject overlapping click-test / fire pulses
+        self._pulse_busy = False
         self._lock = threading.Lock()
+        self._pico = None
+        driver = (solenoid_driver or SOLENOID_DRIVER_PICO).strip().lower()
+        if driver not in (SOLENOID_DRIVER_PICO, SOLENOID_DRIVER_LEGACY):
+            driver = SOLENOID_DRIVER_PICO
+        self._solenoid_driver = driver
 
-        # PADCTL pinmux MUST run before claiming lines.
-        # Never rewrite PR.05 again while libgpiod owns it (glitches SIG).
         configure_push_pull()
 
         if JETSON_AVAILABLE:
@@ -323,35 +322,83 @@ class RelayController:
         else:
             print("[RelayController] STUB MODE — no real pump GPIO control.")
 
-        # Solenoid trigger via libgpiod (BCM 16 / PR.05 / T36 → module SIG).
         self._solenoid = _LibGpiodSolenoid()
-        self._solenoid.set(False)  # SAFE-001 §1: CLOSED at boot
-
-        # CH2 via Jetson.GPIO BCM 5 / T29 (same path as pump). Kept LOW when hardwired.
+        self._solenoid.set(False)
         self._sol_12v = _JetsonGpioOut(RELAY_SOL12V_PIN, label="Sol12V")
         self._sol_12v_state = False
-        self._force_solenoid_safe()
-        self._solenoid.set(False)
-        if not self._module_12v_hardwired:
-            self._boot_warm_module_12v()
-            print("[RelayController] Solenoid 12V via Relay CH2 "
-                  f"(Jetson.GPIO BCM{RELAY_SOL12V_PIN}/T29).")
+
+        if self._solenoid_driver == SOLENOID_DRIVER_PICO:
+            if PicoSolenoid is None:
+                print("[RelayController] Pico driver missing — solenoid STUB (CLOSED).")
+            else:
+                self._pico = PicoSolenoid(port=pico_port or "", baud=int(pico_baud or 115200))
+            self._force_solenoid_safe()
+            print("[RelayController] Solenoid driver = PICO (USB CDC → GP15 → IRLB8721).")
         else:
-            print("[RelayController] Module 12V HARDWIRED mode — CH2 GPIO idle; "
-                  "jumper CH2 load screws or feed fused 12V to module DC IN+.")
+            self._force_solenoid_safe()
+            self._solenoid.set(False)
+            if not self._module_12v_hardwired:
+                self._boot_warm_module_12v()
+                print("[RelayController] Solenoid driver = LEGACY_MODULE "
+                      f"(SIG T36 + CH2 BCM{RELAY_SOL12V_PIN}/T29).")
+            else:
+                print("[RelayController] Module 12V HARDWIRED mode — CH2 GPIO idle.")
+
         self._idle_stop = threading.Event()
         self._idle_thread = threading.Thread(
             target=self._idle_sig_watchdog, daemon=True, name="solenoid-idle-watchdog")
         self._idle_thread.start()
 
+    @property
+    def using_pico(self) -> bool:
+        return self._solenoid_driver == SOLENOID_DRIVER_PICO
+
+    def set_solenoid_driver(self, driver: str, pico_port: str = None, pico_baud: int = None):
+        """Switch pico ↔ legacy_module at runtime (settings apply)."""
+        driver = (driver or SOLENOID_DRIVER_PICO).strip().lower()
+        if driver not in (SOLENOID_DRIVER_PICO, SOLENOID_DRIVER_LEGACY):
+            driver = SOLENOID_DRIVER_PICO
+        with self._lock:
+            prev = self._solenoid_driver
+            same = (prev == driver and driver == SOLENOID_DRIVER_PICO
+                    and self._pico is not None and self._pico.available
+                    and pico_port is None and pico_baud is None)
+            if same:
+                return
+            self._force_solenoid_safe()
+            self._solenoid_driver = driver
+            if driver == SOLENOID_DRIVER_PICO:
+                if self._pico is not None and pico_port is None and pico_baud is None:
+                    self._pico.connect()
+                else:
+                    if self._pico is not None:
+                        self._pico.close()
+                    if PicoSolenoid is not None:
+                        self._pico = PicoSolenoid(
+                            port="" if pico_port is None else str(pico_port),
+                            baud=int(115200 if pico_baud is None else pico_baud),
+                        )
+            else:
+                if self._pico is not None:
+                    self._pico.close()
+                    self._pico = None
+                self._solenoid.set(False)
+            print(f"[RelayController] Solenoid driver {prev} → {driver}")
+
     def set_module_12v_hardwired(self, hardwired: bool):
         """
-        When True: do not drive Relay CH2 — assume module has fused 12V
-        (CH2 load jumpered or DC IN+ wired direct). Shots are SIG-only.
+        Legacy module path only. When True: do not drive Relay CH2.
+        Ignored for valve control when solenoid_driver=pico.
         """
         with self._lock:
             self._module_12v_hardwired = bool(hardwired)
             self._module_power_hold = False
+            if self.using_pico:
+                if self._pico is not None:
+                    self._pico.set_open(False)
+                self._solenoid_state = False
+                print("[RelayController] module_12v_hardwired ignored (pico driver)")
+                return
             self._solenoid.set(False)
             self._solenoid_state = False
             self._sol_12v.set(False)
@@ -376,17 +423,17 @@ class RelayController:
 
     def _idle_sig_watchdog(self):
         """
-        Periodic SIG/CH2 hygiene. Does NOT rewrite PADCTL (can glitch PR.05).
-
-        CRITICAL (Rev J hardwired 12V): do NOT hammer SIG LOW every tick when
-        already LOW — redundant libgpiod writes on PR.05 were correlated with
-        intermittent phantom clicks / missed clicks while module 12V is latched.
-        Only clear SIG when readback shows HIGH (stuck).
+        Periodic hygiene. Pico path: ensure CLOSE if idle. Legacy: SIG/CH2.
         """
         while not self._idle_stop.wait(0.5):
             with self._lock:
                 if self._solenoid_state or self._pulse_busy:
-                    continue  # intentional open / pulse in progress
+                    continue
+                if self.using_pico:
+                    # No Jetson SIG/CH2. Soft-reconnect if USB dropped.
+                    if self._pico is not None and not self._pico.available:
+                        self._pico.connect()
+                    continue
                 rb = self._solenoid.get()
                 if rb == 1:
                     self._solenoid.set(False)
@@ -489,31 +536,49 @@ class RelayController:
         # clear a stuck SIG HIGH. Never close an intentional open (DRAIN PIPE
         # keeps solenoid OPEN + pump ON — closing SIG here caused multi-click
         # chatter and left the drain path wrong).
-        if state and not self._solenoid_state and not self._pulse_busy:
+        if (not self.using_pico and state and not self._solenoid_state
+                and not self._pulse_busy):
             if self._solenoid.get() == 1:
                 self._solenoid.set(False)
                 print("[RelayController] Pump start: cleared stuck SIG HIGH")
         # Pump edges can EMI-glitch PQ.05; re-drive CH2 while ARMED hold is on.
-        if self._module_power_hold and not self._module_12v_hardwired:
+        if (not self.using_pico and self._module_power_hold
+                and not self._module_12v_hardwired):
             self._drive_module_12v_on(settle=False)
         print(f"[RelayController] Pump {'ON' if state else 'OFF'}")
 
     # -- Solenoid Control (ECO-2026-004) --------------------------------------
 
     def _force_solenoid_safe(self):
-        """SIG LOW + cut CH2 (if gated) + clear session hold. Caller holds lock."""
-        self._solenoid.set(False)
+        """Valve CLOSED + clear holds. Caller holds lock (or init)."""
+        if self.using_pico and self._pico is not None:
+            self._pico.set_open(False)
+        else:
+            self._solenoid.set(False)
+            self._sol_12v.set(False)
+            self._sol_12v_state = False
         self._solenoid_state = False
         self._module_power_hold = False
-        self._sol_12v.set(False)
-        self._sol_12v_state = False
 
     def set_module_power_hold(self, hold: bool):
         """
-        ARMED-session power: keep MOSFET module 12V (Relay CH2) ON continuously
-        and only pulse SIG for each shot. No-op for CH2 when hardwired.
+        ARMED-session power for legacy module CH2. No-op in pico mode
+        (coil 12V is always available; Pico only pulses the gate).
         """
         with self._lock:
+            if self.using_pico:
+                self._module_power_hold = False
+                if hold:
+                    if self._pico is not None:
+                        self._pico.set_open(False)
+                    self._solenoid_state = False
+                    print("[RelayController] Pico mode ARMED — gate stays CLOSED between shots")
+                else:
+                    if self._pico is not None:
+                        self._pico.set_open(False)
+                    self._solenoid_state = False
+                    print("[RelayController] Pico mode DISARMED — gate CLOSED")
+                return
             self._module_power_hold = bool(hold) and not self._module_12v_hardwired
             if hold:
                 self._solenoid.set(False)
@@ -535,7 +600,7 @@ class RelayController:
 
     def set_solenoid(self, state: bool):
         """
-        Open (HIGH) or close (LOW) the solenoid valve via the MOSFET gate.
+        Open or close the solenoid valve.
         Always takes the relay lock (safe vs idle watchdog).
         """
         with self._lock:
@@ -543,14 +608,20 @@ class RelayController:
 
     def _set_solenoid(self, state: bool):
         """Caller MUST hold self._lock."""
+        if self.using_pico:
+            ok = True
+            if self._pico is not None:
+                ok = self._pico.set_open(bool(state))
+            self._solenoid_state = bool(state) and ok
+            print(f"[RelayController] Solenoid {'OPEN' if self._solenoid_state else 'CLOSED'} "
+                  f"(Pico GP15) ok={ok}")
+            return
+
         if state:
             need_settle = (
                 not self._module_12v_hardwired
                 and (not self._sol_12v_state or not self._module_power_hold)
             )
-            # Hardwired: clean rising edge only (no pre-LOW toggle — that can
-            # chatter the coil when 12V is latched). Gated: ensure SIG low
-            # before enabling CH2.
             if not self._module_12v_hardwired:
                 self._solenoid.set(False)
                 self._solenoid_state = False
@@ -567,7 +638,6 @@ class RelayController:
                   f", ch2_rb={self._sol_12v.get()})")
         else:
             if not self._solenoid_state and self._solenoid.get() != 1:
-                # Already closed — skip redundant write (avoids glitch / double click)
                 if self._module_power_hold and not self._module_12v_hardwired:
                     self._drive_module_12v_on(settle=False)
                 return
@@ -586,8 +656,8 @@ class RelayController:
 
     def pulse_solenoid(self, duration_sec: float = 0.025) -> dict:
         """
-        Synchronous solenoid pulse under the relay lock for the entire open
-        window. Rejects overlapping pulses (rapid Click Test double-submit).
+        Synchronous solenoid pulse under the relay lock.
+        Pico path: FIRE <ms> timed on the Pico. Legacy: OPEN + sleep + CLOSE.
         """
         duration_sec = max(0.001, min(float(duration_sec), 2.0))
         t0 = time.time()
@@ -595,6 +665,7 @@ class RelayController:
         ch2_rb = None
         ch2_rb_after = None
         hardwired = False
+        pico_ok = None
         with self._lock:
             if self._pulse_busy:
                 print("[RelayController] SOLENOID PULSE rejected — busy")
@@ -607,56 +678,76 @@ class RelayController:
                     "solenoid_12v": self._sol_12v_state,
                     "ch2_held": False,
                     "module_12v_hardwired": self._module_12v_hardwired,
+                    "solenoid_driver": self._solenoid_driver,
                 }
             self._pulse_busy = True
             hardwired = self._module_12v_hardwired
             try:
-                self._set_solenoid(True)
-                ch2_rb = self._sol_12v.get()
-                ch2_held = bool(self._module_power_hold) or hardwired
-                time.sleep(duration_sec)
+                if self.using_pico:
+                    ms = max(1, int(round(duration_sec * 1000.0)))
+                    pico_ok = bool(self._pico and self._pico.fire_ms(ms))
+                    self._solenoid_state = False
+                    if not pico_ok:
+                        print("[RelayController] SOLENOID PULSE Pico FIRE failed — "
+                              f"{getattr(self._pico, 'last_error', None)}")
+                else:
+                    self._set_solenoid(True)
+                    ch2_rb = self._sol_12v.get()
+                    ch2_held = bool(self._module_power_hold) or hardwired
+                    time.sleep(duration_sec)
             finally:
-                self._set_solenoid(False)
-                # Brief settle with SIG held LOW before releasing lock — reduces
-                # pump-start EMI chatter right after a shot.
-                time.sleep(0.04)
-                ch2_rb_after = self._sol_12v.get()
+                if not self.using_pico:
+                    self._set_solenoid(False)
+                    time.sleep(0.04)
+                    ch2_rb_after = self._sol_12v.get()
+                elif self._pico is not None:
+                    self._pico.set_open(False)
+                    self._solenoid_state = False
                 self._pulse_busy = False
         elapsed_ms = (time.time() - t0) * 1000.0
+        status = "complete"
+        if self.using_pico and pico_ok is False:
+            status = "error"
         print(f"[RelayController] SOLENOID PULSE done: cmd={duration_sec*1000:.1f}ms "
-              f"elapsed={elapsed_ms:.1f}ms hardwired={hardwired} ch2_held={ch2_held} "
+              f"elapsed={elapsed_ms:.1f}ms driver={self._solenoid_driver} "
+              f"pico_ok={pico_ok} hardwired={hardwired} ch2_held={ch2_held} "
               f"ch2_rb={ch2_rb}/{ch2_rb_after}")
         return {
-            "status": "complete",
+            "status": status,
             "duration_ms": round(duration_sec * 1000.0, 1),
             "elapsed_ms": round(elapsed_ms, 1),
             "solenoid_state": self._solenoid_state,
-            "solenoid_12v": self._sol_12v_state,
+            "solenoid_12v": True if self.using_pico else self._sol_12v_state,
             "ch2_held": ch2_held,
             "ch2_readback": ch2_rb,
             "ch2_readback_after": ch2_rb_after,
             "module_power_hold": self._module_power_hold,
             "module_12v_hardwired": hardwired,
+            "solenoid_driver": self._solenoid_driver,
+            "pico_ok": pico_ok,
+            "pico": self._pico.status() if self._pico else None,
         }
 
     def recover_solenoid(self, re_pinmux: bool = False) -> dict:
         """
-        Force SIG LOW + CH2 OFF + clear session hold.
-
-        IMPORTANT: default re_pinmux=False. Rewriting PR.05 PADCTL while
-        libgpiod owns the line glitches SIG. Pinmux is applied once at init.
+        Force valve CLOSED + clear session hold.
+        Legacy: SIG LOW + CH2 OFF. Pico: CLOSE over USB.
         """
         with self._lock:
-            if re_pinmux:
+            if re_pinmux and not self.using_pico:
                 configure_push_pull(only=("PR.05", "PQ.05"))
             self._force_solenoid_safe()
-            self._solenoid.set(False)
-            print("[RelayController] Solenoid drive recovered (SIG LOW, CH2 OFF"
-                  f"{', pinmux rewritten' if re_pinmux else ''})")
+            if not self.using_pico:
+                self._solenoid.set(False)
+            print("[RelayController] Solenoid drive recovered "
+                  f"(driver={self._solenoid_driver}"
+                  f"{', pinmux rewritten' if re_pinmux and not self.using_pico else ''})")
             return {
                 "solenoid": False,
-                "solenoid_12v": False,
-                "re_pinmux": bool(re_pinmux),
+                "solenoid_12v": False if not self.using_pico else True,
+                "re_pinmux": bool(re_pinmux) and not self.using_pico,
+                "solenoid_driver": self._solenoid_driver,
+                "pico": self._pico.status() if self._pico else None,
             }
 
     def fire_solenoid(self, duration_sec: float = 0.025):
@@ -808,26 +899,34 @@ class RelayController:
     # -- Status ---------------------------------------------------------------
 
     def get_status(self) -> dict:
+        pico_st = self._pico.status() if self._pico else None
         return {
             "pump": self._pump_state,
             "solenoid": self._solenoid_state,
-            "solenoid_12v": self._sol_12v_state,  # Rev H boot interlock (Relay CH2)
+            "solenoid_12v": True if self.using_pico else self._sol_12v_state,
             "module_power_hold": self._module_power_hold,
             "module_12v_hardwired": self._module_12v_hardwired,
-            "ch2_readback": self._sol_12v.get() if hasattr(self, "_sol_12v") else None,
-            "sig_readback": self._solenoid.get() if hasattr(self, "_solenoid") else None,
+            "solenoid_driver": self._solenoid_driver,
+            "pico": pico_st,
+            "pico_available": bool(pico_st and pico_st.get("available")),
+            "ch2_readback": None if self.using_pico else (
+                self._sol_12v.get() if hasattr(self, "_sol_12v") else None),
+            "sig_readback": None if self.using_pico else (
+                self._solenoid.get() if hasattr(self, "_solenoid") else None),
             "gimbal_power": True  # Always on (backward compat)
         }
 
     # -- Cleanup --------------------------------------------------------------
 
     def cleanup(self):
-        """Ensure pump OFF, solenoid CLOSED, module 12V OFF, then release GPIO."""
+        """Ensure pump OFF, solenoid CLOSED, then release GPIO / Pico."""
         print("[RelayController] Cleaning up GPIO...")
         try:
             if hasattr(self, "_idle_stop"):
                 self._idle_stop.set()
-            self._force_solenoid_safe()  # SIG LOW, then CH2 OFF before release
+            self._force_solenoid_safe()
+            if self._pico is not None:
+                self._pico.close()
             self._sol_12v.release()
             self._solenoid.release()
             if JETSON_AVAILABLE:

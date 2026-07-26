@@ -36,6 +36,11 @@ DEFAULTS: dict[str, Any] = {
         # Yahboom PY.00 cannot reliably close Monk Makes CH2 — jumper CH2 load
         # (or hardwire fused 12V to module DC IN+) and keep this True.
         "module_12v_hardwired": False,
+        # Option B (HW-001 §5.4 Rev O): pico = USB CDC → Pico GP15 → IRLB8721
+        # legacy_module = T36 SIG + T29/CH2 dual-MOS path
+        "solenoid_driver": "pico",
+        "pico_port": "",       # empty = auto-detect
+        "pico_baud": 115200,
     },
     "servo": {
         "speed": 120.0,
@@ -219,6 +224,12 @@ class SettingsStore:
                 "module_12v_hardwired",
                 DEFAULTS["accumulator"]["module_12v_hardwired"],
             )
+            acc.setdefault(
+                "solenoid_driver",
+                DEFAULTS["accumulator"]["solenoid_driver"],
+            )
+            acc.setdefault("pico_port", DEFAULTS["accumulator"]["pico_port"])
+            acc.setdefault("pico_baud", DEFAULTS["accumulator"]["pico_baud"])
             out["accumulator"] = acc
             pulse = dict(out.get("pulse") or {})
             pulse["operational_pulse"] = float(acc["default_pulse_ms"]) / 1000.0
