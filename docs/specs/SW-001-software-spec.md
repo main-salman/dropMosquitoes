@@ -94,12 +94,12 @@ The R385 pump has **no pressure switch** and must not run continuously against a
 closed solenoid (deadhead → overheat), so the accumulator is charged in bursts
 and the solenoid pulse releases stored pressure.
 
-**Solenoid drive hardware (HW-001 §5.4 Rev O — Option B):** Production path is
-**Jetson USB CDC → Pico W → GP15 → IRLB8721 → coil** (5 ms class pulses). Dual-MOS
-module + Relay CH2 interlock + 2N3904 buffer are **superseded for the valve**;
-pump remains on Monk Makes CH1. **Software still implements the legacy module
-path** (PR.05 SIG + BCM5/CH2) until the Pico FIRE driver lands — see diagram
-`eco004_mosfet_module_option.drawio`.
+**Solenoid drive (HW-001 §5.4 Rev O — Option B):** Production path is
+**Jetson USB CDC → Pico W → GP15 → IRLB8721 → coil**. Dual-MOS module + Relay CH2
+interlock are **superseded for the valve**; pump stays on Monk Makes CH1.
+`settings.accumulator.solenoid_driver` default **`pico`** (`legacy_module` = old
+T36 SIG + T29/CH2 path). Protocol: `FIRE <ms>`, `OPEN`, `CLOSE`, `PING` over
+115200 8N1 (`pico_solenoid.py` + `firmware/pico_solenoid/main.py`).
 
 **Physics constraint:** shot distance ∝ exit velocity ∝ √(pressure). The solenoid
 pulse width sets shot *volume/duration*, NOT velocity — so consistent distance
@@ -133,13 +133,11 @@ requires firing from a **consistent pressure**, not a longer pulse.
 `default_pulse_ms` (shared live + auto-cal; factory **100 ms**), `max_pump_run_sec`,
 timed fallbacks. Charge-after-shot is always on.
 **Solenoid drive:** every open pulse must run under `RelayController.pulse_solenoid()`
-(lock held for the open window). While **ARMED**, Relay CH2 (module 12V) stays
-**ON for the session** (`set_module_power_hold(True)`); shots only toggle SIG.
-CH2 GPIO is re-asserted on each fire/pump/watchdog tick (PQ.05/SSR can drop
-while cached state still says ON — LED off, silent shots). Idle: CH2 OFF;
-watchdog keeps SIG LOW. Do **not** rewrite PR.05 PADCTL after libgpiod claims
-the line. Disarm / auto-cal end: drop hold + `recover_solenoid()`.
-Pump edges must not cut CH2 or rewrite padmux.
+(lock held for the open window). **Option B (`pico`):** Jetson sends `FIRE <ms>`
+and the Pico times GP15 (preferred for short pulses). `OPEN`/`CLOSE` used for
+DRAIN PIPE. CH2 / PR.05 unused. **Legacy (`legacy_module`):** while ARMED, Relay
+CH2 stays ON (`set_module_power_hold`); shots toggle SIG; idle watchdog holds
+SIG LOW. Disarm / auto-cal end: `recover_solenoid()`.
 **Maintenance drain:** `POST /api/line/drain` (Control tab **DRAIN PIPE**) runs
 solenoid OPEN + pump ON for N seconds (default **15**, clamp 1–30) under the
 relay lock, then pump OFF / valve CLOSED + `recover_solenoid()`. Disarms

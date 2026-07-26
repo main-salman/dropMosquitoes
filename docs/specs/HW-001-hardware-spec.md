@@ -151,7 +151,16 @@ IRLB8721 Source ── GND bus
 - **Common GND required:** Pico GND pin (or USB GND) must share the 12V PSU / Jetson GND bus.
 - **Do NOT** use 2N3904/2N2222 to switch the 2A coil — those are logic-only.
 - **Pre-install FET check** (part out of circuit, gate shorted to source first): see diagram Ω table.
-- Software still on Rev G/N module path until Pico CDC driver lands — hardware may be built first.
+
+**USB CDC protocol (Jetson ↔ Pico, 115200 8N1):**
+| Host → Pico | Pico action | Reply |
+|---|---|---|
+| `FIRE <ms>` | GP15 HIGH for ms (1–2000), then LOW | `OK FIRE <ms>` |
+| `OPEN` | GP15 HIGH | `OK OPEN` |
+| `CLOSE` | GP15 LOW | `OK CLOSE` |
+| `PING` | none | `PONG` |
+
+Firmware: `firmware/pico_solenoid/main.py` (MicroPython). Host driver: `pico_solenoid.py`.
 
 ### 5.4b Legacy — Dual-MOSFET Trigger Module (ECO-2026-004 Rev G) — SUPERSEDED by §5.4
 

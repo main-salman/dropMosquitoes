@@ -1106,6 +1106,13 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-25 — [DIAGRAM] Fix C5 arrow landing on +12V (looked like Source→12V)
 - **[DIAGRAM]** `eco004_mosfet_module_option.drawio`: C5 Source arrow tip was at the red **+12V** box coords — retargeted to black **GND** (T6/T9/T14). Labels: Source → GND only (never +12V); +12V is C7→solenoid RED only.
 
+## 2026-07-25 — [SW] Option B Pico W solenoid driver live
+- **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
+- **[FW]** `firmware/pico_solenoid/main.py` — MicroPython GP15 timer.
+- **[SW]** `pico_solenoid.py` — Jetson USB CDC client (auto-detect ttyACM/by-id).
+- **[SW]** `hardware.RelayController` — pulses via Pico `FIRE <ms>`; legacy module path retained as `legacy_module`.
+- **[SETTINGS]** `settings_store` defaults: `solenoid_driver=pico`, `pico_port=""`, `pico_baud=115200`; `app.apply_settings_to_runtime` syncs driver.
+
 ## 2026-07-24 — [DIAGRAM/SPEC] Option B Rev O install guide (Pico + IRLB8721 + 1N5408)
 - **[PROCUREMENT]** Pico W, diode kit, USB-A↔Micro-B marked **have** in `parts.csv` (received).
 - **[SPEC]** `HW-001` §5.4 Rev O = production Option B; §5.4b/§5.5 module+CH2 marked legacy. `SW-001` §2.7 notes hardware cutover pending Pico CDC driver (live code still T36 SIG + T29/CH2).
