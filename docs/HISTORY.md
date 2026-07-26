@@ -1106,6 +1106,12 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-25 — [DIAGRAM] Fix C5 arrow landing on +12V (looked like Source→12V)
 - **[DIAGRAM]** `eco004_mosfet_module_option.drawio`: C5 Source arrow tip was at the red **+12V** box coords — retargeted to black **GND** (T6/T9/T14). Labels: Source → GND only (never +12V); +12V is C7→solenoid RED only.
 
+## 2026-07-26 — [OPS] Pico W flashed on Jetson (Option B)
+- **[OPS]** First cable was power-only (LED off, no USB enum). Data cable → BOOTSEL `2e8a:0003` / `RPI-RP2`.
+- **[FW]** Copied MicroPython UF2 `RPI_PICO_W` + `firmware/pico_solenoid/main.py` via mpremote on Jetson.
+- **[VERIFY]** Serial: `CLOSE→OK CLOSE`, `PING→PONG`, `FIRE 5→OK FIRE 5`. Device `2e8a:0005` MicroPython FS mode `/dev/ttyACM0`.
+- **[SW]** Restarted `sentry`: `[PicoSolenoid] Connected /dev/ttyACM0 @ 115200 — gate CLOSED.`
+
 ## 2026-07-25 — [SW] Option B Pico W solenoid driver live
 - **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
 - **[FW]** `firmware/pico_solenoid/main.py` — MicroPython GP15 timer.
