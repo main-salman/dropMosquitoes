@@ -430,9 +430,9 @@ class RelayController:
                 if self._solenoid_state or self._pulse_busy:
                     continue
                 if self.using_pico:
-                    # No Jetson SIG/CH2. Soft-reconnect if USB dropped.
-                    if self._pico is not None and not self._pico.available:
-                        self._pico.connect()
+                    # Drop stale USB handles after unplug; reconnect when Pico returns.
+                    if self._pico is not None:
+                        self._pico.health_check()
                     continue
                 rb = self._solenoid.get()
                 if rb == 1:

@@ -8,7 +8,9 @@ Protocol (115200 8N1, newline-terminated):
   CLOSE      → GP15 LOW;  reply OK CLOSE
   PING       → reply PONG
 
-Auto-detects /dev/serial/by-id/*Pico* (or *2e8a*), else /dev/ttyACM*.
+Auto-detects /dev/serial/by-id/*MicroPython* (or *Pico* / *2e8a*), else ttyACM*.
+Survives USB unplug/replug: drops stale handles when the by-id path vanishes
+and reconnects on the next FIRE / idle health check.
 """
 
 from __future__ import annotations
@@ -31,6 +33,7 @@ except ImportError:
 
 DEFAULT_BAUD = 115200
 DEFAULT_TIMEOUT_S = 1.5
+STUB_LOG_INTERVAL_S = 15.0
 
 
 def find_pico_port(preferred: str = "") -> Optional[str]:
@@ -72,11 +75,18 @@ class PicoSolenoid:
         self._lock = threading.Lock()
         self._port_used = None
         self._last_error = None
+        self._last_stub_log = 0.0
+        self._was_missing = False
         self.connect()
 
     @property
     def available(self) -> bool:
-        return self._ser is not None and getattr(self._ser, "is_open", False)
+        """True only if handle is open AND the device node still exists."""
+        if self._ser is None or not getattr(self._ser, "is_open", False):
+            return False
+        if self._port_used and not os.path.exists(self._port_used):
+            return False
+        return True
 
     @property
     def port(self) -> Optional[str]:
@@ -90,48 +100,75 @@ class PicoSolenoid:
         with self._lock:
             return self._connect_locked()
 
+    def _drop_stale_locked(self):
+        """Close handle if USB node disappeared (unplug) without waiting for I/O error."""
+        if self._ser is None:
+            return
+        if self._port_used and not os.path.exists(self._port_used):
+            try:
+                self._ser.close()
+            except Exception:
+                pass
+            self._ser = None
+            self._port_used = None
+            self._last_error = "USB device removed"
+            self._was_missing = True
+
     def _connect_locked(self) -> bool:
+        self._drop_stale_locked()
+        if self.available:
+            return True
         self._close_locked()
         if not SERIAL_AVAILABLE:
             self._last_error = "pyserial not installed"
-            print("[PicoSolenoid] STUB — pyserial missing.")
+            self._log_stub("pyserial missing")
             return False
         path = find_pico_port(self._port_pref)
         if not path:
             self._last_error = "no Pico serial port found"
-            print("[PicoSolenoid] STUB — no Pico on USB (expected /dev/ttyACM* or by-id).")
+            self._was_missing = True
+            self._log_stub("no Pico on USB (expected MicroPython by-id / ttyACM*)")
             return False
         try:
-            # Resolve by-id → real device for logging, but open the by-id path
-            # so renumbering ACM0→ACM1 does not break a held handle as badly.
             self._ser = serial.Serial(
                 path, self._baud, timeout=DEFAULT_TIMEOUT_S, write_timeout=DEFAULT_TIMEOUT_S
             )
-            time.sleep(0.05)
+            time.sleep(0.08)
             self._ser.reset_input_buffer()
             self._ser.reset_output_buffer()
             self._port_used = path
-            # SAFE-001: ensure valve closed after open. Do NOT soft-reset (Ctrl-D)
-            # here — that can renumber ttyACM and drop the link mid-session.
+            # SAFE-001: CLOSE after open. No Ctrl-D soft-reset (renumbers ACM).
             ok = self._cmd_locked("CLOSE", expect_prefix="OK CLOSE")
             if not ok:
-                # One retry after brief pause (firmware still booting)
                 time.sleep(0.5)
-                self._ser.reset_input_buffer()
+                try:
+                    self._ser.reset_input_buffer()
+                except Exception:
+                    pass
                 ok = self._cmd_locked("CLOSE", expect_prefix="OK CLOSE")
             if ok:
                 self._last_error = None
-                print(f"[PicoSolenoid] Connected {path} @ {self._baud} — gate CLOSED.")
+                tag = "reconnected after USB reseat" if self._was_missing else "Connected"
+                print(f"[PicoSolenoid] {tag} {path} @ {self._baud} — gate CLOSED.")
+                self._was_missing = False
                 return True
             self._last_error = "CLOSE handshake failed (flash firmware/pico_solenoid/main.py?)"
             print(f"[PicoSolenoid] {self._last_error}")
             self._close_locked()
+            self._was_missing = True
             return False
         except Exception as e:
             self._last_error = str(e)
-            print(f"[PicoSolenoid] open failed ({e}) — STUB.")
+            self._log_stub(f"open failed ({e})")
             self._close_locked()
+            self._was_missing = True
             return False
+
+    def _log_stub(self, msg: str):
+        now = time.time()
+        if now - self._last_stub_log >= STUB_LOG_INTERVAL_S:
+            print(f"[PicoSolenoid] STUB — {msg}")
+            self._last_stub_log = now
 
     def close(self):
         with self._lock:
@@ -152,6 +189,7 @@ class PicoSolenoid:
         self._port_used = None
 
     def _cmd_locked(self, cmd: str, expect_prefix: str = "", timeout_s: float = None) -> bool:
+        self._drop_stale_locked()
         if self._ser is None or not self._ser.is_open:
             return False
         timeout_s = DEFAULT_TIMEOUT_S if timeout_s is None else timeout_s
@@ -164,7 +202,6 @@ class PicoSolenoid:
                 line = self._ser.readline().decode("ascii", errors="ignore").strip()
                 if not line:
                     continue
-                # Skip MicroPython banners / echoes
                 if line == cmd.strip() or line.startswith(">>>"):
                     continue
                 if expect_prefix:
@@ -179,27 +216,40 @@ class PicoSolenoid:
             return False
         except Exception as e:
             self._last_error = str(e)
-            # Mark link dead so next call reconnects
+            self._was_missing = True
             try:
                 self._ser.close()
             except Exception:
                 pass
             self._ser = None
+            self._port_used = None
             return False
 
     def _ensure_locked(self) -> bool:
+        self._drop_stale_locked()
         if self.available:
             return True
         return self._connect_locked()
+
+    def health_check(self) -> bool:
+        """
+        Idle-path probe: drop stale USB handles and reconnect if the Pico is back.
+        Returns True if a live link is available after the check.
+        """
+        with self._lock:
+            self._drop_stale_locked()
+            if self.available:
+                # Cheap liveness: device node still present (already checked).
+                return True
+            return self._connect_locked()
 
     def ping(self) -> bool:
         with self._lock:
             if not self._ensure_locked():
                 return False
             ok = self._cmd_locked("PING", expect_prefix="PONG")
-            if not ok:
-                if self._connect_locked():
-                    ok = self._cmd_locked("PING", expect_prefix="PONG")
+            if not ok and self._connect_locked():
+                ok = self._cmd_locked("PING", expect_prefix="PONG")
             return ok
 
     def set_open(self, open_: bool) -> bool:
@@ -209,21 +259,23 @@ class PicoSolenoid:
             cmd = "OPEN" if open_ else "CLOSE"
             expect = "OK OPEN" if open_ else "OK CLOSE"
             ok = self._cmd_locked(cmd, expect_prefix=expect)
-            if not ok:
-                if self._connect_locked():
-                    ok = self._cmd_locked(cmd, expect_prefix=expect)
+            if not ok and self._connect_locked():
+                ok = self._cmd_locked(cmd, expect_prefix=expect)
             return ok
 
     def fire_ms(self, ms: int) -> bool:
-        """Pulse GP15 for ms on the Pico (precise timer)."""
+        """Pulse GP15 for ms on the Pico (precise timer). Reconnects after USB reseat."""
         ms = max(1, min(int(ms), 2000))
         with self._lock:
             if not self._ensure_locked():
-                return False
+                # Device may appear a moment after plug — brief retry
+                time.sleep(0.3)
+                if not self._connect_locked():
+                    return False
             timeout_s = max(DEFAULT_TIMEOUT_S, ms / 1000.0 + 0.5)
             ok = self._cmd_locked(f"FIRE {ms}", expect_prefix="OK FIRE", timeout_s=timeout_s)
             if not ok:
-                # USB renumber / transient I/O — reconnect once and retry
+                time.sleep(0.2)
                 if self._connect_locked():
                     ok = self._cmd_locked(
                         f"FIRE {ms}", expect_prefix="OK FIRE", timeout_s=timeout_s

@@ -1118,10 +1118,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** `HW-001` §8: check valve mandatory (pump internals insufficient); topology + routing updated for Option B solenoid drive.
 - **[BOM]** `parts.csv` Feelers check valve → **have** / installed.
 
-## 2026-07-27 — [FIX] Pico detect MicroPython by-id + reconnect after USB renumber
-- **[ROOT CAUSE]** After reboot/reseats, MicroPython enumerates as `/dev/serial/by-id/usb-MicroPython_Board...` (not `*Pico*`). Old glob missed it → STUB / FIRE I/O errors when ttyACM renumbered.
-- **[FIX]** `pico_solenoid.py`: match `*MicroPython*`; open by-id; auto-reconnect on I/O fail; stop Ctrl-D soft-reset on connect (caused ACM renumber).
-- **[OPS]** Pico reseated with data cable; Click Test needs sentry restart after this deploy.
+## 2026-07-27 — [FIX] Pico USB reseat auto-reconnect (no sentry restart)
+- **[ROOT CAUSE]** After unplug, pyserial often still reports `is_open`; by-id node is gone. Idle loop never reconnected until restart. New/bad cables also show **no USB enum** (LED off / no `2e8a`).
+- **[FIX]** `pico_solenoid.py`: treat missing device node as dead; `health_check()` every 0.5s; FIRE retries reconnect + 300ms settle; rate-limit STUB logs; log `reconnected after USB reseat`.
+- **[FIX]** `RelayController` idle watchdog calls `pico.health_check()` continuously.
 
 ## 2026-07-25 — [SW] Option B Pico W solenoid driver live
 - **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
