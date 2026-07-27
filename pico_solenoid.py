@@ -34,14 +34,19 @@ DEFAULT_TIMEOUT_S = 1.5
 
 
 def find_pico_port(preferred: str = "") -> Optional[str]:
-    """Return a serial device path for the Pico, or None."""
+    """Return a serial device path for the Pico / MicroPython CDC, or None."""
     if preferred and os.path.exists(preferred):
         return preferred
 
+    # Prefer stable by-id symlinks (survives ttyACM0→ACM1 renumber).
+    # Stock MicroPython names the device "MicroPython_Board...", not "Pico".
     by_id = sorted(
-        glob.glob("/dev/serial/by-id/*Pico*")
+        glob.glob("/dev/serial/by-id/*MicroPython*")
+        + glob.glob("/dev/serial/by-id/*micropython*")
+        + glob.glob("/dev/serial/by-id/*Pico*")
         + glob.glob("/dev/serial/by-id/*pico*")
         + glob.glob("/dev/serial/by-id/*2e8a*")
+        + glob.glob("/dev/serial/by-id/*Raspberry*")
     )
     if by_id:
         return by_id[0]
@@ -49,7 +54,7 @@ def find_pico_port(preferred: str = "") -> Optional[str]:
     if SERIAL_AVAILABLE and list_ports is not None:
         for p in list_ports.comports():
             blob = f"{p.description} {p.manufacturer} {p.product} {p.hwid}".lower()
-            if "pico" in blob or "2e8a" in blob:
+            if any(k in blob for k in ("pico", "2e8a", "micropython", "raspberry pi")):
                 return p.device
 
     for path in sorted(glob.glob("/dev/ttyACM*")):
@@ -97,6 +102,8 @@ class PicoSolenoid:
             print("[PicoSolenoid] STUB — no Pico on USB (expected /dev/ttyACM* or by-id).")
             return False
         try:
+            # Resolve by-id → real device for logging, but open the by-id path
+            # so renumbering ACM0→ACM1 does not break a held handle as badly.
             self._ser = serial.Serial(
                 path, self._baud, timeout=DEFAULT_TIMEOUT_S, write_timeout=DEFAULT_TIMEOUT_S
             )
@@ -104,12 +111,12 @@ class PicoSolenoid:
             self._ser.reset_input_buffer()
             self._ser.reset_output_buffer()
             self._port_used = path
-            # SAFE-001: ensure valve closed after open
+            # SAFE-001: ensure valve closed after open. Do NOT soft-reset (Ctrl-D)
+            # here — that can renumber ttyACM and drop the link mid-session.
             ok = self._cmd_locked("CLOSE", expect_prefix="OK CLOSE")
             if not ok:
-                # Soft-reset MicroPython then retry once
-                self._ser.write(b"\x04")
-                time.sleep(0.4)
+                # One retry after brief pause (firmware still booting)
+                time.sleep(0.5)
                 self._ser.reset_input_buffer()
                 ok = self._cmd_locked("CLOSE", expect_prefix="OK CLOSE")
             if ok:
@@ -172,34 +179,56 @@ class PicoSolenoid:
             return False
         except Exception as e:
             self._last_error = str(e)
+            # Mark link dead so next call reconnects
+            try:
+                self._ser.close()
+            except Exception:
+                pass
+            self._ser = None
             return False
+
+    def _ensure_locked(self) -> bool:
+        if self.available:
+            return True
+        return self._connect_locked()
 
     def ping(self) -> bool:
         with self._lock:
-            if not self.available and not self._connect_locked():
+            if not self._ensure_locked():
                 return False
-            return self._cmd_locked("PING", expect_prefix="PONG")
+            ok = self._cmd_locked("PING", expect_prefix="PONG")
+            if not ok:
+                if self._connect_locked():
+                    ok = self._cmd_locked("PING", expect_prefix="PONG")
+            return ok
 
     def set_open(self, open_: bool) -> bool:
         with self._lock:
-            if not self.available and not self._connect_locked():
+            if not self._ensure_locked():
                 return False
-            if open_:
-                return self._cmd_locked("OPEN", expect_prefix="OK OPEN")
-            return self._cmd_locked("CLOSE", expect_prefix="OK CLOSE")
+            cmd = "OPEN" if open_ else "CLOSE"
+            expect = "OK OPEN" if open_ else "OK CLOSE"
+            ok = self._cmd_locked(cmd, expect_prefix=expect)
+            if not ok:
+                if self._connect_locked():
+                    ok = self._cmd_locked(cmd, expect_prefix=expect)
+            return ok
 
     def fire_ms(self, ms: int) -> bool:
         """Pulse GP15 for ms on the Pico (precise timer)."""
         ms = max(1, min(int(ms), 2000))
         with self._lock:
-            if not self.available and not self._connect_locked():
+            if not self._ensure_locked():
                 return False
-            # Allow reply window ≥ pulse + margin
-            return self._cmd_locked(
-                f"FIRE {ms}",
-                expect_prefix="OK FIRE",
-                timeout_s=max(DEFAULT_TIMEOUT_S, ms / 1000.0 + 0.5),
-            )
+            timeout_s = max(DEFAULT_TIMEOUT_S, ms / 1000.0 + 0.5)
+            ok = self._cmd_locked(f"FIRE {ms}", expect_prefix="OK FIRE", timeout_s=timeout_s)
+            if not ok:
+                # USB renumber / transient I/O — reconnect once and retry
+                if self._connect_locked():
+                    ok = self._cmd_locked(
+                        f"FIRE {ms}", expect_prefix="OK FIRE", timeout_s=timeout_s
+                    )
+            return ok
 
     def status(self) -> dict:
         return {

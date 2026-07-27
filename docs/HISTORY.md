@@ -1118,6 +1118,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** `HW-001` §8: check valve mandatory (pump internals insufficient); topology + routing updated for Option B solenoid drive.
 - **[BOM]** `parts.csv` Feelers check valve → **have** / installed.
 
+## 2026-07-27 — [FIX] Pico detect MicroPython by-id + reconnect after USB renumber
+- **[ROOT CAUSE]** After reboot/reseats, MicroPython enumerates as `/dev/serial/by-id/usb-MicroPython_Board...` (not `*Pico*`). Old glob missed it → STUB / FIRE I/O errors when ttyACM renumbered.
+- **[FIX]** `pico_solenoid.py`: match `*MicroPython*`; open by-id; auto-reconnect on I/O fail; stop Ctrl-D soft-reset on connect (caused ACM renumber).
+- **[OPS]** Pico reseated with data cable; Click Test needs sentry restart after this deploy.
+
 ## 2026-07-25 — [SW] Option B Pico W solenoid driver live
 - **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
 - **[FW]** `firmware/pico_solenoid/main.py` — MicroPython GP15 timer.

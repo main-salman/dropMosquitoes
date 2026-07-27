@@ -46,3 +46,4 @@
 2026-07-25 | [SW] | Option B Pico W live: pico_solenoid.py + firmware + RelayController FIRE path; default driver=pico
 2026-07-26 | [OPS] | Pico flashed on Jetson (data cable); MicroPython+main.py; sentry Connected ttyACM0 gate CLOSED
 2026-07-27 | [DIAGRAM/SPEC] | Check valve as-built pump→accum in eco004_fluid_topology + HW-001 §8; parts have
+2026-07-27 | [FIX] | Pico detect MicroPython by-id + reconnect; stop Ctrl-D renumber on connect
