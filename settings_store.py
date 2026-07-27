@@ -75,6 +75,23 @@ DEFAULTS: dict[str, Any] = {
         "threshold": 16,
         "min_area": 500,
         "detect_shadows": False,
+        "dead_zone_frac": 0.15,
+    },
+    "sniper": {
+        "rotate_180": True,  # Physical upside-down mount on gimbal
+    },
+    "hunt": {
+        # Scout pixel → gimbal camera-pointing (signs flip axes if mount mirrored)
+        "pitch_sign": 1.0,
+        "yaw_sign": 1.0,
+        # Amplify Scout FOV→gimbal mapping (1.0 = pure IMX219 FOV; >1 = snappier follow)
+        "fov_scale": 1.35,
+        # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
+        # Align button + online boresight refine this while hunting.
+        "sniper_mount_pitch_deg": 0.0,
+        "sniper_mount_yaw_deg": 0.0,
+        # Nozzle↔Sniper cal applied on FIRE only (not while tracking camera)
+        "apply_nozzle_cal_on_fire": True,
     },
 }
 

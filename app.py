@@ -1,4 +1,4 @@
-# Implements: SW-001 §2, §2.7 — Flask server, MJPEG streams, REST API, predictive lead
+# Implements: SW-001 §2, §2.7, §2.13, §2.14 — Flask server, hunt mode, captures
 """
 app.py — Sniper Messy Mortar Flask Server
 
@@ -20,7 +20,7 @@ import re
 import subprocess
 import sys
 import time
-from flask import Flask, render_template, Response, request, jsonify
+from flask import Flask, render_template, Response, request, jsonify, send_file
 
 from hardware import (
     RelayController, LiDARController, create_turret_controller,
@@ -34,6 +34,7 @@ from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
 from settings_store import SettingsStore
 from status_indicator import StatusIndicator
 from activity_log import init_activity_log, log_event
+from hunt_controller import HuntController
 import diagnostics
 
 # ============================================================================
@@ -75,7 +76,8 @@ velocity_tracker = VelocityTracker()
 # - Scout camera: CSI-0 (IMX219 NoIR at 1280x720 @ 60 FPS) fixed to enclosure
 # - Sniper camera: CSI-1 (IMX219 NoIR with Motorized IR-Cut at 1280x720 @ 60 FPS) on gimbal
 scout_cam = CameraStream(sensor_id=0, width=1280, height=720, fps=30, name="Scout")
-sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=30, name="Sniper")
+sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=30, name="Sniper",
+                          rotate_180=True)  # Physical upside-down mount — SW-001 §2.13
 
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
@@ -94,6 +96,23 @@ auto_cal = AutoCalibrator(cal_table, hit_detector)
 # Water Line Priming System
 primer = PrimingSystem(relay)
 # Timed priming keep-alive removed — pressure maintain is AccumulatorManager (SW-001 §2.7)
+
+# Autonomous Hunt Mode — SW-001 §2.13 (started ON after camera boot)
+hunter = HuntController(
+    gimbal=gimbal,
+    scout_cam=scout_cam,
+    sniper_cam=sniper_cam,
+    accum=accum,
+    lidar=lidar,
+    cal_table=cal_table,
+    primer=primer,
+    detector=lambda: detector,
+    velocity_tracker=velocity_tracker,
+    hit_detector=hit_detector,
+    is_busy=lambda: bool(auto_cal.get_status().get("running")),
+    settings_path=settings.path,
+    project_dir=APP_DIR,
+)
 
 
 def apply_settings_to_runtime(data: dict | None = None) -> dict:
@@ -208,9 +227,26 @@ def apply_settings_to_runtime(data: dict | None = None) -> dict:
             "point_count": len(cal_table.points),
         }
 
-    # Scout section is consumed by ScoutVision / main.py; dashboard notes it only.
+    # Scout section → MOG2 hunt tracker (and legacy ScoutVision / main.py)
     if data.get("scout"):
         applied["scout"] = data["scout"]
+        try:
+            hunter.reload_scout_config()
+        except Exception as e:
+            print(f"[app] scout reload skip: {e}")
+
+    sn = data.get("sniper") or {}
+    if sn:
+        if "rotate_180" in sn:
+            sniper_cam.rotate_180 = bool(sn["rotate_180"])
+        applied["sniper"] = {"rotate_180": sniper_cam.rotate_180}
+
+    if data.get("hunt"):
+        try:
+            hunter.reload_hunt_geometry()
+            applied["hunt"] = data["hunt"]
+        except Exception as e:
+            print(f"[app] hunt geometry reload skip: {e}")
 
     print(f"[app] Applied settings to runtime: {list(applied.keys())}")
     return applied
@@ -231,6 +267,10 @@ def cleanup():
         return
     _cleanup_done = True
     print("\n[app] Shutting down...")
+    try:
+        hunter.shutdown()
+    except Exception as e:
+        print(f"[app] hunt shutdown: {e}")
     scout_cam.stop()
     sniper_cam.stop()
     lidar.cleanup()
@@ -1434,7 +1474,7 @@ def api_cal_freefire():
 
 @app.route('/api/status')
 def api_status():
-    """Return full system status as JSON — gimbal, relay, LiDAR, AI."""
+    """Return full system status as JSON — gimbal, relay, LiDAR, AI, hunt."""
     from hardware import ServoTurretController
     status = gimbal.get_status()
     status["controller"] = "servo" if isinstance(gimbal, ServoTurretController) else "storm32"
@@ -1447,8 +1487,75 @@ def api_status():
             "enabled": detector is not None,
             "confidence": detector.confidence if detector else 0,
             "min_box_area": detector.min_box_area if detector else 0
-        }
+        },
+        "hunt": hunter.get_status(),
     })
+
+
+# ============================================================================
+# HUNT MODE API — SW-001 §2.13
+# ============================================================================
+
+@app.route('/api/hunt/status', methods=['GET'])
+def api_hunt_status():
+    """Server-side hunt state (survives browser refresh)."""
+    return jsonify(hunter.get_status())
+
+
+@app.route('/api/hunt/start', methods=['POST'])
+def api_hunt_start():
+    """Enable autonomous hunt and arm accumulator pressure."""
+    return jsonify(hunter.start())
+
+
+@app.route('/api/hunt/stop', methods=['POST'])
+def api_hunt_stop():
+    """Pause hunt after current shot; cameras/gimbal/pressure stay up."""
+    return jsonify(hunter.stop())
+
+
+@app.route('/api/hunt/align', methods=['POST'])
+def api_hunt_align():
+    """ORB Scout↔Sniper align at home; saves mount bias for hunt aim."""
+    return jsonify(hunter.align_scout_gimbal())
+
+
+@app.route('/api/hunt/captures', methods=['GET'])
+def api_hunt_captures():
+    """List last ≤5 hunt attempts (newest first) — SW-001 §2.14."""
+    from hunt_capture import MAX_ATTEMPTS
+    limit = request.args.get('limit', MAX_ATTEMPTS, type=int)
+    limit = max(1, min(int(limit or MAX_ATTEMPTS), MAX_ATTEMPTS))
+    return jsonify({
+        "count": hunter.captures.count(),
+        "max": MAX_ATTEMPTS,
+        "items": hunter.captures.list_attempts(limit=limit),
+    })
+
+
+@app.route('/api/hunt/captures/<attempt_id>', methods=['GET'])
+def api_hunt_capture_one(attempt_id):
+    meta = hunter.captures.get_meta(attempt_id)
+    if not meta:
+        return jsonify({"error": "not_found"}), 404
+    return jsonify(meta)
+
+
+@app.route('/api/hunt/captures/<attempt_id>/<path:filename>', methods=['GET'])
+def api_hunt_capture_file(attempt_id, filename):
+    path = hunter.captures.resolve_file(attempt_id, filename)
+    if not path:
+        return jsonify({"error": "not_found"}), 404
+    # Guess MIME
+    if filename.endswith('.jpg') or filename.endswith('.jpeg'):
+        mime = 'image/jpeg'
+    elif filename.endswith('.mp4'):
+        mime = 'video/mp4'
+    elif filename.endswith('.avi'):
+        mime = 'video/x-msvideo'
+    else:
+        mime = 'application/octet-stream'
+    return send_file(path, mimetype=mime, conditional=True)
 
 
 # ============================================================================
@@ -1746,11 +1853,16 @@ if __name__ == '__main__':
         print(f"[app] Yaw Vmax tuning skipped: {e}")
 
     print(f"\n{'='*60}")
-    print(f"  SNIPER MESSY MORTAR — Control Dashboard")
+    print(f"  BugSniper — Control Dashboard")
     print(f"  http://0.0.0.0:{args.port}")
     print(f"{'='*60}\n")
 
-    # SAFE-001 §1: Gimbal power stays OFF until user explicitly enables it
-    print("[app] Gimbal power is OFF. Enable via dashboard when ready.")
+    # SW-001 §2.13: Hunt ON by default at boot (arms accumulator)
+    try:
+        boot_hunt = hunter.start()
+        print(f"[app] Hunt auto-start: mode={boot_hunt.get('mode')} "
+              f"armed={boot_hunt.get('armed')}")
+    except Exception as e:
+        print(f"[app] Hunt auto-start failed: {e}")
 
     app.run(host='0.0.0.0', port=args.port, threaded=True, debug=False)

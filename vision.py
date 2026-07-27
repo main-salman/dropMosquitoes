@@ -189,7 +189,7 @@ class CameraStream:
     """
 
     def __init__(self, sensor_id: int, width: int, height: int, fps: int,
-                 name: str = "Camera"):
+                 name: str = "Camera", rotate_180: bool = False):
         """
         Args:
             sensor_id: MIPI CSI port number (0=Scout, 1=Sniper).
@@ -197,12 +197,14 @@ class CameraStream:
             height: Capture height in pixels.
             fps: Target framerate.
             name: Human-readable name for logging.
+            rotate_180: If True, rotate every frame 180° (upside-down mount).
         """
         self.sensor_id = sensor_id
         self.width = width
         self.height = height
         self.fps = fps
         self.name = name
+        self.rotate_180 = bool(rotate_180)
 
         self._frame = None
         self._jpeg = None
@@ -329,6 +331,7 @@ class CameraStream:
             "flush_count": self.flush_count,
             "has_frame": has_frame,
             "error": self.error,
+            "rotate_180": self.rotate_180,
         }
 
     def _capture_loop(self):
@@ -352,6 +355,10 @@ class CameraStream:
             # Resize to target dimensions if needed
             if frame.shape[1] != self.width or frame.shape[0] != self.height:
                 frame = cv2.resize(frame, (self.width, self.height))
+
+            # Physical upside-down mount (Sniper) — SW-001 §2.13
+            if self.rotate_180:
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
 
             # Encode JPEG for MJPEG streaming
             _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])

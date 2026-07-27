@@ -32,6 +32,7 @@ settings_backups/
 activity.log
 activity.log.*
 .sentry.pid
+hunt_captures/
 *.engine
 *.onnx
 !requirements*.txt

@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.0  
-**Last Updated:** 2026-05-20  
+**Version:** 5.6  
+**Last Updated:** 2026-07-27  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -232,6 +232,91 @@ flat `{"target_psi": N}` are migrated on first load.
 - **Startup:** `app.py` loads store and `apply_settings_to_runtime()` before serving.
   `ScoutVision` / `main.py` read `settings.scout` (fallback: `scout_config.json`).
 - **Git:** `settings.json` and `settings_backups/` are machine-local (gitignored).
+
+### 2.13 Autonomous Hunt Mode (`hunt_controller.py` + Flask GUI)
+
+Operator-facing start/stop for autonomous bug engagement inside the production
+dashboard (`app.py` / `sentry.service`). Complements (does not replace) the
+legacy asyncio orchestrator in `main.py`.
+
+**Behavior**
+- **Default ON at boot:** after cameras initialize, hunt starts automatically
+  and **arms the accumulator** (pressure to Target PSI).
+- **Start:** enable hunt + arm pressure if not already armed. No confirm dialog.
+- **Stop:** **pause only** — cameras and gimbal stay live; accumulator stays
+  armed. Does **not** disarm or park.
+- **In-flight stop:** if Stop arrives mid-engagement, **finish the current shot**
+  then pause (do not abort mid-pulse).
+- **Server-side state:** survives browser refresh (`GET /api/hunt/status`).
+
+**Loop (dashboard path)**
+```
+Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online boresight)
+  → Sniper YOLO verify / closed-loop center → fire → HitDetector splash confirm
+```
+- Scout MOG2 on Flask `CameraStream` frames. Uses `settings.scout`.
+- **Center dead-zone:** ignore motion centroids near frame center (rejects static
+  center noise that previously locked aim at ~(640,360)).
+- **Track (flying bugs):** while Scout keeps a valid blob, continuously update
+  aim (Scout lead + Sniper closed-loop if insect seen off-center). Fire only when
+  YOLO verifies an insect **and** it is near Sniper crosshair.
+- **Sniper upside-down mount:** `CameraStream(rotate_180=True)` for sensor-1 —
+  UI + YOLO + hit-detect all see an upright image (`settings.sniper.rotate_180`).
+- **Scout→gimbal geometry:** track aim uses Scout FOV × `hunt.fov_scale` ×
+  `hunt.pitch_sign` / `yaw_sign` + online **camera** boresight/mount bias.
+  **Nozzle calibration offsets** (`calibration.offset_*`) apply on **FIRE only**
+  so camera pointing is not biased ~30° by nozzle-vs-lens cal. Hunt optical
+  range is the Scout FOV cone (not the full mechanical cal sweep).
+- **Align Scout↔Gimbal:** Control-tab button + `POST /api/hunt/align` homes
+  the gimbal, ORB-matches Scout vs Sniper, sets/refines
+  `settings.hunt.sniper_mount_*_deg`, and resumes hunt if it was running.
+- **Online boresight:** EMA from Sniper insect/splash error; auto-saved to
+  `settings.hunt.sniper_mount_*_deg` (does **not** overwrite nozzle cal).
+- Fire: ECO-004 solenoid pulse. **Post-shot:** HitDetector before/after on Sniper;
+  result `hit`/`miss` stored on hunt capture meta.
+- Skips new engagements while auto-cal is running.
+
+**Display states**
+| State | Meaning |
+|:------|:--------|
+| `HUNTING` | Hunt enabled and accumulator armed |
+| `PAUSED` | Hunt disabled (operator Stop or not yet started) |
+| `DISARMED` | Hunt enabled but accumulator not armed (arm failed / fault) |
+
+Also expose: `shot_count`, `last_engagement` (ISO timestamp + brief detail),
+`detections`, `rejections`, `engaging` (mid-shot).
+
+**API**
+- `GET /api/hunt/status` → full hunt status dict
+- `POST /api/hunt/start` → enable + arm → status
+- `POST /api/hunt/stop` → request pause (finish current shot) → status
+- `POST /api/hunt/align` → Scout↔Sniper ORB align at home → mount bias + status
+
+**GUI:** always-visible Start/Stop controls in the sticky header (all tabs),
+with live state badge + last shot / shot count. Polled with `/api/status`
+(hunt block included) or `/api/hunt/status`. **Control tab:** Align Scout↔Gimbal
+card (above Hunt Attempts).
+### 2.14 Hunt Attempt Captures (`hunt_capture.py` + Control tab)
+
+While **HUNTING**, engagement attempts (verified fire **and** reject) may record
+media for operator review. Manual TEST FIRE / PAUSED hunt do **not** capture.
+
+**Resource profile (v5.3 — after overload incident)**
+- **Stills only** — Scout + Sniper before/after JPEG + annotated copies.
+  **No video encode** (was saturating Jetson CPU/RAM and stalling MJPEG).
+- Stills downscaled to max width **640px**, JPEG quality ~80.
+- **Retention:** last **5** attempts under `hunt_captures/`; auto-delete oldest.
+- **Cooldownoldown:** minimum **8 s** between captures (rejects between windows are
+  not saved). Still records every reject *that passes the cooldown*.
+- **No continuous frame ring** — snapshot at engage + short after delay only.
+
+**API**
+- `GET /api/hunt/captures` → newest-first list (max 5) + meta/urls
+- `GET /api/hunt/captures/<id>` → one attempt meta
+- `GET /api/hunt/captures/<id>/<file>` → JPEG bytes
+
+**GUI:** Control-tab card only. Poll gallery **only while Control tab is
+active** (8 s interval). Detail stills load on click.
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 

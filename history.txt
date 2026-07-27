@@ -48,3 +48,15 @@
 2026-07-27 | [DIAGRAM/SPEC] | Check valve as-built pump→accum in eco004_fluid_topology + HW-001 §8; parts have
 2026-07-27 | [FIX] | Pico detect MicroPython by-id + reconnect; stop Ctrl-D renumber on connect
 2026-07-27 | [FIX] | Pico USB reseat auto-reconnect via health_check (no sentry restart)
+2026-07-27 | [UI] | Mobile: wrap tabs so Control visible; lock sideways pan on sliders
+2026-07-27 | [UI] | Dashboard brand → BugSniper (GUI title/header)
+2026-07-27 | [FEATURE] | Hunt Start/Stop in GUI; boot ON + auto-arm; pause-only stop; SW-001 §2.13
+2026-07-27 | [DEPLOY] | Hunt mode → Jetson 192.168.0.196 reboot; verified HUNTING+armed via /api/hunt/status
+2026-07-27 | [FEATURE] | Hunt Attempts gallery: last 50 Scout+Sniper stills+≤5s video; SW-001 §2.14
+2026-07-27 | [DEPLOY] | Hunt gallery → Jetson; CSI auto-reboot; captures live (4 rejects saved)
+2026-07-27 | [BUG FIX] | Hunt capture overload: stills-only, max 5, 8s cooldown; wipe+full reboot
+2026-07-27 | [FEATURE] | Hunt track+boresight+hit-verify; Scout dead-zone; keep YOLO
+2026-07-27 | [FIX] | Sniper rotate_180; nozzle cal on fire only; auto mount boresight (fix ~30° low aim)
+2026-07-27 | [FIX] | Align Scout↔Gimbal Control-tab button + ORB /api/hunt/align; fov_scale 1.35; SW-001 v5.6
+2026-07-27 | [FIX] | Align ORB single-pass only (2nd pass invalid after large yaw move)
+2026-07-27 | [LICENSE] | PolyForm Noncommercial 1.0.0 + COMMERCIAL.md (contact salmannaqvi.com); README license blurb

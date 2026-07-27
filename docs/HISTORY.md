@@ -1123,6 +1123,52 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** `pico_solenoid.py`: treat missing device node as dead; `health_check()` every 0.5s; FIRE retries reconnect + 300ms settle; rate-limit STUB logs; log `reconnected after USB reseat`.
 - **[FIX]** `RelayController` idle watchdog calls `pico.health_check()` continuously.
 
+## 2026-07-27 — [UI] Mobile dashboard: Control tab + slider pan
+- **[BUG]** On phone, tab bar overflow hid **Control**; dragging range sliders panned the whole page sideways.
+- **[FIX]** `templates/index.html`: wrap tabs on narrow screens; `overflow-x:hidden` + `overscroll-behavior-x:none`; `touch-action:none` on range inputs; tighter mobile tab/slider spacing.
+
+## 2026-07-27 — [DEPLOY] Hunt mode to Jetson + reboot verify
+- **[DEPLOY]** `./run-ai.sh` → rsync incl. `hunt_controller.py` / `app.py` / `templates/index.html` / SW-001 §2.13 → full reboot `192.168.0.196`.
+- **[VERIFY]** After boot: dashboard HTTP 200; `sentry` active; `/api/hunt/status` → `mode=HUNTING`, `armed=true`, insect `best.engine` loaded; Start/Stop in served HTML.
+- **[NOTE]** `run-ai.sh` 90s dashboard poll timed out once (arm + TensorRT load delayed bind); service was healthy immediately after — consider longer wait later if this recurs.
+
+## 2026-07-27 — [FEATURE] Hunt attempt capture gallery (stills + ≤5s video)
+- **[SPEC]** `SW-001` §2.14 v5.2: while HUNTING, record Scout+Sniper before/after JPEGs (raw + annotated) and ≤5s clips for verified fires **and** rejects; retain last 50 under `hunt_captures/` (auto-prune).
+- **[CODE]** `hunt_capture.py` — ring buffers @10 FPS, async finalize, MP4/`mp4v` with MJPEG `.avi` fallback.
+- **[CODE]** `hunt_controller.py` — tick buffers while hunting; `_record_attempt` on fire/reject/arm-fail.
+- **[API]** `GET /api/hunt/captures`, `/api/hunt/captures/<id>`, `/api/hunt/captures/<id>/<file>`.
+- **[UI]** Control-tab **Hunt Attempts** card — thumbnails, expand to play stills/videos.
+- **[GIT]** `.gitignore` → `hunt_captures/`.
+
+## 2026-07-27 — [DEPLOY] Hunt capture gallery to Jetson
+- **[DEPLOY]** `./run-ai.sh --restart` → soft restart hit Sniper CSI PHY dead → auto-reboot; cameras healthy after.
+- **[VERIFY]** Dashboard 200; hunt `HUNTING`+armed; `/api/hunt/captures` returning items; `HuntCapture` saving rejects to `hunt_captures/`.
+
+## 2026-07-27 — [BUG FIX] Hunt captures overloaded Jetson (stuck feeds)
+- **[ROOT CAUSE]** Reject storm (300+) wrote dual MP4 + 8 JPEGs ~every 200ms; app.py ~4.6GB RAM / 150%+ CPU; gallery polled 50 thumbs/4s; GStreamer `gst_sample_get_caps() NULL`; OpenCV `mp4v` unplayable in browsers.
+- **[OPS]** Paused hunt via `/api/hunt/stop` before fix.
+- **[SPEC]** `SW-001` §2.14 → v5.3: **stills only**, retain **5**, **8s cooldown**, no frame ring, Control-tab-only gallery poll.
+- **[CODE]** Rewrote `hunt_capture.py` lightweight; UI stops polling off Control tab; no `<video>`.
+- **[DEPLOY]** Wipe `hunt_captures/`, `./run-ai.sh` full reboot.
+
+## 2026-07-27 — [FEATURE] Hunt track + online boresight + hit verify
+- **[SPEC]** `SW-001` §2.13 v5.4: Scout dead-zone; continuous track for flying bugs; Sniper YOLO closed-loop center; HitDetector splash confirm; EMA Scout↔Sniper boresight from insect/splash error.
+- **[CODE]** `boresight.py`; `scout_vision` `dead_zone_frac`; rewrite `hunt_controller` track/fire/hit; captures store `hit_confirmed`/`hit_px`.
+- **[UI]** Hunt Attempts show HIT/MISS.
+- **[DEPLOY]** Full reboot; verified targets off-center (e.g. 1265,292) not stuck at 640,360; `boresight` in `/api/hunt/status`.
+
+## 2026-07-27 — [FIX] Align Scout↔Gimbal UI + hunt follow scale
+- **[FIX]** Align ORB is **single-pass at home** only (2nd pass after large yaw moved Sniper off shared scene and inflated bias).
+- **[UX]** Align was never in the GUI (only background boresight). Added Control-tab **Align Scout↔Gimbal** card + `POST /api/hunt/align` (ORB match at home → mount bias).
+- **[CODE]** `boresight.estimate_from_frames`; hunt `fov_scale` default 1.35 for snappier Scout→gimbal follow; align pause/resume hunt + persist mount.
+- **[NOTE]** Hunt pitch range = Scout FOV cone (~±24° × scale), not full mechanical cal sweep — explained in UI.
+- **[SPEC]** SW-001 §2.13 v5.6.
+
+## 2026-07-27 — [FIX] Scout↔Sniper aim geometry (upside-down + 30° low)
+- **[ROOT CAUSE]** Hunt track applied nozzle `calibration.offset_pitch≈+29°` to Scout→gimbal camera aim → systematically ~30° too low; Sniper physically upside-down; boresight was overwriting nozzle cal.
+- **[CODE]** `vision.CameraStream.rotate_180` for Sniper; hunt track uses mount/boresight only; **nozzle cal on FIRE only**; auto-save mount bias to `settings.hunt.sniper_mount_*`.
+- **[SPEC]** SW-001 §2.13 v5.5.
+
 ## 2026-07-25 — [SW] Option B Pico W solenoid driver live
 - **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
 - **[FW]** `firmware/pico_solenoid/main.py` — MicroPython GP15 timer.
@@ -1136,3 +1182,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** `HW-001` §5.4 Rev O = production Option B; §5.4b/§5.5 module+CH2 marked legacy. `SW-001` §2.7 notes hardware cutover pending Pico CDC driver (live code still T36 SIG + T29/CH2).
 - **[DIAGRAM]** Rewrote `diagrams/eco004_mosfet_module_option.drawio` — wire-move guide: remove dual-MOS module / T36 / T29–CH2 from valve; add Pico USB+GP15 → 220Ω → IRLB8721 G, 10k G→GND, S→GND, D←solenoid(−), +12V fused→solenoid(+), 1N5408 across coil (band→+). Includes pre-wire FET Ω/diode health table. **No 2N3904** on this path.
 - **[SOFTWARE CHECK]** Confirmed `hardware.py`: `RELAY_SOL12V_PIN=5` (CH2), `SOLENOID_LINE_NAME=PR.05` (T36). Click Test will not drive Option B until Pico firmware/driver ships.
+
+## 2026-07-27 — [LICENSE] Source-available PolyForm Noncommercial
+- **[LICENSE]** Added repo-root `LICENSE` (PolyForm Noncommercial 1.0.0) with Required Notice for Salman Abbas Naqvi.
+- **[DOCS]** `COMMERCIAL.md` — commercial use requires negotiated license via https://salmannaqvi.com/centered-heading-with-contact-form/
+- **[DOCS]** README license section: personal/home only; not positioned as open source.
+- **[SCOPE]** Applies to entire repo (software, firmware, hardware designs, diagrams, docs).

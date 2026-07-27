@@ -2,6 +2,12 @@
 
 An autonomous AI-powered mosquito sentry turret built on the NVIDIA Jetson Orin Nano.
 
+## License
+
+**Source available** under [PolyForm Noncommercial 1.0.0](LICENSE) — personal/home/hobby use only.
+
+Commercial use of any part of this project (code, firmware, hardware designs, docs) requires a license. Contact: [salmannaqvi.com](https://salmannaqvi.com/centered-heading-with-contact-form/). See [COMMERCIAL.md](COMMERCIAL.md).
+
 ## How It Works
 
 The system uses a **"Two-Brain" dual-pipeline architecture**:

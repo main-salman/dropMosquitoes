@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sniper Messy Mortar — Control Dashboard</title>
+  <title>BugSniper — Control Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -15,15 +15,52 @@
       --radius: 14px; --radius-sm: 10px;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
-    header { backdrop-filter: saturate(180%) blur(20px); background: rgba(28,28,30,0.8); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+      overscroll-behavior-x: none;
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      touch-action: pan-y;
+    }
+    header { backdrop-filter: saturate(180%) blur(20px); background: rgba(28,28,30,0.8); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
     header h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
     .header-pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
     .pill-live { background: rgba(48,209,88,0.18); color: var(--green); }
     .pill-off { background: rgba(255,69,58,0.18); color: var(--red); }
-    header .spacer { flex: 1; }
-    .tab-bar { display: flex; justify-content: center; gap: 4px; padding: 12px 16px; background: var(--bg); }
-    .tab-btn { padding: 7px 20px; font-size: 13px; font-weight: 500; color: var(--dim); background: transparent; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .pill-hunt { background: rgba(48,209,88,0.22); color: var(--green); }
+    .pill-paused { background: rgba(255,159,10,0.22); color: var(--orange); }
+    .pill-disarmed { background: rgba(255,69,58,0.22); color: var(--red); }
+    .hunt-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .hunt-meta { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    header .spacer { flex: 1; min-width: 8px; }
+    .hc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .hc-card { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; background: rgba(0,0,0,0.35); transition: border-color 0.15s; }
+    .hc-card:hover, .hc-card.active { border-color: var(--accent); }
+    .hc-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #111; }
+    .hc-card .hc-cap { padding: 8px 10px; font-size: 11px; color: var(--dim); line-height: 1.35; }
+    .hc-card .hc-cap b { color: var(--text); font-weight: 600; }
+    .hc-card .hc-fired { color: var(--green); }
+    .hc-card .hc-rejected { color: var(--orange); }
+    .hc-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .hc-media { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 900px) { .hc-media { grid-template-columns: 1fr; } }
+    .hc-media figure { margin: 0; }
+    .hc-media figcaption { font-size: 11px; color: var(--dim2); margin: 6px 0 4px; }
+    .hc-media img, .hc-media video { width: 100%; border-radius: 8px; background: #111; max-height: 320px; object-fit: contain; }
+    .tab-bar {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 4px;
+      padding: 12px 16px; background: var(--bg);
+      max-width: 100%;
+    }
+    .tab-btn {
+      padding: 7px 20px; font-size: 13px; font-weight: 500; color: var(--dim);
+      background: transparent; border: none; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; flex-shrink: 0;
+    }
     .tab-btn:hover { color: var(--text); background: var(--glass); }
     .tab-btn.active { color: var(--text); background: var(--glass); }
     .tab-pane { display: none; } .tab-pane.active { display: block; }
@@ -61,10 +98,15 @@
     .wasd [data-k=w]{grid-area:w} .wasd [data-k=a]{grid-area:a} .wasd [data-k=c]{grid-area:c} .wasd [data-k=d]{grid-area:d} .wasd [data-k=s]{grid-area:s}
     .pos-readout { text-align: center; margin-top: 10px; font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
     .pos-readout b { color: var(--teal); font-weight: 600; }
-    .sl { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
-    .sl label { font-size: 12px; color: var(--dim); min-width: 95px; }
-    .sl input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
-    .sl .v { font-size: 12px; color: var(--accent); min-width: 48px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .sl { display: flex; align-items: center; gap: 12px; margin: 10px 0; min-width: 0; }
+    .sl label { font-size: 12px; color: var(--dim); min-width: 95px; flex-shrink: 0; }
+    .sl input[type=range] {
+      flex: 1; min-width: 0; accent-color: var(--accent); height: 4px;
+      /* Keep page from panning sideways while dragging on mobile */
+      touch-action: none;
+    }
+    input[type=range] { touch-action: none; }
+    .sl .v { font-size: 12px; color: var(--accent); min-width: 48px; text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
     .tgl-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .tgl-row:last-child { border-bottom: none; }
     .tgl-row span { font-size: 13px; }
@@ -144,14 +186,33 @@
     .dg-badge.skip { background:rgba(120,120,128,0.15); color:var(--dim2); }
     .dg-act { font-size:9px; font-weight:700; color:var(--orange); border:1px solid rgba(255,159,10,0.4); border-radius:4px; padding:1px 5px; vertical-align:middle; }
     @media (max-width:900px){ .dg-desc{display:none} .dg-name{min-width:140px} }
+    /* Mobile: keep all tabs visible; stop sideways page drag on sliders */
+    @media (max-width: 720px) {
+      header { padding: 12px 14px; flex-wrap: wrap; }
+      header h1 { font-size: 15px; }
+      header .spacer { display: none; }
+      .tab-bar { justify-content: flex-start; padding: 8px 10px; gap: 2px; }
+      .tab-btn { padding: 6px 10px; font-size: 12px; }
+      .sl label { min-width: 72px; font-size: 11px; }
+      .sl .v { min-width: 40px; font-size: 11px; }
+      .card-body { padding: 14px; }
+      .test-grid { grid-template-columns: 1fr; }
+      .toast { left: 12px; right: 12px; bottom: 16px; max-width: none; }
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>🎯 Sniper Messy Mortar</h1>
+  <h1>🎯 BugSniper</h1>
   <span class="header-pill pill-live" id="conn">● Connected</span>
   <span class="spacer"></span>
+  <div class="hunt-bar" title="Autonomous hunt — survives page refresh">
+    <span class="header-pill pill-paused" id="hunt-mode">PAUSED</span>
+    <button class="btn btn-sm btn-green" id="hunt-start" onclick="huntStart()">▶ Start</button>
+    <button class="btn btn-sm btn-red" id="hunt-stop" onclick="huntStop()">⏹ Stop</button>
+    <span class="hunt-meta" id="hunt-meta">Shots: 0 · Last: —</span>
+  </div>
   <span style="font-size:12px; color:var(--dim)">Dashboard v2.0 · {% if ctrl_type == 'servo' %}Servo Turret{% else %}Storm32 Gimbal{% endif %}</span>
 </header>
 
@@ -281,6 +342,46 @@
           <label class="tgl"><input type="checkbox" id="tg" onchange="api('/api/relay/gimbal_power',{state:this.checked})"><i></i></label>
         </div>
         <p class="note">⚠ Gimbal power defaults OFF at boot per SAFE-001.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Align Scout↔Gimbal — SW-001 §2.13 -->
+  <div style="padding:0 14px 14px">
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span>🔭 Align Scout↔Gimbal</span>
+        <span style="font-weight:400;color:var(--dim2);font-size:12px">Homes gimbal, ORB-matches Scout vs Sniper, saves mount bias for hunt</span>
+        <span style="flex:1"></span>
+        <span class="cal-stat" id="align-bias">bias p=0° y=0°</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12px;color:var(--dim);margin:0 0 10px">
+          Hunt aim spans the Scout camera FOV (~±33° yaw / ±24° pitch × scale), not the full mechanical cal sweep.
+          Run Align once facing a textured wall/room so Sniper looks where Scout center points. Online boresight keeps refining during hunt.
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-blue" id="align-btn" onclick="huntAlign()">Align Scout↔Gimbal</button>
+          <span id="align-status" style="font-size:12px;color:var(--dim)">Idle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hunt attempt gallery — SW-001 §2.14 -->
+  <div style="padding:0 14px 14px">
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span>🎯 Hunt Attempts</span>
+        <span style="font-weight:400;color:var(--dim2);font-size:12px">Last 5 · Scout + Sniper stills (no video) · hunting only · 8s cooldown</span>
+        <span style="flex:1"></span>
+        <span class="header-pill pill-paused" id="hc-count">0 / 5</span>
+        <button class="btn btn-sm" onclick="hcRefresh()">🔄 Refresh</button>
+      </div>
+      <div class="card-body">
+        <div id="hc-empty" style="font-size:12px;color:var(--dim);padding:8px 0">No hunt attempts yet. When hunting, verified fires and rejects appear here.</div>
+        <div id="hc-grid" class="hc-grid"></div>
+        <div id="hc-detail" class="hc-detail" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -1031,18 +1132,152 @@ async function drainPipe() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal')}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal')}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}if(t==='ctrl')hcStartPolling();else hcStopPolling()}
 
-// ---- Status poll (includes LiDAR telemetry) ----
+// ---- Status poll (includes LiDAR telemetry + hunt) ----
+function renderHunt(h){
+  if(!h)return;
+  const mode=h.mode||'PAUSED';
+  const pill=$('hunt-mode');
+  pill.textContent=mode+(h.engaging?' · FIRING':'');
+  pill.className='header-pill '+(mode==='HUNTING'?'pill-hunt':mode==='DISARMED'?'pill-disarmed':'pill-paused');
+  const last=h.last_engagement;
+  let lastTxt='—';
+  if(last&&last.timestamp){
+    const t=(last.timestamp||'').split('T')[1]||last.timestamp;
+    lastTxt=t+(last.verify?(' '+last.verify):'');
+  }
+  $('hunt-meta').textContent=`Shots: ${h.shot_count||0} · Last: ${lastTxt}`;
+  $('hunt-start').disabled=mode==='HUNTING';
+  $('hunt-stop').disabled=mode==='PAUSED';
+  const b=h.boresight||{};
+  const g=h.geometry||{};
+  const bp=(b.pitch_bias_deg!=null?b.pitch_bias_deg:g.mount_pitch)||0;
+  const by=(b.yaw_bias_deg!=null?b.yaw_bias_deg:g.mount_yaw)||0;
+  const ab=$('align-bias');
+  if(ab)ab.textContent=`bias p=${Number(bp).toFixed(1)}° y=${Number(by).toFixed(1)}° · fov×${Number(g.fov_scale||1).toFixed(2)}`;
+}
+async function huntAlign(){
+  const btn=$('align-btn');
+  const st=$('align-status');
+  if(btn)btn.disabled=true;
+  if(st)st.textContent='Aligning (homes gimbal, matches features)…';
+  try{
+    const r=await fetch('/api/hunt/align',{method:'POST'});
+    const d=await r.json();
+    if(d.ok||(d.boresight&&d.message&&d.message.startsWith('Aligned'))){
+      const b=d.boresight||d;
+      if(st)st.textContent=d.message||`OK · p=${b.pitch_bias_deg}° y=${b.yaw_bias_deg}°`;
+      const ab=$('align-bias');
+      if(ab&&b.pitch_bias_deg!=null)ab.textContent=`bias p=${Number(b.pitch_bias_deg).toFixed(1)}° y=${Number(b.yaw_bias_deg).toFixed(1)}°`;
+      showToast('Align',d.message||'Scout↔Gimbal aligned');
+    }else{
+      if(st)st.textContent=d.message||('Failed: '+(d.error||'unknown'));
+      showToast('Align',d.message||d.error||'failed');
+    }
+  }catch(e){
+    if(st)st.textContent='Error: '+e.message;
+    showToast('Align','Failed: '+e.message);
+  }finally{
+    if(btn)btn.disabled=false;
+  }
+}
+async function huntStart(){
+  try{
+    const r=await fetch('/api/hunt/start',{method:'POST'});
+    const d=await r.json();
+    renderHunt(d);
+    showToast('Hunt','Started — '+ (d.mode||''));
+  }catch(e){showToast('Hunt','Start failed: '+e.message)}
+}
+async function huntStop(){
+  try{
+    const r=await fetch('/api/hunt/stop',{method:'POST'});
+    const d=await r.json();
+    renderHunt(d);
+    showToast('Hunt', d.engaging ? 'Stopping after current shot…' : 'Paused');
+  }catch(e){showToast('Hunt','Stop failed: '+e.message)}
+}
 async function poll(){try{const r=await fetch('/api/status');const d=await r.json();
   $('pp').textContent=d.gimbal.pitch.toFixed(1)+'°';$('py').textContent=d.gimbal.yaw.toFixed(1)+'°';
   $('tv-pitch').textContent=d.gimbal.pitch.toFixed(1)+'°';$('tv-yaw').textContent=d.gimbal.yaw.toFixed(1)+'°';
   $('tp').checked=d.relay.pump;$('tg').checked=d.relay.gimbal_power;
   if(d.lidar){$('tv-dist').textContent=d.lidar.distance_m.toFixed(2)}
-  if(d.gimbal.controller){const ct=d.gimbal.controller==='servo'?'Servo Turret':'Storm32 Gimbal';document.querySelector('.card-title')&&0}
+  if(d.hunt)renderHunt(d.hunt);
   $('conn').className='header-pill pill-live';$('conn').textContent='● Connected';
 }catch{$('conn').className='header-pill pill-off';$('conn').textContent='● Offline'}}
 setInterval(poll,1500);poll();
+
+// ---- Hunt attempt gallery (SW-001 §2.14) — Control tab only, lazy thumbs ----
+let hcItems=[], hcSelected=null, hcTimer=null;
+function hcFile(item, name){return (item.files&&item.files[name])||null}
+function hcThumb(item){
+  return hcFile(item,'sniper_after_ann.jpg')||hcFile(item,'scout_after_ann.jpg')
+    ||hcFile(item,'sniper_before_ann.jpg')||hcFile(item,'scout_before.jpg')||'';
+}
+function hcResultClass(r){return r==='fired'?'hc-fired':'hc-rejected'}
+function hcOnControlTab(){
+  const pane=$('p-ctrl');
+  return !!(pane&&pane.classList.contains('active'));
+}
+async function hcRefresh(){
+  if(!hcOnControlTab())return;
+  try{
+    const r=await fetch('/api/hunt/captures?limit=5');
+    const d=await r.json();
+    hcItems=d.items||[];
+    $('hc-count').textContent=`${d.count||hcItems.length} / ${d.max||5}`;
+    const grid=$('hc-grid'), empty=$('hc-empty');
+    if(!hcItems.length){empty.style.display='';grid.innerHTML='';$('hc-detail').style.display='none';return}
+    empty.style.display='none';
+    // Cards only — images load when clicked (detail) or via tiny placeholder badge
+    grid.innerHTML=hcItems.map(it=>{
+      const t=(it.timestamp||'').replace('T',' ');
+      const thumb=hcThumb(it);
+      const hit = it.hit_confirmed===true?' HIT':(it.hit_confirmed===false?' MISS':'');
+      return `<div class="hc-card${hcSelected===it.id?' active':''}" onclick="hcOpen('${it.id}')">
+        <img src="${thumb}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=.25"/>
+        <div class="hc-cap"><b class="${hcResultClass(it.result)}">${(it.result||'?').toUpperCase()}${hit}</b>
+          · ${esc(it.verify||'')}<br>${esc(t)} · p=${it.aim_pitch}° y=${it.aim_yaw}°</div></div>`;
+    }).join('');
+    if(hcSelected){const still=hcItems.find(x=>x.id===hcSelected);if(still)hcShowDetail(still);else{$('hc-detail').style.display='none';hcSelected=null}}
+  }catch(e){console.warn('hcRefresh',e)}
+}
+function hcOpen(id){
+  const it=hcItems.find(x=>x.id===id);if(!it)return;
+  hcSelected=id;
+  document.querySelectorAll('.hc-card').forEach(c=>c.classList.toggle('active',c.getAttribute('onclick')&&c.getAttribute('onclick').includes(id)));
+  hcShowDetail(it);
+}
+function hcShowDetail(it){
+  const f=n=>hcFile(it,n);
+  const img=(url,cap)=>url?`<figure><figcaption>${cap}</figcaption><img src="${url}" alt="${cap}" loading="lazy" decoding="async"/></figure>`:'';
+  $('hc-detail').style.display='block';
+  $('hc-detail').innerHTML=`
+    <div style="font-size:13px;margin-bottom:10px">
+      <b class="${hcResultClass(it.result)}">${(it.result||'').toUpperCase()}</b>
+      · ${esc(it.verify||'')} · ${esc((it.timestamp||'').replace('T',' '))}
+      · aim ${it.aim_pitch}°/${it.aim_yaw}° · ${it.distance_m!=null?(it.distance_m+' m'):'—'}
+      · hit=${it.hit_confirmed===true?'YES':(it.hit_confirmed===false?'NO':'—')}
+      ${it.status==='recording'?' · <span style="color:var(--orange)">saving…</span>':''}
+    </div>
+    <div class="hc-media">
+      ${img(f('scout_before_ann.jpg')||f('scout_before.jpg'),'Scout before')}
+      ${img(f('scout_after_ann.jpg')||f('scout_after.jpg'),'Scout after')}
+      ${img(f('sniper_before_ann.jpg')||f('sniper_before.jpg'),'Sniper before')}
+      ${img(f('sniper_after_ann.jpg')||f('sniper_after.jpg'),'Sniper after')}
+    </div>`;
+}
+function hcStartPolling(){
+  if(hcTimer)return;
+  hcRefresh();
+  hcTimer=setInterval(hcRefresh,8000);
+}
+function hcStopPolling(){
+  if(hcTimer){clearInterval(hcTimer);hcTimer=null}
+}
+// Kick once if Control is the default tab
+if(hcOnControlTab())hcStartPolling();
 
 // ---- Tests ----
 async function loadTests(){const r=await fetch('/api/tests/list');const s=await r.json();const g=$('test-grid');g.innerHTML='';for(const id of SUITES){const t=s[id];if(!t)continue;ST[id]={p:0,f:0};g.innerHTML+=`<div class="tc" id="tc-${id}"><div class="tc-head"><span class="tc-icon">${ICONS[t.layer]||'📦'}</span><div class="tc-info"><h3>${t.name}</h3><p>${t.description}</p></div><span class="tc-badge idle" id="b-${id}">IDLE</span></div><div class="tc-body"><div class="tc-actions"><button class="btn btn-sm btn-green" id="r-${id}" onclick="runT('${id}')">▶ Run</button><button class="btn btn-sm" onclick="$('l-${id}').classList.toggle('vis')">📋 Log</button><span class="score" id="s-${id}"></span></div><div class="tc-log" id="l-${id}"></div></div></div>`}tl=true}

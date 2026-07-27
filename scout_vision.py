@@ -27,6 +27,7 @@ class ScoutVision:
         self.threshold = 16
         self.min_area = 500
         self.detect_shadows = False
+        self.dead_zone_frac = 0.15
 
         self.load_config()
 
@@ -55,6 +56,8 @@ class ScoutVision:
         self.threshold = int(config.get("threshold", 16))
         self.min_area = int(config.get("min_area", 500))
         self.detect_shadows = bool(config.get("detect_shadows", False))
+        # Fraction of half-frame ignored around center (0.15 ≈ middle 30% box)
+        self.dead_zone_frac = float(config.get("dead_zone_frac", 0.15))
 
     def load_config(self):
         """Prefer settings.json scout section (SW-001 §2.11); else scout_config.json."""
@@ -83,8 +86,21 @@ class ScoutVision:
         else:
             print("[ScoutVision] Config not found, using defaults.")
 
-    def start(self):
+    def start(self, external_frames: bool = False):
+        """
+        Start MOG2 tracking.
+
+        external_frames=True: do not open CSI — caller feeds frames via
+        process_frame() (used by Flask hunt mode sharing scout_cam).
+        """
         if self._running:
+            return
+
+        if external_frames:
+            self._running = True
+            self._thread = None
+            self._cap = None
+            print("[ScoutVision] Started (external frames — shared scout_cam).")
             return
 
         # GStreamer pipeline with drop=true max-buffers=1 for strict memory constraint
@@ -112,56 +128,70 @@ class ScoutVision:
         self._thread.start()
         print("[ScoutVision] Started.")
 
-    def _process_loop(self):
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    def process_frame(self, frame):
+        """
+        Run one MOG2 update on an externally supplied BGR frame.
+        Used by HuntController with Flask CameraStream frames (SW-001 §2.13).
+        """
+        if frame is None or not self._running:
+            return
 
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        fgMask = self.backSub.apply(frame)
+        fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
+
+        contours, _ = cv2.findContours(fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        largest_area = 0
+        best_cx, best_cy = None, None
+
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area < self.min_area or area <= largest_area:
+                continue
+            M = cv2.moments(contour)
+            if M["m00"] <= 0:
+                continue
+            cx = int(M["m10"] / M["m00"])
+            cy = int(M["m01"] / M["m00"])
+            # Center dead-zone — ignore static center noise (SW-001 §2.13)
+            h, w = frame.shape[:2]
+            nx = abs((cx / max(w, 1)) - 0.5)
+            ny = abs((cy / max(h, 1)) - 0.5)
+            if nx < self.dead_zone_frac and ny < self.dead_zone_frac:
+                continue
+            largest_area = area
+            best_cx, best_cy = cx, cy
+
+        now = time.monotonic()
+        vx, vy = 0.0, 0.0
+
+        if best_cx is not None and best_cy is not None:
+            self._position_history.append((best_cx, best_cy, now))
+            if len(self._position_history) >= 2:
+                oldest = self._position_history[0]
+                newest = self._position_history[-1]
+                dt = newest[2] - oldest[2]
+                if dt > 0.001:
+                    vx = (newest[0] - oldest[0]) / dt
+                    vy = (newest[1] - oldest[1]) / dt
+        else:
+            self._position_history.clear()
+
+        with self._lock:
+            self.target_x = best_cx
+            self.target_y = best_cy
+            self.velocity_x = vx
+            self.velocity_y = vy
+            self.latest_frame = frame.copy()
+
+    def _process_loop(self):
         while self._running:
             ret, frame = self._cap.read()
             if not ret:
                 time.sleep(0.01)
                 continue
-
-            fgMask = self.backSub.apply(frame)
-            fgMask = cv2.morphologyEx(fgMask, cv2.MORPH_OPEN, kernel)
-
-            contours, _ = cv2.findContours(fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            largest_area = 0
-            best_cx, best_cy = None, None
-
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                if area >= self.min_area and area > largest_area:
-                    largest_area = area
-                    M = cv2.moments(contour)
-                    if M["m00"] > 0:
-                        best_cx = int(M["m10"] / M["m00"])
-                        best_cy = int(M["m01"] / M["m00"])
-
-            now = time.monotonic()
-            vx, vy = 0.0, 0.0
-
-            if best_cx is not None and best_cy is not None:
-                self._position_history.append((best_cx, best_cy, now))
-
-                # Calculate velocity from position history if we have enough samples
-                if len(self._position_history) >= 2:
-                    oldest = self._position_history[0]
-                    newest = self._position_history[-1]
-                    dt = newest[2] - oldest[2]
-                    if dt > 0.001:  # Avoid division by near-zero
-                        vx = (newest[0] - oldest[0]) / dt
-                        vy = (newest[1] - oldest[1]) / dt
-            else:
-                # Target lost — clear history
-                self._position_history.clear()
-
-            with self._lock:
-                self.target_x = best_cx
-                self.target_y = best_cy
-                self.velocity_x = vx
-                self.velocity_y = vy
-                self.latest_frame = frame.copy() if frame is not None else None
+            self.process_frame(frame)
 
     def get_target(self):
         """Returns (X, Y) of the largest moving contour, or (None, None)."""
