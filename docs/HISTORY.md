@@ -1112,6 +1112,12 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[VERIFY]** Serial: `CLOSE→OK CLOSE`, `PING→PONG`, `FIRE 5→OK FIRE 5`. Device `2e8a:0005` MicroPython FS mode `/dev/ttyACM0`.
 - **[SW]** Restarted `sentry`: `[PicoSolenoid] Connected /dev/ttyACM0 @ 115200 — gate CLOSED.`
 
+## 2026-07-27 — [DIAGRAM/SPEC] External check valve as-built (pump→accumulator)
+- **[HW]** Feelers 1/4" one-way check valve **installed** between pump outlet and accumulator (arrow toward tank) — holds PSI when pump OFF.
+- **[DIAGRAM]** Rewrote `diagrams/eco004_fluid_topology.drawio` with check valve + transducer tee; updated `eco004_vertical_stack.drawio` pump note.
+- **[SPEC]** `HW-001` §8: check valve mandatory (pump internals insufficient); topology + routing updated for Option B solenoid drive.
+- **[BOM]** `parts.csv` Feelers check valve → **have** / installed.
+
 ## 2026-07-25 — [SW] Option B Pico W solenoid driver live
 - **[SPEC]** `SW-001` §2.7 / `HW-001` §5.4: Pico CDC protocol `FIRE`/`OPEN`/`CLOSE`/`PING`; default `solenoid_driver=pico`.
 - **[FW]** `firmware/pico_solenoid/main.py` — MicroPython GP15 timer.

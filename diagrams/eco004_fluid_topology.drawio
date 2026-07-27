@@ -1,83 +1,170 @@
-<mxfile>
+<mxfile host="app.diagrams.net" modified="2026-07-27T10:05:00.000Z" agent="Cursor" version="22.1.0">
   <diagram name="ECO-004 Fluid Topology" id="eco004_fluid">
-    <mxGraphModel dx="1800" dy="900" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="900" background="#FFFFFF">
+    <mxGraphModel dx="1800" dy="900" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="980" background="#FFFFFF">
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <!-- Title -->
-        <mxCell id="t1" value="&lt;b style='font-size:20px'&gt;ECO-2026-004: Constant-Pressure Accumulator + Solenoid Fluid Path&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666;font-size:12px'&gt;Reservoir → Pump (continuous) → Accumulator (dampens pulsation) → Solenoid ON TURRET (MOSFET-gated) → Nozzle&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="40" y="15" width="950" height="50" as="geometry"/></mxCell>
-        <!-- ===== 1. RESERVOIR ===== -->
-        <mxCell id="res" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#90CAF9;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="40" y="120" width="130" height="130" as="geometry"/></mxCell>
-        <mxCell id="reswater" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=50;" vertex="1" parent="1"><mxGeometry x="50" y="160" width="110" height="80" as="geometry"/></mxCell>
-        <mxCell id="reslbl" value="&lt;b style='color:#1565C0;font-size:11px'&gt;Water Reservoir&lt;/b&gt;&lt;br&gt;&lt;span style='color:#1976D2;font-size:8px'&gt;Shallow tote + mesh lid&lt;br&gt;Gravity-fed intake&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="45" y="125" width="120" height="35" as="geometry"/></mxCell>
-        <mxCell id="rescap" value="&lt;b&gt;1. Reservoir&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="55" y="260" width="100" height="18" as="geometry"/></mxCell>
-        <!-- Arrow 1→2 -->
-        <mxCell id="a12" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=6;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="170" y="185" as="sourcePoint"/><mxPoint x="225" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="a12l" value="&lt;span style='font-size:8px;color:#42A5F5'&gt;1/4&amp;quot; silicone&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="170" y="165" width="60" height="14" as="geometry"/></mxCell>
-        <!-- ===== 2. DIAPHRAGM PUMP ===== -->
-        <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="225" y="130" width="130" height="110" as="geometry"/></mxCell>
-        <mxCell id="pumpmotor" value="" style="ellipse;fillColor=#1565C0;strokeColor=#1976D2;" vertex="1" parent="1"><mxGeometry x="240" y="170" width="30" height="30" as="geometry"/></mxCell>
-        <mxCell id="pumplbl" value="&lt;span style='color:#90CAF9;font-size:10px'&gt;&lt;b&gt;12V Diaphragm Pump&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px'&gt;60 PSI, self-priming&lt;br&gt;RUNS CONTINUOUSLY&lt;br&gt;(Relay CH1 / BCM 17)&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="270" y="142" width="80" height="55" as="geometry"/></mxCell>
-        <mxCell id="pumpcap" value="&lt;b&gt;2. Pump&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;continuous — no pulsing&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="225" y="250" width="130" height="28" as="geometry"/></mxCell>
-        <!-- Arrow 2→3a -->
-        <mxCell id="a23" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=6;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="355" y="185" as="sourcePoint"/><mxPoint x="410" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <!-- ===== 3a. UXCELL ADAPTER (pump→accum) ===== -->
-        <mxCell id="ux1" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FFD54F;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="410" y="155" width="80" height="60" as="geometry"/></mxCell>
-        <mxCell id="ux1body" value="" style="rounded=0;fillColor=#FFD54F;strokeColor=#FFC107;" vertex="1" parent="1"><mxGeometry x="425" y="175" width="50" height="12" as="geometry"/></mxCell>
-        <mxCell id="ux1lbl" value="&lt;span style='color:#F57F17;font-size:8px'&gt;&lt;b&gt;uxcell Adapter&lt;/b&gt;&lt;br&gt;1/4&amp;quot; Barb → 1/2&amp;quot; FNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="410" y="190" width="80" height="22" as="geometry"/></mxCell>
-        <!-- Arrow 3a→4 -->
-        <mxCell id="a34" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="490" y="185" as="sourcePoint"/><mxPoint x="530" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="a34l" value="&lt;span style='font-size:7px;color:#F57F17'&gt;threads into&lt;br&gt;1/2&amp;quot; MNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="487" y="156" width="48" height="22" as="geometry"/></mxCell>
-        <!-- ===== 4. ACCUMULATOR TANK ===== -->
-        <mxCell id="accum" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#7986CB;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="530" y="100" width="160" height="170" as="geometry"/></mxCell>
-        <mxCell id="accumbody" value="" style="rounded=1;fillColor=#C5CAE9;strokeColor=#7986CB;arcSize=30;" vertex="1" parent="1"><mxGeometry x="565" y="140" width="90" height="80" as="geometry"/></mxCell>
-        <mxCell id="accumair" value="&lt;span style='font-size:8px;color:#5C6BC0'&gt;Air&lt;br&gt;Chamber&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="580" y="145" width="60" height="22" as="geometry"/></mxCell>
-        <mxCell id="accumwater" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=40;" vertex="1" parent="1"><mxGeometry x="565" y="185" width="90" height="30" as="geometry"/></mxCell>
-        <mxCell id="accumlbl" value="&lt;b style='color:#283593;font-size:11px'&gt;Swess 0.75L Accumulator&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:8px'&gt;125 PSI max&lt;br&gt;Dual 1/2&amp;quot; MNPT ports&lt;br&gt;Absorbs ALL pump pulsation&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="540" y="105" width="140" height="42" as="geometry"/></mxCell>
-        <mxCell id="accumcap" value="&lt;b&gt;3. Accumulator&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;flat pressure output&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="545" y="280" width="130" height="28" as="geometry"/></mxCell>
-        <!-- Arrow 4→3b -->
-        <mxCell id="a45" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="690" y="185" as="sourcePoint"/><mxPoint x="730" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <!-- ===== 3b. UXCELL ADAPTER (accum→line) ===== -->
-        <mxCell id="ux2" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#FFD54F;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="730" y="155" width="80" height="60" as="geometry"/></mxCell>
-        <mxCell id="ux2body" value="" style="rounded=0;fillColor=#FFD54F;strokeColor=#FFC107;" vertex="1" parent="1"><mxGeometry x="745" y="175" width="50" height="12" as="geometry"/></mxCell>
-        <mxCell id="ux2lbl" value="&lt;span style='color:#F57F17;font-size:8px'&gt;&lt;b&gt;uxcell Adapter&lt;/b&gt;&lt;br&gt;1/4&amp;quot; Barb → 1/2&amp;quot; FNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="730" y="190" width="80" height="22" as="geometry"/></mxCell>
-        <!-- Arrow to turret section -->
-        <mxCell id="a56" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=6;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="810" y="185" as="sourcePoint"/><mxPoint x="870" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="a56l" value="&lt;span style='font-size:8px;color:#42A5F5'&gt;1/4&amp;quot; silicone&lt;br&gt;to turret&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="815" y="160" width="60" height="20" as="geometry"/></mxCell>
-        <!-- ===== TURRET BOUNDARY ===== -->
-        <mxCell id="turretbox" value="" style="rounded=1;fillColor=none;strokeColor=#4CAF50;strokeWidth=3;dashed=1;dashPattern=8 4;" vertex="1" parent="1"><mxGeometry x="860" y="85" width="590" height="210" as="geometry"/></mxCell>
-        <mxCell id="turretlabel" value="&lt;b style='color:#2E7D32;font-size:12px'&gt;🎯 ON SERVO TURRET PAYLOAD&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4CAF50;font-size:9px'&gt;MG996R servos (11 kg·cm torque) • PCA9685 PWM driver • Total payload ~275g&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="900" y="88" width="500" height="28" as="geometry"/></mxCell>
-        <!-- ===== 5a. KOZELO ADAPTER (line→solenoid) ===== -->
-        <mxCell id="kz1" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="875" y="155" width="80" height="60" as="geometry"/></mxCell>
-        <mxCell id="kz1body" value="" style="rounded=0;fillColor=#FFB74D;strokeColor=#FF9800;" vertex="1" parent="1"><mxGeometry x="890" y="175" width="50" height="12" as="geometry"/></mxCell>
-        <mxCell id="kz1lbl" value="&lt;span style='color:#E65100;font-size:8px'&gt;&lt;b&gt;Kozelo Adapter&lt;/b&gt;&lt;br&gt;1/4&amp;quot; Barb → 1/4&amp;quot; MNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="875" y="190" width="80" height="22" as="geometry"/></mxCell>
-        <!-- Arrow 5a→6 -->
-        <mxCell id="a67" value="" style="endArrow=block;endFill=1;strokeColor=#FFB74D;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="955" y="185" as="sourcePoint"/><mxPoint x="1005" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <!-- ===== 6. SOLENOID VALVE (ON TURRET) ===== -->
-        <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;arcSize=8;" vertex="1" parent="1"><mxGeometry x="1005" y="120" width="160" height="155" as="geometry"/></mxCell>
-        <mxCell id="solcoil" value="" style="rounded=1;fillColor=#37474F;strokeColor=#455A64;arcSize=10;" vertex="1" parent="1"><mxGeometry x="1040" y="140" width="90" height="40" as="geometry"/></mxCell>
-        <mxCell id="sollbl" value="&lt;b style='color:#B0BEC5;font-size:11px'&gt;GOODRIG Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:8px'&gt;12V DC Direct-Acting NC&lt;br&gt;1/4&amp;quot; FNPT both ends&lt;br&gt;MOSFET-gated (BCM 27)&lt;br&gt;&lt;b style='color:#4CAF50'&gt;⚡ MOUNTED ON TURRET&lt;br&gt;Zero dead volume to nozzle&lt;/b&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1010" y="185" width="150" height="65" as="geometry"/></mxCell>
-        <mxCell id="solcap" value="&lt;b&gt;4. Solenoid&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;on turret, direct to nozzle&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="1015" y="305" width="130" height="28" as="geometry"/></mxCell>
-        <!-- Arrow 6→5b DIRECT connection -->
-        <mxCell id="a78" value="" style="endArrow=block;endFill=1;strokeColor=#FFB74D;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1165" y="185" as="sourcePoint"/><mxPoint x="1215" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <mxCell id="a78l" value="&lt;span style='font-size:7px;color:#E65100'&gt;DIRECT&lt;br&gt;no tubing&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1167" y="156" width="45" height="22" as="geometry"/></mxCell>
-        <!-- ===== 5b. KOZELO ADAPTER (solenoid→nozzle) ===== -->
-        <mxCell id="kz2" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FFB74D;shadow=1;arcSize=12;" vertex="1" parent="1"><mxGeometry x="1215" y="155" width="80" height="60" as="geometry"/></mxCell>
-        <mxCell id="kz2body" value="" style="rounded=0;fillColor=#FFB74D;strokeColor=#FF9800;" vertex="1" parent="1"><mxGeometry x="1230" y="175" width="50" height="12" as="geometry"/></mxCell>
-        <mxCell id="kz2lbl" value="&lt;span style='color:#E65100;font-size:8px'&gt;&lt;b&gt;Kozelo Adapter&lt;/b&gt;&lt;br&gt;1/4&amp;quot; Barb → 1/4&amp;quot; MNPT&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1215" y="190" width="80" height="22" as="geometry"/></mxCell>
-        <!-- Arrow 5b→7 DIRECT -->
-        <mxCell id="a89" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=4;rounded=1;" edge="1" parent="1"><mxGeometry relative="1" as="geometry"><mxPoint x="1295" y="185" as="sourcePoint"/><mxPoint x="1350" y="185" as="targetPoint"/></mxGeometry></mxCell>
-        <!-- ===== 7. NOZZLE (ON TURRET) ===== -->
-        <mxCell id="nozzle" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;arcSize=10;" vertex="1" parent="1"><mxGeometry x="1350" y="130" width="90" height="110" as="geometry"/></mxCell>
-        <mxCell id="nozzletip" value="" style="triangle;fillColor=#4CAF50;strokeColor=#2E7D32;direction=south;" vertex="1" parent="1"><mxGeometry x="1375" y="180" width="20" height="35" as="geometry"/></mxCell>
-        <mxCell id="nozzlebody" value="" style="rounded=0;fillColor=#2E7D32;strokeColor=#1B5E20;" vertex="1" parent="1"><mxGeometry x="1365" y="165" width="50" height="10" as="geometry"/></mxCell>
-        <mxCell id="nozzlelbl" value="&lt;span style='color:#A5D6A7;font-size:10px'&gt;&lt;b&gt;Nozzle&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:8px'&gt;Fires down ↓&lt;/span&gt;&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1355" y="135" width="75" height="28" as="geometry"/></mxCell>
-        <mxCell id="spray" value="&lt;span style='font-size:16px;color:#42A5F5'&gt;💧&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="1378" y="220" width="25" height="25" as="geometry"/></mxCell>
-        <mxCell id="nozzlecap" value="&lt;b&gt;5. Nozzle&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;fires downward&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" vertex="1" parent="1"><mxGeometry x="1345" y="255" width="100" height="28" as="geometry"/></mxCell>
-        <!-- ===== FLOW SUMMARY ===== -->
-        <mxCell id="flow" value="&lt;b&gt;Flow:&lt;/b&gt; Reservoir → Pump (continuous) → uxcell adapter → &lt;b&gt;Accumulator&lt;/b&gt; (absorbs pulsation) → uxcell adapter → 1/4&amp;quot; silicone to turret → Kozelo adapter → &lt;b&gt;Solenoid ON TURRET&lt;/b&gt; (MOSFET-gated) → Kozelo adapter → &lt;b&gt;Nozzle&lt;/b&gt; (DIRECT, zero dead volume)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#2196F3;fontColor=#333;fontSize=11;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="40" y="350" width="1410" height="35" as="geometry"/></mxCell>
-        <!-- Key advantage -->
-        <mxCell id="adv" value="&lt;b style='color:#2E7D32'&gt;✅ KEY ADVANTAGE:&lt;/b&gt; Solenoid mounted directly on MG996R servo turret payload (~275g total = 2.5% of stall torque). Zero tubing between valve and nozzle = zero dead volume, zero drip, maximum pulse precision." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#4CAF50;fontColor=#333;fontSize=10;strokeWidth=1;" vertex="1" parent="1"><mxGeometry x="40" y="400" width="1000" height="30" as="geometry"/></mxCell>
+
+        <mxCell id="t1" value="&lt;b style='font-size:20px'&gt;ECO-2026-004: Accumulator Fluid Path (as-built)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666;font-size:12px'&gt;Reservoir → Pump → &lt;b style='color:#C62828'&gt;Check Valve&lt;/b&gt; → Accumulator → Transducer tee → Solenoid (turret) → Nozzle&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" parent="1" vertex="1">
+          <mxGeometry x="40" y="12" width="1100" height="48" as="geometry"/>
+        </mxCell>
+
+        <!-- 1 RESERVOIR -->
+        <mxCell id="res" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#90CAF9;shadow=1;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="120" width="120" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="reswater" value="" style="rounded=0;fillColor=#42A5F5;strokeColor=#1E88E5;opacity=50;" parent="1" vertex="1">
+          <mxGeometry x="50" y="160" width="100" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="reslbl" value="&lt;b style='color:#1565C0;font-size:11px'&gt;Reservoir&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="45" y="128" width="110" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="rescap" value="&lt;b&gt;1. Reservoir&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="50" y="250" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a12" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="160" y="180" as="sourcePoint"/><mxPoint x="210" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- 2 PUMP -->
+        <mxCell id="pump" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#1565C0;shadow=1;arcSize=10;" parent="1" vertex="1">
+          <mxGeometry x="210" y="130" width="120" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="pumplbl" value="&lt;span style='color:#90CAF9;font-size:10px'&gt;&lt;b&gt;12V Pump&lt;/b&gt;&lt;br&gt;R385 · CH1&lt;br&gt;charge only&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="220" y="155" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="pumpcap" value="&lt;b&gt;2. Pump&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="220" y="240" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a23" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="330" y="180" as="sourcePoint"/><mxPoint x="370" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- 3 CHECK VALVE (NEW / INSTALLED) -->
+        <mxCell id="chk" value="" style="rounded=1;fillColor=#FFEBEE;strokeColor=#C62828;strokeWidth=3;shadow=1;arcSize=10;" parent="1" vertex="1">
+          <mxGeometry x="370" y="135" width="130" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="chklbl" value="&lt;b style='color:#B71C1C;font-size:12px'&gt;★ Check Valve&lt;/b&gt;&lt;br&gt;&lt;span style='color:#C62828;font-size:9px'&gt;Feelers 1/4&amp;quot; one-way&lt;br&gt;arrow → accumulator&lt;br&gt;holds PSI when pump OFF&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="375" y="145" width="120" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="chkcap" value="&lt;b style='color:#B71C1C'&gt;3. Check valve&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:9px'&gt;INSTALLED — no backflow&lt;/span&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="370" y="235" width="130" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="chkarrow" value="&lt;b style='font-size:14px;color:#C62828'&gt;→&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="420" y="118" width="30" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a34" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="500" y="180" as="sourcePoint"/><mxPoint x="540" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- uxcell in -->
+        <mxCell id="ux1" value="&lt;span style='color:#F57F17;font-size:8px'&gt;&lt;b&gt;uxcell&lt;/b&gt;&lt;br&gt;1/4→1/2 FNPT&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFD54F;align=center;" parent="1" vertex="1">
+          <mxGeometry x="540" y="155" width="70" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a45" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=4;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="610" y="180" as="sourcePoint"/><mxPoint x="650" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- 4 ACCUMULATOR -->
+        <mxCell id="accum" value="" style="rounded=1;fillColor=#E8EAF6;strokeColor=#7986CB;shadow=1;arcSize=8;" parent="1" vertex="1">
+          <mxGeometry x="650" y="110" width="150" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="accumlbl" value="&lt;b style='color:#283593;font-size:11px'&gt;Swess 0.75L&lt;/b&gt;&lt;br&gt;&lt;span style='color:#3F51B5;font-size:9px'&gt;Accumulator&lt;br&gt;stores shot pressure&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="660" y="145" width="130" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="accumcap" value="&lt;b&gt;4. Accumulator&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="665" y="260" width="120" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a56" value="" style="endArrow=block;endFill=1;strokeColor=#FFD54F;strokeWidth=4;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="800" y="180" as="sourcePoint"/><mxPoint x="840" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="ux2" value="&lt;span style='color:#F57F17;font-size:8px'&gt;&lt;b&gt;uxcell&lt;/b&gt;&lt;br&gt;1/2→1/4&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFD54F;align=center;" parent="1" vertex="1">
+          <mxGeometry x="840" y="155" width="60" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a67" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="900" y="180" as="sourcePoint"/><mxPoint x="940" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <!-- 5 TRANSDUCER TEE -->
+        <mxCell id="tee" value="" style="rounded=1;fillColor=#E0F2F1;strokeColor=#00897B;strokeWidth=2;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="940" y="130" width="120" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="teelbl" value="&lt;b style='color:#00695C;font-size:11px'&gt;Brass tee&lt;/b&gt;&lt;br&gt;&lt;span style='color:#00796B;font-size:9px'&gt;+ AUTEX 0–100 PSI&lt;br&gt;transducer (ADS1115)&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="945" y="145" width="110" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="teecap" value="&lt;b&gt;5. Pressure tee&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="950" y="240" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a78" value="" style="endArrow=block;endFill=1;strokeColor=#42A5F5;strokeWidth=5;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1060" y="180" as="sourcePoint"/><mxPoint x="1110" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="a78l" value="&lt;span style='font-size:8px;color:#42A5F5'&gt;to turret&lt;/span&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1065" y="158" width="50" height="14" as="geometry"/>
+        </mxCell>
+
+        <!-- TURRET -->
+        <mxCell id="turretbox" value="" style="rounded=1;fillColor=none;strokeColor=#4CAF50;strokeWidth=3;dashed=1;dashPattern=8 4;" parent="1" vertex="1">
+          <mxGeometry x="1100" y="90" width="520" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="turretlabel" value="&lt;b style='color:#2E7D32;font-size:12px'&gt;ON SERVO TURRET&lt;/b&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1200" y="95" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="kz1" value="&lt;span style='color:#E65100;font-size:8px'&gt;&lt;b&gt;Kozelo&lt;/b&gt;&lt;br&gt;barb→MNPT&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FFB74D;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1120" y="155" width="70" height="50" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a89" value="" style="endArrow=block;endFill=1;strokeColor=#FFB74D;strokeWidth=4;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1190" y="180" as="sourcePoint"/><mxPoint x="1230" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+
+        <mxCell id="sol" value="" style="rounded=1;fillColor=#263238;strokeColor=#37474F;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="1230" y="130" width="140" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="sollbl" value="&lt;b style='color:#B0BEC5;font-size:11px'&gt;GOODRIG NC&lt;/b&gt;&lt;br&gt;&lt;span style='color:#78909C;font-size:9px'&gt;Pico→IRLB8721&lt;br&gt;gates the shot&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1240" y="150" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="solcap" value="&lt;b&gt;6. Solenoid&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1250" y="245" width="100" height="18" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="a910" value="" style="endArrow=block;endFill=1;strokeColor=#4CAF50;strokeWidth=4;rounded=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1370" y="180" as="sourcePoint"/><mxPoint x="1410" y="180" as="targetPoint"/></mxGeometry>
+        </mxCell>
+        <mxCell id="a910l" value="&lt;span style='font-size:8px;color:#2E7D32'&gt;DIRECT&lt;/span&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="1372" y="158" width="40" height="14" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="nozzle" value="" style="rounded=1;fillColor=#1B5E20;strokeColor=#2E7D32;shadow=1;" parent="1" vertex="1">
+          <mxGeometry x="1410" y="140" width="90" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="nozzlelbl" value="&lt;span style='color:#A5D6A7;font-size:11px'&gt;&lt;b&gt;Nozzle&lt;/b&gt;&lt;br&gt;↓ fire&lt;/span&gt;" style="text;html=1;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1420" y="155" width="70" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="nozzlecap" value="&lt;b&gt;7. Nozzle&lt;/b&gt;" style="text;html=1;fontSize=10;fontColor=#333;align=center;" parent="1" vertex="1">
+          <mxGeometry x="1415" y="235" width="80" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- FLOW + NOTES -->
+        <mxCell id="flow" value="&lt;b&gt;As-built flow:&lt;/b&gt; Reservoir → Pump → &lt;b style='color:#C62828'&gt;Feelers 1/4&amp;quot; check valve (arrow toward tank)&lt;/b&gt; → uxcell → Accumulator → uxcell → brass tee + AUTEX transducer → silicone to turret → Kozelo → Solenoid → Nozzle (direct).&lt;br&gt;&lt;b style='color:#B71C1C'&gt;Why the check valve:&lt;/b&gt; pump internal valves leak when OFF — external one-way traps pressure in accumulator + tee + solenoid inlet. &lt;b&gt;Do not&lt;/b&gt; put a check valve between accumulator and solenoid (blocks the shot)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=12;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="40" y="320" width="1560" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="verify" value="&lt;b style='color:#1B5E20'&gt;Verify hold:&lt;/b&gt; charge to Target PSI → stop pump → solenoid CLOSED → transducer PSI must stay flat (no bleed-back through pump)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#333;fontSize=11;strokeWidth=2;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+          <mxGeometry x="40" y="405" width="1560" height="36" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="footer" value="&lt;span style='font-size:10px;color:#666'&gt;HW-001 §8 · diagrams/eco004_fluid_topology.drawio · Check valve installed 2026-07-27 · Solenoid drive = Option B Pico+IRLB8721&lt;/span&gt;" style="text;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="455" width="900" height="18" as="geometry"/>
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

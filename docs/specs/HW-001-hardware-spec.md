@@ -349,7 +349,8 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 | MOSFET Switch | **IRLB8721PBF** N-Channel TO-220, 30V/62A. Coil via Drain; gate via BCM 27 + 4.7kΩ pull-up (T17). |
 | Tubing | Feelers 1/4" ID × 3/8" OD Silicone (26.25ft spool) |
 | Barb Adapters | **Kozelo** 1/4" Barb × 1/4" MNPT (×2) — solenoid I/O. **uxcell** 1/4" Barb × 1/2" FNPT (×2) — accumulator I/O. |
-| Check Valve | Built into diaphragm pump (internal one-way valves prevent backflow) |
+| Check Valve | **Feelers 1/4" inline one-way** (installed) between **pump outlet and accumulator**. Arrow toward tank. Pump-internal valves alone do **not** hold PSI when pump is OFF. |
+| Pressure tee | Brass 1/8" NPT tee + AUTEX 0–100 PSI transducer on accumulator→solenoid line (ADS1115). |
 | Nozzle | Adjustable stream nozzle with 1/4" NPT thread + PTFE tape seal |
 | Reservoir | Shallow Plastic Storage Tote (placed ABOVE enclosure for gravity-assisted feed) |
 | Service Loop | 3" slack arc at gimbal entry (zip-tied at 2 anchors) |
@@ -357,31 +358,26 @@ timed-only charging. Full wiring: `diagrams/eco004_ads1115_pressure.drawio`.
 ### 8.1 System Topology (ECO-2026-004)
 
 ```
-[Reservoir] ──> (1/4" Flex Line) ──> [Diaphragm Pump (continuous run)]
-                                              │
-                              (1/4" Flex Line) │
-                                              ▼
-                              [1/2" FNPT-to-1/4" Barb Adapter (uxcell)]
-                                              │
-                              [Swess 0.75L Accumulator Tank (125 PSI)]
-                              [  Absorbs all pump pulsation → flat   ]
-                              [  pressure line to solenoid            ]
-                                              │
-                              [1/2" FNPT-to-1/4" Barb Adapter (uxcell)]
-                                              │
-                              (1/4" Flex Line) │
-                                              ▼
-                              [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
-                                              │
-                              [GOODRIG 12V Solenoid Valve (NC, 1/4" FNPT)]
-                              [  Gated by IRLB8721 MOSFET via BCM 27 + 4.7kΩ pull-up ]
-                                              │
-                              [1/4" MNPT-to-1/4" Barb Adapter (Kozelo)]
-                                              │
-                              (1/4" Flex Line) │
-                                              ▼
-                              [Nozzle (on gimbal payload)]
+[Reservoir] ──> (1/4" Flex) ──> [Diaphragm Pump (charge)]
+                                      │
+                      (1/4" Flex)     │
+                                      ▼
+                      [Feelers 1/4" CHECK VALVE]  ← arrow toward accumulator
+                                      │             (holds PSI when pump OFF)
+                                      ▼
+                      [uxcell 1/2" FNPT ← 1/4" barb]
+                                      │
+                      [Swess 0.75L Accumulator]
+                                      │
+                      [uxcell] ──> [brass tee + AUTEX transducer]
+                                      │
+                      (1/4" Flex to turret)
+                                      ▼
+                      [Kozelo] → [GOODRIG NC solenoid] → [Nozzle DIRECT]
+                      Solenoid gated by Pico W → IRLB8721 (HW-001 §5.4 Rev O)
 ```
+
+> **Do not** install a check valve between accumulator and solenoid — that path must remain free for the shot.
 
 ### 8.2 Physical Stacking (Top to Bottom)
 
@@ -412,11 +408,11 @@ The chassis is a vertically condensed dome enclosure with the gimbal mounted INV
 > absorbs the 10ms pulse energy, defeating the entire accumulator upgrade.
 
 1. **Inlet** — silicone tubing drops into reservoir → runs to pump inlet barb
-2. **Pump → Accumulator** — pump outlet → 1/4" flex line → uxcell 1/2" FNPT adapter → accumulator port 1
-3. **Accumulator → Turret** — accumulator port 2 → uxcell 1/2" FNPT adapter → 1/4" flex line → through PG9 cable gland → service loop → Kozelo 1/4" MNPT adapter → **solenoid inlet (ON TURRET)**
-4. **Solenoid → Nozzle (DIRECT)** — solenoid outlet → Kozelo 1/4" MNPT adapter → **nozzle threads DIRECTLY into adapter** (zero dead volume, zero drip, 40 PSI at nozzle tip)
-5. **Pump Power** — Relay CH1 supplies +12V for pump on/off (continuous run or software-managed duty cycle)
-6. **Solenoid Power** — IRLB8721 MOSFET switches solenoid coil (−) to GND. BCM 27 (with 4.7kΩ pull-up from T17) drives MOSFET gate. 12V/GND wires routed from enclosure to turret alongside silicone line.
+2. **Pump → Check valve → Accumulator** — pump outlet → 1/4" flex → **Feelers one-way check valve (arrow → tank)** → uxcell 1/2" FNPT adapter → accumulator port 1. External check is **mandatory** — pump internals bleed when OFF.
+3. **Accumulator → Pressure tee → Turret** — accumulator port 2 → uxcell → brass tee + AUTEX transducer → 1/4" flex → PG9 / service loop → Kozelo → **solenoid inlet (ON TURRET)**
+4. **Solenoid → Nozzle (DIRECT)** — solenoid outlet → Kozelo → **nozzle threads DIRECTLY into adapter** (zero dead volume)
+5. **Pump Power** — Relay CH1 supplies +12V for pump on/off (software-managed charge bursts)
+6. **Solenoid Power** — Pico W USB CDC → GP15 → IRLB8721 low-side (HW-001 §5.4 Rev O); 1N5408 across coil
 
 ### 8.4 Turret Payload Weight Budget
 
