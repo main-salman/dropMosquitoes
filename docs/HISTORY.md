@@ -1340,3 +1340,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPERATOR]** GOOD P7 (772,406) tarp accurate; BAD P6 (739,320) foliage; BAD (471,495) deck AE; BAD P7 (832,474) should be lower.
 - **[FIX]** HitDetector v5.17: refuse foliage/wind ROI, top-exclude canopy, larger puddles, gravity+darken score, down-weight blue furniture. Offline: (471,495)→(713,599); (832,474)→(776,586); P10 wet still (865,307).
 - **[SPEC]** SW-001 §1 timezone + §6 v5.17.
+
+## 2026-07-28 — [DEPLOY] EST timezone + HitDetector v5.17 live
+- **[DEPLOY]** America/New_York confirmed (EDT); `/api/status` exposes time_et; Scout+Sniper healthy after auto-reboot.
