@@ -1271,3 +1271,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** `hunt.min_speed_px_s` (default 80) gates slow blobs; factory defaults match tempered outdoor profile.
 - **[SPEC]** SW-001 §2.13 outdoor-tempered defaults.
 - **[DEPLOY]** Tempered outdoor profile live after restart/reboot; Scout/servo/fov applied.
+
+## 2026-07-28 — [TROUBLESHOOT] Auto-cal misses visible wet spots on deck
+- **[SYMPTOM]** Outdoor live cal: water visible in Sniper GUI + wet deck boards, but HitDetector logs `no_blob` / `low_change@0–0.85%`.
+- **[TEST]** Log pattern: most frames fail `MIN_CHANGE_PCT=0.9` at `DIFF_THRESHOLD=48`; when change ~1–2.5% still `no_blob` (area/circ/aim gates).
+- **[TEST]** Live Sniper noise + synthetic wet: diffuse wood stains need lower thr / smaller min area / later capture than current POST_FIRE_DELAYS≤0.70s.
+- **[CONTEXT]** Pulse ~11ms; nozzle right of Sniper; large pole in FOV; wet = darkening not bright splash.
+- **[NEXT]** Ask operator 10 questions before changing HitDetector.

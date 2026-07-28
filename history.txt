@@ -80,3 +80,4 @@
 2026-07-28 | [DEPLOY] | Pulse fix live on Jetson; 10ms persists after reboot
 2026-07-28 | [TUNING] | Outdoor temper: Scout less sensitive, slower servo, fov_scale=1, min_speed 80px/s
 2026-07-28 | [DEPLOY] | Outdoor temper profile live on Jetson
+2026-07-28 | [TROUBLESHOOT] | Auto-cal HitDetector misses deck wet spots (low_change/no_blob) — questions before fix
