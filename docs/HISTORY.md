@@ -1278,3 +1278,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[TEST]** Live Sniper noise + synthetic wet: diffuse wood stains need lower thr / smaller min area / later capture than current POST_FIRE_DELAYS≤0.70s.
 - **[CONTEXT]** Pulse ~11ms; nozzle right of Sniper; large pole in FOV; wet = darkening not bright splash.
 - **[NEXT]** Ask operator 10 questions before changing HitDetector.
+
+## 2026-07-28 — [FIX] Auto-cal wet-stain detection + pulse ladder
+- **[OPERATOR]** Wet = coin-size, slightly dark, low of crosshair, visible ~0.5s @ 11ms/15PSI, 1–3m; wants both sensitivity + 11/15/20/30ms escalate.
+- **[CODE]** HitDetector v5.14: darkening+absdiff, lower thr/area, aim-down bias, captures 0.35–1.30s, require net darken.
+- **[CODE]** AutoCal: pulse ladder 11→15→20→30ms (4 attempts); same PSI.
+- **[SPEC]** SW-001 §6 updated.

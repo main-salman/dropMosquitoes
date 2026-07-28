@@ -208,24 +208,32 @@ class HitDetector:
     """
     Detect where water hits by comparing before/after Sniper frames.
 
-    Hardened against dry-fire / AE flicker false positives:
-      - pre-fire noise floor (must exceed ~3× ambient change)
+    Tuned for real outdoor impacts (coin-size dark wet stains on wood/concrete),
+    not only bright specular splash:
+      - absdiff + **darkening** mask (after darker than before)
+      - pre-fire noise floor (must exceed ~2× ambient)
       - stable before-frame (AE settled)
-      - compact blob + area gates
-      - multi-frame consensus (same splash location in ≥2 after frames)
+      - small-blob gates (coin @ 1–3 m)
+      - search biased **below** Sniper crosshair (nozzle gravity / low impacts)
+      - multi-frame consensus (≥2 after-frames agree)
     """
 
-    DIFF_THRESHOLD = 48
-    MIN_CONTOUR_AREA = 1400
-    MAX_CONTOUR_AREA = 22000
-    BLUR_KERNEL = 9
-    MIN_CHANGE_PCT = 0.9
-    MAX_CHANGE_PCT = 7.0
-    NOISE_MULTIPLIER = 3.0
-    MIN_CIRCULARITY = 0.12
-    CONSENSUS_PX = 48
+    # Pixel gates — sensitive enough for subtle wet darkening humans can see
+    DIFF_THRESHOLD = 24          # absdiff (was 48 — missed deck stains)
+    DARKEN_THRESHOLD = 10        # before−after gray (wet wood / most surfaces)
+    MIN_CONTOUR_AREA = 220       # coin-size @ ~1–3 m on 1280×720
+    MAX_CONTOUR_AREA = 35000
+    BLUR_KERNEL = 7
+    MIN_CHANGE_PCT = 0.12        # was 0.9 — wet stains are tiny % of frame
+    MAX_CHANGE_PCT = 12.0
+    NOISE_MULTIPLIER = 2.0
+    MIN_CIRCULARITY = 0.05       # irregular stains OK
+    CONSENSUS_PX = 56
     MIN_CONSENSUS = 2
-    MAX_AIM_DIST_FRAC = 0.48  # splash must be near sniper crosshair region
+    MAX_AIM_DIST_FRAC = 0.58
+    # Prefer impacts below crosshair (user: wet is low; gravity)
+    AIM_DOWN_BIAS_FRAC = 0.14
+    MIN_MEAN_DARKEN = 4.0        # blob must be net darker after (reduces AE false +)
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -239,12 +247,16 @@ class HitDetector:
 
     def _gray(self, frame):
         g = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        return cv2.GaussianBlur(g, (self.BLUR_KERNEL, self.BLUR_KERNEL), 0)
+        k = self.BLUR_KERNEL | 1
+        return cv2.GaussianBlur(g, (k, k), 0)
 
     def _change_pct(self, a, b) -> float:
         diff = cv2.absdiff(a, b)
         _, thresh = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
-        return 100.0 * cv2.countNonZero(thresh) / float(thresh.shape[0] * thresh.shape[1])
+        darken = cv2.subtract(a, b)
+        _, dth = cv2.threshold(darken, self.DARKEN_THRESHOLD, 255, cv2.THRESH_BINARY)
+        mask = cv2.bitwise_or(thresh, dth)
+        return 100.0 * cv2.countNonZero(mask) / float(mask.shape[0] * mask.shape[1])
 
     def measure_noise_floor(self, camera, samples: int = 4, delay: float = 0.12) -> float:
         """Ambient before/after change with no fire (AE / scene noise)."""
@@ -279,7 +291,7 @@ class HitDetector:
             self._last_reason = ""
         return True
 
-    def capture_before_stable(self, camera, tries: int = 6, max_pct: float = 0.35) -> bool:
+    def capture_before_stable(self, camera, tries: int = 6, max_pct: float = 0.45) -> bool:
         """Wait until consecutive frames are similar (AE settled), then lock before."""
         if not CV2_AVAILABLE or camera is None:
             return self.capture_before(camera)
@@ -323,11 +335,18 @@ class HitDetector:
             self._after_frames.append(frame.copy())
         return True
 
+    def _impact_mask(self, before_gray, after_gray):
+        """Union of absdiff and darkening — wet stains darken most surfaces."""
+        diff = cv2.absdiff(before_gray, after_gray)
+        _, abs_th = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
+        darken = cv2.subtract(before_gray, after_gray)
+        _, dark_th = cv2.threshold(darken, self.DARKEN_THRESHOLD, 255, cv2.THRESH_BINARY)
+        return cv2.bitwise_or(abs_th, dark_th), diff, darken
+
     def _candidates_from_diff(self, before_gray, after_frame, min_pct: float,
                               aim_xy, max_dist_px: float):
         after_gray = self._gray(after_frame)
-        diff = cv2.absdiff(before_gray, after_gray)
-        _, thresh = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
+        thresh, diff, darken = self._impact_mask(before_gray, after_gray)
         total = thresh.shape[0] * thresh.shape[1]
         change_pct = 100.0 * cv2.countNonZero(thresh) / float(total)
         if change_pct < min_pct:
@@ -335,7 +354,7 @@ class HitDetector:
         if change_pct > self.MAX_CHANGE_PCT:
             return [], change_pct, diff, "scene_change"
 
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
         thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -356,8 +375,20 @@ class HitDetector:
             if aim_xy is not None and max_dist_px > 0:
                 if math.hypot(cx - aim_xy[0], cy - aim_xy[1]) > max_dist_px:
                     continue
-            cands.append({"xy": (cx, cy), "area": area, "circ": circ})
-        cands.sort(key=lambda x: x["area"], reverse=True)
+            # Require net darkening inside contour (wet vs AE bright flicker)
+            mask = np.zeros(before_gray.shape, dtype=np.uint8)
+            cv2.drawContours(mask, [c], -1, 255, -1)
+            mean_dark = float(cv2.mean(darken, mask=mask)[0])
+            if mean_dark < self.MIN_MEAN_DARKEN:
+                continue
+            # Score: darker + lower in frame (prefer below crosshair)
+            below = max(0, cy - aim_xy[1]) if aim_xy else 0
+            score = area * (1.0 + 0.02 * mean_dark) * (1.0 + 0.001 * below)
+            cands.append({
+                "xy": (cx, cy), "area": area, "circ": circ,
+                "darken": mean_dark, "score": score,
+            })
+        cands.sort(key=lambda x: x["score"], reverse=True)
         return cands[:3], change_pct, diff, ("ok" if cands else "no_blob")
 
     def detect(self, aim_xy: Optional[Tuple[int, int]] = None,
@@ -379,6 +410,11 @@ class HitDetector:
             h, w = before_gray.shape[:2]
             if aim_xy is None:
                 aim_xy = (w // 2, h // 2)
+            # Bias search center downward — impacts land low of crosshair
+            aim_xy = (
+                int(aim_xy[0]),
+                int(min(h - 1, aim_xy[1] + self.AIM_DOWN_BIAS_FRAC * h)),
+            )
             max_dist = self.MAX_AIM_DIST_FRAC * math.hypot(w, h)
             floor = (self._noise_floor_pct if noise_floor_pct is None
                      else float(noise_floor_pct))
@@ -393,27 +429,26 @@ class HitDetector:
                 reasons.append(f"{reason}@{change_pct:.2f}%")
                 if cands:
                     per_frame.append(cands[0])
-                    if best_diff is None or cands[0]["area"] > 0:
+                    if best_diff is None:
                         best_diff = diff
 
             hit = None
             conf = 0.0
             reason = "no_consensus"
             if len(per_frame) >= self.MIN_CONSENSUS:
-                # Greedy cluster: pick seed with most neighbors within CONSENSUS_PX
                 best_n, best_seed = 0, None
                 for i, a in enumerate(per_frame):
                     n = 1
                     ax, ay = a["xy"]
-                    area_sum = a["area"]
+                    score_sum = a.get("score", a["area"])
                     for j, b in enumerate(per_frame):
                         if i == j:
                             continue
                         if math.hypot(ax - b["xy"][0], ay - b["xy"][1]) <= self.CONSENSUS_PX:
                             n += 1
-                            area_sum += b["area"]
+                            score_sum += b.get("score", b["area"])
                     if n > best_n:
-                        best_n, best_seed = n, (ax, ay, area_sum / n)
+                        best_n, best_seed = n, (ax, ay, score_sum / n)
                 if best_seed is not None and best_n >= self.MIN_CONSENSUS:
                     hit = (int(best_seed[0]), int(best_seed[1]))
                     conf = float(best_seed[2])
@@ -639,20 +674,22 @@ class AutoCalibrator:
     progressively more accurate.
 
     3-tier retry on miss:
-    1. Retry with longer burst (0.8s instead of 0.4s)
-    2. Lower detection threshold (from 40 → 20)
+    1. Escalating solenoid pulse for visibility: 11 → 15 → 20 → 30 ms (same PSI)
+    2. Same HitDetector gates (darkening-aware wet stain detection)
     3. Skip point, use remaining points for offset
     """
 
     # Configuration
     N_POINTS = 10             # Number of calibration points
-    # Pulse/PSI come from AccumulatorManager (same as hunt). Do not use a
-    # different burst length here — nozzle offset is only valid at one setpoint.
-    FIRE_DURATION = 0.010     # legacy alias; actual fire uses accum.DEFAULT_PULSE_SEC
-    RETRY_DURATION = 0.010    # same pulse on retry (volume≠velocity; PSI is the knob)
+    # Hunt pulse stays at settings default; auto-cal may escalate volume so the
+    # wet stain is visible (same PSI → aim geometry stays comparable).
+    FIRE_DURATION = 0.011
+    RETRY_DURATION = 0.030
+    CAL_PULSE_MS_LADDER = (11, 15, 20, 30)
     SETTLE_TIME = 1.5         # Seconds to wait after servo move
-    POST_FIRE_DELAYS = [0.25, 0.45, 0.70]  # tighter window around splash
-    MAX_RETRIES = 1           # Max retries per point (same detection bar — never loosen)
+    # Wet stains appear ~0.5 s; sample through ~1.3 s
+    POST_FIRE_DELAYS = [0.35, 0.50, 0.70, 1.00, 1.30]
+    MAX_RETRIES = 3           # 4 attempts → full 11/15/20/30 ms ladder
     MIN_HITS_TO_SAVE = 3      # Dry/noise "hits" must not overwrite a good offset
     SNIPER_W = 1280
     SNIPER_H = 720
@@ -962,8 +999,9 @@ class AutoCalibrator:
         Fire at a target with retry logic.
 
         Splash is measured in the Sniper frame vs the sniper crosshair (not
-        Scout pixel coords). Detection never loosens on retry — dry/AE noise
-        must not become a "hit".
+        Scout pixel coords). Detection uses darkening-aware HitDetector.
+        Retries escalate pulse 11→15→20→30 ms (same PSI) so coin-size wet
+        stains become visible without loosening gates.
         """
         # Offset = splash vs where the Sniper camera was aimed (crosshair)
         sniper_aim_px = self.SNIPER_W // 2
@@ -973,7 +1011,12 @@ class AutoCalibrator:
             if not self._running:
                 return {"success": False, "skipped": True}
 
-            attempt_desc = "standard pulse" if attempt == 0 else "retry same gates"
+            pulse_ms = float(
+                self.CAL_PULSE_MS_LADDER[
+                    min(attempt, len(self.CAL_PULSE_MS_LADDER) - 1)
+                ]
+            )
+            attempt_desc = f"{pulse_ms:.0f}ms pulse"
 
             self._update(f"Point {point_idx+1}: Measuring noise floor...")
             noise = self.detector.measure_noise_floor(self._sniper_cam)
@@ -981,19 +1024,18 @@ class AutoCalibrator:
             self._update(f"Point {point_idx+1}: Waiting for AE / firing ({attempt_desc})...")
             self.detector.capture_before_stable(self._sniper_cam)
 
-            pulse_ms = self._accum.DEFAULT_PULSE_SEC * 1000.0
             psi_set = getattr(self._accum, "TARGET_PSI", None)
             self._update(
                 f"Point {point_idx+1}: {pulse_ms:.0f}ms @ "
                 f"{psi_set:.1f} PSI ({attempt_desc})..."
                 if psi_set is not None else
                 f"Point {point_idx+1}: Solenoid pulse {pulse_ms:.0f}ms ({attempt_desc})...")
-            fire_result = self._accum.fire()
+            fire_result = self._accum.fire(pulse_ms / 1000.0)
             try:
                 from activity_log import log_event
                 log_event("AUTOCAL_FIRE", point=point_idx + 1, attempt=attempt + 1,
                           status=fire_result.get("status"),
-                          pulse_ms=fire_result.get("duration_ms"),
+                          pulse_ms=fire_result.get("duration_ms", pulse_ms),
                           elapsed_ms=fire_result.get("elapsed_ms"),
                           psi_before=fire_result.get("psi_before"),
                           psi_after=fire_result.get("psi_after"),
@@ -1019,7 +1061,7 @@ class AutoCalibrator:
                 time.sleep(0.5)
                 continue
 
-            time.sleep(0.20)
+            time.sleep(0.15)
             t0 = time.monotonic()
             for delay in self.POST_FIRE_DELAYS:
                 wait = delay - (time.monotonic() - t0)
@@ -1042,6 +1084,7 @@ class AutoCalibrator:
                     hit_confirmed=True,
                     distance_m=self._lidar.read_distance(),
                     note=(f"auto-cal point {point_idx+1} attempt {attempt+1} "
+                          f"pulse={pulse_ms:.0f}ms "
                           f"scout_feat=({aim_px},{aim_py})")
                 )
                 point.compute_offset()
@@ -1051,6 +1094,7 @@ class AutoCalibrator:
                     "type": "hit",
                     "point": point_idx + 1,
                     "attempt": attempt + 1,
+                    "pulse_ms": pulse_ms,
                     "aim": f"({sniper_aim_px},{sniper_aim_py})",
                     "hit": f"({hit_px},{hit_py})",
                     "offset_pitch": round(point.offset_pitch, 2),
@@ -1059,11 +1103,11 @@ class AutoCalibrator:
                     "reason": det.get("last_reason"),
                     "running_offset": f"P={self.table.offset_pitch:.2f}° Y={self.table.offset_yaw:.2f}°",
                     "message": f"✅ Point {point_idx+1}: Splash @ ({hit_px},{hit_py}) "
-                              f"vs crosshair. Offset P={point.offset_pitch:.2f}° "
+                              f"@ {pulse_ms:.0f}ms. Offset P={point.offset_pitch:.2f}° "
                               f"Y={point.offset_yaw:.2f}°"
                 })
                 self._update(
-                    f"Point {point_idx+1}: ✅ Hit! "
+                    f"Point {point_idx+1}: ✅ Hit @ {pulse_ms:.0f}ms! "
                     f"Running offset: P={self.table.offset_pitch:.2f}° Y={self.table.offset_yaw:.2f}°")
                 return {"success": True, "skipped": False}
 
@@ -1072,6 +1116,7 @@ class AutoCalibrator:
                 "point": point_idx + 1,
                 "attempt": attempt + 1,
                 "attempt_desc": attempt_desc,
+                "pulse_ms": pulse_ms,
                 "noise_floor": round(noise, 3),
                 "reason": det.get("last_reason"),
                 "message": (f"❌ Point {point_idx+1}: No splash "
@@ -1080,7 +1125,11 @@ class AutoCalibrator:
                                else " — skipping."))
             })
             if attempt < self.MAX_RETRIES:
-                self._update(f"Point {point_idx+1}: Miss — retrying (same gates)...")
+                nxt = self.CAL_PULSE_MS_LADDER[
+                    min(attempt + 1, len(self.CAL_PULSE_MS_LADDER) - 1)
+                ]
+                self._update(
+                    f"Point {point_idx+1}: Miss — retrying at {nxt}ms...")
                 time.sleep(0.5)
 
         self._add_log({

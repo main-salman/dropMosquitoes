@@ -81,3 +81,4 @@
 2026-07-28 | [TUNING] | Outdoor temper: Scout less sensitive, slower servo, fov_scale=1, min_speed 80px/s
 2026-07-28 | [DEPLOY] | Outdoor temper profile live on Jetson
 2026-07-28 | [TROUBLESHOOT] | Auto-cal HitDetector misses deck wet spots (low_change/no_blob) — questions before fix
+2026-07-28 | [FIX] | Auto-cal: darkening wet-stain HitDetector + 11/15/20/30ms pulse ladder

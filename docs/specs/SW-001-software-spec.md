@@ -423,10 +423,11 @@ Auto-cal measures **where water actually lands** vs the Sniper crosshair and
 stores a nozzle offset (`settings.calibration.offset_*`). Hunt applies that
 offset on **FIRE only**.
 
-**Critical:** calibrate at the **same** `target_psi` + `default_pulse_ms` used
-for hunting (factory **15 PSI / 10 ms**). Changing PSI changes exit velocity
-and stream shape — **re-run auto-cal** after any setpoint change. Pulse width
-sets volume/duration, not velocity; do not “fix” aim with longer bursts.
+**Critical:** calibrate at the **same** `target_psi` used for hunting (factory
+**15 PSI**). Auto-cal may escalate **pulse volume** only when needed for stain
+visibility: **11 → 15 → 20 → 30 ms** at that PSI (aim geometry stays comparable;
+hunt continues to use Settings `default_pulse_ms`). Re-run auto-cal after any
+PSI change. Pulse width sets volume/duration, not velocity.
 
 **Pressure sweeps (future):** optional multi-PSI table (e.g. 10 / 15 / 20 PSI)
 with per-PSI offsets. Not required for first field insect tests — pick one
@@ -438,14 +439,17 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
 5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
 
-**HitDetector / AutoCal (v5.9 — anti dry-false-hit)**
-- Pre-fire **noise floor**; post-fire change must exceed `max(0.9%, 3×floor)`.
-- Stable before-frame (AE settle); compact blob gates; splash within ~0.48 diagonal of Sniper crosshair.
-- **Multi-frame consensus** (≥2 after-frames agree within 48 px) — single-frame flicker ≠ hit.
-- Offset vs **Sniper crosshair** (not Scout feature pixels). Global offset = **median**.
-- Retries keep the same gates (never lower threshold).
+**HitDetector / AutoCal (v5.14 — wet-stain before/after)**
+- Detects **any surface** via before/after difference: absdiff **or** darkening
+  (`before − after`), so coin-size dark wet stains on wood/concrete count.
+- Pre-fire **noise floor**; post-fire change must exceed `max(0.12%, 2×floor)`.
+- Stable before-frame (AE settle); min blob ~220 px²; search biased **below**
+  Sniper crosshair (impacts land low); require net darkening in the blob.
+- Capture window **0.35–1.30 s** (wet visible ~0.5 s to human).
+- **Multi-frame consensus** (≥2 after-frames agree within 56 px).
+- Offset vs **Sniper crosshair**. Global offset = **median**.
+- Auto-cal retries escalate pulse **11 / 15 / 20 / 30 ms** (same gates).
 - Save only if ≥**3** consensus hits; otherwise **reject** and keep previous offset.
-- Dry runs should complete with ~0 hits / rejected save.
 
 ## 7. Training & Tuning Pipeline
 
