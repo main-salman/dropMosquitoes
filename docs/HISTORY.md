@@ -1284,3 +1284,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** HitDetector v5.14: darkening+absdiff, lower thr/area, aim-down bias, captures 0.35–1.30s, require net darken.
 - **[CODE]** AutoCal: pulse ladder 11→15→20→30ms (4 attempts); same PSI.
 - **[SPEC]** SW-001 §6 updated.
+- **[DEPLOY]** Wet-stain HitDetector + pulse ladder live on Jetson (reboot if CSI needed).
