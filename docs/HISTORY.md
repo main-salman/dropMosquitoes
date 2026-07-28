@@ -1299,3 +1299,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** `hunt.yolo_conf=0.35`, `roi_zoom=2` digital center crop for YOLO, wider `center_ok_frac=0.18`, opportunity-fire after refine / end-of-track.
 - **[TUNING]** Scout slightly relaxed (T=32, min_area=1200, min_speed=55) for flies/bees.
 - **[SPEC]** SW-001 §2.13 updated.
+- **[DEPLOY]** Hunt ROI/conf/opportunity-fire live; applied scout/hunt settings on Jetson.

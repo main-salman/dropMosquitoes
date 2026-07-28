@@ -85,3 +85,4 @@
 2026-07-28 | [DEPLOY] | Auto-cal wet-stain fix live on Jetson
 2026-07-28 | [TROUBLESHOOT] | Hunt: 207 motion / 0 shots — YOLO no_insect + one uncentered ladybug; questions before fix
 2026-07-28 | [FIX] | Hunt: YOLO ROI×2 + conf 0.35 + opportunity fire; Scout slightly relaxed for flies
+2026-07-28 | [DEPLOY] | Hunt first-field detect fixes live + settings applied
