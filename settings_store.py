@@ -234,9 +234,8 @@ class SettingsStore:
             # Old factory was 1.0 PSI hysteresis — new contract is 0
             if acc.get("maintain_hysteresis_psi", 0) == 1.0:
                 acc["maintain_hysteresis_psi"] = 0.0
-            # 10/25ms pulses were inaudible and hard to verify during auto-cal
-            if float(acc.get("default_pulse_ms", 100)) <= 25.0:
-                acc["default_pulse_ms"] = 100.0
+            # Do NOT clamp short pulses upward — user may choose 1–10 ms
+            # (old ≤25→100 migration undid every Save on reboot).
             acc.setdefault(
                 "module_12v_hardwired",
                 DEFAULTS["accumulator"]["module_12v_hardwired"],

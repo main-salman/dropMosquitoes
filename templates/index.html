@@ -301,7 +301,7 @@
       <div class="card-body">
         <div class="sl">
           <label>Solenoid pulse</label>
-          <input type="range" id="fd" min="0.05" max="0.5" step="0.01" value="0.10" oninput="$('fdv').textContent=fmtPulse(this.value)">
+          <input type="range" id="fd" min="0.001" max="0.5" step="0.001" value="0.010" oninput="$('fdv').textContent=fmtPulse(this.value)">
           <div class="v" id="fdv">100ms</div>
         </div>
         <div class="sl">
@@ -875,10 +875,10 @@
             </div>
             <div class="sl">
               <label>Standard solenoid pulse (live + auto-cal)</label>
-              <input type="range" id="set-std-pulse" min="10" max="500" step="10" value="100" oninput="$('set-std-pulse-v').textContent=this.value+'ms'">
-              <div class="v" id="set-std-pulse-v">100ms</div>
+              <input type="range" id="set-std-pulse" min="1" max="500" step="1" value="10" oninput="onStdPulseInput(this.value)">
+              <div class="v" id="set-std-pulse-v">10ms</div>
             </div>
-            <p style="font-size:10px;color:var(--dim);margin:0 0 8px">Shared for mosquito fire and auto-cal. Below ~50ms is often inaudible even when the valve opens.</p>
+            <p style="font-size:10px;color:var(--dim);margin:0 0 8px">Shared for mosquito fire and auto-cal. Range 1–500 ms (Pico FIRE). Below ~50 ms is often inaudible even when the valve opens.</p>
             <div class="sl">
               <label>Max pump run (deadhead timeout)</label>
               <input type="range" id="set-max-pump" min="1" max="30" step="1" value="8" oninput="$('set-max-pump-v').textContent=this.value+'s'">
@@ -1624,8 +1624,16 @@ async function setPsiLoad() {
     $('set-target-psi-v').textContent = v + ' PSI';
     const poll = acc.pressure_poll_sec != null ? acc.pressure_poll_sec : 60;
     if ($('set-psi-poll')) { $('set-psi-poll').value = poll; $('set-psi-poll-v').textContent = poll + 's'; }
-    const pulse = acc.default_pulse_ms != null ? acc.default_pulse_ms : 25;
+    const pulse = acc.default_pulse_ms != null ? acc.default_pulse_ms : 10;
     if ($('set-std-pulse')) { $('set-std-pulse').value = pulse; $('set-std-pulse-v').textContent = pulse + 'ms'; }
+    if ($('set-op-pulse')) {
+      $('set-op-pulse').value = pulse / 1000.0;
+      $('set-op-pulse-v').textContent = fmtPulse(pulse / 1000.0);
+    }
+    if ($('fd')) {
+      $('fd').value = Math.max(0.001, Math.min(0.5, pulse / 1000.0));
+      if ($('fdv')) $('fdv').textContent = fmtPulse($('fd').value);
+    }
     const maxp = acc.max_pump_run_sec != null ? acc.max_pump_run_sec : 8;
     if ($('set-max-pump')) { $('set-max-pump').value = maxp; $('set-max-pump-v').textContent = maxp + 's'; }
     const n = (d.backups || []).length;
@@ -1634,6 +1642,19 @@ async function setPsiLoad() {
     const al = d.runtime && d.runtime.accumulator && d.runtime.accumulator.alarm;
     if ($('set-psi-alarm')) $('set-psi-alarm').style.display = al ? 'block' : 'none';
   } catch (e) { console.error(e); }
+}
+
+function onStdPulseInput(ms) {
+  $('set-std-pulse-v').textContent = ms + 'ms';
+  const sec = (+ms) / 1000.0;
+  if ($('set-op-pulse')) {
+    $('set-op-pulse').value = sec;
+    $('set-op-pulse-v').textContent = fmtPulse(sec);
+  }
+  if ($('fd')) {
+    $('fd').value = Math.max(0.001, Math.min(0.5, sec));
+    if ($('fdv')) $('fdv').textContent = fmtPulse($('fd').value);
+  }
 }
 
 function pressureSettingsBody() {
@@ -1653,16 +1674,21 @@ function pressureSettingsBody() {
 }
 
 async function applyPressureSettingsRuntime() {
-  const body = pressureSettingsBody().accumulator;
+  const body = pressureSettingsBody();
   await fetch('/api/accumulator/config', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(body)
+    body: JSON.stringify(body.accumulator)
   });
+  // Keep pulse.operational_pulse in sync (hunt + relay defaults)
+  await fetch('/api/pulse/config', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body.pulse)
+  }).catch(() => {});
   if ($('cal-target-psi')) {
-    $('cal-target-psi').value = body.target_psi;
-    $('cal-target-psi-v').textContent = body.target_psi + ' PSI';
+    $('cal-target-psi').value = body.accumulator.target_psi;
+    $('cal-target-psi-v').textContent = body.accumulator.target_psi + ' PSI';
   }
-  showToast('⚙️ Pressure (runtime)', `Target ${body.target_psi} PSI · poll ${body.pressure_poll_sec}s`);
+  showToast('⚙️ Pressure (runtime)', `Target ${body.accumulator.target_psi} PSI · pulse ${body.accumulator.default_pulse_ms}ms · poll ${body.accumulator.pressure_poll_sec}s`);
 }
 
 async function savePressureSettingsPermanent() {
@@ -1697,7 +1723,7 @@ function collectAllSettingsFromGui() {
       target_psi: +($('set-target-psi') || $('ac-target-psi')).value,
       pressure_poll_sec: $('set-psi-poll') ? +$('set-psi-poll').value : 60,
       maintain_hysteresis_psi: 0,
-      default_pulse_ms: $('set-std-pulse') ? +$('set-std-pulse').value : 25,
+      default_pulse_ms: $('set-std-pulse') ? +$('set-std-pulse').value : 10,
       max_pump_run_sec: $('set-max-pump') ? +$('set-max-pump').value : 8,
       charge_per_shot: true,
     },
@@ -1709,7 +1735,10 @@ function collectAllSettingsFromGui() {
       pitch_limit: +$('set-pitch-lim').value,
     },
     pulse: {
-      operational_pulse: +$('set-op-pulse').value,
+      // Prefer Settings “standard pulse” so Save All cannot revive a stale Pulse-tab value
+      operational_pulse: $('set-std-pulse')
+        ? (+$('set-std-pulse').value / 1000.0)
+        : +$('set-op-pulse').value,
       cal_pulse: +$('set-cal-pulse').value,
       cal_retry_pulse: +$('set-cal-retry').value,
       prime_duration_ms: +$('set-prime-dur2').value,

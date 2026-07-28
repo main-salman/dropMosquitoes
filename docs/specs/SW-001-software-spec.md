@@ -135,8 +135,11 @@ requires firing from a **consistent pressure**, not a longer pulse.
 
 **Key tunables** (`settings.accumulator` / `POST /api/accumulator/config`):
 `target_psi`, `pressure_poll_sec` (default 60), `maintain_hysteresis_psi` (default 0),
-`default_pulse_ms` (shared live + auto-cal; factory **10 ms**), `max_pump_run_sec`,
+`default_pulse_ms` (shared live + auto-cal; factory **10 ms**; allowed **1–2000 ms**;
+short pulses may be inaudible), `max_pump_run_sec`,
 timed fallbacks. Charge-after-shot is always on.
+**Persistence:** `settings.json` must keep the user’s pulse as saved — do **not**
+auto-bump short pulses to 100 ms on load (that migration was removed 2026-07-28).
 **Solenoid drive:** every open pulse must run under `RelayController.pulse_solenoid()`
 (lock held for the open window). **Option B (`pico`):** Jetson sends `FIRE <ms>`
 and the Pico times GP15 (preferred for short pulses). `OPEN`/`CLOSE` used for

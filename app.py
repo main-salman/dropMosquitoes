@@ -605,11 +605,24 @@ def api_settings_set():
         patch = {"accumulator": {"target_psi": patch["target_psi"]},
                  **{k: v for k, v in patch.items() if k != "target_psi"}}
 
-    # Clamp accumulator target if present
+    # Clamp accumulator target / pulse if present
     if "accumulator" in patch and isinstance(patch["accumulator"], dict):
         if "target_psi" in patch["accumulator"]:
             patch["accumulator"]["target_psi"] = max(
                 1.0, min(float(patch["accumulator"]["target_psi"]), 40.0))
+        if "default_pulse_ms" in patch["accumulator"]:
+            patch["accumulator"]["default_pulse_ms"] = max(
+                1.0, min(float(patch["accumulator"]["default_pulse_ms"]), 2000.0))
+            # Keep pulse.operational_pulse mirrored (seconds)
+            pulse_patch = dict(patch.get("pulse") or {})
+            pulse_patch["operational_pulse"] = (
+                float(patch["accumulator"]["default_pulse_ms"]) / 1000.0
+            )
+            patch["pulse"] = pulse_patch
+    if "pulse" in patch and isinstance(patch["pulse"], dict):
+        if "operational_pulse" in patch["pulse"]:
+            patch["pulse"]["operational_pulse"] = max(
+                0.001, min(float(patch["pulse"]["operational_pulse"]), 2.0))
 
     saved = settings.update(patch, persist=True)
     applied = apply_settings_to_runtime(saved)
