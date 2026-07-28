@@ -1343,3 +1343,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-28 — [DEPLOY] EST timezone + HitDetector v5.17 live
 - **[DEPLOY]** America/New_York confirmed (EDT); `/api/status` exposes time_et; Scout+Sniper healthy after auto-reboot.
+
+## 2026-07-28 — [FIX] Splash localization: dense burst (see landing like a human)
+- **[OPERATOR]** HIT completely wrong vs pink marks; pink = annotation only. Goal = find where water lands if visible in camera. Right+low + farther→lower are physics to account for.
+- **[ROOT]** Gallery stills: strongest darken often at wrong HIT; real landing may be a transient a human sees in motion — only 5 sparse after-frames were sampled.
+- **[FIX]** HitDetector v5.18: `capture_after_burst` (~30fps×1.45s); temporal onset+motion score; soft prior right+gravity drop; gallery uses best after-frame. AutoCal/hunt/free-fire use burst.
+- **[SPEC]** SW-001 §6 → v5.18.

@@ -1486,16 +1486,12 @@ def api_cal_freefire():
     fire_result = accum.fire()
     if fire_result.get("status") != "fired":
         return jsonify({"error": fire_result.get("status"), "fire": fire_result}), 400
-    time.sleep(0.15)
+    time.sleep(0.08)
 
-    # Capture after frames
-    for delay in [0.3, 0.6, 1.0]:
-        time.sleep(delay)
-        hit_detector.capture_after(sniper_cam)
-
-    # Detect hit
-    hit = hit_detector.detect()
+    # Dense burst — localize landing the way a human watches the stream
+    hit_detector.capture_after_burst(sniper_cam)
     distance = lidar.read_distance()
+    hit = hit_detector.detect(distance_m=distance)
 
     result = {
         "aimed": {"pitch": pitch, "yaw": yaw, "px": aim_px, "py": aim_py},

@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.17  
-**Last Updated:** 2026-07-28  
+**Version:** 5.18  
+**Last Updated:** 2026-07-28
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -446,16 +446,16 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
 5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
 
-**HitDetector / AutoCal (v5.17 — wet stain, anti-foliage, gravity)**
-- Persistent darken votes (≥3 after-frames); score darken contrast × absolute
-  darken × lower-in-frame gravity.
-- Refuse when ROI persistent-darken > **6%** (wind/foliage canopy).
-- Reject green canopy blobs above aim; down-weight vivid blue furniture AE.
-- Top **28%** of frame excluded; puddles up to **9000 px²** allowed.
-- Operator labels: GOOD tarp (772,406); BAD foliage (739,320); BAD deck AE
-  (471,495→prefer lower puddle); BAD blue mid (832,474→prefer lower).
-- Noise floor > **3.5%** → skip fire; |offset| > **15°** rejected; pulse 30ms-first.
-- Gallery timestamps are Eastern (`… ET` in Calibration tab).
+**HitDetector / AutoCal (v5.18 — watch the landing like a human)**
+- Humans see water land in **motion**; single stills often peak on AE while the
+  real landing is a subtler transient. Post-fire capture is a **dense burst**
+  (~30 FPS × 1.45 s unique frames), not 5 sparse samples.
+- Score = temporal darken onset + brief persistence + frame-to-frame splash
+  motion. Gallery AFTER = the frame where the chosen blob was darkest.
+- Soft expected-impact prior (does not replace vision): **~70 px right of aim**
+  + gravity drop vs LiDAR range (`hit_verdict.drop_px_for_distance`).
+- Still refuse foliage-wind / unstable AE; |offset| gate ±18°.
+- Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
 
 ## 7. Training & Tuning Pipeline
 

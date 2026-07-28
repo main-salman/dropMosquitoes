@@ -655,13 +655,11 @@ class HuntController:
 
         if ok and self._hit_detector is not None:
             try:
-                for _ in range(3):
-                    time.sleep(0.25)
-                    self._hit_detector.capture_after(self._sniper_cam)
-                # Splash vs Sniper crosshair; bbox proximity checked in verdict
+                self._hit_detector.capture_after_burst(self._sniper_cam)
                 hit_px_t = self._hit_detector.detect(
                     aim_xy=(FRAME_W // 2, FRAME_H // 2),
                     noise_floor_pct=noise,
+                    distance_m=distance_m,
                 )
                 if hit_px_t is not None:
                     hit_px = list(hit_px_t)

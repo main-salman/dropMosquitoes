@@ -84,10 +84,10 @@ class CalibrationTable:
     """
 
     # Max |offset| accepted for a single point (degrees).
-    # True nozzle↔camera bias can be ~10–12°; reject only wild outliers.
-    MAX_POINT_OFFSET_DEG = 15.0
+    # True landing can sit well off crosshair until cal converges.
+    MAX_POINT_OFFSET_DEG = 18.0
     # Inliers for median must lie within this of the provisional median
-    INLIER_BAND_DEG = 6.0
+    INLIER_BAND_DEG = 7.0
 
     def __init__(self, filepath: str = "calibration.json", settings_store=None):
         self.filepath = filepath
@@ -242,43 +242,41 @@ class CalibrationTable:
 
 class HitDetector:
     """
-    Detect wet impact stains via persistent darkening (not absdiff flicker).
+    Localize where water lands in the Sniper feed — same evidence a human sees.
 
-    Operator labels (2026-07-28):
-      GOOD — Point7 (772,406) on white tarp fabric
-      BAD  — Point6 (739,320) foliage canopy (whole tree red)
-      BAD  — Point6 (471,495) deck AE/shadow
-      BAD  — Point7 (832,474); real wet nearer bottom of frame
-
-    v5.17:
-      - refuse when too much of ROI is "persistent" (foliage wind)
-      - reject green foliage blobs
-      - prefer lower-in-frame (ballistic water falls)
-      - refuse unstable AE noise floor
+    Humans spot the landing by watching motion over time. Single before/after
+    stills often peak on AE/shadow while the real landing is a subtler transient.
+    v5.18:
+      - dense post-fire frame burst (use camera rate, not 5 sparse samples)
+      - score temporal onset + brief persistence (wet appears then may fade)
+      - soft expected-impact prior: a bit right of aim + gravity drop vs range
+      - still refuse foliage-wind / unstable AE
     """
 
-    DIFF_THRESHOLD = 22          # noise-floor measurement only
-    DARKEN_THRESHOLD = 24        # wet core; higher rejects soft AE gradients
-    MIN_CONTOUR_AREA = 150
-    MAX_CONTOUR_AREA = 9000       # allow larger deck puddles (BAD 471 miss was 5k+)
-    BLUR_KERNEL = 7
-    MIN_CIRCULARITY = 0.18
-    MIN_VOTES = 3                # must darken in ≥3 after-frames
-    # ~0.25 diagonal ≈ ±14° — covers true ~11° bias (Point10 wet @ ~862,306)
-    MAX_AIM_DIST_FRAC = 0.25
-    MIN_MEAN_DARKEN = 22.0
-    MIN_CONTRAST = 16.0          # blob mean darken − surrounding ring
-    MIN_SCORE = 12.0
-    MAX_NOISE_FLOOR_PCT = 3.5    # outdoor AE > this → do not trust a hit
-    # If this much of the aim ROI stays "darkened", it's wind/foliage not a splash
-    MAX_PERSISTENT_ROI_PCT = 6.0
+    DIFF_THRESHOLD = 20
+    DARKEN_THRESHOLD = 18
+    MIN_CONTOUR_AREA = 120
+    MAX_CONTOUR_AREA = 10000
+    BLUR_KERNEL = 5
+    MIN_CIRCULARITY = 0.12
+    # With a burst, wet need only appear in a few frames (not most)
+    MIN_VOTE_FRAC = 0.18
+    MIN_VOTES_ABS = 3
+    MAX_AIM_DIST_FRAC = 0.32
+    MIN_MEAN_DARKEN = 14.0
+    MIN_CONTRAST = 10.0
+    MIN_SCORE = 10.0
+    MAX_NOISE_FLOOR_PCT = 3.5
+    MAX_PERSISTENT_ROI_PCT = 12.0
     RING_PX = 28
-    EDGE_MARGIN_PX = 110         # ignore tarp/sky / upper fabric flicker
-    TOP_EXCLUDE_FRAC = 0.28      # canopy/foliage zone (BAD 739,320 lived here)
-    # Foliage: G strongly dominates R/B in the after-frame blob
-    FOLIAGE_G_MARGIN = 12.0
-    # Ballistic water prefers lower than aim (GOOD 772,406; BAD 832 should be lower)
-    BELOW_BONUS = 0.85
+    EDGE_MARGIN_PX = 80
+    TOP_EXCLUDE_FRAC = 0.22
+    FOLIAGE_G_MARGIN = 14.0
+    # Operator: landing is always a bit right of aim; farther → lower (gravity)
+    RIGHT_BIAS_PX = 70
+    PRIOR_SIGMA_FRAC = 0.12   # soft Gaussian around expected impact
+    BURST_DURATION_S = 1.45
+    BURST_TARGET_FPS = 30
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -289,6 +287,7 @@ class HitDetector:
         self._last_reason: str = ""
         self._noise_floor_pct: float = 0.0
         self._impact_mask_u8 = None
+        self._best_after_idx: int = -1
         self._lock = threading.Lock()
 
     def _gray(self, frame):
@@ -337,6 +336,7 @@ class HitDetector:
             self._confidence = 0.0
             self._last_reason = ""
             self._impact_mask_u8 = None
+            self._best_after_idx = -1
         return True
 
     def capture_before_stable(self, camera, tries: int = 10, max_pct: float = 0.35) -> bool:
@@ -361,6 +361,7 @@ class HitDetector:
                     self._confidence = 0.0
                     self._last_reason = ""
                     self._impact_mask_u8 = None
+                    self._best_after_idx = -1
                 return True
             prev = g
             time.sleep(0.12)
@@ -374,16 +375,51 @@ class HitDetector:
             self._confidence = 0.0
             self._last_reason = "ae_unstable"
             self._impact_mask_u8 = None
+            self._best_after_idx = -1
         return True
 
     def capture_after(self, camera) -> bool:
-        """Capture an 'after' frame. Call multiple times post-fire."""
+        """Capture an 'after' frame. Prefer capture_after_burst for splash finding."""
         frame = camera.get_frame() if camera is not None else None
         if frame is None:
             return False
         with self._lock:
             self._after_frames.append(frame.copy())
         return True
+
+    def capture_after_burst(self, camera, duration_s: Optional[float] = None,
+                            target_fps: Optional[float] = None) -> int:
+        """
+        Grab a dense post-fire burst — matches how a human watches the landing.
+        Skips duplicate frames when the camera has not updated yet.
+        Returns number of unique frames captured.
+        """
+        if not CV2_AVAILABLE or camera is None:
+            return 0
+        duration = float(duration_s if duration_s is not None else self.BURST_DURATION_S)
+        fps = float(target_fps if target_fps is not None else self.BURST_TARGET_FPS)
+        interval = 1.0 / max(fps, 1.0)
+        t_end = time.monotonic() + duration
+        last_sig = None
+        n = 0
+        while time.monotonic() < t_end:
+            t0 = time.monotonic()
+            frame = camera.get_frame()
+            if frame is not None:
+                # Cheap signature so we only keep new camera frames
+                h, w = frame.shape[:2]
+                sig = (int(frame[h // 2, w // 2].sum())
+                       ^ int(frame[h // 4, w // 4].sum())
+                       ^ int(frame[3 * h // 4, 3 * w // 4].sum()))
+                if sig != last_sig:
+                    last_sig = sig
+                    with self._lock:
+                        self._after_frames.append(frame.copy())
+                    n += 1
+            dt = time.monotonic() - t0
+            time.sleep(max(0.0, interval - dt))
+        print(f"[HitDetector] after-burst {n} unique frames in {duration:.2f}s")
+        return n
 
     def _blob_contrast(self, darken, mask) -> Tuple[float, float]:
         """Return (mean_darken, darken_contrast vs ring)."""
@@ -398,7 +434,6 @@ class HitDetector:
         return mean_dark, mean_dark - ring_m
 
     def _is_foliage(self, after_bgr, mask) -> bool:
-        """True if blob looks like green canopy (BAD Point6 tree hit)."""
         if after_bgr is None:
             return False
         mean = cv2.mean(after_bgr, mask=mask)
@@ -406,22 +441,35 @@ class HitDetector:
         return g > r + self.FOLIAGE_G_MARGIN and g > b + self.FOLIAGE_G_MARGIN
 
     def _surface_weight(self, after_bgr, mask) -> float:
-        """
-        Down-weight vivid blue plastic/furniture AE (BAD 832,474 on blue tarp).
-        White fabric (GOOD 772,406) and wood deck stay near 1.0.
-        """
         if after_bgr is None:
             return 1.0
         mean = cv2.mean(after_bgr, mask=mask)
         b, g, r = float(mean[0]), float(mean[1]), float(mean[2])
         if b > 150 and b > r + 40 and b > g + 10:
-            return 0.22
+            return 0.35
         return 1.0
 
+    def _expected_impact(self, aim_xy, distance_m, w, h) -> Tuple[float, float]:
+        """Soft prior: a bit right of aim + gravity drop with range."""
+        drop_px = 0.0
+        try:
+            from hit_verdict import drop_px_for_distance
+            drop_px = float(drop_px_for_distance(distance_m, frame_h=h))
+        except Exception:
+            if distance_m is not None and distance_m > 0.3:
+                drop_px = 8.0 * float(distance_m)  # ~fallback
+        ex = float(aim_xy[0]) + self.RIGHT_BIAS_PX
+        ey = float(aim_xy[1]) + drop_px
+        return (
+            max(0.0, min(float(w - 1), ex)),
+            max(0.0, min(float(h - 1), ey)),
+        )
+
     def detect(self, aim_xy: Optional[Tuple[int, int]] = None,
-               noise_floor_pct: Optional[float] = None) -> Optional[Tuple[int, int]]:
+               noise_floor_pct: Optional[float] = None,
+               distance_m: Optional[float] = None) -> Optional[Tuple[int, int]]:
         """
-        Find persistent wet stain centroid in Sniper pixels, or None.
+        Find where water landed using the post-fire burst (human-visible motion).
         """
         if not CV2_AVAILABLE:
             return None
@@ -432,12 +480,13 @@ class HitDetector:
                 return None
 
             before_gray = self._gray(self._before_frame)
-            after_bgr = self._after_frames[-1]
             h, w = before_gray.shape[:2]
             if aim_xy is None:
                 aim_xy = (w // 2, h // 2)
             aim_xy = (int(aim_xy[0]), int(aim_xy[1]))
             max_dist = self.MAX_AIM_DIST_FRAC * math.hypot(w, h)
+            exp_xy = self._expected_impact(aim_xy, distance_m, w, h)
+            prior_sigma = max(40.0, self.PRIOR_SIGMA_FRAC * math.hypot(w, h))
 
             floor = (self._noise_floor_pct if noise_floor_pct is None
                      else float(noise_floor_pct))
@@ -445,27 +494,55 @@ class HitDetector:
                 self._hit_point = None
                 self._confidence = 0.0
                 self._last_reason = f"scene_unstable@{floor:.2f}%"
-                print(f"[HitDetector] No hit — {self._last_reason} "
-                      f"(max {self.MAX_NOISE_FLOOR_PCT}%)")
+                print(f"[HitDetector] No hit — {self._last_reason}")
                 return None
 
             n_after = len(self._after_frames)
-            need = min(self.MIN_VOTES, max(2, n_after))
-            votes = np.zeros((h, w), dtype=np.uint8)
+            need = max(self.MIN_VOTES_ABS, int(math.ceil(self.MIN_VOTE_FRAC * n_after)))
+            need = min(need, max(2, n_after))
+
+            votes = np.zeros((h, w), dtype=np.uint16)
+            darken_max = np.zeros((h, w), dtype=np.float32)
             darken_sum = np.zeros((h, w), dtype=np.float32)
-            last_darken = None
-            for after_frame in self._after_frames:
+            motion_max = np.zeros((h, w), dtype=np.float32)
+            per_frame_darken = []
+            prev_gray = before_gray
+            best_idx = 0
+            best_idx_score = -1.0
+
+            for i, after_frame in enumerate(self._after_frames):
                 after_gray = self._gray(after_frame)
                 darken = cv2.subtract(before_gray, after_gray)
-                last_darken = darken
-                darken_sum += darken.astype(np.float32)
-                _, dth = cv2.threshold(
-                    darken, self.DARKEN_THRESHOLD, 1, cv2.THRESH_BINARY)
-                votes = cv2.add(votes, dth)
+                per_frame_darken.append(darken)
+                darken_f = darken.astype(np.float32)
+                darken_max = np.maximum(darken_max, darken_f)
+                darken_sum += darken_f
+                _, dth = cv2.threshold(darken, self.DARKEN_THRESHOLD, 1, cv2.THRESH_BINARY)
+                votes = votes + dth.astype(np.uint16)
+                # Frame-to-frame motion (stream / splash arrival a human notices)
+                motion = cv2.absdiff(prev_gray, after_gray).astype(np.float32)
+                motion_max = np.maximum(motion_max, motion)
+                prev_gray = after_gray
+                # Track which after frame best shows the eventual hit region later
+                # (filled after we pick hit — provisional: max mean darken)
+                mscore = float(darken_f.mean())
+                if mscore > best_idx_score:
+                    best_idx_score = mscore
+                    best_idx = i
 
-            self._diff_frame = last_darken
             mean_darken = (darken_sum / float(n_after)).astype(np.float32)
+            self._diff_frame = darken_max.astype(np.uint8)
+
             persistent = (votes >= need).astype(np.uint8) * 255
+            # Also keep strong single-frame onsets that move (splash flash)
+            _, onset = cv2.threshold(
+                darken_max.astype(np.uint8), self.DARKEN_THRESHOLD + 6, 255,
+                cv2.THRESH_BINARY)
+            _, moved = cv2.threshold(
+                motion_max.astype(np.uint8), self.DIFF_THRESHOLD + 8, 255,
+                cv2.THRESH_BINARY)
+            flash = cv2.bitwise_and(onset, moved)
+            search = cv2.bitwise_or(persistent, flash)
 
             roi = np.zeros((h, w), dtype=np.uint8)
             cv2.circle(roi, aim_xy, int(max_dist), 255, -1)
@@ -475,26 +552,26 @@ class HitDetector:
             roi[h - m:, :] = 0
             roi[:, :m] = 0
             roi[:, w - m:] = 0
-            persistent = cv2.bitwise_and(persistent, roi)
+            search = cv2.bitwise_and(search, roi)
 
             roi_area = float(cv2.countNonZero(roi)) or 1.0
-            persist_pct = 100.0 * cv2.countNonZero(persistent) / roi_area
+            persist_pct = 100.0 * cv2.countNonZero(persistent & roi) / roi_area
             if persist_pct > self.MAX_PERSISTENT_ROI_PCT:
-                self._impact_mask_u8 = persistent
+                self._impact_mask_u8 = search
                 self._hit_point = None
                 self._confidence = 0.0
                 self._last_reason = f"foliage_or_wind@{persist_pct:.1f}%"
-                print(f"[HitDetector] No hit — {self._last_reason} "
-                      f"(max {self.MAX_PERSISTENT_ROI_PCT}%)")
+                print(f"[HitDetector] No hit — {self._last_reason}")
                 return None
 
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-            persistent = cv2.morphologyEx(persistent, cv2.MORPH_OPEN, kernel)
-            persistent = cv2.morphologyEx(persistent, cv2.MORPH_CLOSE, kernel)
-            self._impact_mask_u8 = persistent
+            search = cv2.morphologyEx(search, cv2.MORPH_OPEN, kernel)
+            search = cv2.morphologyEx(search, cv2.MORPH_CLOSE, kernel)
+            self._impact_mask_u8 = search
 
+            after_bgr = self._after_frames[-1]
             contours, _ = cv2.findContours(
-                persistent, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                search, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cands = []
             for c in contours:
                 area = cv2.contourArea(c)
@@ -509,32 +586,37 @@ class HitDetector:
                     continue
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
-                dist = math.hypot(cx - aim_xy[0], cy - aim_xy[1])
-                if dist > max_dist:
+                if math.hypot(cx - aim_xy[0], cy - aim_xy[1]) > max_dist:
                     continue
                 mask = np.zeros((h, w), dtype=np.uint8)
                 cv2.drawContours(mask, [c], -1, 255, -1)
-                if self._is_foliage(after_bgr, mask):
-                    # Allow green-tinted deck hits below aim; reject canopy above
-                    if cy < aim_xy[1] + int(0.12 * h):
-                        continue
-                mean_dark, contrast = self._blob_contrast(mean_darken, mask)
-                if mean_dark < self.MIN_MEAN_DARKEN or contrast < self.MIN_CONTRAST:
+                if self._is_foliage(after_bgr, mask) and cy < aim_xy[1] + int(0.1 * h):
                     continue
-                area_term = 1.0 - abs(area - 1200.0) / 9000.0
-                area_term = max(0.35, min(1.0, area_term))
+                mean_dark, contrast = self._blob_contrast(mean_darken, mask)
+                peak_dark = float(cv2.mean(darken_max, mask=mask)[0])
+                peak_motion = float(cv2.mean(motion_max, mask=mask)[0])
+                if peak_dark < self.MIN_MEAN_DARKEN and mean_dark < self.MIN_MEAN_DARKEN:
+                    continue
+                if contrast < self.MIN_CONTRAST and peak_motion < self.DIFF_THRESHOLD:
+                    continue
+                # Soft prior: right + gravity-expected impact (does not replace seeing)
+                dist_prior = math.hypot(cx - exp_xy[0], cy - exp_xy[1])
+                prior = math.exp(-0.5 * (dist_prior / prior_sigma) ** 2)
+                # Prefer slightly right/low of raw aim (operator physics)
+                right = max(0.0, (cx - aim_xy[0]) / float(w))
                 below = max(0.0, (cy - aim_xy[1]) / float(h))
-                low_frac = cy / float(h)
-                gravity = (1.0 + self.BELOW_BONUS * below) * (0.7 + 0.4 * low_frac)
+                geom = (1.0 + 0.6 * right) * (1.0 + 0.9 * below)
                 surf = self._surface_weight(after_bgr, mask)
-                # Absolute darken dominates weak circular AE (deck puddle > coin AE)
-                dark_term = min((mean_dark / 30.0) ** 1.4, 2.8)
-                score = ((contrast ** 1.05) * (0.55 + 0.45 * circ)
-                         * area_term * gravity * surf * dark_term)
+                dark_term = min((max(peak_dark, mean_dark) / 28.0) ** 1.25, 2.6)
+                motion_term = 0.7 + 0.3 * min(peak_motion / 40.0, 1.5)
+                area_term = max(0.35, min(1.0, 1.0 - abs(area - 1000.0) / 10000.0))
+                score = ((0.55 + 0.45 * prior) * (0.5 + 0.5 * circ) * area_term
+                         * geom * surf * dark_term * motion_term
+                         * (0.6 + 0.4 * min(contrast / 20.0, 1.5)))
                 cands.append({
                     "xy": (cx, cy), "area": area, "circ": circ,
-                    "darken": mean_dark, "contrast": contrast,
-                    "dist": dist, "score": score,
+                    "darken": mean_dark, "peak": peak_dark, "contrast": contrast,
+                    "motion": peak_motion, "prior": prior, "score": score,
                 })
             cands.sort(key=lambda x: x["score"], reverse=True)
 
@@ -542,37 +624,49 @@ class HitDetector:
             conf = 0.0
             if cands and cands[0]["score"] >= self.MIN_SCORE:
                 best = cands[0]
-                if (len(cands) > 1
-                        and best["score"] < cands[1]["score"] * 1.12):
+                if len(cands) > 1 and best["score"] < cands[1]["score"] * 1.10:
                     reason = (f"ambiguous@{best['score']:.0f}/"
                               f"{cands[1]['score']:.0f}")
                 else:
                     hit = best["xy"]
                     conf = float(best["score"])
-                    reason = (f"persist_{need}/{n_after} "
-                              f"c={best['contrast']:.0f} "
-                              f"a={best['area']:.0f}")
+                    reason = (f"burst_{n_after} "
+                              f"pk={best['peak']:.0f} "
+                              f"mv={best['motion']:.0f} "
+                              f"pr={best['prior']:.2f}")
+                    # Pick gallery after-frame where this blob was darkest
+                    hx, hy = hit
+                    best_i, best_s = 0, -1.0
+                    for i, dmap in enumerate(per_frame_darken):
+                        y0, y1 = max(0, hy - 20), min(h, hy + 21)
+                        x0, x1 = max(0, hx - 20), min(w, hx + 21)
+                        s = float(dmap[y0:y1, x0:x1].mean())
+                        if s > best_s:
+                            best_s, best_i = s, i
+                    best_idx = best_i
             elif cands:
                 reason = f"weak_score@{cands[0]['score']:.1f}"
             else:
-                reason = f"no_persistent_blob(votes≥{need}/{n_after})"
+                reason = f"no_splash_blob(n={n_after},votes≥{need})"
 
+            self._best_after_idx = best_idx
             self._hit_point = hit
             self._confidence = conf
             self._last_reason = reason
             if hit:
                 print(f"[HitDetector] Hit ({hit[0]},{hit[1]}) conf={conf:.0f} "
-                      f"floor={floor:.2f}% ({reason})")
+                      f"floor={floor:.2f}% n={n_after} ({reason})")
             else:
-                print(f"[HitDetector] No hit — {reason} (floor={floor:.2f}%)")
+                print(f"[HitDetector] No hit — {reason} (floor={floor:.2f}% n={n_after})")
             return hit
 
     def get_annotated_frame(self) -> Optional[np.ndarray]:
-        """After-frame with bright-red persistent-darken highlight + hit marker."""
+        """Best after-frame with splash mask + hit marker."""
         with self._lock:
             if not self._after_frames:
                 return None
-            frame = self._after_frames[-1].copy()
+            idx = self._best_after_idx if 0 <= self._best_after_idx < len(self._after_frames) else -1
+            frame = self._after_frames[idx].copy()
             mask = getattr(self, "_impact_mask_u8", None)
             if mask is not None and mask.shape[:2] == frame.shape[:2]:
                 red = frame.copy()
@@ -595,7 +689,8 @@ class HitDetector:
         with self._lock:
             if not self._after_frames:
                 return None
-            return self._after_frames[-1].copy()
+            idx = self._best_after_idx if 0 <= self._best_after_idx < len(self._after_frames) else -1
+            return self._after_frames[idx].copy()
 
     def get_state(self) -> dict:
         with self._lock:
@@ -791,8 +886,6 @@ class AutoCalibrator:
     RETRY_DURATION = 0.040
     CAL_PULSE_MS_LADDER = (30, 30, 35, 40)
     SETTLE_TIME = 1.5         # Seconds to wait after servo move
-    # Wet stains appear ~0.5 s; sample through ~1.3 s
-    POST_FIRE_DELAYS = [0.35, 0.50, 0.70, 1.00, 1.30]
     MAX_RETRIES = 3           # 4 attempts at ~30–40 ms
     MIN_HITS_TO_SAVE = 3      # Dry/noise "hits" must not overwrite a good offset
     SNIPER_W = 1280
@@ -1194,19 +1287,23 @@ class AutoCalibrator:
                 time.sleep(0.5)
                 continue
 
-            time.sleep(0.15)
-            t0 = time.monotonic()
-            for delay in self.POST_FIRE_DELAYS:
-                wait = delay - (time.monotonic() - t0)
-                if wait > 0:
-                    time.sleep(wait)
-                self.detector.capture_after(self._sniper_cam)
-
+            time.sleep(0.08)
+            # Dense burst — watch the landing the way a human does (not 5 stills)
+            self._update(f"Point {point_idx+1}: Watching splash burst...")
+            n_burst = self.detector.capture_after_burst(self._sniper_cam)
+            dist_m = None
+            try:
+                dist_m = self._lidar.read_distance()
+            except Exception:
+                dist_m = None
             hit = self.detector.detect(
                 aim_xy=(sniper_aim_px, sniper_aim_py),
                 noise_floor_pct=noise,
+                distance_m=dist_m,
             )
             det = self.detector.get_state()
+            if n_burst:
+                det = {**det, "burst_frames": n_burst}
 
             if hit:
                 hit_px, hit_py = hit
