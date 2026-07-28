@@ -1254,3 +1254,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-28 — [PROCESS] Commit and push every step
 - **[PROCESS]** User: commit **and push** every change/discovery/deploy.
 - **[RULE]** `.cursor/rules/agents-commit-every-step.mdc` updated — push after each commit (no force).
+- **[RULE]** Cursor rule now requires **push after every commit** (not ask-first).
