@@ -1321,3 +1321,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** CalibrationTable: reject |offset|>8°; inlier median (±5°); clamp global ±8°.
 - **[FIX]** Auto-cal pulse ladder **30/30/35/40 ms**; rejected outliers retry (no gallery pollute).
 - **[SPEC]** SW-001 §6 → v5.15.
+
+## 2026-07-28 — [DEPLOY] Near-crosshair auto-cal fix live
+- **[DEPLOY]** `calibration_engine.py` v5.15 (near-crosshair + |offset|>8° reject + 30ms pulse) live after soft-restart→auto-reboot; Scout+Sniper healthy.

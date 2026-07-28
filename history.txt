@@ -91,3 +91,4 @@
 2026-07-28 | [TROUBLESHOOT] | Auto-cal false hit pixels → wild offsets; questions before fix
 
 2026-07-28 | [FIX] | Auto-cal: near-crosshair HitDetector + reject |offset|>8°; pulse 30ms-first; inlier median
+2026-07-28 | [DEPLOY] | Near-crosshair auto-cal + offset outlier reject live on Jetson
