@@ -1,9 +1,12 @@
-# Implements: SW-001 §2.14 — Hunt attempt stills (lightweight)
+# Implements: SW-001 §2.14 — Hunt attempt stills + trajectory strip
 """
 hunt_capture.py — Scout/Sniper stills for hunt attempts.
 
-Stills-only (no video encode) to protect Jetson CPU/RAM/MJPEG streams.
-Keeps last MAX_ATTEMPTS dirs under hunt_captures/. Cooldown enforced by caller.
+Retention (dual ring):
+  - last MAX_RECENT (10) of *any* attempt (reject or fire)
+  - last MAX_INSECT (100) of YOLO insect detections
+
+Trajectory: stills contact-sheet from Sniper burst during fire (no MP4).
 """
 
 from __future__ import annotations
@@ -18,15 +21,18 @@ from typing import List, Optional, Tuple
 
 try:
     import cv2
+    import numpy as np
     CV2 = True
 except ImportError:
     CV2 = False
 
-MAX_ATTEMPTS = 5
-AFTER_DELAY_SEC = 0.4  # single after still (no multi-second clip)
+MAX_RECENT = 10
+MAX_INSECT = 100
+AFTER_DELAY_SEC = 0.35
 JPEG_QUALITY = 80
-# Downscale stills for disk + browser bandwidth
 STILL_MAX_W = 640
+TRAJ_CELL_W = 160
+TRAJ_MAX_FRAMES = 12
 
 
 def annotate_frame(
@@ -36,6 +42,7 @@ def annotate_frame(
     point: Optional[Tuple[int, int]] = None,
     crosshair: bool = False,
     boxes: Optional[list] = None,
+    hit_px=None,
     color=(0, 255, 0),
 ):
     if frame is None or not CV2:
@@ -62,53 +69,107 @@ def annotate_frame(
             if name:
                 cv2.putText(out, str(name), (x1, max(14, y1 - 4)),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+    if hit_px is not None:
+        hx, hy = int(hit_px[0] * sx), int(hit_px[1] * sy)
+        cv2.circle(out, (hx, hy), 16, (0, 0, 255), 2)
+        cv2.drawMarker(out, (hx, hy), (0, 0, 255), cv2.MARKER_TILTED_CROSS, 28, 2)
     cv2.rectangle(out, (0, 0), (w, 28), (0, 0, 0), -1)
     cv2.putText(out, label[:70], (6, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 1)
     return out
 
 
-def _resize(frame):
+def _resize(frame, max_w=STILL_MAX_W):
     if frame is None or not CV2:
         return frame
     h, w = frame.shape[:2]
-    if w <= STILL_MAX_W:
+    if w <= max_w:
         return frame
-    nh = int(h * (STILL_MAX_W / float(w)))
-    return cv2.resize(frame, (STILL_MAX_W, nh))
+    nh = int(h * (max_w / float(w)))
+    return cv2.resize(frame, (max_w, nh))
+
+
+def build_trajectory_strip(
+    frames: list,
+    *,
+    boxes: Optional[list] = None,
+    hit_px=None,
+    label: str = "TRAJECTORY",
+):
+    """Horizontal contact sheet of Sniper burst frames (water path)."""
+    if not CV2 or not frames:
+        return None
+    cells = []
+    n = min(len(frames), TRAJ_MAX_FRAMES)
+    step = max(1, len(frames) // n) if len(frames) > n else 1
+    picked = frames[::step][:n]
+    for i, fr in enumerate(picked):
+        img = _resize(fr, TRAJ_CELL_W)
+        img = annotate_frame(
+            img,
+            label=f"{i + 1}/{len(picked)}",
+            crosshair=True,
+            boxes=boxes if i == 0 or i == len(picked) - 1 else None,
+            hit_px=hit_px if i == len(picked) - 1 else None,
+            color=(0, 255, 255),
+        )
+        cells.append(img)
+    if not cells:
+        return None
+    h = max(c.shape[0] for c in cells)
+    padded = []
+    for c in cells:
+        if c.shape[0] < h:
+            pad = np.zeros((h - c.shape[0], c.shape[1], 3), dtype=c.dtype)
+            c = np.vstack([c, pad])
+        padded.append(c)
+    strip = np.hstack(padded)
+    cv2.rectangle(strip, (0, 0), (strip.shape[1], 22), (0, 0, 0), -1)
+    cv2.putText(strip, label[:90], (4, 16),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 255), 1)
+    return strip
 
 
 class HuntCaptureStore:
-    """Disk-backed ring of the last MAX_ATTEMPTS hunt attempts (stills only)."""
+    """Dual ring: recent (any) + insects (YOLO-verified)."""
 
     def __init__(self, root_dir: str):
         self.root = root_dir
         self._lock = threading.Lock()
-        self._index: List[str] = []
+        self._recent: List[str] = []
+        self._insects: List[str] = []
         self._last_capture_mono = 0.0
         os.makedirs(self.root, exist_ok=True)
         self._load_index()
 
     def tick(self, scout_frame, sniper_frame) -> None:
-        """No-op: stills-only path snapshots at engage time (saves RAM)."""
         return
 
     def count(self) -> int:
         with self._lock:
-            return len(self._index)
+            return len(set(self._recent) | set(self._insects))
+
+    def counts(self) -> dict:
+        with self._lock:
+            return {
+                "recent": len(self._recent),
+                "insects": len(self._insects),
+                "max_recent": MAX_RECENT,
+                "max_insects": MAX_INSECT,
+                "total": len(set(self._recent) | set(self._insects)),
+            }
 
     def clear_all(self) -> int:
-        """Delete every attempt dir + reset index. Returns removed count."""
         with self._lock:
-            n = len(self._index)
-            for aid in list(self._index):
+            ids = set(self._recent) | set(self._insects)
+            n = len(ids)
+            for aid in ids:
                 shutil.rmtree(os.path.join(self.root, aid), ignore_errors=True)
-            # orphan dirs
             for name in os.listdir(self.root):
                 path = os.path.join(self.root, name)
                 if os.path.isdir(path):
                     shutil.rmtree(path, ignore_errors=True)
-            self._index = []
+            self._recent, self._insects = [], []
             self._save_index()
             return n
 
@@ -117,32 +178,45 @@ class HuntCaptureStore:
 
     def _load_index(self):
         path = self._index_path()
+        recent, insects = [], []
         if os.path.isfile(path):
             try:
                 with open(path, "r") as f:
                     data = json.load(f)
-                ids = data if isinstance(data, list) else data.get("ids", [])
-                self._index = [i for i in ids
-                               if os.path.isdir(os.path.join(self.root, i))][:MAX_ATTEMPTS]
+                if isinstance(data, list):
+                    recent = data
+                else:
+                    recent = data.get("recent") or data.get("ids") or []
+                    insects = data.get("insects") or []
             except Exception:
-                self._index = []
+                pass
         else:
-            dirs = sorted(
+            recent = sorted(
                 [d for d in os.listdir(self.root)
                  if os.path.isdir(os.path.join(self.root, d))],
                 reverse=True,
             )
-            self._index = dirs[:MAX_ATTEMPTS]
+        self._recent = [i for i in recent
+                        if os.path.isdir(os.path.join(self.root, i))]
+        self._insects = [i for i in insects
+                         if os.path.isdir(os.path.join(self.root, i))]
         self._prune_locked()
         self._save_index()
 
     def _save_index(self):
         with open(self._index_path(), "w") as f:
-            json.dump({"ids": self._index, "max": MAX_ATTEMPTS}, f, indent=2)
+            json.dump({
+                "recent": self._recent,
+                "insects": self._insects,
+                "max_recent": MAX_RECENT,
+                "max_insects": MAX_INSECT,
+            }, f, indent=2)
 
-    def list_attempts(self, limit: int = MAX_ATTEMPTS) -> list:
+    def list_attempts(self, limit: int = MAX_RECENT,
+                      view: str = "recent") -> list:
         with self._lock:
-            ids = list(self._index[:limit])
+            ids = list(self._insects if view == "insects" else self._recent)
+        ids = ids[:max(1, int(limit))]
         out = []
         for aid in ids:
             meta = self.get_meta(aid)
@@ -191,12 +265,15 @@ class HuntCaptureStore:
         scout_cam,
         sniper_cam,
         boxes: Optional[list] = None,
-        cooldown_sec: float = 8.0,
+        cooldown_sec: float = 3.0,
         hit_confirmed=None,
         hit_px=None,
+        insect_detected: bool = False,
+        trajectory_frames: Optional[list] = None,
+        hit_verdict=None,
     ) -> Optional[str]:
-        """Snapshot before/after JPEGs on a daemon thread. No video."""
-        if not self.can_capture(cooldown_sec):
+        # Insect detections always saved; others respect cooldown.
+        if not insect_detected and not self.can_capture(cooldown_sec):
             return None
 
         attempt_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
@@ -206,6 +283,9 @@ class HuntCaptureStore:
             scout_before = scout_before.copy()
         if sniper_before is not None:
             sniper_before = sniper_before.copy()
+        traj = []
+        if trajectory_frames:
+            traj = [f.copy() for f in trajectory_frames if f is not None]
 
         dest = os.path.join(self.root, attempt_id)
         os.makedirs(dest, exist_ok=True)
@@ -219,16 +299,21 @@ class HuntCaptureStore:
             "aim_yaw": round(float(aim_yaw), 2),
             "distance_m": round(float(distance_m), 2) if distance_m is not None else None,
             "status": "recording",
-            "media": "stills_only",
+            "media": "stills_traj" if traj else "stills_only",
+            "insect_detected": bool(insect_detected),
             "hit_confirmed": hit_confirmed,
             "hit_px": hit_px,
+            "hit_verdict": hit_verdict,
+            "traj_frames": len(traj),
         }
         with open(os.path.join(dest, "meta.json"), "w") as f:
             json.dump(meta, f, indent=2)
 
         self._last_capture_mono = time.monotonic()
         with self._lock:
-            self._index.insert(0, attempt_id)
+            self._recent.insert(0, attempt_id)
+            if insect_detected:
+                self._insects.insert(0, attempt_id)
             self._prune_locked()
             self._save_index()
 
@@ -249,6 +334,9 @@ class HuntCaptureStore:
                 boxes=boxes or [],
                 hit_confirmed=hit_confirmed,
                 hit_px=hit_px,
+                insect_detected=insect_detected,
+                trajectory_frames=traj,
+                hit_verdict=hit_verdict,
             ),
             daemon=True,
             name=f"hunt-cap-{attempt_id[-6:]}",
@@ -256,10 +344,16 @@ class HuntCaptureStore:
         return attempt_id
 
     def _prune_locked(self):
-        while len(self._index) > MAX_ATTEMPTS:
-            old = self._index.pop()
-            shutil.rmtree(os.path.join(self.root, old), ignore_errors=True)
-            print(f"[HuntCapture] pruned {old}")
+        while len(self._recent) > MAX_RECENT:
+            old = self._recent.pop()
+            if old not in self._insects:
+                shutil.rmtree(os.path.join(self.root, old), ignore_errors=True)
+                print(f"[HuntCapture] pruned recent {old}")
+        while len(self._insects) > MAX_INSECT:
+            old = self._insects.pop()
+            if old not in self._recent:
+                shutil.rmtree(os.path.join(self.root, old), ignore_errors=True)
+                print(f"[HuntCapture] pruned insect {old}")
 
     def _finalize(
         self,
@@ -278,21 +372,32 @@ class HuntCaptureStore:
         boxes,
         hit_confirmed=None,
         hit_px=None,
+        insect_detected=False,
+        trajectory_frames=None,
+        hit_verdict=None,
     ):
         dest = os.path.join(self.root, attempt_id)
         color = (0, 220, 0) if result == "fired" else (0, 165, 255)
         hit_txt = ""
         if hit_confirmed is True:
-            hit_txt = " | HIT"
-            color = (0, 255, 0)
+            hit_txt, color = " | HIT", (0, 255, 0)
         elif hit_confirmed is False:
             hit_txt = " | MISS"
-        label = f"{result.upper()}{hit_txt} | {verify} | p={aim_pitch:.1f} y={aim_yaw:.1f}"
+        if hit_verdict and hit_verdict.get("label"):
+            hit_txt = f" | {hit_verdict['label']} {hit_verdict.get('score', '?')}/{hit_verdict.get('max_score', 3)}"
+            if hit_verdict.get("label") == "HIT":
+                color = (0, 255, 0)
+            elif hit_verdict.get("label") == "PROBABLE":
+                color = (0, 200, 255)
+            else:
+                hit_txt = f" | {hit_verdict['label']} {hit_verdict.get('score', '?')}/{hit_verdict.get('max_score', 3)}"
+        insect_txt = " | INSECT" if insect_detected else ""
+        label = (f"{result.upper()}{hit_txt}{insect_txt} | {verify} | "
+                 f"p={aim_pitch:.1f} y={aim_yaw:.1f}")
         point = tuple(target_px) if target_px else None
 
         time.sleep(AFTER_DELAY_SEC)
-        scout_after = None
-        sniper_after = None
+        scout_after = sniper_after = None
         if scout_cam is not None:
             f = scout_cam.get_frame()
             scout_after = f.copy() if f is not None else None
@@ -306,18 +411,15 @@ class HuntCaptureStore:
             img = _resize(frame)
             if ann:
                 img = annotate_frame(
-                    img,
-                    label=label,
+                    img, label=label,
                     point=None if sniper else point,
                     crosshair=sniper,
                     boxes=boxes if sniper else None,
+                    hit_px=hit_px if sniper else None,
                     color=color,
                 )
-            cv2.imwrite(
-                os.path.join(dest, name),
-                img,
-                [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY],
-            )
+            cv2.imwrite(os.path.join(dest, name), img,
+                        [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY])
 
         _jpg("scout_before.jpg", scout_before)
         _jpg("scout_after.jpg", scout_after)
@@ -327,6 +429,18 @@ class HuntCaptureStore:
         _jpg("scout_after_ann.jpg", scout_after, ann=True)
         _jpg("sniper_before_ann.jpg", sniper_before, ann=True, sniper=True)
         _jpg("sniper_after_ann.jpg", sniper_after, ann=True, sniper=True)
+
+        if trajectory_frames and CV2:
+            strip = build_trajectory_strip(
+                trajectory_frames, boxes=boxes, hit_px=hit_px,
+                label=f"WATER PATH{hit_txt} | {verify}",
+            )
+            if strip is not None:
+                cv2.imwrite(
+                    os.path.join(dest, "trajectory.jpg"),
+                    strip,
+                    [int(cv2.IMWRITE_JPEG_QUALITY), JPEG_QUALITY],
+                )
 
         meta = {
             "id": attempt_id,
@@ -338,10 +452,16 @@ class HuntCaptureStore:
             "aim_yaw": round(float(aim_yaw), 2),
             "distance_m": round(float(distance_m), 2) if distance_m is not None else None,
             "status": "ready",
-            "media": "stills_only",
+            "media": "stills_traj" if trajectory_frames else "stills_only",
+            "insect_detected": bool(insect_detected),
             "hit_confirmed": hit_confirmed,
-            "hit_px": hit_px,
+            "hit_px": list(hit_px) if hit_px else None,
+            "hit_verdict": hit_verdict,
+            "traj_frames": len(trajectory_frames or []),
+            "has_trajectory": bool(trajectory_frames),
         }
         with open(os.path.join(dest, "meta.json"), "w") as f:
             json.dump(meta, f, indent=2)
-        print(f"[HuntCapture] saved {attempt_id} ({result}, hit={hit_confirmed})")
+        print(f"[HuntCapture] saved {attempt_id} ({result}, insect={insect_detected}, "
+              f"hit={hit_confirmed}, verdict={((hit_verdict or {}).get('summary'))}, "
+              f"traj={len(trajectory_frames or [])})")

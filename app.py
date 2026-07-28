@@ -35,6 +35,8 @@ from settings_store import SettingsStore
 from status_indicator import StatusIndicator
 from activity_log import init_activity_log, log_event
 from hunt_controller import HuntController
+from ir_controller import get_illumination_status, IRController
+from camera_optics import get_camera_optics_status
 import diagnostics
 
 # ============================================================================
@@ -68,16 +70,23 @@ def _accum_alarm(reason: str):
 
 accum = AccumulatorManager(relay, pressure, on_alarm=_accum_alarm)
 
+# IR illumination awareness (HW-001 §4) — Univivi 850nm hardwired always-on with 12V
+ir_status = get_illumination_status()
+print(f"[app] IR: {ir_status['note']}")
+# Keep controller instance for future GPIO; as-built is hardwired always-on
+ir = IRController(auto_schedule=False)
+
 # Velocity tracker for predictive lead — SW-001 §2.7.1
 velocity_tracker = VelocityTracker()
 
 # Camera streams — dimensions must match HW-001 §2
 # Full Dual-Camera Architecture:
-# - Scout camera: CSI-0 (IMX219 NoIR at 1280x720 @ 60 FPS) fixed to enclosure
-# - Sniper camera: CSI-1 (IMX219 NoIR with Motorized IR-Cut at 1280x720 @ 60 FPS) on gimbal
+# - Scout camera: CSI-0 Arducam NoIR IMX219 (permanent NoIR — no IR-cut)
+# - Sniper camera: CSI-1 Arducam IMX219 w/ Motorized IR-Cut (not software-switched)
 scout_cam = CameraStream(sensor_id=0, width=1280, height=720, fps=30, name="Scout")
 sniper_cam = CameraStream(sensor_id=1, width=1280, height=720, fps=30, name="Sniper",
                           rotate_180=True)  # Physical upside-down mount — SW-001 §2.13
+print(f"[app] Cameras: {get_camera_optics_status()['summary']}")
 
 # AI detector (lazy-init — may be disabled via --no-ai flag)
 detector = None
@@ -342,9 +351,13 @@ def api_cameras_status():
     """
     scout = scout_cam.get_status()
     sniper = sniper_cam.get_status()
+    optics = get_camera_optics_status()
+    scout["optics"] = optics["scout"]
+    sniper["optics"] = optics["sniper"]
     return jsonify({
         "scout": scout,
         "sniper": sniper,
+        "optics": optics,
         "ok": bool(scout.get("healthy") and sniper.get("healthy")),
         "reboot_required": sniper.get("error") == "csi_phy_dead"
             or scout.get("error") == "csi_phy_dead",
@@ -1483,6 +1496,8 @@ def api_status():
         "relay": relay.get_status(),
         "lidar": lidar.get_status(),
         "pressure": pressure.get_status(),
+        "ir": ir.get_status(),
+        "cameras_optics": get_camera_optics_status(),
         "ai": {
             "enabled": detector is not None,
             "confidence": detector.confidence if detector else 0,
@@ -1522,14 +1537,21 @@ def api_hunt_align():
 
 @app.route('/api/hunt/captures', methods=['GET'])
 def api_hunt_captures():
-    """List last ≤5 hunt attempts (newest first) — SW-001 §2.14."""
-    from hunt_capture import MAX_ATTEMPTS
-    limit = request.args.get('limit', MAX_ATTEMPTS, type=int)
-    limit = max(1, min(int(limit or MAX_ATTEMPTS), MAX_ATTEMPTS))
+    """List hunt attempts — view=recent (10 any) | insects (100) — SW-001 §2.14."""
+    from hunt_capture import MAX_RECENT, MAX_INSECT
+    view = (request.args.get('view') or 'recent').strip().lower()
+    if view not in ('recent', 'insects'):
+        view = 'recent'
+    default_max = MAX_INSECT if view == 'insects' else MAX_RECENT
+    limit = request.args.get('limit', default_max, type=int)
+    limit = max(1, min(int(limit or default_max), default_max))
+    counts = hunter.captures.counts()
     return jsonify({
-        "count": hunter.captures.count(),
-        "max": MAX_ATTEMPTS,
-        "items": hunter.captures.list_attempts(limit=limit),
+        "view": view,
+        "count": counts["insects"] if view == "insects" else counts["recent"],
+        "max": default_max,
+        "counts": counts,
+        "items": hunter.captures.list_attempts(limit=limit, view=view),
     })
 
 

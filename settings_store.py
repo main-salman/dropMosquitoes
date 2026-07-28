@@ -24,13 +24,13 @@ MAX_BACKUPS = 30
 # Factory defaults when no settings.json and no backups exist.
 DEFAULTS: dict[str, Any] = {
     "accumulator": {
-        "target_psi": 5.0,
+        "target_psi": 15.0,  # field start point; recalibrate nozzle after PSI changes
         "maintain_hysteresis_psi": 0.0,
         "pressure_poll_sec": 60.0,
         "initial_charge_sec": 3.0,
         "topup_charge_sec": 1.0,
         "topup_interval_shots": 10,
-        "default_pulse_ms": 100.0,  # shared live+auto-cal; 25ms is often inaudible
+        "default_pulse_ms": 10.0,  # short burst; shared live + auto-cal
         "max_pump_run_sec": 8.0,
         "charge_per_shot": True,
         # Yahboom PY.00 cannot reliably close Monk Makes CH2 — jumper CH2 load
@@ -50,9 +50,9 @@ DEFAULTS: dict[str, Any] = {
         "pitch_limit": 90.0,
     },
     "pulse": {
-        "operational_pulse": 0.100,  # mirrors accumulator.default_pulse_ms
-        "cal_pulse": 0.100,
-        "cal_retry_pulse": 0.100,
+        "operational_pulse": 0.010,  # mirrors accumulator.default_pulse_ms (10 ms)
+        "cal_pulse": 0.010,
+        "cal_retry_pulse": 0.010,
         "prime_duration_ms": 3000,
     },
     "prime": {

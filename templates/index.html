@@ -206,6 +206,7 @@
 <header>
   <h1>🎯 BugSniper</h1>
   <span class="header-pill pill-live" id="conn">● Connected</span>
+  <span class="header-pill pill-live" id="ir-pill" title="Univivi 850nm hardwired to system 12V (Wago Port 3)">IR always on</span>
   <span class="spacer"></span>
   <div class="hunt-bar" title="Autonomous hunt — survives page refresh">
     <span class="header-pill pill-paused" id="hunt-mode">PAUSED</span>
@@ -229,14 +230,14 @@
 <div class="tab-pane active" id="p-ctrl">
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">📷 Scout — IMX219 NoIR Fixed · 60 FPS</div>
+      <div class="card-title">📷 Scout — IMX219 permanent NoIR · Fixed</div>
       <div class="feed" onclick="aim(event,this,1280,720)">
         <img src="/stream/scout" alt="Scout"/>
         <div class="feed-chip">LIVE</div>
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🔭 Sniper — IMX219 Gimbal · 30 FPS</div>
+      <div class="card-title">🔭 Sniper — IMX219 motorized IR-cut · Gimbal</div>
       <div class="feed" id="sniper-feed" onclick="aim(event,this,1920,1080)">
         <img src="/stream/sniper" alt="Sniper"/>
         <div class="feed-chip">LIVE</div>
@@ -373,13 +374,15 @@
     <div class="card">
       <div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span>🎯 Hunt Attempts</span>
-        <span style="font-weight:400;color:var(--dim2);font-size:12px">Last 5 · Scout + Sniper stills (no video) · hunting only · 8s cooldown</span>
+        <span style="font-weight:400;color:var(--dim2);font-size:12px">Recent 10 (any) · Insects 100 · water trajectory strip on fire · stills only</span>
         <span style="flex:1"></span>
-        <span class="header-pill pill-paused" id="hc-count">0 / 5</span>
+        <span class="header-pill pill-paused" id="hc-count">0 / 10</span>
+        <button class="btn btn-sm" id="hc-view-recent" onclick="hcSetView('recent')">Recent 10</button>
+        <button class="btn btn-sm" id="hc-view-insects" onclick="hcSetView('insects')">Insects 100</button>
         <button class="btn btn-sm" onclick="hcRefresh()">🔄 Refresh</button>
       </div>
       <div class="card-body">
-        <div id="hc-empty" style="font-size:12px;color:var(--dim);padding:8px 0">No hunt attempts yet. When hunting, verified fires and rejects appear here.</div>
+        <div id="hc-empty" style="font-size:12px;color:var(--dim);padding:8px 0">No hunt attempts yet. Recent shows last 10 (reject or fire). Insects keeps last 100 YOLO insect sightings for field testing.</div>
         <div id="hc-grid" class="hc-grid"></div>
         <div id="hc-detail" class="hc-detail" style="display:none"></div>
       </div>
@@ -687,8 +690,9 @@
     <div class="card" style="grid-column:1/-1">
       <div class="card-title">🚀 One-Button Calibration</div>
       <div class="card-body">
-        <p style="font-size:12px;color:var(--dim);margin-bottom:14px">Press the button below. The system will automatically scan the scene, pick 10 targets, fire water at each, verify hits, and calibrate itself.</p>
-        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px"><b>Clicks:</b> each solenoid pulse = <b>2 clicks</b> (open + close). Auto-cal may fire up to <b>2 pulses per target</b> if the first miss is detected — that can sound like 4 clicks for one point. Gated: Channel B via <b>T29</b> (not jumpered).</p>
+        <p style="font-size:12px;color:var(--dim);margin-bottom:14px">Scans the scene, fires at 10 targets, detects <b>real water splash</b> on Sniper, and saves a median nozzle offset. Needs water + a surface where splash is visible.</p>
+        <p style="font-size:11px;color:var(--orange);margin-bottom:10px;font-weight:600">Dry tests should report ~0 hits. If only 1–2 “hits” appear, calibration is <b>rejected</b> and the previous offset is kept (need ≥3 consensus splashes).</p>
+        <p style="font-size:11px;color:var(--dim2);margin-bottom:14px"><b>Clicks:</b> each solenoid pulse = <b>2 clicks</b> (open + close). Up to <b>2 pulses/target</b> on miss. Detection gates never loosen on retry.</p>
 
         <div id="ac-hardwired-box" style="display:none;background:rgba(255,159,10,0.12);border:1px solid rgba(255,159,10,0.45);border-radius:10px;padding:12px;margin-bottom:14px">
           <p style="font-size:12px;color:var(--orange);margin:0 0 8px;font-weight:600">⚠ Module 12V hardwired mode</p>
@@ -1205,14 +1209,21 @@ async function poll(){try{const r=await fetch('/api/status');const d=await r.jso
   if(d.lidar){$('tv-dist').textContent=d.lidar.distance_m.toFixed(2)}
   if(d.hunt)renderHunt(d.hunt);
   $('conn').className='header-pill pill-live';$('conn').textContent='● Connected';
+  const irp=$('ir-pill');
+  if(irp&&d.ir){
+    const on=d.ir.hardwired_always_on||d.ir.on_when_system_powered||d.ir.ir_on;
+    irp.textContent=on?'IR always on':'IR off';
+    irp.className='header-pill '+(on?'pill-live':'pill-off');
+    irp.title=d.ir.note||d.ir.part||'';
+  }
 }catch{$('conn').className='header-pill pill-off';$('conn').textContent='● Offline'}}
 setInterval(poll,1500);poll();
 
 // ---- Hunt attempt gallery (SW-001 §2.14) — Control tab only, lazy thumbs ----
-let hcItems=[], hcSelected=null, hcTimer=null;
+let hcItems=[], hcSelected=null, hcTimer=null, hcView='recent';
 function hcFile(item, name){return (item.files&&item.files[name])||null}
 function hcThumb(item){
-  return hcFile(item,'sniper_after_ann.jpg')||hcFile(item,'scout_after_ann.jpg')
+  return hcFile(item,'trajectory.jpg')||hcFile(item,'sniper_after_ann.jpg')||hcFile(item,'scout_after_ann.jpg')
     ||hcFile(item,'sniper_before_ann.jpg')||hcFile(item,'scout_before.jpg')||'';
 }
 function hcResultClass(r){return r==='fired'?'hc-fired':'hc-rejected'}
@@ -1220,24 +1231,39 @@ function hcOnControlTab(){
   const pane=$('p-ctrl');
   return !!(pane&&pane.classList.contains('active'));
 }
+function hcSetView(v){
+  hcView=(v==='insects')?'insects':'recent';
+  const a=$('hc-view-recent'), b=$('hc-view-insects');
+  if(a)a.classList.toggle('btn-blue', hcView==='recent');
+  if(b)b.classList.toggle('btn-blue', hcView==='insects');
+  hcSelected=null;
+  hcRefresh();
+}
 async function hcRefresh(){
   if(!hcOnControlTab())return;
   try{
-    const r=await fetch('/api/hunt/captures?limit=5');
+    const lim=hcView==='insects'?100:10;
+    const r=await fetch(`/api/hunt/captures?view=${hcView}&limit=${lim}`);
     const d=await r.json();
     hcItems=d.items||[];
-    $('hc-count').textContent=`${d.count||hcItems.length} / ${d.max||5}`;
+    const c=d.counts||{};
+    $('hc-count').textContent=hcView==='insects'
+      ? `${c.insects||d.count||0} / ${c.max_insects||100} insects`
+      : `${c.recent||d.count||0} / ${c.max_recent||10} recent`;
     const grid=$('hc-grid'), empty=$('hc-empty');
     if(!hcItems.length){empty.style.display='';grid.innerHTML='';$('hc-detail').style.display='none';return}
     empty.style.display='none';
-    // Cards only — images load when clicked (detail) or via tiny placeholder badge
     grid.innerHTML=hcItems.map(it=>{
       const t=(it.timestamp||'').replace('T',' ');
       const thumb=hcThumb(it);
       const hit = it.hit_confirmed===true?' HIT':(it.hit_confirmed===false?' MISS':'');
+      const hv = it.hit_verdict;
+      const verd = hv&&hv.label?` ${hv.label} ${hv.score||0}/${hv.max_score||3}`:'';
+      const bug = it.insect_detected?' 🪲':'';
+      const traj = it.has_trajectory||hcFile(it,'trajectory.jpg')?' 💧':'';
       return `<div class="hc-card${hcSelected===it.id?' active':''}" onclick="hcOpen('${it.id}')">
         <img src="${thumb}" alt="" loading="lazy" decoding="async" onerror="this.style.opacity=.25"/>
-        <div class="hc-cap"><b class="${hcResultClass(it.result)}">${(it.result||'?').toUpperCase()}${hit}</b>
+        <div class="hc-cap"><b class="${hcResultClass(it.result)}">${(it.result||'?').toUpperCase()}${verd||hit}${bug}${traj}</b>
           · ${esc(it.verify||'')}<br>${esc(t)} · p=${it.aim_pitch}° y=${it.aim_yaw}°</div></div>`;
     }).join('');
     if(hcSelected){const still=hcItems.find(x=>x.id===hcSelected);if(still)hcShowDetail(still);else{$('hc-detail').style.display='none';hcSelected=null}}
@@ -1252,15 +1278,29 @@ function hcOpen(id){
 function hcShowDetail(it){
   const f=n=>hcFile(it,n);
   const img=(url,cap)=>url?`<figure><figcaption>${cap}</figcaption><img src="${url}" alt="${cap}" loading="lazy" decoding="async"/></figure>`:'';
+  const traj=f('trajectory.jpg');
+  const hv=it.hit_verdict||{};
+  const sig=hv.signals||{};
+  const sigRow=(name,s)=>{
+    if(!s)return '';
+    if(s.na)return `<span style="margin-right:10px;color:var(--dim2)">— ${name}</span>`;
+    const ok=s.ok;
+    const veto=s.veto?' (veto)':'';
+    return `<span style="margin-right:10px;color:${ok?'var(--green)':(s.veto?'var(--red)':'var(--dim)')}">${ok?'✓':'✗'} ${name}${veto}</span>`;
+  };
   $('hc-detail').style.display='block';
   $('hc-detail').innerHTML=`
     <div style="font-size:13px;margin-bottom:10px">
       <b class="${hcResultClass(it.result)}">${(it.result||'').toUpperCase()}</b>
       · ${esc(it.verify||'')} · ${esc((it.timestamp||'').replace('T',' '))}
       · aim ${it.aim_pitch}°/${it.aim_yaw}° · ${it.distance_m!=null?(it.distance_m+' m'):'—'}
-      · hit=${it.hit_confirmed===true?'YES':(it.hit_confirmed===false?'NO':'—')}
+      · insect=${it.insect_detected?'YES':'NO'}
+      · verdict=<b>${esc(hv.summary|| (it.hit_confirmed===true?'HIT':(it.hit_confirmed===false?'MISS':'—')))}</b>
+      ${it.hit_px?(' · splash@'+JSON.stringify(it.hit_px)) : ''}
       ${it.status==='recording'?' · <span style="color:var(--orange)">saving…</span>':''}
     </div>
+    ${hv.score!=null?`<div style="font-size:12px;margin-bottom:10px;color:var(--dim)">${sigRow('lock',sig.insect_locked)}${sigRow('traj',sig.traj_through_path||sig.traj_through_bbox)}${sigRow('ballistic',sig.ballistic_on_target)}${sigRow('splash',sig.splash_optional||sig.splash_near_bbox)} · HIT needs ≥2/3 core; splash optional (— if not visible)</div>`:''}
+    ${traj?`<figure style="margin:0 0 12px"><figcaption>Water trajectory (Sniper burst during pulse)</figcaption><img src="${traj}" alt="trajectory" loading="lazy" decoding="async" style="width:100%;max-height:220px;object-fit:contain;background:#111;border-radius:8px"/></figure>`:''}
     <div class="hc-media">
       ${img(f('scout_before_ann.jpg')||f('scout_before.jpg'),'Scout before')}
       ${img(f('scout_after_ann.jpg')||f('scout_after.jpg'),'Scout after')}
@@ -1270,7 +1310,7 @@ function hcShowDetail(it){
 }
 function hcStartPolling(){
   if(hcTimer)return;
-  hcRefresh();
+  hcSetView(hcView||'recent');
   hcTimer=setInterval(hcRefresh,8000);
 }
 function hcStopPolling(){

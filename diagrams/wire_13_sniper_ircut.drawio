@@ -1,0 +1,70 @@
+<mxfile host="app.diagrams.net" modified="2026-07-28T12:45:00.000Z" agent="BugSniper" version="22.0.0">
+  <diagram name="Sniper IR-Cut Control" id="ircut_v2">
+    <mxGraphModel dx="1400" dy="1100" grid="0" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1100" background="#FFFFFF">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="t1" value="&lt;b style='font-size:18px'&gt;WIRE 13: Sniper IR-Cut — UC-350 Rev.C (confirmed)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#666'&gt;Arducam “The Verifier” IMX219. CSI = video only. On-board red/black = IR-cut motor (not a laser). LDR present → Auto mode works without Jetson wires.&lt;/span&gt;" style="text;html=1;fontColor=#333;align=left;" vertex="1" parent="1"><mxGeometry x="30" y="12" width="1400" height="48" as="geometry"/></mxCell>
+
+        <!-- ========== AS-BUILT ========== -->
+        <mxCell id="have" value="" style="rounded=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=2;arcSize=4;" vertex="1" parent="1"><mxGeometry x="30" y="70" width="480" height="230" as="geometry"/></mxCell>
+        <mxCell id="havel" value="&lt;b style='color:#2E7D32;font-size:13px'&gt;AS-BUILT (your photos)&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="45" y="78" width="280" height="20" as="geometry"/></mxCell>
+        <mxCell id="have1" value="&lt;b&gt;Board:&lt;/b&gt; UC-350 Rev.C · CSI ribbon = video+sensor power only" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#81C784;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="45" y="105" width="450" height="32" as="geometry"/></mxCell>
+        <mxCell id="have2" value="&lt;b&gt;Back pads (L→R):&lt;/b&gt; GND · &lt;b&gt;IR&lt;/b&gt; · SCL · SDA · FSTROBE · GP0 · GND · 3V3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#81C784;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="45" y="145" width="450" height="32" as="geometry"/></mxCell>
+        <mxCell id="have3" value="&lt;b&gt;Red/black pair:&lt;/b&gt; already soldered GND→IR pads → white 2-pin → &lt;b&gt;IR-cut actuator&lt;/b&gt; (red cylinder under lens). Local loop — not missing power." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#81C784;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="45" y="185" width="450" height="52" as="geometry"/></mxCell>
+        <mxCell id="have4" value="&lt;b&gt;LDR&lt;/b&gt; (photoresistor, front top-right) drives auto day/night today. SCL/SDA/FSTROBE/GP0 unused for BugSniper." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#81C784;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="45" y="245" width="450" height="40" as="geometry"/></mxCell>
+
+        <!-- ========== OPTIONS ========== -->
+        <mxCell id="opts" value="" style="rounded=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=2;arcSize=4;" vertex="1" parent="1"><mxGeometry x="530" y="70" width="940" height="230" as="geometry"/></mxCell>
+        <mxCell id="optsl" value="&lt;b style='color:#1565C0;font-size:13px'&gt;WHAT YOU NEED TO DO&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="545" y="78" width="280" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="oA" value="&lt;b&gt;A — Keep Auto LDR (zero extra cable)&lt;/b&gt;&lt;br&gt;Do nothing. Filter follows ambient light via LDR. &lt;span style='color:#E65100'&gt;⚠ Always-on 850nm IR may keep LDR “day” — test night.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#90CAF9;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="545" y="105" width="440" height="72" as="geometry"/></mxCell>
+        <mxCell id="oB" value="&lt;b&gt;B — Jetson GPIO (recommended for hunt)&lt;/b&gt;&lt;br&gt;Cover/lift LDR. Extend &lt;b&gt;IR + GND&lt;/b&gt; across umbilical → BCM 22 / T15. Software Day/Night." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#43A047;fontSize=10;align=left;spacingLeft=6;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="1000" y="105" width="450" height="72" as="geometry"/></mxCell>
+        <mxCell id="oC" value="&lt;b&gt;C — Fixed day&lt;/b&gt;&lt;br&gt;Unplug white 2-pin IR-cut connector → stays color cam." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#90CAF9;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="545" y="190" width="440" height="68" as="geometry"/></mxCell>
+        <mxCell id="oD" value="&lt;b&gt;D — Fixed night (NoIR)&lt;/b&gt;&lt;br&gt;Opaque tape over LDR → module thinks dark → IR-pass." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#90CAF9;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="1000" y="190" width="450" height="68" as="geometry"/></mxCell>
+
+        <!-- ========== PCB PAD CALLOUT ========== -->
+        <mxCell id="pcb" value="" style="rounded=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=2;arcSize=4;" vertex="1" parent="1"><mxGeometry x="30" y="320" width="480" height="200" as="geometry"/></mxCell>
+        <mxCell id="pcbl" value="&lt;b style='color:#F57F17;font-size:12px'&gt;UC-350 BACK — tap points for Mode B&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="45" y="328" width="320" height="18" as="geometry"/></mxCell>
+        <mxCell id="padrow" value="&lt;font face='monospace'&gt;[GND] [IR] [SCL] [SDA] [FSTROBE] [GP0] [GND] [3V3]&lt;/font&gt;&lt;br&gt;&lt;b style='color:#C62828'&gt;↑ use these two&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#FFB74D;fontSize=12;align=center;" vertex="1" parent="1"><mxGeometry x="45" y="355" width="450" height="55" as="geometry"/></mxCell>
+        <mxCell id="padnote" value="Solder umbilical pair to &lt;b&gt;IR&lt;/b&gt; (signal) + leftmost &lt;b&gt;GND&lt;/b&gt;. Keep existing red/black to white 2-pin (motor). Do &lt;b&gt;not&lt;/b&gt; wire 3V3 from Jetson into that pad for IR-cut." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#FBC02D;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="45" y="425" width="450" height="75" as="geometry"/></mxCell>
+
+        <!-- ========== ZONE A ========== -->
+        <mxCell id="za" value="" style="rounded=1;fillColor=#FFF3E0;strokeColor=#FF6D00;strokeWidth=3;arcSize=4;" vertex="1" parent="1"><mxGeometry x="530" y="320" width="300" height="360" as="geometry"/></mxCell>
+        <mxCell id="zal" value="&lt;b style='color:#E65100;font-size:12px'&gt;ZONE A — Gimbal payload&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="545" y="328" width="220" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="cam" value="" style="rounded=1;fillColor=#0D47A1;strokeColor=#42A5F5;shadow=1;" vertex="1" parent="1"><mxGeometry x="550" y="360" width="120" height="80" as="geometry"/></mxCell>
+        <mxCell id="caml" value="&lt;b style='color:#BBDEFB;font-size:10px'&gt;UC-350 Rev.C&lt;/b&gt;&lt;br&gt;&lt;span style='color:#90CAF9;font-size:9px'&gt;IMX219 + IR-cut&lt;br&gt;+ LDR&lt;/span&gt;" style="text;html=1;align=center;" vertex="1" parent="1"><mxGeometry x="555" y="375" width="110" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="stepA" value="&lt;b&gt;Mode B on board&lt;/b&gt;&lt;br&gt;1. Cover LDR (tape) or desolder it&lt;br&gt;2. Keep white 2-pin plugged (motor)&lt;br&gt;3. Add flex pair on &lt;b&gt;IR + GND&lt;/b&gt; pads&lt;br&gt;4. Strain-relief on payload plate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFA000;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="545" y="455" width="270" height="110" as="geometry"/></mxCell>
+        <mxCell id="stepA2" value="&lt;span style='font-size:9px;color:#BF360C'&gt;⚠ Don’t bottom M12 lens into IR-cut glass.&lt;/span&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="545" y="580" width="270" height="30" as="geometry"/></mxCell>
+        <mxCell id="stepA3" value="Red cylinder = filter actuator, not aiming laser." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#E57373;fontSize=10;" vertex="1" parent="1"><mxGeometry x="545" y="620" width="270" height="40" as="geometry"/></mxCell>
+
+        <!-- ========== ZONE B ========== -->
+        <mxCell id="zb" value="" style="rounded=1;fillColor=#FCE4EC;strokeColor=#D32F2F;strokeWidth=3;arcSize=4;" vertex="1" parent="1"><mxGeometry x="850" y="320" width="280" height="360" as="geometry"/></mxCell>
+        <mxCell id="zbl" value="&lt;b style='color:#C62828;font-size:12px'&gt;ZONE B — Umbilical&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="865" y="328" width="220" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="hdmi2" value="Existing: FPV HDMI (video only)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#EF9A9A;fontSize=11;" vertex="1" parent="1"><mxGeometry x="865" y="360" width="250" height="36" as="geometry"/></mxCell>
+        <mxCell id="pair" value="&lt;b style='color:#C62828'&gt;ADD: 2-conductor ultra-flex&lt;/b&gt;&lt;br&gt;IR (red) + GND (black)&lt;br&gt;28–30 AWG silicone / servo wire&lt;br&gt;Service loop w/ HDMI — zero stiffness" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFCDD2;strokeColor=#C62828;fontSize=11;align=left;spacingLeft=8;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="865" y="410" width="250" height="100" as="geometry"/></mxCell>
+        <mxCell id="gland2" value="Route HDMI + IR pair through PG11 (or 2nd gland). Seal after." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#EF9A9A;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="865" y="525" width="250" height="50" as="geometry"/></mxCell>
+        <mxCell id="zbnote" value="IR GND must equal Jetson GND (common)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;fontSize=10;" vertex="1" parent="1"><mxGeometry x="865" y="590" width="250" height="40" as="geometry"/></mxCell>
+
+        <!-- ========== ZONE C ========== -->
+        <mxCell id="zc" value="" style="rounded=1;fillColor=#E8F5E9;strokeColor=#2E7D32;strokeWidth=3;arcSize=4;" vertex="1" parent="1"><mxGeometry x="1150" y="320" width="320" height="360" as="geometry"/></mxCell>
+        <mxCell id="zcl" value="&lt;b style='color:#2E7D32;font-size:12px'&gt;ZONE C — Jetson&lt;/b&gt;" style="text;html=1;" vertex="1" parent="1"><mxGeometry x="1165" y="328" width="200" height="18" as="geometry"/></mxCell>
+
+        <mxCell id="pinmap" value="&lt;b&gt;Mode B pin&lt;/b&gt;&lt;br&gt;IR → &lt;b&gt;BCM 22 / Pin 15 / T15&lt;/b&gt;&lt;br&gt;GND → IDC / Jetson GND&lt;br&gt;&lt;span style='font-size:9px;color:#555'&gt;Reuses illuminator-MOSFET reserve; illuminator is hardwired always-on.&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#66BB6A;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="1165" y="360" width="290" height="90" as="geometry"/></mxCell>
+
+        <mxCell id="logic" value="&lt;b&gt;Polarity (verify on bench)&lt;/b&gt;&lt;br&gt;GPIO HIGH ≈ IR-cut IN (day/color)&lt;br&gt;GPIO LOW ≈ IR-cut OUT (night/IR-pass)&lt;br&gt;Confirm: click + phone IR view." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF;strokeColor=#66BB6A;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="1165" y="465" width="290" height="85" as="geometry"/></mxCell>
+
+        <mxCell id="sw" value="&lt;b&gt;After Mode B wired&lt;/b&gt;&lt;br&gt;1. Toggle BCM22 → hear click&lt;br&gt;2. Add IR-cut driver + Day/Night UI&lt;br&gt;3. Night = cut OUT + 850nm on" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=10;align=left;spacingLeft=6;" vertex="1" parent="1"><mxGeometry x="1165" y="565" width="290" height="90" as="geometry"/></mxCell>
+
+        <mxCell id="ref" value="&lt;b&gt;Refs:&lt;/b&gt; Photos confirm UC-350 Rev.C · parts.csv “The Verifier” · HW-001 §2 · Arducam motorized IR-cut (LDR auto vs GPIO after covering/removing LDR) · WIRE 07 CSI HDMI chain" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#78909C;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1"><mxGeometry x="30" y="700" width="1440" height="40" as="geometry"/></mxCell>
+
+        <mxCell id="next" value="&lt;b&gt;CHOSEN 2026-07-28: Mode A — leave as-is.&lt;/b&gt; LDR verified working. No umbilical IR wires. No GPIO IR-cut driver. Mode B only if LDR later fails." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontSize=11;align=left;spacingLeft=8;strokeWidth=2;" vertex="1" parent="1"><mxGeometry x="30" y="755" width="1440" height="48" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

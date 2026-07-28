@@ -16,6 +16,7 @@ from scout_vision import ScoutVision
 from hardware import pixel_to_angle, compute_predictive_lead
 from hunt_capture import HuntCaptureStore
 from boresight import BoresightCorrector
+from hit_verdict import evaluate_hit
 
 FRAME_W = 1280
 FRAME_H = 720
@@ -26,7 +27,10 @@ PREDICTION_LOOKAHEAD_SEC = 0.12
 SETTLE_SEC = 0.07
 POST_ENGAGEMENT_COOLDOWN_SEC = 1.0
 SCAN_INTERVAL_SEC = 0.05
-CAPTURE_COOLDOWN_SEC = 8.0
+# Rejects fill the "recent 10" ring; insect detections ignore cooldown.
+CAPTURE_COOLDOWN_SEC = 3.0
+TRAJ_BURST_HZ = 28.0
+TRAJ_BURST_TAIL_SEC = 0.25
 
 # Flying-bug track window
 TRACK_MAX_SEC = 2.5
@@ -203,6 +207,7 @@ class HuntController:
                 "last_error": self._last_error,
                 "insect_model": self._insect_model is not None,
                 "capture_count": self.captures.count(),
+                "captures": self.captures.counts(),
                 "boresight": self.boresight.status(),
                 "geometry": {
                     "pitch_sign": self._pitch_sign,
@@ -405,8 +410,13 @@ class HuntController:
         if self._velocity_tracker is not None:
             omega_p, omega_y = self._velocity_tracker.get_angular_velocity()
 
+        psi = None
+        try:
+            psi = float(self._accum.TARGET_PSI)
+        except Exception:
+            pass
         aim_pitch, aim_yaw, _ = compute_predictive_lead(
-            raw_pitch, raw_yaw, distance_m, omega_p, omega_y)
+            raw_pitch, raw_yaw, distance_m, omega_p, omega_y, psi=psi)
 
         if for_fire:
             np_, ny_ = self._nozzle_offsets(distance_m, aim_pitch, aim_yaw)
@@ -425,6 +435,7 @@ class HuntController:
         last_detail = "tracking"
         last_boxes = []
         last_tx, last_ty = int(tx), int(ty)
+        saw_insect = False
 
         while time.monotonic() - t0 < TRACK_MAX_SEC:
             with self._lock:
@@ -450,6 +461,8 @@ class HuntController:
             with self._lock:
                 self._verifications += 1
             last_detail, last_boxes = detail, boxes
+            if verified:
+                saw_insect = True
 
             if not verified or center is None:
                 time.sleep(0.03)
@@ -496,6 +509,7 @@ class HuntController:
             aim_yaw=aim_yaw,
             distance_m=distance_m,
             boxes=last_boxes,
+            insect_detected=saw_insect,
         )
 
     def _fire_and_verify_hit(self, *, target_px, aim_pitch, aim_yaw,
@@ -512,16 +526,42 @@ class HuntController:
                     aim_yaw=aim_yaw,
                     distance_m=distance_m,
                     boxes=boxes,
+                    insect_detected=True,
                 )
                 return
 
         if self._hit_detector is not None:
             try:
-                self._hit_detector.capture_before(self._sniper_cam)
+                # Noise floor + AE settle so dry flicker ≠ splash
+                self._hit_detector.measure_noise_floor(self._sniper_cam, samples=3)
+                self._hit_detector.capture_before_stable(self._sniper_cam)
             except Exception as e:
                 print(f"[Hunt] hit before-capture: {e}")
+                try:
+                    self._hit_detector.capture_before(self._sniper_cam)
+                except Exception:
+                    pass
 
+        # Burst-grab Sniper frames during the pulse → water trajectory strip
+        traj_frames: list = []
+        stop_burst = threading.Event()
+
+        def _traj_burst():
+            period = 1.0 / TRAJ_BURST_HZ
+            while not stop_burst.is_set() and len(traj_frames) < 16:
+                f = self._sniper_cam.get_frame()
+                if f is not None:
+                    traj_frames.append(f.copy())
+                time.sleep(period)
+
+        burst_t = threading.Thread(
+            target=_traj_burst, daemon=True, name="hunt-traj-burst")
+        burst_t.start()
         result = self._accum.fire()
+        time.sleep(TRAJ_BURST_TAIL_SEC)
+        stop_burst.set()
+        burst_t.join(timeout=1.0)
+
         if self._primer is not None:
             try:
                 self._primer.mark_fired()
@@ -529,33 +569,55 @@ class HuntController:
                 pass
 
         ok = result.get("status") == "fired"
-        hit_confirmed = None
         hit_px = None
+        noise = 0.0
+        if self._hit_detector is not None:
+            try:
+                noise = float(self._hit_detector.get_state().get("noise_floor_pct") or 0.0)
+            except Exception:
+                pass
 
         if ok and self._hit_detector is not None:
             try:
                 for _ in range(3):
-                    time.sleep(0.30)
+                    time.sleep(0.25)
                     self._hit_detector.capture_after(self._sniper_cam)
-                hit_px_t = self._hit_detector.detect()
+                # Splash vs Sniper crosshair; bbox proximity checked in verdict
+                hit_px_t = self._hit_detector.detect(
+                    aim_xy=(FRAME_W // 2, FRAME_H // 2),
+                    noise_floor_pct=noise,
+                )
                 if hit_px_t is not None:
-                    hit_confirmed = True
                     hit_px = list(hit_px_t)
-                    self.boresight.update_from_sniper_point(hit_px_t[0], hit_px_t[1])
-                    self._maybe_persist_mount()
-                    with self._lock:
-                        self._hits += 1
-                else:
-                    hit_confirmed = False
-                    with self._lock:
-                        self._misses += 1
             except Exception as e:
                 print(f"[Hunt] hit detect: {e}")
 
-        outcome = "fired" if ok else "fire_failed"
+        verdict = evaluate_hit(
+            boxes=boxes,
+            traj_frames=traj_frames,
+            hit_px=hit_px,
+            distance_m=distance_m,
+        ) if ok else {
+            "score": 0, "max_score": 3, "min_score": 2,
+            "hit_confirmed": False, "label": "MISS",
+            "summary": "MISS (fire_failed)", "signals": {},
+        }
+        hit_confirmed = bool(verdict.get("hit_confirmed")) if ok else False
+
+        if ok and hit_confirmed and hit_px is not None:
+            try:
+                self.boresight.update_from_sniper_point(hit_px[0], hit_px[1])
+                self._maybe_persist_mount()
+            except Exception:
+                pass
+
         with self._lock:
             if ok:
                 self._shot_count += 1
+                if hit_confirmed:
+                    self._hits += 1
+                else:
+                    self._misses += 1
             self._last_engagement = {
                 "timestamp": datetime.now().isoformat(timespec="seconds"),
                 "target_px": [int(target_px[0]), int(target_px[1])],
@@ -565,20 +627,24 @@ class HuntController:
                 "verify": detail,
                 "fire_status": result.get("status"),
                 "shot_count": self._shot_count,
-                "result": outcome,
+                "result": "fired" if ok else "fire_failed",
                 "hit_confirmed": hit_confirmed,
                 "hit_px": hit_px,
+                "hit_verdict": verdict,
+                "traj_frames": len(traj_frames),
                 "boresight": self.boresight.status(),
             }
 
+        outcome = "fired" if ok else "fire_failed"
         print(
             f"[Hunt] {'FIRE' if ok else 'FIRE FAIL'} "
-            f"#{self._shot_count} hit={hit_confirmed} ({detail}) "
-            f"bias={self.boresight.status()}"
+            f"#{self._shot_count} {verdict.get('summary')} traj={len(traj_frames)} "
+            f"({detail}) bias={self.boresight.status()}"
         )
         try:
             from activity_log import log_event
             log_event("HUNT_FIRE", ok=ok, hit=hit_confirmed,
+                      score=verdict.get("score"), label=verdict.get("label"),
                       shot=self._shot_count, verify=detail)
         except Exception:
             pass
@@ -593,11 +659,16 @@ class HuntController:
             boxes=boxes,
             hit_confirmed=hit_confirmed,
             hit_px=hit_px,
+            insect_detected=True,
+            trajectory_frames=traj_frames,
+            hit_verdict=verdict,
         )
         time.sleep(POST_ENGAGEMENT_COOLDOWN_SEC)
 
     def _record_attempt(self, *, result, verify, target_px, aim_pitch, aim_yaw,
-                        distance_m, boxes=None, hit_confirmed=None, hit_px=None):
+                        distance_m, boxes=None, hit_confirmed=None, hit_px=None,
+                        insect_detected: bool = False, trajectory_frames=None,
+                        hit_verdict=None):
         try:
             aid = self.captures.save_attempt_async(
                 result=result,
@@ -609,9 +680,12 @@ class HuntController:
                 scout_cam=self._scout_cam,
                 sniper_cam=self._sniper_cam,
                 boxes=boxes,
-                cooldown_sec=CAPTURE_COOLDOWN_SEC,
+                cooldown_sec=0.0 if insect_detected else CAPTURE_COOLDOWN_SEC,
                 hit_confirmed=hit_confirmed,
                 hit_px=hit_px,
+                insect_detected=insect_detected,
+                trajectory_frames=trajectory_frames,
+                hit_verdict=hit_verdict,
             )
             with self._lock:
                 eng = {
@@ -624,6 +698,7 @@ class HuntController:
                     "result": result,
                     "hit_confirmed": hit_confirmed,
                     "hit_px": hit_px,
+                    "hit_verdict": hit_verdict,
                     "boresight": self.boresight.status(),
                 }
                 if aid:

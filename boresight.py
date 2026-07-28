@@ -31,9 +31,12 @@ class BoresightCorrector:
         frame_w: int = 1280,
         frame_h: int = 720,
         center_ok_frac: float = 0.08,
+        # ORB align must stay conservative — Scout/Sniper often barely overlap
+        align_max_bias_deg: float = 18.0,
     ):
         self.alpha = alpha
         self.max_bias = max_bias_deg
+        self.align_max_bias = align_max_bias_deg
         self.fov_h = sniper_fov_h
         self.fov_v = sniper_fov_v
         self.fw = frame_w
@@ -92,11 +95,10 @@ class BoresightCorrector:
     def estimate_from_frames(self, scout_frame, sniper_frame,
                              *, accumulate: bool = False) -> dict:
         """
-        ORB-match Scout vs Sniper at current gimbal pose.
+        ORB-match Scout vs Sniper at current gimbal pose (home recommended).
 
-        Returns mount bias so content near Scout center lands on Sniper
-        crosshair. If accumulate=True, add residual onto existing bias
-        (used for refine after a coarse move).
+        Uses Lowe ratio + RANSAC homography; rejects weak/large offsets so a
+        bad match cannot yank hunt aim by tens of degrees.
         """
         if not CV2 or scout_frame is None or sniper_frame is None:
             return {"ok": False, "error": "no_frames"}
@@ -107,12 +109,12 @@ class BoresightCorrector:
             if g1.shape != g2.shape:
                 g2 = cv2.resize(g2, (g1.shape[1], g1.shape[0]))
 
-            orb = cv2.ORB_create(1200)
+            orb = cv2.ORB_create(1500)
             k1, d1 = orb.detectAndCompute(g1, None)
             k2, d2 = orb.detectAndCompute(g2, None)
             n1 = len(k1) if k1 is not None else 0
             n2 = len(k2) if k2 is not None else 0
-            if d1 is None or d2 is None or n1 < 12 or n2 < 12:
+            if d1 is None or d2 is None or n1 < 20 or n2 < 20:
                 return {
                     "ok": False,
                     "error": "not_enough_features",
@@ -120,41 +122,58 @@ class BoresightCorrector:
                     "n2": n2,
                 }
 
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-            matches = sorted(bf.match(d1, d2), key=lambda m: m.distance)[:80]
-            if len(matches) < 8:
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING)
+            knn = bf.knnMatch(d1, d2, k=2)
+            good = []
+            for pair in knn:
+                if len(pair) < 2:
+                    continue
+                m, n = pair
+                if m.distance < 0.75 * n.distance:
+                    good.append(m)
+            if len(good) < 12:
                 return {
                     "ok": False,
                     "error": "not_enough_matches",
-                    "n": len(matches),
+                    "n": len(good),
+                }
+
+            pts1 = np.float32([k1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+            pts2 = np.float32([k2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+            H, mask = cv2.findHomography(pts1, pts2, cv2.RANSAC, 5.0)
+            if H is None or mask is None:
+                return {"ok": False, "error": "homography_failed"}
+            inliers = int(mask.sum())
+            if inliers < 10:
+                return {
+                    "ok": False,
+                    "error": "not_enough_inliers",
+                    "inliers": inliers,
                 }
 
             h, w = g1.shape[:2]
-            cx, cy = w / 2.0, h / 2.0
-            dxs, dys = [], []
-            for m in matches:
-                p1 = k1[m.queryIdx].pt
-                p2 = k2[m.trainIdx].pt
-                if abs(p1[0] - cx) > w * 0.35 or abs(p1[1] - cy) > h * 0.35:
-                    continue
-                dxs.append(p2[0] - cx)
-                dys.append(p2[1] - cy)
-
-            used_mode = "center_neighbors"
-            if len(dxs) < 5:
-                used_mode = "pairwise_delta"
-                dxs, dys = [], []
-                for m in matches:
-                    p1 = k1[m.queryIdx].pt
-                    p2 = k2[m.trainIdx].pt
-                    dxs.append(p2[0] - p1[0])
-                    dys.append(p2[1] - p1[1])
-
-            med_dx = float(np.median(dxs))
-            med_dy = float(np.median(dys))
-            # Feature right/down of Sniper crosshair → need +yaw / +pitch
+            # Where Scout center lands in Sniper after homography
+            c = np.float32([[[w / 2.0, h / 2.0]]])
+            mapped = cv2.perspectiveTransform(c, H)[0, 0]
+            med_dx = float(mapped[0] - w / 2.0)
+            med_dy = float(mapped[1] - h / 2.0)
             err_yaw = (med_dx / w) * self.fov_h
             err_pitch = (med_dy / h) * self.fov_v
+
+            if (abs(err_pitch) > self.align_max_bias
+                    or abs(err_yaw) > self.align_max_bias):
+                return {
+                    "ok": False,
+                    "error": "offset_too_large",
+                    "residual_pitch_deg": round(err_pitch, 3),
+                    "residual_yaw_deg": round(err_yaw, 3),
+                    "inliers": inliers,
+                    "hint": (
+                        "Cameras may not share the same scene at home. "
+                        "Point both at a nearby textured wall and retry, "
+                        "or leave mount at 0 and let hunt refine online."
+                    ),
+                }
 
             with self._lock:
                 if accumulate:
@@ -167,9 +186,9 @@ class BoresightCorrector:
 
             return {
                 "ok": True,
-                "matches": len(matches),
-                "used": len(dxs),
-                "mode": used_mode,
+                "matches": len(good),
+                "inliers": inliers,
+                "mode": "homography_center",
                 "median_dx_px": round(med_dx, 1),
                 "median_dy_px": round(med_dy, 1),
                 "residual_pitch_deg": round(err_pitch, 3),

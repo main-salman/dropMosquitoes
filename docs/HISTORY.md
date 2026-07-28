@@ -1157,10 +1157,54 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[UI]** Hunt Attempts show HIT/MISS.
 - **[DEPLOY]** Full reboot; verified targets off-center (e.g. 1265,292) not stuck at 640,360; `boresight` in `/api/hunt/status`.
 
+## 2026-07-28 — [DIAGRAM] Sniper IR-cut wiring (CSI alone insufficient)
+- **[FINDING]** Motorized IR-cut is not carried on CSI→HDMI; Sniper currently CSI-only.
+- **[DIAGRAM]** `diagrams/wire_13_sniper_ircut.drawio` — Modes A–D; Mode B = IR+GND umbilical → BCM22/T15.
+- **[SPEC]** HW-001 §2 updated; `camera_optics` points at WIRE 13.
+
+## 2026-07-28 — [DOCS/SW] Scout vs Sniper IR-cut profiles (parts.csv)
+- **[FINDING]** Scout = permanent NoIR; Sniper = motorized IR-cut — only comments before; **not software-switched**.
+- **[CODE]** `camera_optics.py`; `/api/status` → `cameras_optics`; camera card titles updated.
+- **[SPEC]** HW-001 §2 table + SW-001 §2.12c v5.13.
+
+## 2026-07-28 — [DOCS/SW] IR always-on awareness in live dashboard
+- **[AS-BUILT]** Univivi 850nm hardwired to system 12V — ON whenever powered (not GPIO).
+- **[CODE]** `ir_controller.get_illumination_status()`; `app.py` `/api/status` → `ir`; header pill **IR always on**.
+- **[SPEC]** SW-001 §2.12b v5.12.
+
+## 2026-07-28 — [FIX] Hit verdict: drop PSI; splash optional + gravity-aware
+- **[FEEDBACK]** PSI flutters → not a hit signal. Splash often invisible at range/angle.
+- **[CODE]** `hit_verdict` v5.11: core = lock + traj_corridor + ballistic (≥2/3 HIT). Splash N/A if missing; if present must match gravity-expected impact or veto HIT.
+- **[SPEC]** SW-001 §2.13 v5.11.
+
+## 2026-07-28 — [FEATURE] Multi-signal hit verdict (≥3/4)
+- **[SPEC]** SW-001 §2.13 v5.10: HIT only if ≥3 of psi_drop / insect_locked / traj_through_bbox / splash_near_bbox.
+- **[CODE]** `hit_verdict.py`; hunt fire uses hardened HitDetector + `evaluate_hit`; gallery shows score + signal row.
+- **[NOTE]** PROBABLE = 2/4; dry/false splash alone cannot confirm HIT.
+
+## 2026-07-28 — [FIX] Auto-cal false hits on dry fire
+- **[ROOT]** HitDetector treated AE/noise as splash; Scout px vs Sniper hit; retries lowered threshold; 2/10 “hits” polluted offset.
+- **[CODE]** Noise floor ×3, AE-stable before, circularity/area, multi-frame consensus, aim=Sniper crosshair, median offset, reject save unless ≥3 hits; no loosened retry.
+- **[UI]** Calibration copy: dry ≈0 hits; rejected keeps previous offset.
+- **[SPEC]** SW-001 §6 v5.9.
+
+## 2026-07-27 — [CONFIG] Field start: 15 PSI / 10 ms pulse; cal=hunt setpoint
+- **[DEFAULTS]** `target_psi=15`, `default_pulse_ms=10` (settings_store + AccumulatorManager).
+- **[SPEC]** SW-001 v5.8: flight lead + linear drop are partial; cal must match hunt PSI/pulse; multi-PSI cal deferred.
+- **[CODE]** ToF exit velocity scales with √(psi/15); AutoCal status shows PSI+ms.
+
+## 2026-07-27 — [FEATURE] Hunt gallery: 10 recent + 100 insects + water trajectory
+- **[SPEC]** SW-001 §2.14 v5.7: dual retention (recent 10 any / insects 100); Sniper burst contact-sheet `trajectory.jpg` during fire + HitDetector splash.
+- **[CODE]** `hunt_capture` dual index; insect detections skip cooldown; fire-path traj burst in `hunt_controller`.
+- **[UI]** Control-tab Recent 10 / Insects 100 toggles; trajectory strip in detail.
+- **[RATIONALE]** Best trajectory check without MP4/high-speed cam: stills strip of the jet + splash marker vs insect bbox.
+- **[OPS]** Jetson unreachable at deploy time — run `./run-ai.sh` when back online.
+
 ## 2026-07-27 — [FIX] Align Scout↔Gimbal UI + hunt follow scale
 - **[FIX]** Align ORB is **single-pass at home** only (2nd pass after large yaw moved Sniper off shared scene and inflated bias).
 - **[UX]** Align was never in the GUI (only background boresight). Added Control-tab **Align Scout↔Gimbal** card + `POST /api/hunt/align` (ORB match at home → mount bias).
 - **[CODE]** `boresight.estimate_from_frames`; hunt `fov_scale` default 1.35 for snappier Scout→gimbal follow; align pause/resume hunt + persist mount.
+- **[FIX]** ORB uses Lowe+RANSAC homography + **18° reject cap**; reset Jetson mount bias to 0 after flaky earlier align.
 - **[NOTE]** Hunt pitch range = Scout FOV cone (~±24° × scale), not full mechanical cal sweep — explained in UI.
 - **[SPEC]** SW-001 §2.13 v5.6.
 
@@ -1188,3 +1232,21 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[DOCS]** `COMMERCIAL.md` — commercial use requires negotiated license via https://salmannaqvi.com/centered-heading-with-contact-form/
 - **[DOCS]** README license section: personal/home only; not positioned as open source.
 - **[SCOPE]** Applies to entire repo (software, firmware, hardware designs, diagrams, docs).
+
+## 2026-07-28 — [FINDING] Sniper = UC-350 Rev.C (photos)
+- **[FINDING]** Back pads GND/IR/SCL/SDA/FSTROBE/GP0/GND/3V3; red/black = local IR-cut motor (not laser); LDR present → Mode A as-built.
+- **[DIAGRAM]** Updated `diagrams/wire_13_sniper_ircut.drawio` to UC-350-specific Mode A–D + Mode B tap points.
+- **[SPEC]** HW-001 §2 Sniper row + IR-cut connectivity; `camera_optics` pcb/ldr fields.
+
+## 2026-07-28 — [DECISION] Sniper IR-cut Mode A (LDR auto)
+- **[DECISION]** Leave UC-350 as Mode A — LDR working as expected; no GPIO/umbilical IR-cut wires.
+- **[SPEC]** HW-001 §2 + SW-001 §2.12c; `camera_optics`/`ir_controller` note Mode A verified; Mode B deferred.
+- **[DIAGRAM]** wire_13 footer → Mode A chosen.
+
+## 2026-07-28 — [DEPLOY] Mode A optics + pending hunt/hit code → Jetson reboot
+- **[DEPLOY]** `./run-ai.sh` → 192.168.0.196; dashboard HTTP 200 after ~70s.
+- **[VERIFY]** `/api/status` ir/cameras_optics show Sniper Mode A LDR auto (verified).
+
+## 2026-07-28 — [PROCESS] Enforce AGENTS.md commit-every-step
+- **[PROCESS]** User: always follow AGENTS.md — commit on every change/discovery/deploy; catch up uncommitted work.
+- **[RULE]** `.cursor/rules/agents-commit-every-step.mdc` (alwaysApply) — overrides ask-before-commit for this repo.

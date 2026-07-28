@@ -60,3 +60,17 @@
 2026-07-27 | [FIX] | Align Scout↔Gimbal Control-tab button + ORB /api/hunt/align; fov_scale 1.35; SW-001 v5.6
 2026-07-27 | [FIX] | Align ORB single-pass only (2nd pass invalid after large yaw move)
 2026-07-27 | [LICENSE] | PolyForm Noncommercial 1.0.0 + COMMERCIAL.md (contact salmannaqvi.com); README license blurb
+2026-07-27 | [FIX] | ORB align: RANSAC+18° cap; reset bad mount bias to 0
+2026-07-27 | [FEATURE] | Hunt gallery: last 10 any + last 100 insects; Sniper water trajectory strip on fire
+2026-07-27 | [OPS] | Gallery+trajectory code ready locally; Jetson 192.168.0.196 unreachable — deploy when back
+2026-07-27 | [CONFIG] | Factory start 15 PSI / 10ms; cal must match hunt setpoint; ToF scales with sqrt(PSI)
+2026-07-28 | [FIX] | Auto-cal: noise-floor+consensus HitDetector; reject save <3 hits; sniper-crosshair aim (dry false hits)
+2026-07-28 | [FEATURE] | Hit verdict ≥3/4: psi_drop + insect_lock + traj∩bbox + splash_near_bbox
+2026-07-28 | [FIX] | Hit verdict: remove PSI; splash optional+gravity; HIT ≥2/3 lock/traj/ballistic
+2026-07-28 | [SW] | IR awareness: hardwired always-on in /api/status + dashboard pill (no GPIO control)
+2026-07-28 | [SW] | Camera optics awareness: Scout permanent NoIR vs Sniper motorized IR-cut (not Jetson-driven)
+2026-07-28 | [DIAGRAM] | wire_13_sniper_ircut.drawio — IR-cut needs IR+GND across umbilical (not CSI); Mode B → BCM22/T15
+2026-07-28 | [FINDING] | Sniper UC-350 Rev.C: LDR auto; IR+GND local to cut motor; Mode B = extend IR+GND → BCM22 (wire_13 updated)
+2026-07-28 | [DECISION] | Sniper IR-cut Mode A LDR auto (verified) — leave as-is; Mode B deferred
+2026-07-28 | [DEPLOY] | ./run-ai.sh → Jetson reboot; Mode A optics live on dashboard
+2026-07-28 | [PROCESS] | Enforce AGENTS.md commit-every-step; catch-up commit + cursor rule

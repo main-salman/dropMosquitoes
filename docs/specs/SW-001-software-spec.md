@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.6  
-**Last Updated:** 2026-07-27  
+**Version:** 5.13  
+**Last Updated:** 2026-07-28  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -81,7 +81,12 @@ The following stages execute **in sequence** for every fire decision:
 
 #### 2.6.3 Linear Drop Compensation (Final Stage)
 - After velocity lead offsets, apply `drop_offset_deg` to the **final pitch angle**.
-- The turret is mounted inverted in an overhead dome enclosure, firing downward. The 45 PSI diaphragm pump fires a direct pressurized stream. Under 3m, the stream is dead-straight. Over 3m, we apply a slight negative pitch offset (aiming closer to horizon) to compensate for trajectory drop.
+- **Partial gravity model:** linear heuristic only (0° under 3 m, then −0.5°/m).
+  Full parabolic integration of `GRAVITY` is **not** implemented yet.
+- **Flight path:** Scout pixel lookahead + angular velocity × ToF (constant-ω
+  assumption). Does **not** model insect acceleration / turns.
+- Exit velocity for ToF uses `WATER_EXIT_VELOCITY` at `REF_EXIT_PSI` (15 PSI),
+  scaled by `√(target_psi / REF_EXIT_PSI)`.
 - Execution order:
   1. `pixel_to_angle()` → raw pitch/yaw (positive pitch = moves camera DOWN)
   2. `+ lead_pitch / lead_yaw` → velocity-corrected aim point
@@ -125,12 +130,12 @@ requires firing from a **consistent pressure**, not a longer pulse.
    `initial_charge_sec` / `topup_charge_sec` are arm-time fallbacks only when the
    sensor was never connected (bench/stub).
 
-**Setpoint / persistence:** factory `target_psi` = **5 PSI** (GUI 1–40) in
+**Setpoint / persistence:** factory `target_psi` = **15 PSI** (GUI 1–40) in
 `settings.json` (§2.11). Pressure tunables on Settings tab with **Save as permanent**.
 
 **Key tunables** (`settings.accumulator` / `POST /api/accumulator/config`):
 `target_psi`, `pressure_poll_sec` (default 60), `maintain_hysteresis_psi` (default 0),
-`default_pulse_ms` (shared live + auto-cal; factory **100 ms**), `max_pump_run_sec`,
+`default_pulse_ms` (shared live + auto-cal; factory **10 ms**), `max_pump_run_sec`,
 timed fallbacks. Charge-after-shot is always on.
 **Solenoid drive:** every open pulse must run under `RelayController.pulse_solenoid()`
 (lock held for the open window). **Option B (`pico`):** Jetson sends `FIRE <ms>`
@@ -149,6 +154,23 @@ accumulator first. This is the only intentional pump+open-valve overlap.
 Rotating field log for post-run troubleshooting: project-root `activity.log`,
 **10 MB** per file, **5** backups (`activity.log.1` …). Records ARM / FIRE /
 CLICK_TEST / AUTOCAL_* (and related) with PSI and pulse timing. Gitignored.
+
+### 2.12b IR Illumination Awareness (`ir_controller.py`)
+
+As-built Univivi **850 nm** illuminator is **hardwired always-on** with system
+12V (Wago Port 3 — HW-001 §4). Software does **not** switch it; cameras use IR
+per their optical profiles (§2.12c). `GET /api/status` → `ir` block. Dashboard
+shows **IR always on**.
+
+### 2.12c Camera IR-cut profiles (`camera_optics.py`)
+
+| Camera | parts.csv | IR filter | Software |
+|:-------|:----------|:----------|:---------|
+| Scout | The New Scout — NoIR IMX219 | **None** (always IR-sensitive) | Documented; MOG2 grayscale |
+| Sniper | The Verifier — UC-350 Rev.C + motorized IR-cut | **Motorized, Mode A LDR auto** (verified) | **Not Jetson-controlled** — leave as-is |
+
+`GET /api/status` → `cameras_optics` and `/api/cameras/status` → `optics`.
+Mode B GPIO (WIRE 13) deferred unless LDR fails. Frames are used as the module delivers them.
 
 ### 2.9 Pressure Sensing (`hardware.py — PressureSensor`)
 
@@ -272,8 +294,17 @@ Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online bor
   `settings.hunt.sniper_mount_*_deg`, and resumes hunt if it was running.
 - **Online boresight:** EMA from Sniper insect/splash error; auto-saved to
   `settings.hunt.sniper_mount_*_deg` (does **not** overwrite nozzle cal).
-- Fire: ECO-004 solenoid pulse. **Post-shot:** HitDetector before/after on Sniper;
-  result `hit`/`miss` stored on hunt capture meta.
+- Fire: ECO-004 solenoid pulse. **Post-shot hit verdict (v5.11):** `hit_verdict.py`
+  scores **3 core signals**; `hit_confirmed=true` if **≥2/3** and splash does
+  not veto:
+  1. **insect_locked** — YOLO insect near Sniper crosshair at fire
+  2. **traj_through_path** — trajectory burst motion in gravity-aware corridor
+     through the insect (pad grows downward with LiDAR distance)
+  3. **ballistic_on_target** — insect overlaps aim / expected impact at range
+  **Splash is optional:** often invisible at range or off-angle → **N/A** (ignored).
+  If a splash *is* detected, it must land near the gravity-aware expected point;
+  a far splash **vetoes** HIT. **PSI drop is not used** (pressure flutters).
+  Labels: `HIT` (≥2/3 core), `PROBABLE` (weaker), `MISS`. Stored on capture meta.
 - Skips new engagements while auto-cal is running.
 
 **Display states**
@@ -298,25 +329,37 @@ with live state badge + last shot / shot count. Polled with `/api/status`
 card (above Hunt Attempts).
 ### 2.14 Hunt Attempt Captures (`hunt_capture.py` + Control tab)
 
-While **HUNTING**, engagement attempts (verified fire **and** reject) may record
-media for operator review. Manual TEST FIRE / PAUSED hunt do **not** capture.
+While **HUNTING**, engagement attempts record media for operator review
+(field insect testing). Manual TEST FIRE / PAUSED hunt do **not** capture.
 
-**Resource profile (v5.3 — after overload incident)**
+**Dual retention**
+| Ring | Count | Contents |
+|:-----|:------|:---------|
+| `recent` | last **10** | Any attempt (reject **or** fire / accept) |
+| `insects` | last **100** | YOLO insect detected during engagement |
+
+Dirs are shared; prune only deletes a dir when it falls out of **both** rings.
+Insect detections **bypass** reject cooldown (always saved). Rejects use ~3 s
+cooldown so the recent ring stays useful without flooding disk.
+
+**Resource profile**
 - **Stills only** — Scout + Sniper before/after JPEG + annotated copies.
-  **No video encode** (was saturating Jetson CPU/RAM and stalling MJPEG).
+  **No MP4 encode** (protects Jetson CPU/RAM/MJPEG).
 - Stills downscaled to max width **640px**, JPEG quality ~80.
-- **Retention:** last **5** attempts under `hunt_captures/`; auto-delete oldest.
-- **Cooldownoldown:** minimum **8 s** between captures (rejects between windows are
-  not saved). Still records every reject *that passes the cooldown*.
-- **No continuous frame ring** — snapshot at engage + short after delay only.
+- **Water trajectory (best practical method):** during solenoid fire, burst-grab
+  Sniper frames (~28 Hz for pulse + short tail) and build a horizontal contact
+  sheet `trajectory.jpg` (insect bbox + crosshair + HitDetector splash marker).
+  Pair with existing before/after HitDetector splash confirm — no high-speed
+  camera required; avoids video encode load.
 
 **API**
-- `GET /api/hunt/captures` → newest-first list (max 5) + meta/urls
+- `GET /api/hunt/captures?view=recent|insects&limit=` → newest-first list + counts
 - `GET /api/hunt/captures/<id>` → one attempt meta
-- `GET /api/hunt/captures/<id>/<file>` → JPEG bytes
+- `GET /api/hunt/captures/<id>/<file>` → JPEG bytes (`trajectory.jpg` when fired)
 
-**GUI:** Control-tab card only. Poll gallery **only while Control tab is
-active** (8 s interval). Detail stills load on click.
+**GUI:** Control-tab card with **Recent 10** / **Insects 100** toggles. Poll
+gallery only while Control tab is active (8 s). Detail shows trajectory strip
+when present, then Scout/Sniper stills.
 
 ## 3. Orchestration Sequence — "Stream and Sweep" (`main.py`)
 
@@ -367,13 +410,35 @@ Scout Detect → Predict Position → Gimbal Aim → Sniper Verify → [ Fire Pu
 - **Firing Mode:** "Stream and Sweep" — pump fires while gimbal sweeps along target's predicted flight path, creating a moving wall of water. Sweep includes a downward bias to match trajectory incidence.
 - **Drop Compensation:** Pitch offset compensates for gravity-induced stream drop over distance. Since gimbal is inverted, aiming "up" means negative pitch. Under 3m, correction is 0.0°. Over 3m, correction is -0.5° per meter.
 
-## 6. Calibration Procedure
+## 6. Calibration Procedure (nozzle ↔ Sniper)
 
-1. Power on gimbal and Jetson, wait 15s for gimbal IMU calibration
-2. Run `phantom_ping.py` to fire test shots at known distances
-3. Scout camera tracks water stream impact point
-4. System generates lookup table (distance → optimal linear drop compensation)
-5. Store calibration in `calibration.json`
+Auto-cal measures **where water actually lands** vs the Sniper crosshair and
+stores a nozzle offset (`settings.calibration.offset_*`). Hunt applies that
+offset on **FIRE only**.
+
+**Critical:** calibrate at the **same** `target_psi` + `default_pulse_ms` used
+for hunting (factory **15 PSI / 10 ms**). Changing PSI changes exit velocity
+and stream shape — **re-run auto-cal** after any setpoint change. Pulse width
+sets volume/duration, not velocity; do not “fix” aim with longer bursts.
+
+**Pressure sweeps (future):** optional multi-PSI table (e.g. 10 / 15 / 20 PSI)
+with per-PSI offsets. Not required for first field insect tests — pick one
+setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
+
+1. Set Target PSI + pulse (Settings → Save as permanent)
+2. Align Scout↔Gimbal (Control tab)
+3. Run Calibration-tab auto-cal with **water** and a visible impact surface
+4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
+5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
+
+**HitDetector / AutoCal (v5.9 — anti dry-false-hit)**
+- Pre-fire **noise floor**; post-fire change must exceed `max(0.9%, 3×floor)`.
+- Stable before-frame (AE settle); compact blob gates; splash within ~0.48 diagonal of Sniper crosshair.
+- **Multi-frame consensus** (≥2 after-frames agree within 48 px) — single-frame flicker ≠ hit.
+- Offset vs **Sniper crosshair** (not Scout feature pixels). Global offset = **median**.
+- Retries keep the same gates (never lower threshold).
+- Save only if ≥**3** consensus hits; otherwise **reject** and keep previous offset.
+- Dry runs should complete with ~0 hits / rejected save.
 
 ## 7. Training & Tuning Pipeline
 

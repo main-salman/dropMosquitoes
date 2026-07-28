@@ -1,8 +1,8 @@
 # HW-001: Hardware Specification
 
 **Status:** APPROVED  
-**Version:** 5.0 (ECO-2026-004)  
-**Last Updated:** 2026-06-12  
+**Version:** 5.1  
+**Last Updated:** 2026-07-28  
 **Owner:** Salman
 
 ## 1. Compute Platform
@@ -14,10 +14,10 @@
 
 ## 2. Camera Interfaces (MIPI CSI-2)
 
-| Role | Sensor | Resolution | FPS | Mount | MIPI Port | Extension |
+| Role | Sensor | Resolution | FPS | Mount | MIPI Port | IR filter |
 |:-----|:-------|:-----------|:----|:------|:----------|:----------|
-| Scout | Arducam NoIR IMX219 8MP | 1280×720 | 60 | FIXED to enclosure | Port 0 | CSI→HDMI kit |
-| Sniper | Arducam NoIR IMX219 8MP | 1920×1080 | 30 | GIMBAL payload | Port 1 | CSI→HDMI kit |
+| Scout | Arducam NoIR IMX219 8MP (“The New Scout”) | 1280×720 | 60 | FIXED to enclosure | Port 0 | **None** (permanent NoIR) |
+| Sniper | Arducam IMX219 w/ Motorized IR-Cut (“The Verifier”), PCB **UC-350 Rev.C** | 1280×720 | 30–60 | GIMBAL payload | Port 1 | **Mode A LDR auto** (verified); local IR+GND→actuator; Mode B deferred |
 
 **Camera Extension Chain:** Camera → 15-pin FPC → TX Board → HDMI Cable → RX Board → 15-pin FPC → 15→22 Adapter → Jetson MIPI Port
 
@@ -44,7 +44,20 @@
 
 ### 2.2 Scout Camera (Arducam NoIR IMX219 8MP) — Simplified Chain
 
-The Scout uses the same IMX219 sensor family as the Sniper (NoIR variant — no IR-cut filter). This enables 24/7 operation: visible-light tracking during the day and 850nm IR-illuminated tracking at night. Both cameras are detected by the single `imx219-dual.dtbo` overlay with zero kernel modifications.
+The Scout uses an IMX219 **permanent NoIR** module (no IR-cut filter). Daylight
+may look pink/magenta; MOG2 is grayscale so that is fine. Night tracking uses
+the always-on 850nm illuminator. The Sniper uses an IMX219 with a **motorized
+IR-cut** (“The Verifier” in parts.csv): daytime color when the cut is in,
+IR-pass at night when out.
+
+**IR-cut connectivity (chosen 2026-07-28):** Sniper is **UC-350 Rev.C**,
+**Mode A — LDR auto** (verified working; leave as-is). No Jetson IR-cut wires.
+Back pads: `GND · IR · SCL · SDA · FSTROBE · GP0 · GND · 3V3`. Red/black join
+**IR+GND** to the white 2-pin → IR-cut actuator (local). CSI→HDMI is video only.
+Mode B (IR+GND → BCM 22 / T15) is deferred unless LDR later fails — see
+`diagrams/wire_13_sniper_ircut.drawio`. Software does not drive the filter
+(`camera_optics.py` → `software_drives_ircut=false`).
+Both cameras use `imx219-dual.dtbo` with CSI→HDMI extension chains.
 
 The Scout camera is **fixed to the enclosure** (no gimbal movement), so it uses the same CSI→HDMI kit but with a standard HDMI cable between TX/RX boards. Both boards are inside the enclosure.
 

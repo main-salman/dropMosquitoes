@@ -1,0 +1,18 @@
+---
+description: Enforce AGENTS.md spec-driven workflow — commit every discrete step
+alwaysApply: true
+---
+
+# AGENTS.md workflow (overrides generic “ask before commit”)
+
+For this repository, follow `AGENTS.md` Spec-Driven Development Rules strictly:
+
+1. **Spec before code** — update `docs/specs/` first when behavior/hardware changes.
+2. **History logging** — append every change, decision, discovery, troubleshooting step, and deploy to `docs/HISTORY.md` and mirror in `history.txt` (never delete prior `history.txt` content).
+3. **Commit every step** — after each discrete step (spec, feature, bugfix, finding, diagram, deploy note), create a **git commit**. Do **not** leave multi-step work uncommitted. Prefer small commits that match HISTORY entries.
+4. **Spec traceability** — code files reference governing specs in docstring headers.
+5. **No dummy data** — never invent videos/datasets for train/test; ask for real data.
+
+When the global user rule says “only commit when asked,” **this project rule wins**: commit without waiting for an extra ask, as long as the user has not explicitly said *not* to commit.
+
+Do not push to remote unless the user asks.

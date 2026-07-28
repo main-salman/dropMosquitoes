@@ -968,14 +968,14 @@ class AccumulatorManager:
     """
 
     # -- Configurable charge parameters (tunable via settings.json §2.11) ------
-    TARGET_PSI = 5.0             # Closed-loop charge + maintain
+    TARGET_PSI = 15.0            # Closed-loop charge + maintain (field start)
     MAINTAIN_HYSTERESIS_PSI = 0.0  # No hysteresis — recharge if PSI < target
     PRESSURE_POLL_SEC = 60.0     # Maintain loop poll interval while ARMED
     INITIAL_CHARGE_SEC = 3.0     # Timed fallback when first arming (sensor absent)
     TOPUP_CHARGE_SEC = 1.0       # Timed fallback for top-up (sensor absent)
     TOPUP_INTERVAL_SHOTS = 10    # Legacy burst counter (pressure path always recharge-after-shot)
     MAX_PUMP_RUN_SEC = 8.0       # Absolute max pump run time (deadhead protection)
-    DEFAULT_PULSE_SEC = 0.100    # Standard solenoid pulse (shared live + auto-cal)
+    DEFAULT_PULSE_SEC = 0.010    # Standard solenoid pulse (shared live + auto-cal)
     CHARGE_PER_SHOT = True       # Always recharge after shot when pressure-gated
 
     # States
@@ -2609,9 +2609,21 @@ class PressureSensor:
 # will drop over that distance and adjust pitch accordingly.
 # ============================================================================
 
-# Calibration constants — tune these after field testing
-WATER_EXIT_VELOCITY = 7.0   # m/s — measured at nozzle exit
-GRAVITY = 9.81               # m/s²
+# Ballistic constants — tune after field testing at the hunt setpoint PSI.
+# Full parabolic gravity is NOT used yet; drop is a linear heuristic (§2.6.3).
+# Exit velocity scales roughly with √(PSI); REF is the factory hunt setpoint.
+WATER_EXIT_VELOCITY = 7.0   # m/s estimate at REF_EXIT_PSI (tune with trajectory stills)
+REF_EXIT_PSI = 15.0
+GRAVITY = 9.81               # m/s² (reserved; linear drop heuristic below)
+
+
+def exit_velocity_for_psi(psi: float | None) -> float:
+    """Scale nominal exit velocity with √(psi/REF)."""
+    if psi is None or psi <= 0:
+        return WATER_EXIT_VELOCITY
+    return WATER_EXIT_VELOCITY * math.sqrt(float(psi) / REF_EXIT_PSI)
+
+
 def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
                                distance_m: float) -> tuple:
     """
@@ -2688,17 +2700,16 @@ def pixel_to_angle(px: int, py: int,
 def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
                             distance_m: float,
                             omega_pitch: float = 0.0,
-                            omega_yaw: float = 0.0) -> tuple:
+                            omega_yaw: float = 0.0,
+                            psi: float | None = None) -> tuple:
     """
     Apply velocity lead + Linear Drop Compensation to raw gimbal angles.
 
-    SW-001 §2.7.2: Calculates Time-of-Flight, then applies the target's
-    angular velocity over that window to predict where the target WILL BE
-    when the water stream arrives.
+    Flight path (partial): assumes constant angular velocity (Scout/tracker ω)
+    over Time-of-Flight — not full insect maneuver/acceleration prediction.
 
-    Linear Drop Compensation: Firing downward from the inverted dome.
-    Under 3m, the stream is dead-straight. Over 3m, apply a slight
-    negative pitch offset (aiming closer to horizon) to compensate for drop.
+    Gravity (partial): linear drop heuristic over 3 m, NOT full parabolic
+    integration of GRAVITY. Exit velocity scales with √(psi/REF) when psi given.
 
     Execution order:
       1. raw angles (input)
@@ -2714,13 +2725,14 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
             "lead_yaw_deg": 0.0,
             "drop_offset_deg": 0.0,
             "total_pitch_correction": 0.0,
-            "total_yaw_correction": 0.0
+            "total_yaw_correction": 0.0,
+            "exit_velocity_m_s": WATER_EXIT_VELOCITY,
         }
 
-    v0 = WATER_EXIT_VELOCITY
+    v0 = exit_velocity_for_psi(psi)
     alpha_rad = math.radians(raw_pitch)
 
-    # --- Stage 2: Time-of-Flight Lead (§2.7.2) ---
+    # --- Stage 2: Time-of-Flight Lead (§2.6.2) ---
     cos_alpha = math.cos(alpha_rad)
     if abs(cos_alpha) < 0.01:
         cos_alpha = 0.01  # Prevent division by zero
@@ -2734,7 +2746,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
     led_pitch = raw_pitch + lead_pitch
     led_yaw = raw_yaw + lead_yaw
 
-    # --- Stage 3: Linear Drop Compensation ---
+    # --- Stage 3: Linear Drop Compensation (heuristic, not full gravity) ---
     if distance_m <= 3.0:
         drop_offset_deg = 0.0
     else:
@@ -2751,7 +2763,9 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
         "lead_yaw_deg": round(lead_yaw, 3),
         "drop_offset_deg": round(drop_offset_deg, 2),
         "total_pitch_correction": round(lead_pitch + drop_offset_deg, 3),
-        "total_yaw_correction": round(lead_yaw, 3)
+        "total_yaw_correction": round(lead_yaw, 3),
+        "exit_velocity_m_s": round(v0, 2),
+        "psi": psi,
     }
 
 
