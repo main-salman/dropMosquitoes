@@ -32,9 +32,12 @@ CAPTURE_COOLDOWN_SEC = 3.0
 TRAJ_BURST_HZ = 28.0
 TRAJ_BURST_TAIL_SEC = 0.25
 
-# Flying-bug track window
-TRACK_MAX_SEC = 2.5
-TARGET_LOST_GRACE_SEC = 0.4
+# Flying-bug track window — longer so YOLO+refine can lock before timeout
+TRACK_MAX_SEC = 4.0
+TARGET_LOST_GRACE_SEC = 0.5
+MAX_CENTER_REFINES = 8
+# Fire even if not perfectly centered after this many refines / this much time
+OPPORTUNITY_FIRE_AFTER_SEC = 1.2
 
 INSECT_CLASSES = {
     "spider", "bees", "butterfly", "mantis", "ant", "beetle", "caterpillar",
@@ -235,7 +238,14 @@ class HuntController:
             self._yaw_sign = float(hunt.get("yaw_sign", 1.0)) or 1.0
             self._fov_scale = float(hunt.get("fov_scale", 1.0)) or 1.0
             self._min_speed_px_s = max(
-                0.0, float(hunt.get("min_speed_px_s", 80.0) or 0.0))
+                0.0, float(hunt.get("min_speed_px_s", 55.0) or 0.0))
+            self._yolo_conf = max(
+                0.10, min(0.95, float(hunt.get("yolo_conf", 0.35) or 0.35)))
+            self._roi_zoom = max(
+                1.0, min(4.0, float(hunt.get("roi_zoom", 2.0) or 2.0)))
+            center_frac = max(
+                0.05, min(0.40, float(hunt.get("center_ok_frac", 0.18) or 0.18)))
+            self.boresight.center_ok_frac = center_frac
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -244,6 +254,8 @@ class HuntController:
             print(f"[Hunt] geometry: pitch_sign={self._pitch_sign} "
                   f"yaw_sign={self._yaw_sign} fov_scale={self._fov_scale} "
                   f"min_speed={self._min_speed_px_s:.0f}px/s "
+                  f"yolo_conf={self._yolo_conf:.2f} roi_zoom={self._roi_zoom:.1f} "
+                  f"center_ok={center_frac:.2f} "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
@@ -448,6 +460,8 @@ class HuntController:
         last_boxes = []
         last_tx, last_ty = int(tx), int(ty)
         saw_insect = False
+        last_center = None
+        refine_count = 0
 
         while time.monotonic() - t0 < TRACK_MAX_SEC:
             with self._lock:
@@ -473,30 +487,76 @@ class HuntController:
             with self._lock:
                 self._verifications += 1
             last_detail, last_boxes = detail, boxes
-            if verified:
+            if verified and center is not None:
                 saw_insect = True
+                last_center = center
 
             if not verified or center is None:
                 time.sleep(0.03)
                 continue
 
-            # Closed-loop: if insect off crosshair, nudge + update boresight
-            if not self.boresight.is_centered(center[0], center[1]):
+            elapsed = time.monotonic() - t0
+            centered = self.boresight.is_centered(center[0], center[1])
+            # Closed-loop refine toward insect, but don't miss the shot window
+            if (not centered and refine_count < MAX_CENTER_REFINES
+                    and elapsed < OPPORTUNITY_FIRE_AFTER_SEC + 1.5):
                 err_p, err_y = self.boresight.update_from_sniper_point(
                     center[0], center[1])
-                # Persist learned mount into settings hunt.* occasionally
                 self._maybe_persist_mount()
                 st = self._gimbal.get_status()
                 self._gimbal.set_angles(
                     float(st.get("pitch", aim_pitch)) + err_p,
                     float(st.get("yaw", aim_yaw)) + err_y,
                 )
-                print(f"[Hunt] Track refine Δp={err_p:.2f} Δy={err_y:.2f} "
+                refine_count += 1
+                print(f"[Hunt] Track refine #{refine_count} Δp={err_p:.2f} Δy={err_y:.2f} "
                       f"bias={self.boresight.status()} ({detail})")
                 time.sleep(SETTLE_SEC)
+                # Opportunity: after enough time/refines, fire even if not perfect
+                if refine_count >= 2 and elapsed >= OPPORTUNITY_FIRE_AFTER_SEC:
+                    pass  # fall through to fire below
+                else:
+                    continue
+            elif not centered and elapsed < OPPORTUNITY_FIRE_AFTER_SEC:
                 continue
 
-            # Centered + verified — re-aim with nozzle cal, then fire
+            # Verified insect — fire (centered or opportunity after refine)
+            aim_pitch, aim_yaw, distance_m = self._aim_from_scout(
+                last_tx, last_ty, 0.0, 0.0, for_fire=True)
+            # Final nudge toward last insect pixel so nozzle tracks the bug
+            if last_center is not None and not self.boresight.is_centered(
+                    last_center[0], last_center[1]):
+                err_p, err_y = self.boresight.pixel_error_to_deg(
+                    last_center[0], last_center[1])
+                st = self._gimbal.get_status()
+                self._gimbal.set_angles(
+                    float(st.get("pitch", aim_pitch)) + err_p,
+                    float(st.get("yaw", aim_yaw)) + err_y,
+                )
+                time.sleep(SETTLE_SEC)
+            else:
+                time.sleep(SETTLE_SEC)
+            self._fire_and_verify_hit(
+                target_px=(last_tx, last_ty),
+                aim_pitch=aim_pitch,
+                aim_yaw=aim_yaw,
+                distance_m=distance_m,
+                detail=detail + ("" if centered else "|opportunity"),
+                boxes=boxes,
+            )
+            return
+
+        # End of track: if we saw an insect but never fired, one last opportunity shot
+        if saw_insect and last_center is not None:
+            print(f"[Hunt] Opportunity fire at end of track ({last_detail})")
+            err_p, err_y = self.boresight.pixel_error_to_deg(
+                last_center[0], last_center[1])
+            st = self._gimbal.get_status()
+            self._gimbal.set_angles(
+                float(st.get("pitch", aim_pitch)) + err_p,
+                float(st.get("yaw", aim_yaw)) + err_y,
+            )
+            time.sleep(SETTLE_SEC)
             aim_pitch, aim_yaw, distance_m = self._aim_from_scout(
                 last_tx, last_ty, 0.0, 0.0, for_fire=True)
             time.sleep(SETTLE_SEC)
@@ -505,8 +565,8 @@ class HuntController:
                 aim_pitch=aim_pitch,
                 aim_yaw=aim_yaw,
                 distance_m=distance_m,
-                detail=detail,
-                boxes=boxes,
+                detail=str(last_detail) + "|end_track_opportunity",
+                boxes=last_boxes,
             )
             return
 
@@ -719,6 +779,39 @@ class HuntController:
         except Exception as e:
             print(f"[Hunt] capture failed: {e}")
 
+    def _sniper_yolo_view(self, frame):
+        """
+        Digital zoom on frame center before YOLO.
+
+        Keeps full-sensor capture cheap (1280×720) but magnifies the crosshair
+        region so flies/bees/mosquitoes occupy more pixels — matches the project
+        thesis that we don't need native high-res if we ROI wisely.
+        Returns (view_bgr, mapper) where mapper(cx,cy)->full-frame (x,y).
+        """
+        zoom = float(getattr(self, "_roi_zoom", 1.0) or 1.0)
+        if zoom <= 1.01 or frame is None:
+            return frame, (lambda x, y: (int(x), int(y)))
+
+        try:
+            import cv2
+        except ImportError:
+            return frame, (lambda x, y: (int(x), int(y)))
+
+        h, w = frame.shape[:2]
+        cw = max(32, int(round(w / zoom)))
+        ch = max(32, int(round(h / zoom)))
+        x0 = max(0, (w - cw) // 2)
+        y0 = max(0, (h - ch) // 2)
+        crop = frame[y0:y0 + ch, x0:x0 + cw]
+        view = cv2.resize(crop, (w, h), interpolation=cv2.INTER_LINEAR)
+
+        def mapper(vx, vy, _x0=x0, _y0=y0, _cw=cw, _ch=ch, _w=w, _h=h):
+            fx = _x0 + (float(vx) / max(_w, 1)) * _cw
+            fy = _y0 + (float(vy) / max(_h, 1)) * _ch
+            return int(fx), int(fy)
+
+        return view, mapper
+
     def _verify_sniper(self):
         """Return (ok, detail, boxes, center_xy|None). YOLO insects required."""
         frame = self._sniper_cam.get_frame()
@@ -728,10 +821,16 @@ class HuntController:
         if self._insect_model is None:
             return False, "no_insect_model", [], None
 
+        conf_min = float(getattr(self, "_yolo_conf", 0.35) or 0.35)
+        view, mapper = self._sniper_yolo_view(frame)
+
         try:
-            results = self._insect_model(frame, conf=0.80, verbose=False)
+            # Run slightly below gate so we can log near-misses in detail
+            results = self._insect_model(view, conf=max(0.10, conf_min * 0.5),
+                                         verbose=False)
             boxes = []
             best = None  # (conf, name, cx, cy)
+            near = None
             for r in results:
                 if r.boxes is None:
                     continue
@@ -740,18 +839,27 @@ class HuntController:
                     conf = float(box.conf[0])
                     name = str(r.names.get(cls_id, "")).lower()
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                    # Map from zoomed view back to full Sniper frame
+                    cx_v, cy_v = (x1 + x2) // 2, (y1 + y2) // 2
+                    cx, cy = mapper(cx_v, cy_v)
+                    fx1, fy1 = mapper(x1, y1)
+                    fx2, fy2 = mapper(x2, y2)
                     boxes.append({
-                        "bbox": (x1, y1, x2, y2),
+                        "bbox": (fx1, fy1, fx2, fy2),
                         "label": f"{name} {conf:.0%}",
                         "class": name,
                         "confidence": conf,
                     })
-                    if name in INSECT_CLASSES and conf > 0.80:
-                        if best is None or conf > best[0]:
-                            best = (conf, name, cx, cy)
+                    if name in INSECT_CLASSES:
+                        if near is None or conf > near[0]:
+                            near = (conf, name, cx, cy)
+                        if conf >= conf_min:
+                            if best is None or conf > best[0]:
+                                best = (conf, name, cx, cy)
             if best:
                 return True, f"{best[1]}:{best[0]:.2f}", boxes, (best[2], best[3])
+            if near is not None:
+                return False, f"no_insect:best={near[1]}:{near[0]:.2f}", boxes, None
             return False, "no_insect", boxes, None
         except Exception as e:
             return False, f"insect_err:{e}", [], None

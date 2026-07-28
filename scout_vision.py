@@ -24,10 +24,10 @@ class ScoutVision:
         self.config_path = config_path
         self.settings_path = settings_path
         self.history = 500
-        self.threshold = 40
-        self.min_area = 2000
+        self.threshold = 32
+        self.min_area = 1200
         self.detect_shadows = False
-        self.dead_zone_frac = 0.25
+        self.dead_zone_frac = 0.22
 
         self.load_config()
 

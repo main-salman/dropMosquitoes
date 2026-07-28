@@ -1293,3 +1293,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OFFLINE]** YOLO on recent reject stills: empty even at conf 0.15 (or tiny ladybug 0.17) — frames often lack a resolvable insect.
 - **[CONTEXT]** Outdoor temper Scout min_area=2000/T=40/min_speed=80; hunt YOLO conf hard-coded **0.80**; targets often near frame edge; range ~1.7–3.3 m on 1280×720 wide FOV.
 - **[NEXT]** 10 operator questions before any change.
+
+## 2026-07-28 — [FIX] Hunt first-field: ROI zoom + lower YOLO + opportunity fire
+- **[FINDING]** Operator cannot see mosquitoes on Scout/Sniper; gallery = false motion; 207 motion / 0 shots; ladybug confirmed but never centered → reject.
+- **[FIX]** `hunt.yolo_conf=0.35`, `roi_zoom=2` digital center crop for YOLO, wider `center_ok_frac=0.18`, opportunity-fire after refine / end-of-track.
+- **[TUNING]** Scout slightly relaxed (T=32, min_area=1200, min_speed=55) for flies/bees.
+- **[SPEC]** SW-001 §2.13 updated.
