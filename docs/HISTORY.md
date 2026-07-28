@@ -1263,3 +1263,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[ROOT CAUSE]** `settings_store._migrate_legacy` forced `default_pulse_ms ≤ 25` → **100** on every load, undoing Save Permanent after reboot.
 - **[FIX]** Remove that migration; allow **1–500 ms** on Settings slider (step 1); sync `operational_pulse` with standard pulse; Save All prefers std pulse.
 - **[SPEC]** SW-001 §2.7: allowed 1–2000 ms; no auto-bump to 100 ms.
+- **[DEPLOY]** `./run-ai.sh --restart` → auto full reboot for CSI; verified `default_pulse_ms=10` persists after boot.

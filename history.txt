@@ -77,3 +77,4 @@
 2026-07-28 | [PROCESS] | Commit and push every discrete step (cursor rule updated)
 2026-07-28 | [PROCESS] | agents.md: commit and push every discrete step
 2026-07-28 | [BUG FIX] | Stop ≤25ms→100 pulse migration; UI allows 1ms standard pulse
+2026-07-28 | [DEPLOY] | Pulse fix live on Jetson; 10ms persists after reboot
