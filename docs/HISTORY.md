@@ -1285,3 +1285,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** AutoCal: pulse ladder 11→15→20→30ms (4 attempts); same PSI.
 - **[SPEC]** SW-001 §6 updated.
 - **[DEPLOY]** Wet-stain HitDetector + pulse ladder live on Jetson (reboot if CSI needed).
+
+## 2026-07-28 — [TROUBLESHOOT] Hunt: motion yes, insect confirm/fire no (1.5h backyard)
+- **[STATUS]** HUNTING+armed; detections=207, verifications=1573, rejections=207, shot_count=0, hits=0.
+- **[PATTERN]** Captures almost all `verify=no_insect`. Scout *is* triggering; Sniper YOLO almost never confirms.
+- **[EXCEPTION]** One `ladybug:0.84` still `rejected` — insect bbox far below crosshair; track timed out without centered fire.
+- **[OFFLINE]** YOLO on recent reject stills: empty even at conf 0.15 (or tiny ladybug 0.17) — frames often lack a resolvable insect.
+- **[CONTEXT]** Outdoor temper Scout min_area=2000/T=40/min_speed=80; hunt YOLO conf hard-coded **0.80**; targets often near frame edge; range ~1.7–3.3 m on 1280×720 wide FOV.
+- **[NEXT]** 10 operator questions before any change.

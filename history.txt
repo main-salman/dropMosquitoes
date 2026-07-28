@@ -83,3 +83,4 @@
 2026-07-28 | [TROUBLESHOOT] | Auto-cal HitDetector misses deck wet spots (low_change/no_blob) — questions before fix
 2026-07-28 | [FIX] | Auto-cal: darkening wet-stain HitDetector + 11/15/20/30ms pulse ladder
 2026-07-28 | [DEPLOY] | Auto-cal wet-stain fix live on Jetson
+2026-07-28 | [TROUBLESHOOT] | Hunt: 207 motion / 0 shots — YOLO no_insect + one uncentered ladybug; questions before fix
