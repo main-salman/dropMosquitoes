@@ -77,10 +77,14 @@ class CalibrationTable:
     Collection of calibration points with global offset computation
     and JSON persistence.
 
-    The global offset represents the average camera-nozzle misalignment
-    that applies to ALL angles. Per-point residuals are stored for
-    fine-grained interpolation at specific distances/angles.
+    Rigid mount: per-point angular offsets must stay small. Wild ±20° “hits”
+    from false blobs are rejected; global offset = median of inliers only.
     """
+
+    # Max |offset| accepted for a single point (degrees) — rigid nozzle↔camera
+    MAX_POINT_OFFSET_DEG = 8.0
+    # Inliers for median must lie within this of the provisional median
+    INLIER_BAND_DEG = 5.0
 
     def __init__(self, filepath: str = "calibration.json", settings_store=None):
         self.filepath = filepath
@@ -90,30 +94,59 @@ class CalibrationTable:
         self.offset_yaw: float = 0.0     # Global yaw correction (degrees)
         self.last_updated: str = ""
 
-    def add_point(self, point: CalibrationPoint):
-        """Add a calibration measurement and recompute global offset."""
+    def add_point(self, point: CalibrationPoint) -> bool:
+        """
+        Add a calibration measurement if geometric offset is plausible.
+        Returns False if rejected as an outlier / false splash localization.
+        """
         if not point.timestamp:
             point.timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        if (abs(point.offset_pitch) > self.MAX_POINT_OFFSET_DEG
+                or abs(point.offset_yaw) > self.MAX_POINT_OFFSET_DEG):
+            print(f"[Calibration] REJECT point — offset too large for rigid mount "
+                  f"P={point.offset_pitch:.1f}° Y={point.offset_yaw:.1f}° "
+                  f"(max ±{self.MAX_POINT_OFFSET_DEG}°)")
+            return False
         self.points.append(point)
         self._recompute_offset()
+        return True
 
     def _recompute_offset(self):
-        """Recompute global offset as the median of confirmed points (outlier-robust)."""
+        """Median of inliers within INLIER_BAND of provisional median."""
         confirmed = [p for p in self.points if p.hit_confirmed]
         if not confirmed:
             return
         pitches = sorted(p.offset_pitch for p in confirmed)
         yaws = sorted(p.offset_yaw for p in confirmed)
-        mid = len(confirmed) // 2
-        if len(confirmed) % 2:
-            self.offset_pitch = pitches[mid]
-            self.offset_yaw = yaws[mid]
-        else:
-            self.offset_pitch = 0.5 * (pitches[mid - 1] + pitches[mid])
-            self.offset_yaw = 0.5 * (yaws[mid - 1] + yaws[mid])
+
+        def _med(vals):
+            m = len(vals) // 2
+            if len(vals) % 2:
+                return vals[m]
+            return 0.5 * (vals[m - 1] + vals[m])
+
+        med_p, med_y = _med(pitches), _med(yaws)
+        inliers = [
+            p for p in confirmed
+            if abs(p.offset_pitch - med_p) <= self.INLIER_BAND_DEG
+            and abs(p.offset_yaw - med_y) <= self.INLIER_BAND_DEG
+        ]
+        if len(inliers) < max(1, len(confirmed) // 2):
+            # Fall back to all confirmed if band too tight
+            inliers = confirmed
+        pitches = sorted(p.offset_pitch for p in inliers)
+        yaws = sorted(p.offset_yaw for p in inliers)
+        self.offset_pitch = _med(pitches)
+        self.offset_yaw = _med(yaws)
+        # Clamp global offset to rigid-mount envelope
+        self.offset_pitch = max(-self.MAX_POINT_OFFSET_DEG,
+                                min(self.MAX_POINT_OFFSET_DEG, self.offset_pitch))
+        self.offset_yaw = max(-self.MAX_POINT_OFFSET_DEG,
+                              min(self.MAX_POINT_OFFSET_DEG, self.offset_yaw))
         self.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[Calibration] Global offset (median): pitch={self.offset_pitch:.2f}° "
-              f"yaw={self.offset_yaw:.2f}° ({len(confirmed)} points)")
+        print(f"[Calibration] Global offset (inlier median): "
+              f"pitch={self.offset_pitch:.2f}° yaw={self.offset_yaw:.2f}° "
+              f"({len(inliers)}/{len(confirmed)} inliers)")
 
     def get_correction(self, distance_m: float = 2.0,
                        pitch: float = 0.0, yaw: float = 0.0) -> Tuple[float, float]:
@@ -208,32 +241,30 @@ class HitDetector:
     """
     Detect where water hits by comparing before/after Sniper frames.
 
-    Tuned for real outdoor impacts (coin-size dark wet stains on wood/concrete),
-    not only bright specular splash:
-      - absdiff + **darkening** mask (after darker than before)
-      - pre-fire noise floor (must exceed ~2× ambient)
-      - stable before-frame (AE settled)
-      - small-blob gates (coin @ 1–3 m)
-      - search biased **below** Sniper crosshair (nozzle gravity / low impacts)
-      - multi-frame consensus (≥2 after-frames agree)
+    Rigid nozzle↔camera: splash must appear **near the Sniper crosshair**.
+    Outdoor deck noise (board seams, shadows) is rejected by:
+      - searching only inside a small aim radius (~±8° worth of pixels)
+      - scoring **proximity + darkening**, not “largest red blob”
+      - requiring multi-frame consensus at the same location
     """
 
-    # Pixel gates — sensitive enough for subtle wet darkening humans can see
-    DIFF_THRESHOLD = 24          # absdiff (was 48 — missed deck stains)
-    DARKEN_THRESHOLD = 10        # before−after gray (wet wood / most surfaces)
-    MIN_CONTOUR_AREA = 220       # coin-size @ ~1–3 m on 1280×720
-    MAX_CONTOUR_AREA = 35000
+    DIFF_THRESHOLD = 22
+    DARKEN_THRESHOLD = 12
+    MIN_CONTOUR_AREA = 180
+    MAX_CONTOUR_AREA = 12000     # reject huge shadow/seam regions
     BLUR_KERNEL = 7
-    MIN_CHANGE_PCT = 0.12        # was 0.9 — wet stains are tiny % of frame
-    MAX_CHANGE_PCT = 12.0
-    NOISE_MULTIPLIER = 2.0
-    MIN_CIRCULARITY = 0.05       # irregular stains OK
-    CONSENSUS_PX = 56
+    MIN_CHANGE_PCT = 0.08       # measured inside aim ROI only
+    MAX_CHANGE_PCT = 25.0
+    NOISE_MULTIPLIER = 1.5
+    MIN_CIRCULARITY = 0.04
+    CONSENSUS_PX = 40
     MIN_CONSENSUS = 2
-    MAX_AIM_DIST_FRAC = 0.58
-    # Prefer impacts below crosshair (user: wet is low; gravity)
-    AIM_DOWN_BIAS_FRAC = 0.14
-    MIN_MEAN_DARKEN = 4.0        # blob must be net darker after (reduces AE false +)
+    # ~0.14 diagonal ≈ ±8° at IMX219 FOV — rigid mount must land near aim
+    MAX_AIM_DIST_FRAC = 0.14
+    AIM_DOWN_BIAS_FRAC = 0.03   # slight gravity only (was 0.14 → false bottom hits)
+    MIN_MEAN_DARKEN = 6.0
+    # Soft weight: nearer to crosshair wins over big noisy blobs
+    PROXIMITY_PX = 50.0
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -348,17 +379,33 @@ class HitDetector:
                               aim_xy, max_dist_px: float):
         after_gray = self._gray(after_frame)
         thresh, diff, darken = self._impact_mask(before_gray, after_gray)
-        total = thresh.shape[0] * thresh.shape[1]
-        change_pct = 100.0 * cv2.countNonZero(thresh) / float(total)
+
+        # Only evaluate change inside the aim ROI (ignore whole-deck seam noise)
+        roi = np.zeros(thresh.shape, dtype=np.uint8)
+        if aim_xy is not None and max_dist_px > 0:
+            cv2.circle(roi, (int(aim_xy[0]), int(aim_xy[1])),
+                       int(max_dist_px), 255, -1)
+            thresh_roi = cv2.bitwise_and(thresh, roi)
+            darken_roi = cv2.bitwise_and(darken, darken, mask=roi)
+        else:
+            thresh_roi = thresh
+            darken_roi = darken
+            roi = None
+
+        roi_area = float(cv2.countNonZero(roi)) if roi is not None else float(
+            thresh.shape[0] * thresh.shape[1])
+        roi_area = max(roi_area, 1.0)
+        change_pct = 100.0 * cv2.countNonZero(thresh_roi) / roi_area
         if change_pct < min_pct:
             return [], change_pct, diff, "low_change"
         if change_pct > self.MAX_CHANGE_PCT:
             return [], change_pct, diff, "scene_change"
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
-        thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        thresh_roi = cv2.morphologyEx(thresh_roi, cv2.MORPH_OPEN, kernel)
+        thresh_roi = cv2.morphologyEx(thresh_roi, cv2.MORPH_CLOSE, kernel)
+        contours, _ = cv2.findContours(
+            thresh_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cands = []
         for c in contours:
             area = cv2.contourArea(c)
@@ -373,21 +420,23 @@ class HitDetector:
                 continue
             cx = int(M["m10"] / M["m00"])
             cy = int(M["m01"] / M["m00"])
+            dist = 0.0
             if aim_xy is not None and max_dist_px > 0:
-                if math.hypot(cx - aim_xy[0], cy - aim_xy[1]) > max_dist_px:
+                dist = math.hypot(cx - aim_xy[0], cy - aim_xy[1])
+                if dist > max_dist_px:
                     continue
-            # Require net darkening inside contour (wet vs AE bright flicker)
             mask = np.zeros(before_gray.shape, dtype=np.uint8)
             cv2.drawContours(mask, [c], -1, 255, -1)
             mean_dark = float(cv2.mean(darken, mask=mask)[0])
             if mean_dark < self.MIN_MEAN_DARKEN:
                 continue
-            # Score: darker + lower in frame (prefer below crosshair)
-            below = max(0, cy - aim_xy[1]) if aim_xy else 0
-            score = area * (1.0 + 0.02 * mean_dark) * (1.0 + 0.001 * below)
+            # Near-crosshair + dark stain wins (NOT largest area / bottom bias)
+            prox = 1.0 / (1.0 + dist / self.PROXIMITY_PX)
+            area_term = min(area, 2500.0) / 2500.0
+            score = mean_dark * (0.35 + 0.65 * prox) * (0.4 + 0.6 * area_term)
             cands.append({
                 "xy": (cx, cy), "area": area, "circ": circ,
-                "darken": mean_dark, "score": score,
+                "darken": mean_dark, "dist": dist, "score": score,
             })
         cands.sort(key=lambda x: x["score"], reverse=True)
         return cands[:3], change_pct, diff, ("ok" if cands else "no_blob")
@@ -411,15 +460,17 @@ class HitDetector:
             h, w = before_gray.shape[:2]
             if aim_xy is None:
                 aim_xy = (w // 2, h // 2)
-            # Bias search center downward — impacts land low of crosshair
+            # Slight downward bias only (rigid mount — splash stays near crosshair)
             aim_xy = (
                 int(aim_xy[0]),
                 int(min(h - 1, aim_xy[1] + self.AIM_DOWN_BIAS_FRAC * h)),
             )
             max_dist = self.MAX_AIM_DIST_FRAC * math.hypot(w, h)
+            # Cap ROI noise floor so outdoor flicker doesn't demand huge % change
             floor = (self._noise_floor_pct if noise_floor_pct is None
                      else float(noise_floor_pct))
-            min_pct = max(self.MIN_CHANGE_PCT, floor * self.NOISE_MULTIPLIER)
+            min_pct = max(self.MIN_CHANGE_PCT,
+                          min(floor * self.NOISE_MULTIPLIER, 2.5))
 
             per_frame = []
             best_diff = None
@@ -698,22 +749,22 @@ class AutoCalibrator:
     progressively more accurate.
 
     3-tier retry on miss:
-    1. Escalating solenoid pulse for visibility: 11 → 15 → 20 → 30 ms (same PSI)
-    2. Same HitDetector gates (darkening-aware wet stain detection)
-    3. Skip point, use remaining points for offset
+    1. Prefer 30 ms pulse (clearest wet on deck); slight escalate if needed
+    2. Near-crosshair HitDetector + reject |offset| > 8° (false blob)
+    3. Skip point, use remaining inlier points for offset
     """
 
     # Configuration
     N_POINTS = 10             # Number of calibration points
-    # Hunt pulse stays at settings default; auto-cal may escalate volume so the
-    # wet stain is visible (same PSI → aim geometry stays comparable).
-    FIRE_DURATION = 0.011
-    RETRY_DURATION = 0.030
-    CAL_PULSE_MS_LADDER = (11, 15, 20, 30)
+    # Hunt pulse stays at settings default; auto-cal uses a visible wet pulse
+    # (same PSI → aim geometry stays comparable). Operator: 30 ms clearest.
+    FIRE_DURATION = 0.030
+    RETRY_DURATION = 0.040
+    CAL_PULSE_MS_LADDER = (30, 30, 35, 40)
     SETTLE_TIME = 1.5         # Seconds to wait after servo move
     # Wet stains appear ~0.5 s; sample through ~1.3 s
     POST_FIRE_DELAYS = [0.35, 0.50, 0.70, 1.00, 1.30]
-    MAX_RETRIES = 3           # 4 attempts → full 11/15/20/30 ms ladder
+    MAX_RETRIES = 3           # 4 attempts at ~30–40 ms
     MIN_HITS_TO_SAVE = 3      # Dry/noise "hits" must not overwrite a good offset
     SNIPER_W = 1280
     SNIPER_H = 720
@@ -1114,7 +1165,37 @@ class AutoCalibrator:
                           f"scout_feat=({aim_px},{aim_py})")
                 )
                 point.compute_offset()
-                self.table.add_point(point)
+                accepted = self.table.add_point(point)
+                if not accepted:
+                    # False localization far from crosshair — do not pollute gallery/offset
+                    self._add_log({
+                        "type": "reject",
+                        "point": point_idx + 1,
+                        "attempt": attempt + 1,
+                        "pulse_ms": pulse_ms,
+                        "aim": f"({sniper_aim_px},{sniper_aim_py})",
+                        "hit": f"({hit_px},{hit_py})",
+                        "offset_pitch": round(point.offset_pitch, 2),
+                        "offset_yaw": round(point.offset_yaw, 2),
+                        "reason": "offset_outlier",
+                        "message": (
+                            f"❌ Point {point_idx+1}: Rejected false hit "
+                            f"@ ({hit_px},{hit_py}) "
+                            f"P={point.offset_pitch:.1f}° Y={point.offset_yaw:.1f}° "
+                            f"(max ±{self.table.MAX_POINT_OFFSET_DEG}°)"
+                            + (" — retrying..." if attempt < self.MAX_RETRIES
+                               else " — skipping.")
+                        ),
+                    })
+                    if attempt < self.MAX_RETRIES:
+                        nxt = self.CAL_PULSE_MS_LADDER[
+                            min(attempt + 1, len(self.CAL_PULSE_MS_LADDER) - 1)
+                        ]
+                        self._update(
+                            f"Point {point_idx+1}: False hit rejected — "
+                            f"retrying at {nxt}ms...")
+                        time.sleep(0.5)
+                    continue
 
                 # Persist before / after / bright-red diff for gallery (last 10)
                 try:

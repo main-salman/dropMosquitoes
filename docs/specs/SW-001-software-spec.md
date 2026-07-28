@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.13  
+**Version:** 5.15  
 **Last Updated:** 2026-07-28  
 **Owner:** Salman
 
@@ -443,20 +443,19 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
 5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
 
-**HitDetector / AutoCal (v5.14 — wet-stain before/after)**
-- Detects **any surface** via before/after difference: absdiff **or** darkening
-  (`before − after`), so coin-size dark wet stains on wood/concrete count.
-- Pre-fire **noise floor**; post-fire change must exceed `max(0.12%, 2×floor)`.
-- Stable before-frame (AE settle); min blob ~220 px²; search biased **below**
-  Sniper crosshair (impacts land low); require net darkening in the blob.
-- Capture window **0.35–1.30 s** (wet visible ~0.5 s to human).
-- **Multi-frame consensus** (≥2 after-frames agree within 56 px).
-- Live after-frame overlay paints changed pixels in **bright red**; successful
-  hits are saved under `cal_hits/` (last **10** before/after/diff) and shown in
-  the Calibration tab gallery (`GET /api/calibration/hits`).
-- Offset vs **Sniper crosshair**. Global offset = **median**.
-- Auto-cal retries escalate pulse **11 / 15 / 20 / 30 ms** (same gates).
-- Save only if ≥**3** consensus hits; otherwise **reject** and keep previous offset.
+**HitDetector / AutoCal (v5.15 — near-crosshair wet stain, rigid mount)**
+- Detects mixed surfaces (wood/concrete/tarp) via absdiff **or** darkening.
+- Search **only near Sniper crosshair** (`MAX_AIM_DIST_FRAC≈0.14` ≈ ±8°);
+  slight gravity bias only (`AIM_DOWN_BIAS≈0.03`). Score = **proximity +
+  darkening**, not largest blob / bottom-of-frame.
+- Change % measured **inside aim ROI** (ignore whole-deck seam noise).
+- Capture window **0.35–1.30 s**; multi-frame consensus (≥2 within 40 px).
+- Bright-red diff overlay; gallery last **10** under `cal_hits/`.
+- Per-point |offset| > **8°** rejected as false localization (fully automatic —
+  no click-to-confirm). Global offset = **inlier median** (±5° band), clamped
+  to ±8° (rigid nozzle↔camera — offset nearly fixed, small refine only).
+- Auto-cal pulse ladder prefers **30 / 30 / 35 / 40 ms** (clearest wet).
+- Save only if ≥**3** accepted hits; else keep previous offset.
 
 ## 7. Training & Tuning Pipeline
 

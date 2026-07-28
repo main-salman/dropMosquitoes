@@ -89,3 +89,5 @@
 2026-07-28 | [UI] | Cal: bright-red before/after diff + last 10 successful hit gallery
 2026-07-28 | [DEPLOY] | Cal red-diff gallery live on Jetson
 2026-07-28 | [TROUBLESHOOT] | Auto-cal false hit pixels → wild offsets; questions before fix
+
+2026-07-28 | [FIX] | Auto-cal: near-crosshair HitDetector + reject |offset|>8°; pulse 30ms-first; inlier median

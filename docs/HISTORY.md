@@ -1313,3 +1313,11 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[PATTERN]** Hit pixels scatter to frame edges/corners (29,1237,905,y=33/643); AIM_DOWN_BIAS + largest darkening blob ≠ water stain; board/shadow noise painted red.
 - **[CONTEXT]** Operator: mount rigid; cal purpose mainly ideal PSI/pulse for insects, not wildly varying geometric offset.
 - **[NEXT]** 10 questions before fix.
+
+## 2026-07-28 — [FIX] Auto-cal: near-crosshair hits + reject wild offsets
+- **[OPERATOR]** Answers: HIT marker wrong most of the time; real wet = fresh dark stain; fully auto reject bad HITs; offset nearly fixed; 30 ms clearest; mixed surfaces; longer cal OK.
+- **[ROOT]** AIM_DOWN_BIAS + largest-darkening score locked onto board/shadow noise far from crosshair → ±20–30° junk offsets.
+- **[FIX]** HitDetector: ROI-only change% near crosshair; score proximity+darken; bias 0.03; `MAX_AIM_DIST≈0.14`.
+- **[FIX]** CalibrationTable: reject |offset|>8°; inlier median (±5°); clamp global ±8°.
+- **[FIX]** Auto-cal pulse ladder **30/30/35/40 ms**; rejected outliers retry (no gallery pollute).
+- **[SPEC]** SW-001 §6 → v5.15.
