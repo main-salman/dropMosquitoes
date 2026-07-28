@@ -1324,3 +1324,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-28 — [DEPLOY] Near-crosshair auto-cal fix live
 - **[DEPLOY]** `calibration_engine.py` v5.15 (near-crosshair + |offset|>8° reject + 30ms pulse) live after soft-restart→auto-reboot; Scout+Sniper healthy.
+
+## 2026-07-28 — [FIX] Auto-cal: persistent darken contrast (false HIT near crosshair)
+- **[OPERATOR]** Point 10 HIT (744,417) still false; pink circle = real wet further right.
+- **[ROOT]** Noise floor often 9–18% but min_change capped at 2.5% → accepted AE noise near aim; real wet @~(865,307) (~11° yaw) outside tight ROI / outscored.
+- **[FIX]** HitDetector v5.16: persistent darken votes, contrast score, edge margin, refuse floor>3.5%, wider ±14° search; offset gate ±15°.
+- **[VERIFY]** Offline on Point10 gallery: new HIT (865,307) matches true wet (was 744,417).
+- **[SPEC]** SW-001 §6 → v5.16.

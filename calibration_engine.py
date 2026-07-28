@@ -81,10 +81,11 @@ class CalibrationTable:
     from false blobs are rejected; global offset = median of inliers only.
     """
 
-    # Max |offset| accepted for a single point (degrees) — rigid nozzle↔camera
-    MAX_POINT_OFFSET_DEG = 8.0
+    # Max |offset| accepted for a single point (degrees).
+    # True nozzle↔camera bias can be ~10–12°; reject only wild outliers.
+    MAX_POINT_OFFSET_DEG = 15.0
     # Inliers for median must lie within this of the provisional median
-    INLIER_BAND_DEG = 5.0
+    INLIER_BAND_DEG = 6.0
 
     def __init__(self, filepath: str = "calibration.json", settings_store=None):
         self.filepath = filepath
@@ -239,32 +240,32 @@ class CalibrationTable:
 
 class HitDetector:
     """
-    Detect where water hits by comparing before/after Sniper frames.
+    Detect wet impact stains via persistent darkening (not absdiff flicker).
 
-    Rigid nozzle↔camera: splash must appear **near the Sniper crosshair**.
-    Outdoor deck noise (board seams, shadows) is rejected by:
-      - searching only inside a small aim radius (~±8° worth of pixels)
-      - scoring **proximity + darkening**, not “largest red blob”
-      - requiring multi-frame consensus at the same location
+    Outdoor deck false positives came from AE/leaf noise near the crosshair while
+    the real coin-size wet blotch sat ~10° off-aim. v5.16:
+      - darken-only mask, multi-frame vote (wet stays; flicker moves)
+      - score local darken contrast (blob vs ring), not proximity
+      - refuse detection when pre-fire noise floor is high
+      - search wide enough for ~12° true nozzle↔camera bias
     """
 
-    DIFF_THRESHOLD = 22
-    DARKEN_THRESHOLD = 12
-    MIN_CONTOUR_AREA = 180
-    MAX_CONTOUR_AREA = 12000     # reject huge shadow/seam regions
+    DIFF_THRESHOLD = 22          # noise-floor measurement only
+    DARKEN_THRESHOLD = 24        # wet core; higher rejects soft AE gradients
+    MIN_CONTOUR_AREA = 150
+    MAX_CONTOUR_AREA = 3500       # coin-size wet; reject huge shadow regions
     BLUR_KERNEL = 7
-    MIN_CHANGE_PCT = 0.08       # measured inside aim ROI only
-    MAX_CHANGE_PCT = 25.0
-    NOISE_MULTIPLIER = 1.5
-    MIN_CIRCULARITY = 0.04
-    CONSENSUS_PX = 40
-    MIN_CONSENSUS = 2
-    # ~0.14 diagonal ≈ ±8° at IMX219 FOV — rigid mount must land near aim
-    MAX_AIM_DIST_FRAC = 0.14
-    AIM_DOWN_BIAS_FRAC = 0.03   # slight gravity only (was 0.14 → false bottom hits)
-    MIN_MEAN_DARKEN = 6.0
-    # Soft weight: nearer to crosshair wins over big noisy blobs
-    PROXIMITY_PX = 50.0
+    MIN_CIRCULARITY = 0.20
+    MIN_VOTES = 3                # must darken in ≥3 after-frames
+    # ~0.25 diagonal ≈ ±14° — covers true ~11° bias (Point10 wet @ ~862,306)
+    MAX_AIM_DIST_FRAC = 0.25
+    AIM_DOWN_BIAS_FRAC = 0.0
+    MIN_MEAN_DARKEN = 22.0
+    MIN_CONTRAST = 16.0          # blob mean darken − surrounding ring
+    MIN_SCORE = 12.0
+    MAX_NOISE_FLOOR_PCT = 3.5    # outdoor AE > this → do not trust a hit
+    RING_PX = 28
+    EDGE_MARGIN_PX = 110         # ignore tarp/sky / upper fabric flicker
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -283,6 +284,7 @@ class HitDetector:
         return cv2.GaussianBlur(g, (k, k), 0)
 
     def _change_pct(self, a, b) -> float:
+        """Ambient flicker metric (absdiff ∪ darken) for AE / noise floor."""
         diff = cv2.absdiff(a, b)
         _, thresh = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
         darken = cv2.subtract(a, b)
@@ -321,9 +323,10 @@ class HitDetector:
             self._hit_point = None
             self._confidence = 0.0
             self._last_reason = ""
+            self._impact_mask_u8 = None
         return True
 
-    def capture_before_stable(self, camera, tries: int = 6, max_pct: float = 0.45) -> bool:
+    def capture_before_stable(self, camera, tries: int = 10, max_pct: float = 0.35) -> bool:
         """Wait until consecutive frames are similar (AE settled), then lock before."""
         if not CV2_AVAILABLE or camera is None:
             return self.capture_before(camera)
@@ -344,9 +347,10 @@ class HitDetector:
                     self._hit_point = None
                     self._confidence = 0.0
                     self._last_reason = ""
+                    self._impact_mask_u8 = None
                 return True
             prev = g
-            time.sleep(0.1)
+            time.sleep(0.12)
         if last is None:
             return False
         with self._lock:
@@ -356,6 +360,7 @@ class HitDetector:
             self._hit_point = None
             self._confidence = 0.0
             self._last_reason = "ae_unstable"
+            self._impact_mask_u8 = None
         return True
 
     def capture_after(self, camera) -> bool:
@@ -367,86 +372,22 @@ class HitDetector:
             self._after_frames.append(frame.copy())
         return True
 
-    def _impact_mask(self, before_gray, after_gray):
-        """Union of absdiff and darkening — wet stains darken most surfaces."""
-        diff = cv2.absdiff(before_gray, after_gray)
-        _, abs_th = cv2.threshold(diff, self.DIFF_THRESHOLD, 255, cv2.THRESH_BINARY)
-        darken = cv2.subtract(before_gray, after_gray)
-        _, dark_th = cv2.threshold(darken, self.DARKEN_THRESHOLD, 255, cv2.THRESH_BINARY)
-        return cv2.bitwise_or(abs_th, dark_th), diff, darken
-
-    def _candidates_from_diff(self, before_gray, after_frame, min_pct: float,
-                              aim_xy, max_dist_px: float):
-        after_gray = self._gray(after_frame)
-        thresh, diff, darken = self._impact_mask(before_gray, after_gray)
-
-        # Only evaluate change inside the aim ROI (ignore whole-deck seam noise)
-        roi = np.zeros(thresh.shape, dtype=np.uint8)
-        if aim_xy is not None and max_dist_px > 0:
-            cv2.circle(roi, (int(aim_xy[0]), int(aim_xy[1])),
-                       int(max_dist_px), 255, -1)
-            thresh_roi = cv2.bitwise_and(thresh, roi)
-            darken_roi = cv2.bitwise_and(darken, darken, mask=roi)
-        else:
-            thresh_roi = thresh
-            darken_roi = darken
-            roi = None
-
-        roi_area = float(cv2.countNonZero(roi)) if roi is not None else float(
-            thresh.shape[0] * thresh.shape[1])
-        roi_area = max(roi_area, 1.0)
-        change_pct = 100.0 * cv2.countNonZero(thresh_roi) / roi_area
-        if change_pct < min_pct:
-            return [], change_pct, diff, "low_change"
-        if change_pct > self.MAX_CHANGE_PCT:
-            return [], change_pct, diff, "scene_change"
-
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        thresh_roi = cv2.morphologyEx(thresh_roi, cv2.MORPH_OPEN, kernel)
-        thresh_roi = cv2.morphologyEx(thresh_roi, cv2.MORPH_CLOSE, kernel)
-        contours, _ = cv2.findContours(
-            thresh_roi, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cands = []
-        for c in contours:
-            area = cv2.contourArea(c)
-            if area < self.MIN_CONTOUR_AREA or area > self.MAX_CONTOUR_AREA:
-                continue
-            peri = cv2.arcLength(c, True)
-            circ = (4.0 * math.pi * area / (peri * peri)) if peri > 1 else 0.0
-            if circ < self.MIN_CIRCULARITY:
-                continue
-            M = cv2.moments(c)
-            if M["m00"] <= 0:
-                continue
-            cx = int(M["m10"] / M["m00"])
-            cy = int(M["m01"] / M["m00"])
-            dist = 0.0
-            if aim_xy is not None and max_dist_px > 0:
-                dist = math.hypot(cx - aim_xy[0], cy - aim_xy[1])
-                if dist > max_dist_px:
-                    continue
-            mask = np.zeros(before_gray.shape, dtype=np.uint8)
-            cv2.drawContours(mask, [c], -1, 255, -1)
-            mean_dark = float(cv2.mean(darken, mask=mask)[0])
-            if mean_dark < self.MIN_MEAN_DARKEN:
-                continue
-            # Near-crosshair + dark stain wins (NOT largest area / bottom bias)
-            prox = 1.0 / (1.0 + dist / self.PROXIMITY_PX)
-            area_term = min(area, 2500.0) / 2500.0
-            score = mean_dark * (0.35 + 0.65 * prox) * (0.4 + 0.6 * area_term)
-            cands.append({
-                "xy": (cx, cy), "area": area, "circ": circ,
-                "darken": mean_dark, "dist": dist, "score": score,
-            })
-        cands.sort(key=lambda x: x["score"], reverse=True)
-        return cands[:3], change_pct, diff, ("ok" if cands else "no_blob")
+    def _blob_contrast(self, darken, mask) -> Tuple[float, float]:
+        """Return (mean_darken, darken_contrast vs ring)."""
+        mean_dark = float(cv2.mean(darken, mask=mask)[0])
+        ring_k = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (self.RING_PX * 2 + 1, self.RING_PX * 2 + 1))
+        dil = cv2.dilate(mask, ring_k)
+        ring = cv2.subtract(dil, mask)
+        if cv2.countNonZero(ring) < 20:
+            return mean_dark, mean_dark
+        ring_m = float(cv2.mean(darken, mask=ring)[0])
+        return mean_dark, mean_dark - ring_m
 
     def detect(self, aim_xy: Optional[Tuple[int, int]] = None,
                noise_floor_pct: Optional[float] = None) -> Optional[Tuple[int, int]]:
         """
-        Run hit detection on captured frames.
-
-        Returns (x, y) of splash in Sniper pixels, or None.
+        Find persistent wet stain centroid in Sniper pixels, or None.
         """
         if not CV2_AVAILABLE:
             return None
@@ -460,95 +401,128 @@ class HitDetector:
             h, w = before_gray.shape[:2]
             if aim_xy is None:
                 aim_xy = (w // 2, h // 2)
-            # Slight downward bias only (rigid mount — splash stays near crosshair)
-            aim_xy = (
-                int(aim_xy[0]),
-                int(min(h - 1, aim_xy[1] + self.AIM_DOWN_BIAS_FRAC * h)),
-            )
+            aim_xy = (int(aim_xy[0]), int(aim_xy[1]))
             max_dist = self.MAX_AIM_DIST_FRAC * math.hypot(w, h)
-            # Cap ROI noise floor so outdoor flicker doesn't demand huge % change
+
             floor = (self._noise_floor_pct if noise_floor_pct is None
                      else float(noise_floor_pct))
-            min_pct = max(self.MIN_CHANGE_PCT,
-                          min(floor * self.NOISE_MULTIPLIER, 2.5))
+            if floor > self.MAX_NOISE_FLOOR_PCT:
+                self._hit_point = None
+                self._confidence = 0.0
+                self._last_reason = f"scene_unstable@{floor:.2f}%"
+                print(f"[HitDetector] No hit — {self._last_reason} "
+                      f"(max {self.MAX_NOISE_FLOOR_PCT}%)")
+                return None
 
-            per_frame = []
-            best_diff = None
-            reasons = []
+            n_after = len(self._after_frames)
+            need = min(self.MIN_VOTES, max(2, n_after))
+            votes = np.zeros((h, w), dtype=np.uint8)
+            darken_sum = np.zeros((h, w), dtype=np.float32)
+            last_darken = None
             for after_frame in self._after_frames:
-                cands, change_pct, diff, reason = self._candidates_from_diff(
-                    before_gray, after_frame, min_pct, aim_xy, max_dist)
-                reasons.append(f"{reason}@{change_pct:.2f}%")
-                if cands:
-                    per_frame.append(cands[0])
-                    if best_diff is None:
-                        best_diff = diff
+                after_gray = self._gray(after_frame)
+                darken = cv2.subtract(before_gray, after_gray)
+                last_darken = darken
+                darken_sum += darken.astype(np.float32)
+                _, dth = cv2.threshold(
+                    darken, self.DARKEN_THRESHOLD, 1, cv2.THRESH_BINARY)
+                votes = cv2.add(votes, dth)
+
+            self._diff_frame = last_darken
+            mean_darken = (darken_sum / float(n_after)).astype(np.float32)
+            persistent = (votes >= need).astype(np.uint8) * 255
+
+            roi = np.zeros((h, w), dtype=np.uint8)
+            cv2.circle(roi, aim_xy, int(max_dist), 255, -1)
+            m = self.EDGE_MARGIN_PX
+            roi[:m, :] = 0
+            roi[h - m:, :] = 0
+            roi[:, :m] = 0
+            roi[:, w - m:] = 0
+            persistent = cv2.bitwise_and(persistent, roi)
+
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+            persistent = cv2.morphologyEx(persistent, cv2.MORPH_OPEN, kernel)
+            persistent = cv2.morphologyEx(persistent, cv2.MORPH_CLOSE, kernel)
+            self._impact_mask_u8 = persistent
+
+            contours, _ = cv2.findContours(
+                persistent, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cands = []
+            for c in contours:
+                area = cv2.contourArea(c)
+                if area < self.MIN_CONTOUR_AREA or area > self.MAX_CONTOUR_AREA:
+                    continue
+                peri = cv2.arcLength(c, True)
+                circ = (4.0 * math.pi * area / (peri * peri)) if peri > 1 else 0.0
+                if circ < self.MIN_CIRCULARITY:
+                    continue
+                M = cv2.moments(c)
+                if M["m00"] <= 0:
+                    continue
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                dist = math.hypot(cx - aim_xy[0], cy - aim_xy[1])
+                if dist > max_dist:
+                    continue
+                mask = np.zeros((h, w), dtype=np.uint8)
+                cv2.drawContours(mask, [c], -1, 255, -1)
+                mean_dark, contrast = self._blob_contrast(mean_darken, mask)
+                if mean_dark < self.MIN_MEAN_DARKEN or contrast < self.MIN_CONTRAST:
+                    continue
+                # Score = darken contrast (wet vs neighbors). Proximity is NOT
+                # primary — true impact can sit ~10° off crosshair.
+                area_term = 1.0 - abs(area - 900.0) / 4500.0
+                area_term = max(0.4, min(1.0, area_term))
+                score = (contrast ** 1.15) * (0.35 + 0.65 * circ) * area_term
+                cands.append({
+                    "xy": (cx, cy), "area": area, "circ": circ,
+                    "darken": mean_dark, "contrast": contrast,
+                    "dist": dist, "score": score,
+                })
+            cands.sort(key=lambda x: x["score"], reverse=True)
 
             hit = None
             conf = 0.0
-            reason = "no_consensus"
-            if len(per_frame) >= self.MIN_CONSENSUS:
-                best_n, best_seed = 0, None
-                for i, a in enumerate(per_frame):
-                    n = 1
-                    ax, ay = a["xy"]
-                    score_sum = a.get("score", a["area"])
-                    for j, b in enumerate(per_frame):
-                        if i == j:
-                            continue
-                        if math.hypot(ax - b["xy"][0], ay - b["xy"][1]) <= self.CONSENSUS_PX:
-                            n += 1
-                            score_sum += b.get("score", b["area"])
-                    if n > best_n:
-                        best_n, best_seed = n, (ax, ay, score_sum / n)
-                if best_seed is not None and best_n >= self.MIN_CONSENSUS:
-                    hit = (int(best_seed[0]), int(best_seed[1]))
-                    conf = float(best_seed[2])
-                    reason = f"consensus_{best_n}/{len(per_frame)}"
-            elif len(per_frame) == 1:
-                reason = "single_frame_only:" + ",".join(reasons)
+            if cands and cands[0]["score"] >= self.MIN_SCORE:
+                best = cands[0]
+                # Require clear winner (≈12% lead) when multiple strong blobs
+                if (len(cands) > 1
+                        and best["score"] < cands[1]["score"] * 1.12):
+                    reason = (f"ambiguous@{best['score']:.0f}/"
+                              f"{cands[1]['score']:.0f}")
+                else:
+                    hit = best["xy"]
+                    conf = float(best["score"])
+                    reason = (f"persist_{need}/{n_after} "
+                              f"c={best['contrast']:.0f} "
+                              f"a={best['area']:.0f}")
+            elif cands:
+                reason = f"weak_score@{cands[0]['score']:.1f}"
             else:
-                reason = "no_blob:" + ",".join(reasons)
+                reason = f"no_persistent_blob(votes≥{need}/{n_after})"
 
             self._hit_point = hit
             self._confidence = conf
             self._last_reason = reason
-            if best_diff is not None:
-                self._diff_frame = best_diff
-            # Keep last impact mask for bright-red overlay (absdiff ∪ darken)
-            try:
-                if self._after_frames:
-                    after_gray = self._gray(self._after_frames[-1])
-                    mask, _, _ = self._impact_mask(before_gray, after_gray)
-                    self._impact_mask_u8 = mask
-            except Exception:
-                self._impact_mask_u8 = None
-
             if hit:
                 print(f"[HitDetector] Hit ({hit[0]},{hit[1]}) conf={conf:.0f} "
-                      f"min_pct={min_pct:.2f} ({reason})")
+                      f"floor={floor:.2f}% ({reason})")
             else:
-                print(f"[HitDetector] No hit — {reason} (min_pct={min_pct:.2f})")
+                print(f"[HitDetector] No hit — {reason} (floor={floor:.2f}%)")
             return hit
 
     def get_annotated_frame(self) -> Optional[np.ndarray]:
-        """After-frame with bright-red difference highlight + hit marker."""
+        """After-frame with bright-red persistent-darken highlight + hit marker."""
         with self._lock:
             if not self._after_frames:
                 return None
             frame = self._after_frames[-1].copy()
             mask = getattr(self, "_impact_mask_u8", None)
-            if mask is None and self._diff_frame is not None:
-                mask = (self._diff_frame > self.DIFF_THRESHOLD).astype(np.uint8) * 255
             if mask is not None and mask.shape[:2] == frame.shape[:2]:
-                # Pure bright red (BGR) on changed pixels — easy to see on any surface
                 red = frame.copy()
                 red[mask > 0] = (0, 0, 255)
-                frame = cv2.addWeighted(frame, 0.40, red, 0.60, 0)
-                # Extra punch: fully paint strongest changed core
-                if self._diff_frame is not None:
-                    strong = self._diff_frame > max(self.DIFF_THRESHOLD + 12, 36)
-                    frame[strong] = (0, 0, 255)
+                frame = cv2.addWeighted(frame, 0.45, red, 0.55, 0)
             if self._hit_point:
                 cx, cy = self._hit_point
                 cv2.circle(frame, (cx, cy), 18, (0, 255, 255), 2)
@@ -1077,8 +1051,8 @@ class AutoCalibrator:
 
         Splash is measured in the Sniper frame vs the sniper crosshair (not
         Scout pixel coords). Detection uses darkening-aware HitDetector.
-        Retries escalate pulse 11→15→20→30 ms (same PSI) so coin-size wet
-        stains become visible without loosening gates.
+        Retries prefer 30 ms pulse (clearest wet); escalate slightly if needed.
+        HitDetector refuses unstable scenes and weak/ambiguous darken blobs.
         """
         # Offset = splash vs where the Sniper camera was aimed (crosshair)
         sniper_aim_px = self.SNIPER_W // 2
@@ -1097,6 +1071,33 @@ class AutoCalibrator:
 
             self._update(f"Point {point_idx+1}: Measuring noise floor...")
             noise = self.detector.measure_noise_floor(self._sniper_cam)
+            # Outdoor AE/leaf flicker: wait rather than fire into noise
+            for _settle in range(4):
+                if noise <= self.detector.MAX_NOISE_FLOOR_PCT:
+                    break
+                self._update(
+                    f"Point {point_idx+1}: Scene unstable "
+                    f"({noise:.1f}%) — waiting for AE...")
+                time.sleep(0.7)
+                noise = self.detector.measure_noise_floor(self._sniper_cam)
+            if noise > self.detector.MAX_NOISE_FLOOR_PCT:
+                self._add_log({
+                    "type": "miss",
+                    "point": point_idx + 1,
+                    "attempt": attempt + 1,
+                    "pulse_ms": pulse_ms,
+                    "noise_floor": round(noise, 3),
+                    "reason": f"scene_unstable@{noise:.2f}%",
+                    "message": (
+                        f"❌ Point {point_idx+1}: Scene too unstable "
+                        f"({noise:.1f}% noise) — skipping fire"
+                        + (" — retrying..." if attempt < self.MAX_RETRIES
+                           else " — skipping.")
+                    ),
+                })
+                if attempt < self.MAX_RETRIES:
+                    time.sleep(0.5)
+                continue
 
             self._update(f"Point {point_idx+1}: Waiting for AE / firing ({attempt_desc})...")
             self.detector.capture_before_stable(self._sniper_cam)

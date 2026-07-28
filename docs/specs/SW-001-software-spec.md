@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.15  
+**Version:** 5.16  
 **Last Updated:** 2026-07-28  
 **Owner:** Salman
 
@@ -443,19 +443,16 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
 5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
 
-**HitDetector / AutoCal (v5.15 — near-crosshair wet stain, rigid mount)**
-- Detects mixed surfaces (wood/concrete/tarp) via absdiff **or** darkening.
-- Search **only near Sniper crosshair** (`MAX_AIM_DIST_FRAC≈0.14` ≈ ±8°);
-  slight gravity bias only (`AIM_DOWN_BIAS≈0.03`). Score = **proximity +
-  darkening**, not largest blob / bottom-of-frame.
-- Change % measured **inside aim ROI** (ignore whole-deck seam noise).
-- Capture window **0.35–1.30 s**; multi-frame consensus (≥2 within 40 px).
-- Bright-red diff overlay; gallery last **10** under `cal_hits/`.
-- Per-point |offset| > **8°** rejected as false localization (fully automatic —
-  no click-to-confirm). Global offset = **inlier median** (±5° band), clamped
-  to ±8° (rigid nozzle↔camera — offset nearly fixed, small refine only).
-- Auto-cal pulse ladder prefers **30 / 30 / 35 / 40 ms** (clearest wet).
-- Save only if ≥**3** accepted hits; else keep previous offset.
+**HitDetector / AutoCal (v5.16 — persistent darken + contrast)**
+- Wet stains found by **persistent darkening** across ≥3 after-frames (not
+  absdiff flicker). Score = **local darken contrast** (blob vs ring); proximity
+  is not primary — true impact can sit ~10–12° off crosshair.
+- Refuse fire/detect when pre-fire noise floor > **3.5%** (outdoor AE/leaves).
+- Search radius ≈±14° with **110 px** frame-edge margin (reject tarp/sky).
+- Coin-size contours only (150–3500 px²); ambiguous near-ties rejected.
+- Per-point |offset| > **15°** rejected; global = inlier median (±6° band).
+- Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
+- Gallery: red overlay = persistent-darken mask only (not whole-deck absdiff).
 
 ## 7. Training & Tuning Pipeline
 
