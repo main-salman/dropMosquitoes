@@ -1349,3 +1349,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[ROOT]** Gallery stills: strongest darken often at wrong HIT; real landing may be a transient a human sees in motion — only 5 sparse after-frames were sampled.
 - **[FIX]** HitDetector v5.18: `capture_after_burst` (~30fps×1.45s); temporal onset+motion score; soft prior right+gravity drop; gallery uses best after-frame. AutoCal/hunt/free-fire use burst.
 - **[SPEC]** SW-001 §6 → v5.18.
+
+## 2026-07-28 — [DEPLOY] Burst splash localization v5.18 live
+- **[DEPLOY]** Dense after-burst HitDetector live; Scout+Sniper healthy after auto-reboot.

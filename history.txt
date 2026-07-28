@@ -97,3 +97,4 @@
 2026-07-28 | [FIX] | EST/EDT timezone for system+logs+GUI; HitDetector v5.17 anti-foliage/gravity from operator labels
 2026-07-28 | [DEPLOY] | EST timezone + HitDetector v5.17 live on Jetson
 2026-07-28 | [FIX] | HitDetector v5.18 dense post-fire burst to see water landing like a human; soft right+gravity prior
+2026-07-28 | [DEPLOY] | HitDetector v5.18 dense burst splash localization live on Jetson
