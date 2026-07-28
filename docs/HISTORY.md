@@ -1270,3 +1270,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[LIVE]** Applied via `/api/settings` (no wait): Scout T=40 min_area=2000 dead_zone=0.25; fov_scale=1.0; servo 55°/s.
 - **[CODE]** `hunt.min_speed_px_s` (default 80) gates slow blobs; factory defaults match tempered outdoor profile.
 - **[SPEC]** SW-001 §2.13 outdoor-tempered defaults.
+- **[DEPLOY]** Tempered outdoor profile live after restart/reboot; Scout/servo/fov applied.
