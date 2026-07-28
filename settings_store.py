@@ -16,6 +16,7 @@ import os
 import shutil
 import threading
 from datetime import datetime
+from timeutil import stamp_file
 from typing import Any
 
 
@@ -299,7 +300,7 @@ class SettingsStore:
         if not os.path.isfile(self._path):
             return
         os.makedirs(self._backup_dir, exist_ok=True)
-        stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        stamp = stamp_file()
         dest = os.path.join(self._backup_dir, f"settings_{stamp}.json")
         shutil.copy2(self._path, dest)
         files = self._list_backups_unlocked()

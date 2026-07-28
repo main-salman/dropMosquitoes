@@ -14,6 +14,8 @@ import threading
 from datetime import datetime
 from typing import Any, List, Optional
 
+from timeutil import stamp_file, stamp_iso
+
 try:
     import cv2
     CV2 = True
@@ -62,7 +64,7 @@ class CalHitStore:
         """Persist one successful hit trio. Returns hit id or None."""
         if not CV2 or before_bgr is None or after_bgr is None:
             return None
-        hid = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+        hid = stamp_file()
         folder = os.path.join(self.root, hid)
         try:
             os.makedirs(folder, exist_ok=True)
@@ -78,7 +80,7 @@ class CalHitStore:
                             [cv2.IMWRITE_JPEG_QUALITY, 90])
             payload = {
                 "id": hid,
-                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "timestamp": stamp_iso(),
                 **(meta or {}),
             }
             with open(os.path.join(folder, "meta.json"), "w") as f:

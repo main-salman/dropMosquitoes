@@ -18,6 +18,7 @@ The results are saved to calibration.json for future reference.
 import argparse
 import json
 import time
+from timeutil import stamp_iso
 import sys
 import os
 
@@ -63,7 +64,7 @@ def fire_test_shot(gimbal, weapon, pitch, yaw, pulse_sec, label=""):
     print("  Shot complete.")
     
     return {
-        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "timestamp": stamp_iso(),
         "pitch": pitch,
         "yaw": yaw,
         "pulse_sec": pulse_sec,

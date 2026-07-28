@@ -17,6 +17,7 @@ import shutil
 import threading
 import time
 from datetime import datetime
+from timeutil import stamp_file, stamp_iso
 from typing import List, Optional, Tuple
 
 try:
@@ -276,7 +277,7 @@ class HuntCaptureStore:
         if not insect_detected and not self.can_capture(cooldown_sec):
             return None
 
-        attempt_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+        attempt_id = stamp_file()
         scout_before = scout_cam.get_frame() if scout_cam else None
         sniper_before = sniper_cam.get_frame() if sniper_cam else None
         if scout_before is not None:
@@ -291,7 +292,7 @@ class HuntCaptureStore:
         os.makedirs(dest, exist_ok=True)
         meta = {
             "id": attempt_id,
-            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "timestamp": stamp_iso(),
             "result": result,
             "verify": verify,
             "target_px": list(target_px) if target_px else None,
@@ -444,7 +445,7 @@ class HuntCaptureStore:
 
         meta = {
             "id": attempt_id,
-            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "timestamp": stamp_iso(),
             "result": result,
             "verify": verify,
             "target_px": list(target_px) if target_px else None,

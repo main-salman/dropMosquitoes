@@ -52,6 +52,7 @@ StandardError=append:/home/jetson/dropMosquitoes/sentry.log
 
 Environment=PYTHONUNBUFFERED=1
 Environment=PYTHONPATH=/home/jetson/.local/lib/python3.10/site-packages
+Environment=TZ=America/New_York
 
 [Install]
 WantedBy=multi-user.target

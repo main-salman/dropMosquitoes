@@ -6,6 +6,8 @@ import time
 import sys
 import os
 from datetime import datetime
+from timeutil import stamp_iso, ensure_process_tz
+ensure_process_tz()
 from scout_vision import ScoutVision
 from sniper_vision import SniperVision
 from gimbal_controller import GimbalController
@@ -34,7 +36,7 @@ log = logging.getLogger("sentry")
 def log_engagement(event_type: str, data: dict):
     """Append a structured JSON line to the engagement log."""
     entry = {
-        "timestamp": datetime.now().isoformat(),
+        "timestamp": stamp_iso(),
         "event": event_type,
         **data
     }

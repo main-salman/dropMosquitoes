@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime
+from timeutil import now as now_et
 from typing import Any
 
 try:
@@ -111,7 +112,7 @@ class IRController:
             self.on()
 
     def _is_nighttime(self) -> bool:
-        hour = datetime.now().hour
+        hour = now_et().hour
         if DUSK_HOUR > DAWN_HOUR:
             return hour >= DUSK_HOUR or hour < DAWN_HOUR
         return DUSK_HOUR <= hour < DAWN_HOUR

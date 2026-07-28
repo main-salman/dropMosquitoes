@@ -22,6 +22,11 @@ import sys
 import time
 from flask import Flask, render_template, Response, request, jsonify, send_file
 
+# Pin process + logging clocks to US Eastern before any stamp/log init
+from timeutil import ensure_process_tz, stamp_full, stamp_hms
+ensure_process_tz()
+
+
 from hardware import (
     RelayController, LiDARController, create_turret_controller,
     PrimingSystem, AccumulatorManager, PressureSensor,
@@ -958,7 +963,7 @@ def api_solenoid_drawdown():
         "num_shots": num_shots,
         "shots": shots,
         "total_fired": disarm_result.get("total_shots_fired", num_shots),
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": stamp_full(),
     })
 
 
@@ -1161,7 +1166,7 @@ def api_cal_lidar_check():
         "error_m": error,
         "error_cm": round(error * 100, 1),
         "label": label,
-        "timestamp": time.strftime("%H:%M:%S")
+        "timestamp": stamp_hms()
     }
     _calibration_log.append(entry)
     return jsonify(entry)
@@ -1185,7 +1190,7 @@ def api_cal_gimbal_test():
         "requested_yaw": yaw,
         "actual_pitch": status["pitch"],
         "actual_yaw": status["yaw"],
-        "timestamp": time.strftime("%H:%M:%S")
+        "timestamp": stamp_hms()
     }
     _calibration_log.append(entry)
     return jsonify(entry)
@@ -1229,7 +1234,7 @@ def api_cal_fire_test():
         "distance_m": round(distance, 2),
         "predicted_offset": offset_info,
         "note": note,
-        "timestamp": time.strftime("%H:%M:%S")
+        "timestamp": stamp_hms()
     }
     _calibration_log.append(entry)
     return jsonify(entry)
@@ -1255,7 +1260,7 @@ def api_cal_record_hit():
         "distance_m": round(distance, 2),
         "offset_error_cm": offset_err,
         "note": note,
-        "timestamp": time.strftime("%H:%M:%S")
+        "timestamp": stamp_hms()
     }
     _calibration_log.append(entry)
 
@@ -1305,7 +1310,7 @@ def api_cal_save():
     cal_data = {
         "ballistic_table": _ballistic_table,
         "log": _calibration_log[-50:],  # Keep last 50 entries
-        "saved_at": time.strftime("%Y-%m-%d %H:%M:%S")
+        "saved_at": stamp_full()
     }
     with open(CALIBRATION_FILE, 'w') as f:
         json.dump(cal_data, f, indent=2)
@@ -1399,7 +1404,7 @@ def api_cal_offset_set():
         cal_table.offset_pitch = float(data['offset_pitch'])
     if 'offset_yaw' in data:
         cal_table.offset_yaw = float(data['offset_yaw'])
-    cal_table.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
+    cal_table.last_updated = stamp_full()
     print(f"[Calibration] Manual offset: pitch={cal_table.offset_pitch:.2f}° "
           f"yaw={cal_table.offset_yaw:.2f}°")
     return jsonify(cal_table.to_dict())
@@ -1408,7 +1413,7 @@ def api_cal_offset_set():
 @app.route('/api/calibration/offset/save', methods=['POST'])
 def api_cal_offset_save():
     """Save visual calibration offsets/points into settings.json (permanent)."""
-    cal_table.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
+    cal_table.last_updated = stamp_full()
     cal_table.save()  # settings.json (+ backup) + legacy calibration_visual.json
     return jsonify({"saved": True, "path": settings.path, **cal_table.to_dict()})
 
@@ -1552,6 +1557,8 @@ def api_status():
             "min_box_area": detector.min_box_area if detector else 0
         },
         "hunt": hunter.get_status(),
+        "timezone": "America/New_York",
+        "time_et": stamp_full(),
     })
 
 

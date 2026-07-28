@@ -1334,3 +1334,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-28 — [DEPLOY] Persistent-darken HitDetector v5.16 live
 - **[DEPLOY]** Auto-reboot after soft restart; Scout+Sniper healthy. Expect fewer accepted hits, HIT nearer real wet, skips when scene unstable.
+
+## 2026-07-28 — [FIX] EST timezone + HitDetector v5.17 (operator labels)
+- **[OPS]** Jetson timezone Asia/Shanghai → **America/New_York** (EDT). `timeutil.py`, `sentry.service` TZ, deploy.sh timedatectl, app `ensure_process_tz`, `/api/status` time_et. Gallery shows ET.
+- **[OPERATOR]** GOOD P7 (772,406) tarp accurate; BAD P6 (739,320) foliage; BAD (471,495) deck AE; BAD P7 (832,474) should be lower.
+- **[FIX]** HitDetector v5.17: refuse foliage/wind ROI, top-exclude canopy, larger puddles, gravity+darken score, down-weight blue furniture. Offline: (471,495)→(713,599); (832,474)→(776,586); P10 wet still (865,307).
+- **[SPEC]** SW-001 §1 timezone + §6 v5.17.

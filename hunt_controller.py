@@ -10,6 +10,7 @@ import os
 import threading
 import time
 from datetime import datetime
+from timeutil import stamp_iso
 from typing import Callable, Optional, Tuple
 
 from scout_vision import ScoutVision
@@ -694,7 +695,7 @@ class HuntController:
                 else:
                     self._misses += 1
             self._last_engagement = {
-                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "timestamp": stamp_iso(),
                 "target_px": [int(target_px[0]), int(target_px[1])],
                 "aim_pitch": round(aim_pitch, 2),
                 "aim_yaw": round(aim_yaw, 2),
@@ -764,7 +765,7 @@ class HuntController:
             )
             with self._lock:
                 eng = {
-                    "timestamp": datetime.now().isoformat(timespec="seconds"),
+                    "timestamp": stamp_iso(),
                     "target_px": [int(target_px[0]), int(target_px[1])],
                     "aim_pitch": round(aim_pitch, 2),
                     "aim_yaw": round(aim_yaw, 2),

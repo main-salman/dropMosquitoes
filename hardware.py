@@ -16,6 +16,7 @@ SAFETY: All GPIO access wrapped in try/finally to guarantee LOW on crash.
 
 import math
 import time
+from timeutil import stamp_hms
 import struct
 import threading
 
@@ -1151,7 +1152,7 @@ class AccumulatorManager:
             self._start_pressure_maintain()
 
             result["status"] = "armed"
-            result["timestamp"] = time.strftime("%H:%M:%S")
+            result["timestamp"] = stamp_hms()
             psi = result.get("psi")
             psi_note = f"{psi:.1f} PSI" if psi is not None else f"target {self.TARGET_PSI:.1f} PSI"
             print(f"[AccumulatorManager] ✅ ARMED — accumulator at {psi_note}, ready to fire")
@@ -1212,7 +1213,7 @@ class AccumulatorManager:
             "status": "disarmed",
             "total_shots_fired": total,
             "reason": reason or None,
-            "timestamp": time.strftime("%H:%M:%S")
+            "timestamp": stamp_hms()
         }
 
     def clear_alarm(self):
@@ -1710,7 +1711,7 @@ class PrimingSystem:
                 self._last_fire_time = time.time()
 
             result["status"] = "primed" if water_detected else "prime_uncertain"
-            result["timestamp"] = time.strftime("%H:%M:%S")
+            result["timestamp"] = stamp_hms()
             print(f"[Priming] Complete: {'✅ Water detected' if water_detected else '⚠️ Uncertain'}")
 
         except Exception as e:

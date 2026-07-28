@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.16  
+**Version:** 5.17  
 **Last Updated:** 2026-07-28  
 **Owner:** Salman
 
@@ -9,6 +9,9 @@
 
 - **Platform:** NVIDIA Jetson Orin Nano SUPER (JetPack 6.0)
 - **Python:** 3.10+
+- **Timezone:** `America/New_York` (EST/EDT). Jetson `timedatectl`, `sentry.service`
+  `Environment=TZ=…`, and `timeutil.py` all pin Eastern so logs, gallery, and GUI
+  stamps match operator local time (`/api/status` exposes `timezone` + `time_et`).
 - **Inference:** YOLOv8n exported to TensorRT `.engine` (FP16)
 - **Camera Pipeline:** GStreamer `nvarguscamerasrc` (mandatory — no raw `cv2.VideoCapture`)
 - **Orchestrator:** `main.py` — asyncio event loop managing all agents
@@ -443,16 +446,16 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 4. Hunt at that setpoint; review Insects gallery + `trajectory.jpg`
 5. If miss pattern is systematic, nudge offsets or change PSI and re-cal
 
-**HitDetector / AutoCal (v5.16 — persistent darken + contrast)**
-- Wet stains found by **persistent darkening** across ≥3 after-frames (not
-  absdiff flicker). Score = **local darken contrast** (blob vs ring); proximity
-  is not primary — true impact can sit ~10–12° off crosshair.
-- Refuse fire/detect when pre-fire noise floor > **3.5%** (outdoor AE/leaves).
-- Search radius ≈±14° with **110 px** frame-edge margin (reject tarp/sky).
-- Coin-size contours only (150–3500 px²); ambiguous near-ties rejected.
-- Per-point |offset| > **15°** rejected; global = inlier median (±6° band).
-- Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
-- Gallery: red overlay = persistent-darken mask only (not whole-deck absdiff).
+**HitDetector / AutoCal (v5.17 — wet stain, anti-foliage, gravity)**
+- Persistent darken votes (≥3 after-frames); score darken contrast × absolute
+  darken × lower-in-frame gravity.
+- Refuse when ROI persistent-darken > **6%** (wind/foliage canopy).
+- Reject green canopy blobs above aim; down-weight vivid blue furniture AE.
+- Top **28%** of frame excluded; puddles up to **9000 px²** allowed.
+- Operator labels: GOOD tarp (772,406); BAD foliage (739,320); BAD deck AE
+  (471,495→prefer lower puddle); BAD blue mid (832,474→prefer lower).
+- Noise floor > **3.5%** → skip fire; |offset| > **15°** rejected; pulse 30ms-first.
+- Gallery timestamps are Eastern (`… ET` in Calibration tab).
 
 ## 7. Training & Tuning Pipeline
 

@@ -94,3 +94,4 @@
 2026-07-28 | [DEPLOY] | Near-crosshair auto-cal + offset outlier reject live on Jetson
 2026-07-28 | [FIX] | Auto-cal HitDetector v5.16: persistent darken+contrast; refuse high noise; Point10 wet matched offline
 2026-07-28 | [DEPLOY] | HitDetector v5.16 persistent-darken auto-cal live on Jetson
+2026-07-28 | [FIX] | EST/EDT timezone for system+logs+GUI; HitDetector v5.17 anti-foliage/gravity from operator labels

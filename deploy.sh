@@ -68,6 +68,25 @@ echo ""
 echo "✅ Files synced."
 echo ""
 
+# Keep Jetson wall-clock on US Eastern so logs/GUI match operator local time
+echo "🕒 Ensuring America/New_York timezone on Jetson..."
+if [ -n "${JETSON_PASSWORD:-}" ]; then
+  ssh "${JETSON_USER}@${JETSON_HOST}" "echo '${JETSON_PASSWORD}' | sudo -S timedatectl set-timezone America/New_York" 2>/dev/null \
+    && ssh "${JETSON_USER}@${JETSON_HOST}" "timedatectl | grep -E 'Time zone|Local time'" \
+    || echo "  ⚠ Could not set timezone (continue deploy)."
+else
+  ssh -t "${JETSON_USER}@${JETSON_HOST}" "sudo timedatectl set-timezone America/New_York" \
+    || echo "  ⚠ Could not set timezone (continue deploy)."
+fi
+# Refresh systemd unit so Environment=TZ=America/New_York is installed
+ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && \
+  if [ -f sentry.service ]; then \
+    echo '${JETSON_PASSWORD:-}' | sudo -S cp sentry.service /etc/systemd/system/sentry.service 2>/dev/null; \
+    echo '${JETSON_PASSWORD:-}' | sudo -S systemctl daemon-reload 2>/dev/null; \
+    echo '  - sentry.service TZ=America/New_York installed'; \
+  fi" || true
+echo ""
+
 # On the Jetson, copy the newly deployed trained model weights to standard target locations
 echo "🎯 Aligning model paths on Jetson..."
 ssh "${JETSON_USER}@${JETSON_HOST}" "cd ${JETSON_PATH} && \

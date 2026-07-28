@@ -24,6 +24,8 @@ import numpy as np
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List, Tuple
 
+from timeutil import stamp_full, stamp_hms
+
 try:
     import cv2
     CV2_AVAILABLE = True
@@ -101,7 +103,7 @@ class CalibrationTable:
         Returns False if rejected as an outlier / false splash localization.
         """
         if not point.timestamp:
-            point.timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+            point.timestamp = stamp_full()
         if (abs(point.offset_pitch) > self.MAX_POINT_OFFSET_DEG
                 or abs(point.offset_yaw) > self.MAX_POINT_OFFSET_DEG):
             print(f"[Calibration] REJECT point — offset too large for rigid mount "
@@ -144,7 +146,7 @@ class CalibrationTable:
                                 min(self.MAX_POINT_OFFSET_DEG, self.offset_pitch))
         self.offset_yaw = max(-self.MAX_POINT_OFFSET_DEG,
                               min(self.MAX_POINT_OFFSET_DEG, self.offset_yaw))
-        self.last_updated = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.last_updated = stamp_full()
         print(f"[Calibration] Global offset (inlier median): "
               f"pitch={self.offset_pitch:.2f}° yaw={self.offset_yaw:.2f}° "
               f"({len(inliers)}/{len(confirmed)} inliers)")
@@ -242,30 +244,41 @@ class HitDetector:
     """
     Detect wet impact stains via persistent darkening (not absdiff flicker).
 
-    Outdoor deck false positives came from AE/leaf noise near the crosshair while
-    the real coin-size wet blotch sat ~10° off-aim. v5.16:
-      - darken-only mask, multi-frame vote (wet stays; flicker moves)
-      - score local darken contrast (blob vs ring), not proximity
-      - refuse detection when pre-fire noise floor is high
-      - search wide enough for ~12° true nozzle↔camera bias
+    Operator labels (2026-07-28):
+      GOOD — Point7 (772,406) on white tarp fabric
+      BAD  — Point6 (739,320) foliage canopy (whole tree red)
+      BAD  — Point6 (471,495) deck AE/shadow
+      BAD  — Point7 (832,474); real wet nearer bottom of frame
+
+    v5.17:
+      - refuse when too much of ROI is "persistent" (foliage wind)
+      - reject green foliage blobs
+      - prefer lower-in-frame (ballistic water falls)
+      - refuse unstable AE noise floor
     """
 
     DIFF_THRESHOLD = 22          # noise-floor measurement only
     DARKEN_THRESHOLD = 24        # wet core; higher rejects soft AE gradients
     MIN_CONTOUR_AREA = 150
-    MAX_CONTOUR_AREA = 3500       # coin-size wet; reject huge shadow regions
+    MAX_CONTOUR_AREA = 9000       # allow larger deck puddles (BAD 471 miss was 5k+)
     BLUR_KERNEL = 7
-    MIN_CIRCULARITY = 0.20
+    MIN_CIRCULARITY = 0.18
     MIN_VOTES = 3                # must darken in ≥3 after-frames
     # ~0.25 diagonal ≈ ±14° — covers true ~11° bias (Point10 wet @ ~862,306)
     MAX_AIM_DIST_FRAC = 0.25
-    AIM_DOWN_BIAS_FRAC = 0.0
     MIN_MEAN_DARKEN = 22.0
     MIN_CONTRAST = 16.0          # blob mean darken − surrounding ring
     MIN_SCORE = 12.0
     MAX_NOISE_FLOOR_PCT = 3.5    # outdoor AE > this → do not trust a hit
+    # If this much of the aim ROI stays "darkened", it's wind/foliage not a splash
+    MAX_PERSISTENT_ROI_PCT = 6.0
     RING_PX = 28
     EDGE_MARGIN_PX = 110         # ignore tarp/sky / upper fabric flicker
+    TOP_EXCLUDE_FRAC = 0.28      # canopy/foliage zone (BAD 739,320 lived here)
+    # Foliage: G strongly dominates R/B in the after-frame blob
+    FOLIAGE_G_MARGIN = 12.0
+    # Ballistic water prefers lower than aim (GOOD 772,406; BAD 832 should be lower)
+    BELOW_BONUS = 0.85
 
     def __init__(self):
         self._before_frame: Optional[np.ndarray] = None
@@ -384,6 +397,27 @@ class HitDetector:
         ring_m = float(cv2.mean(darken, mask=ring)[0])
         return mean_dark, mean_dark - ring_m
 
+    def _is_foliage(self, after_bgr, mask) -> bool:
+        """True if blob looks like green canopy (BAD Point6 tree hit)."""
+        if after_bgr is None:
+            return False
+        mean = cv2.mean(after_bgr, mask=mask)
+        b, g, r = float(mean[0]), float(mean[1]), float(mean[2])
+        return g > r + self.FOLIAGE_G_MARGIN and g > b + self.FOLIAGE_G_MARGIN
+
+    def _surface_weight(self, after_bgr, mask) -> float:
+        """
+        Down-weight vivid blue plastic/furniture AE (BAD 832,474 on blue tarp).
+        White fabric (GOOD 772,406) and wood deck stay near 1.0.
+        """
+        if after_bgr is None:
+            return 1.0
+        mean = cv2.mean(after_bgr, mask=mask)
+        b, g, r = float(mean[0]), float(mean[1]), float(mean[2])
+        if b > 150 and b > r + 40 and b > g + 10:
+            return 0.22
+        return 1.0
+
     def detect(self, aim_xy: Optional[Tuple[int, int]] = None,
                noise_floor_pct: Optional[float] = None) -> Optional[Tuple[int, int]]:
         """
@@ -398,6 +432,7 @@ class HitDetector:
                 return None
 
             before_gray = self._gray(self._before_frame)
+            after_bgr = self._after_frames[-1]
             h, w = before_gray.shape[:2]
             if aim_xy is None:
                 aim_xy = (w // 2, h // 2)
@@ -435,11 +470,23 @@ class HitDetector:
             roi = np.zeros((h, w), dtype=np.uint8)
             cv2.circle(roi, aim_xy, int(max_dist), 255, -1)
             m = self.EDGE_MARGIN_PX
-            roi[:m, :] = 0
+            top_cut = max(m, int(self.TOP_EXCLUDE_FRAC * h))
+            roi[:top_cut, :] = 0
             roi[h - m:, :] = 0
             roi[:, :m] = 0
             roi[:, w - m:] = 0
             persistent = cv2.bitwise_and(persistent, roi)
+
+            roi_area = float(cv2.countNonZero(roi)) or 1.0
+            persist_pct = 100.0 * cv2.countNonZero(persistent) / roi_area
+            if persist_pct > self.MAX_PERSISTENT_ROI_PCT:
+                self._impact_mask_u8 = persistent
+                self._hit_point = None
+                self._confidence = 0.0
+                self._last_reason = f"foliage_or_wind@{persist_pct:.1f}%"
+                print(f"[HitDetector] No hit — {self._last_reason} "
+                      f"(max {self.MAX_PERSISTENT_ROI_PCT}%)")
+                return None
 
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
             persistent = cv2.morphologyEx(persistent, cv2.MORPH_OPEN, kernel)
@@ -467,14 +514,23 @@ class HitDetector:
                     continue
                 mask = np.zeros((h, w), dtype=np.uint8)
                 cv2.drawContours(mask, [c], -1, 255, -1)
+                if self._is_foliage(after_bgr, mask):
+                    # Allow green-tinted deck hits below aim; reject canopy above
+                    if cy < aim_xy[1] + int(0.12 * h):
+                        continue
                 mean_dark, contrast = self._blob_contrast(mean_darken, mask)
                 if mean_dark < self.MIN_MEAN_DARKEN or contrast < self.MIN_CONTRAST:
                     continue
-                # Score = darken contrast (wet vs neighbors). Proximity is NOT
-                # primary — true impact can sit ~10° off crosshair.
-                area_term = 1.0 - abs(area - 900.0) / 4500.0
-                area_term = max(0.4, min(1.0, area_term))
-                score = (contrast ** 1.15) * (0.35 + 0.65 * circ) * area_term
+                area_term = 1.0 - abs(area - 1200.0) / 9000.0
+                area_term = max(0.35, min(1.0, area_term))
+                below = max(0.0, (cy - aim_xy[1]) / float(h))
+                low_frac = cy / float(h)
+                gravity = (1.0 + self.BELOW_BONUS * below) * (0.7 + 0.4 * low_frac)
+                surf = self._surface_weight(after_bgr, mask)
+                # Absolute darken dominates weak circular AE (deck puddle > coin AE)
+                dark_term = min((mean_dark / 30.0) ** 1.4, 2.8)
+                score = ((contrast ** 1.05) * (0.55 + 0.45 * circ)
+                         * area_term * gravity * surf * dark_term)
                 cands.append({
                     "xy": (cx, cy), "area": area, "circ": circ,
                     "darken": mean_dark, "contrast": contrast,
@@ -486,7 +542,6 @@ class HitDetector:
             conf = 0.0
             if cands and cands[0]["score"] >= self.MIN_SCORE:
                 best = cands[0]
-                # Require clear winner (≈12% lead) when multiple strong blobs
                 if (len(cands) > 1
                         and best["score"] < cands[1]["score"] * 1.12):
                     reason = (f"ambiguous@{best['score']:.0f}/"
@@ -860,7 +915,7 @@ class AutoCalibrator:
 
     def _add_log(self, entry: dict):
         """Append to the rolling log."""
-        entry["timestamp"] = time.strftime("%H:%M:%S")
+        entry["timestamp"] = stamp_hms()
         with self._lock:
             self._log.append(entry)
         print(f"[AutoCal] {entry}")
