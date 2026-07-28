@@ -1331,3 +1331,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** HitDetector v5.16: persistent darken votes, contrast score, edge margin, refuse floor>3.5%, wider ±14° search; offset gate ±15°.
 - **[VERIFY]** Offline on Point10 gallery: new HIT (865,307) matches true wet (was 744,417).
 - **[SPEC]** SW-001 §6 → v5.16.
+
+## 2026-07-28 — [DEPLOY] Persistent-darken HitDetector v5.16 live
+- **[DEPLOY]** Auto-reboot after soft restart; Scout+Sniper healthy. Expect fewer accepted hits, HIT nearer real wet, skips when scene unstable.
