@@ -75,3 +75,4 @@
 2026-07-28 | [DEPLOY] | ./run-ai.sh → Jetson reboot; Mode A optics live on dashboard
 2026-07-28 | [PROCESS] | Enforce AGENTS.md commit-every-step; catch-up commit + cursor rule
 2026-07-28 | [PROCESS] | Commit and push every discrete step (cursor rule updated)
+2026-07-28 | [PROCESS] | agents.md: commit and push every discrete step
