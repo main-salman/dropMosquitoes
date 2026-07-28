@@ -1250,3 +1250,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-28 — [PROCESS] Enforce AGENTS.md commit-every-step
 - **[PROCESS]** User: always follow AGENTS.md — commit on every change/discovery/deploy; catch up uncommitted work.
 - **[RULE]** `.cursor/rules/agents-commit-every-step.mdc` (alwaysApply) — overrides ask-before-commit for this repo.
+
+## 2026-07-28 — [PROCESS] Commit and push every step
+- **[PROCESS]** User: commit **and push** every change/discovery/deploy.
+- **[RULE]** `.cursor/rules/agents-commit-every-step.mdc` updated — push after each commit (no force).

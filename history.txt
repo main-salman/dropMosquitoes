@@ -74,3 +74,4 @@
 2026-07-28 | [DECISION] | Sniper IR-cut Mode A LDR auto (verified) — leave as-is; Mode B deferred
 2026-07-28 | [DEPLOY] | ./run-ai.sh → Jetson reboot; Mode A optics live on dashboard
 2026-07-28 | [PROCESS] | Enforce AGENTS.md commit-every-step; catch-up commit + cursor rule
+2026-07-28 | [PROCESS] | Commit and push every discrete step (cursor rule updated)
