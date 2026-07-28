@@ -451,6 +451,9 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
   Sniper crosshair (impacts land low); require net darkening in the blob.
 - Capture window **0.35–1.30 s** (wet visible ~0.5 s to human).
 - **Multi-frame consensus** (≥2 after-frames agree within 56 px).
+- Live after-frame overlay paints changed pixels in **bright red**; successful
+  hits are saved under `cal_hits/` (last **10** before/after/diff) and shown in
+  the Calibration tab gallery (`GET /api/calibration/hits`).
 - Offset vs **Sniper crosshair**. Global offset = **median**.
 - Auto-cal retries escalate pulse **11 / 15 / 20 / 30 ms** (same gates).
 - Save only if ≥**3** consensus hits; otherwise **reject** and keep previous offset.

@@ -243,6 +243,7 @@ class HitDetector:
         self._confidence: float = 0.0
         self._last_reason: str = ""
         self._noise_floor_pct: float = 0.0
+        self._impact_mask_u8 = None
         self._lock = threading.Lock()
 
     def _gray(self, frame):
@@ -463,6 +464,14 @@ class HitDetector:
             self._last_reason = reason
             if best_diff is not None:
                 self._diff_frame = best_diff
+            # Keep last impact mask for bright-red overlay (absdiff ∪ darken)
+            try:
+                if self._after_frames:
+                    after_gray = self._gray(self._after_frames[-1])
+                    mask, _, _ = self._impact_mask(before_gray, after_gray)
+                    self._impact_mask_u8 = mask
+            except Exception:
+                self._impact_mask_u8 = None
 
             if hit:
                 print(f"[HitDetector] Hit ({hit[0]},{hit[1]}) conf={conf:.0f} "
@@ -472,26 +481,41 @@ class HitDetector:
             return hit
 
     def get_annotated_frame(self) -> Optional[np.ndarray]:
+        """After-frame with bright-red difference highlight + hit marker."""
         with self._lock:
             if not self._after_frames:
                 return None
             frame = self._after_frames[-1].copy()
-            if self._diff_frame is not None:
-                heatmap = cv2.applyColorMap(self._diff_frame, cv2.COLORMAP_JET)
-                mask = self._diff_frame > self.DIFF_THRESHOLD
-                frame[mask] = cv2.addWeighted(frame, 0.5, heatmap, 0.5, 0)[mask]
+            mask = getattr(self, "_impact_mask_u8", None)
+            if mask is None and self._diff_frame is not None:
+                mask = (self._diff_frame > self.DIFF_THRESHOLD).astype(np.uint8) * 255
+            if mask is not None and mask.shape[:2] == frame.shape[:2]:
+                # Pure bright red (BGR) on changed pixels — easy to see on any surface
+                red = frame.copy()
+                red[mask > 0] = (0, 0, 255)
+                frame = cv2.addWeighted(frame, 0.40, red, 0.60, 0)
+                # Extra punch: fully paint strongest changed core
+                if self._diff_frame is not None:
+                    strong = self._diff_frame > max(self.DIFF_THRESHOLD + 12, 36)
+                    frame[strong] = (0, 0, 255)
             if self._hit_point:
                 cx, cy = self._hit_point
-                cv2.circle(frame, (cx, cy), 15, (0, 255, 0), 2)
-                cv2.circle(frame, (cx, cy), 3, (0, 255, 0), -1)
+                cv2.circle(frame, (cx, cy), 18, (0, 255, 255), 2)
+                cv2.circle(frame, (cx, cy), 4, (0, 255, 255), -1)
                 cv2.putText(frame, f"HIT ({cx},{cy})",
-                           (cx + 20, cy - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                           0.6, (0, 255, 0), 2)
+                           (cx + 22, cy - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                           0.65, (0, 255, 255), 2)
             return frame
 
     def get_before_frame(self) -> Optional[np.ndarray]:
         with self._lock:
             return self._before_frame.copy() if self._before_frame is not None else None
+
+    def get_after_frame(self) -> Optional[np.ndarray]:
+        with self._lock:
+            if not self._after_frames:
+                return None
+            return self._after_frames[-1].copy()
 
     def get_state(self) -> dict:
         with self._lock:
@@ -694,9 +718,11 @@ class AutoCalibrator:
     SNIPER_W = 1280
     SNIPER_H = 720
 
-    def __init__(self, cal_table: CalibrationTable, hit_detector: HitDetector):
+    def __init__(self, cal_table: CalibrationTable, hit_detector: HitDetector,
+                 hit_store=None):
         self.table = cal_table
         self.detector = hit_detector
+        self.hit_store = hit_store
         self.target_selector = TargetSelector()
 
         # State
@@ -1089,6 +1115,29 @@ class AutoCalibrator:
                 )
                 point.compute_offset()
                 self.table.add_point(point)
+
+                # Persist before / after / bright-red diff for gallery (last 10)
+                try:
+                    if self.hit_store is not None:
+                        hid = self.hit_store.save(
+                            self.detector.get_before_frame(),
+                            self.detector.get_after_frame(),
+                            self.detector.get_annotated_frame(),
+                            meta={
+                                "point": point_idx + 1,
+                                "attempt": attempt + 1,
+                                "pulse_ms": pulse_ms,
+                                "hit_px": hit_px,
+                                "hit_py": hit_py,
+                                "offset_pitch": round(point.offset_pitch, 2),
+                                "offset_yaw": round(point.offset_yaw, 2),
+                                "reason": det.get("last_reason"),
+                            },
+                        )
+                        if hid:
+                            print(f"[AutoCal] Saved hit gallery id={hid}")
+                except Exception as e:
+                    print(f"[AutoCal] hit gallery save skip: {e}")
 
                 self._add_log({
                     "type": "hit",

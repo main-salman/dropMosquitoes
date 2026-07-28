@@ -1300,3 +1300,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[TUNING]** Scout slightly relaxed (T=32, min_area=1200, min_speed=55) for flies/bees.
 - **[SPEC]** SW-001 §2.13 updated.
 - **[DEPLOY]** Hunt ROI/conf/opportunity-fire live; applied scout/hunt settings on Jetson.
+
+## 2026-07-28 — [UI] Cal splash: bright-red diff + last-10 hit gallery
+- **[UI]** HitDetector after-frame paints changed pixels **bright red** (not jet colormap).
+- **[FEATURE]** `cal_hit_store.py` keeps last 10 successful before/after/diff under `cal_hits/`; Calibration tab gallery + `/api/calibration/hits`.
+- **[SPEC]** SW-001 §6 gallery note.

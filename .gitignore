@@ -33,6 +33,7 @@ activity.log
 activity.log.*
 .sentry.pid
 hunt_captures/
+cal_hits/
 *.engine
 *.onnx
 !requirements*.txt

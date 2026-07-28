@@ -756,11 +756,21 @@
             <img id="cal-before-img" src="" style="width:100%;border-radius:8px;background:var(--card);min-height:100px" alt="Before firing">
           </div>
           <div style="flex:1">
-            <p style="font-size:10px;color:var(--dim);margin-bottom:4px">AFTER (with hit detection)</p>
-            <img id="cal-after-img" src="" style="width:100%;border-radius:8px;background:var(--card);min-height:100px" alt="After firing">
+            <p style="font-size:10px;color:var(--dim);margin-bottom:4px">AFTER (bright-red differences)</p>
+            <img id="cal-after-img" src="" style="width:100%;border-radius:8px;background:var(--card);min-height:100px" alt="After firing with red diff">
           </div>
         </div>
-        <div style="margin-top:10px;font-size:11px;color:var(--dim)" id="cal-detection-info">No detection data yet.</div>
+        <div style="margin-top:10px;font-size:11px;color:var(--dim)" id="cal-detection-info">No detection data yet. Changed pixels highlight in <b style="color:#ff2d2d">bright red</b>.</div>
+      </div>
+    </div>
+
+    <!-- Last 10 successful splash hits -->
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-title">🎯 Last 10 Successful Hits <span class="cal-stat" id="cal-hits-count">0</span></div>
+      <div class="card-body">
+        <p style="font-size:11px;color:var(--dim);margin:0 0 10px">Saved when splash detection succeeds (auto-cal or free-fire). Each row: before → after with red diff.</p>
+        <div id="cal-hits-gallery" style="display:flex;flex-direction:column;gap:12px;max-height:520px;overflow-y:auto"></div>
+        <div id="cal-hits-empty" style="font-size:12px;color:var(--dim);padding:8px 0">No successful hits saved yet — run auto-cal with water.</div>
       </div>
     </div>
 
@@ -1136,7 +1146,7 @@ async function drainPipe() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal')}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}if(t==='ctrl')hcStartPolling();else hcStopPolling()}
+function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal');loadCalHitsGallery()}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}if(t==='ctrl')hcStartPolling();else hcStopPolling()}
 
 // ---- Status poll (includes LiDAR telemetry + hunt) ----
 function renderHunt(h){
@@ -1496,12 +1506,47 @@ function acUpdateUI(d) {
     }
   }
 
-  // Load before/after images during calibration
-  if (d.phase === 'calibrating' || d.phase === 'complete') {
+  // Load before/after images during calibration (after = bright-red diff overlay)
+  if (d.phase === 'calibrating' || d.phase === 'complete' || d.phase === 'priming') {
     const ts = Date.now();
     $('cal-before-img').src = '/api/calibration/snapshot/before?t=' + ts;
     $('cal-after-img').src = '/api/calibration/snapshot?t=' + ts;
   }
+  // Refresh successful-hit gallery when a hit is logged
+  if (d.log && d.log.some(e => e.type === 'hit')) {
+    loadCalHitsGallery();
+  }
+}
+
+async function loadCalHitsGallery() {
+  try {
+    const d = await fetch('/api/calibration/hits').then(r => r.json());
+    const hits = d.hits || [];
+    $('cal-hits-count').textContent = String(hits.length);
+    const gal = $('cal-hits-gallery');
+    const empty = $('cal-hits-empty');
+    if (!hits.length) {
+      gal.innerHTML = '';
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    gal.innerHTML = hits.map(h => {
+      const title = h.point != null
+        ? `Point ${h.point} · ${h.pulse_ms || '?'}ms · (${h.hit_px},${h.hit_py})`
+        : `${h.source || 'hit'} · (${h.hit_px},${h.hit_py})`;
+      const ts = h.timestamp || h.id || '';
+      const u = h.urls || {};
+      return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.25)">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px"><b style="color:var(--text)">${title}</b> · ${ts}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">BEFORE</div><img src="${u.before}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
+          <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">AFTER</div><img src="${u.after}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
+          <div><div style="font-size:9px;color:#ff2d2d;margin-bottom:2px">DIFF (RED)</div><img src="${u.diff}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error(e); }
 }
 
 async function calApplyOffset() {
@@ -1535,6 +1580,7 @@ async function calFreeFire() {
   $('ff-log').textContent = log;
   $('cal-before-img').src = '/api/calibration/snapshot/before?t=' + Date.now();
   $('cal-after-img').src = '/api/calibration/snapshot?t=' + Date.now();
+  loadCalHitsGallery();
 }
 
 function calRefresh() {

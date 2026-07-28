@@ -31,6 +31,7 @@ from hardware import (
 )
 from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
+from cal_hit_store import CalHitStore
 from settings_store import SettingsStore
 from status_indicator import StatusIndicator
 from activity_log import init_activity_log, log_event
@@ -100,7 +101,8 @@ cal_table = CalibrationTable(
     settings_store=settings,
 )
 hit_detector = HitDetector()
-auto_cal = AutoCalibrator(cal_table, hit_detector)
+cal_hit_store = CalHitStore(APP_DIR)
+auto_cal = AutoCalibrator(cal_table, hit_detector, hit_store=cal_hit_store)
 
 # Water Line Priming System
 primer = PrimingSystem(relay)
@@ -1413,7 +1415,7 @@ def api_cal_offset_save():
 
 @app.route('/api/calibration/snapshot')
 def api_cal_snapshot():
-    """Get annotated sniper frame with hit detection overlay as JPEG."""
+    """Get annotated sniper frame with bright-red difference highlight as JPEG."""
     frame = hit_detector.get_annotated_frame()
     if frame is None:
         # Return current sniper frame with crosshair
@@ -1434,6 +1436,22 @@ def api_cal_snapshot_before():
     import cv2
     _, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
     return Response(jpeg.tobytes(), mimetype='image/jpeg')
+
+
+@app.route('/api/calibration/hits')
+def api_cal_hits_list():
+    """Last 10 successful calibration splash hits (before/after/diff URLs)."""
+    hits = cal_hit_store.list_hits()
+    return jsonify({"hits": hits, "count": len(hits), "max": 10})
+
+
+@app.route('/api/calibration/hits/<hid>/<kind>.jpg')
+def api_cal_hit_image(hid, kind):
+    """Serve before.jpg / after.jpg / diff.jpg for a saved successful hit."""
+    path = cal_hit_store.file_path(hid, kind)
+    if not path:
+        return jsonify({"error": "not found"}), 404
+    return send_file(path, mimetype="image/jpeg")
 
 
 @app.route('/api/calibration/freefire', methods=['POST'])
@@ -1495,6 +1513,23 @@ def api_cal_freefire():
             "px": point.offset_px,
             "py": point.offset_py,
         }
+        try:
+            hid = cal_hit_store.save(
+                hit_detector.get_before_frame(),
+                hit_detector.get_after_frame(),
+                hit_detector.get_annotated_frame(),
+                meta={
+                    "source": "freefire",
+                    "hit_px": hit[0],
+                    "hit_py": hit[1],
+                    "pulse_ms": fire_result.get("duration_ms"),
+                    "offset_pitch": round(point.offset_pitch, 2),
+                    "offset_yaw": round(point.offset_yaw, 2),
+                },
+            )
+            result["gallery_id"] = hid
+        except Exception as e:
+            print(f"[app] freefire gallery save skip: {e}")
 
     return jsonify(result)
 
