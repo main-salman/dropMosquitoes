@@ -1306,3 +1306,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FEATURE]** `cal_hit_store.py` keeps last 10 successful before/after/diff under `cal_hits/`; Calibration tab gallery + `/api/calibration/hits`.
 - **[SPEC]** SW-001 §6 gallery note.
 - **[DEPLOY]** Bright-red cal diff + last-10 hit gallery live on Jetson.
+
+## 2026-07-28 — [TROUBLESHOOT] Auto-cal hit pixel wrong → wild offsets
+- **[OPERATOR]** Diff red overlay + HIT marker often not on real wet spot (e.g. Point 8 HIT 647,643 vs actual impact in pink box).
+- **[LOGS]** Latest run 8 “hits”: per-point offsets pitch ≈ −22…+19°, yaw ≈ −30…+29° — impossible for rigid nozzle↔camera; median saved P=10.03° Y=2.28°.
+- **[PATTERN]** Hit pixels scatter to frame edges/corners (29,1237,905,y=33/643); AIM_DOWN_BIAS + largest darkening blob ≠ water stain; board/shadow noise painted red.
+- **[CONTEXT]** Operator: mount rigid; cal purpose mainly ideal PSI/pulse for insects, not wildly varying geometric offset.
+- **[NEXT]** 10 questions before fix.
