@@ -43,9 +43,9 @@ DEFAULTS: dict[str, Any] = {
         "pico_baud": 115200,
     },
     "servo": {
-        "speed": 120.0,
-        "rate_hz": 100,
-        "nudge_step": 2.0,
+        "speed": 55.0,   # tempered outdoor slew (was 120)
+        "rate_hz": 80,
+        "nudge_step": 1.5,
         "yaw_limit": 80.0,
         "pitch_limit": 90.0,
     },
@@ -72,10 +72,10 @@ DEFAULTS: dict[str, Any] = {
     },
     "scout": {
         "history": 500,
-        "threshold": 16,
-        "min_area": 500,
+        "threshold": 40,       # outdoor: less leaf/shadow noise (was 16)
+        "min_area": 2000,      # ignore tiny blobs (was 500)
         "detect_shadows": False,
-        "dead_zone_frac": 0.15,
+        "dead_zone_frac": 0.25,  # ignore center flicker (was 0.15)
     },
     "sniper": {
         "rotate_180": True,  # Physical upside-down mount on gimbal
@@ -85,7 +85,9 @@ DEFAULTS: dict[str, Any] = {
         "pitch_sign": 1.0,
         "yaw_sign": 1.0,
         # Amplify Scout FOV→gimbal mapping (1.0 = pure IMX219 FOV; >1 = snappier follow)
-        "fov_scale": 1.35,
+        "fov_scale": 1.0,  # tempered outdoor default (was 1.35)
+        # Ignore nearly-static MOG2 blobs (px/s); flying insects usually faster
+        "min_speed_px_s": 80.0,
         # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
         # Align button + online boresight refine this while hunting.
         "sniper_mount_pitch_deg": 0.0,

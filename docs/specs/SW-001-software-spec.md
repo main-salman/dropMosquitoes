@@ -289,6 +289,10 @@ Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online bor
   UI + YOLO + hit-detect all see an upright image (`settings.sniper.rotate_180`).
 - **Scout→gimbal geometry:** track aim uses Scout FOV × `hunt.fov_scale` ×
   `hunt.pitch_sign` / `yaw_sign` + online **camera** boresight/mount bias.
+  Outdoor-tempered defaults: `fov_scale=1.0`, Scout `threshold=40`,
+  `min_area=2000`, `dead_zone_frac=0.25`, servo speed ~55°/s.
+  `hunt.min_speed_px_s` (default **80**) ignores slow/static MOG2 blobs before
+  engaging (leaves/shadows). Set `0` to disable.
   **Nozzle calibration offsets** (`calibration.offset_*`) apply on **FIRE only**
   so camera pointing is not biased ~30° by nozzle-vs-lens cal. Hunt optical
   range is the Scout FOV cone (not the full mechanical cal sweep).

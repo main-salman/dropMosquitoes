@@ -78,3 +78,4 @@
 2026-07-28 | [PROCESS] | agents.md: commit and push every discrete step
 2026-07-28 | [BUG FIX] | Stop ≤25ms→100 pulse migration; UI allows 1ms standard pulse
 2026-07-28 | [DEPLOY] | Pulse fix live on Jetson; 10ms persists after reboot
+2026-07-28 | [TUNING] | Outdoor temper: Scout less sensitive, slower servo, fov_scale=1, min_speed 80px/s

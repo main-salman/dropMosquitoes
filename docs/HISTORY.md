@@ -1264,3 +1264,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** Remove that migration; allow **1–500 ms** on Settings slider (step 1); sync `operational_pulse` with standard pulse; Save All prefers std pulse.
 - **[SPEC]** SW-001 §2.7: allowed 1–2000 ms; no auto-bump to 100 ms.
 - **[DEPLOY]** `./run-ai.sh --restart` → auto full reboot for CSI; verified `default_pulse_ms=10` persists after boot.
+
+## 2026-07-28 — [TUNING] Outdoor live-test: temper Scout + gimbal
+- **[OPS]** First outdoor water live test — too many motion tracks / gimbal thrash.
+- **[LIVE]** Applied via `/api/settings` (no wait): Scout T=40 min_area=2000 dead_zone=0.25; fov_scale=1.0; servo 55°/s.
+- **[CODE]** `hunt.min_speed_px_s` (default 80) gates slow blobs; factory defaults match tempered outdoor profile.
+- **[SPEC]** SW-001 §2.13 outdoor-tempered defaults.

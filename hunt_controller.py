@@ -233,7 +233,9 @@ class HuntController:
             hunt = data.get("hunt") or {}
             self._pitch_sign = float(hunt.get("pitch_sign", 1.0)) or 1.0
             self._yaw_sign = float(hunt.get("yaw_sign", 1.0)) or 1.0
-            self._fov_scale = float(hunt.get("fov_scale", 1.35)) or 1.35
+            self._fov_scale = float(hunt.get("fov_scale", 1.0)) or 1.0
+            self._min_speed_px_s = max(
+                0.0, float(hunt.get("min_speed_px_s", 80.0) or 0.0))
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -241,6 +243,7 @@ class HuntController:
             self.boresight.seed_from_cal(self._mount_pitch, self._mount_yaw)
             print(f"[Hunt] geometry: pitch_sign={self._pitch_sign} "
                   f"yaw_sign={self._yaw_sign} fov_scale={self._fov_scale} "
+                  f"min_speed={self._min_speed_px_s:.0f}px/s "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
@@ -316,7 +319,9 @@ class HuntController:
             hunt["sniper_mount_yaw_deg"] = round(by, 3)
             hunt.setdefault("pitch_sign", self._pitch_sign)
             hunt.setdefault("yaw_sign", self._yaw_sign)
-            hunt.setdefault("fov_scale", getattr(self, "_fov_scale", 1.35))
+            hunt.setdefault("fov_scale", getattr(self, "_fov_scale", 1.0))
+            hunt.setdefault(
+                "min_speed_px_s", getattr(self, "_min_speed_px_s", 80.0))
             hunt.setdefault("apply_nozzle_cal_on_fire", self._apply_nozzle_cal_on_fire)
             tmp = path + ".tmp"
             with open(tmp, "w") as f:
@@ -370,6 +375,13 @@ class HuntController:
                 self._velocity_tracker.reset()
             return
 
+        # Outdoor temper: ignore slow/static MOG2 blobs (leaves, shadows)
+        min_spd = getattr(self, "_min_speed_px_s", 0.0)
+        if min_spd > 0.0:
+            speed = (float(vx) ** 2 + float(vy) ** 2) ** 0.5
+            if speed < min_spd:
+                return
+
         with self._lock:
             self._detections += 1
             if not self._enabled:
@@ -396,7 +408,7 @@ class HuntController:
 
         raw_pitch, raw_yaw = pixel_to_angle(
             int(pred_x), int(pred_y), FRAME_W, FRAME_H, FOV_H, FOV_V)
-        scale = getattr(self, "_fov_scale", 1.35)
+        scale = getattr(self, "_fov_scale", 1.0)
         raw_pitch *= self._pitch_sign * scale
         raw_yaw *= self._yaw_sign * scale
 
