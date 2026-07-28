@@ -87,3 +87,4 @@
 2026-07-28 | [FIX] | Hunt: YOLO ROI×2 + conf 0.35 + opportunity fire; Scout slightly relaxed for flies
 2026-07-28 | [DEPLOY] | Hunt first-field detect fixes live + settings applied
 2026-07-28 | [UI] | Cal: bright-red before/after diff + last 10 successful hit gallery
+2026-07-28 | [DEPLOY] | Cal red-diff gallery live on Jetson

@@ -1305,3 +1305,4 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[UI]** HitDetector after-frame paints changed pixels **bright red** (not jet colormap).
 - **[FEATURE]** `cal_hit_store.py` keeps last 10 successful before/after/diff under `cal_hits/`; Calibration tab gallery + `/api/calibration/hits`.
 - **[SPEC]** SW-001 §6 gallery note.
+- **[DEPLOY]** Bright-red cal diff + last-10 hit gallery live on Jetson.
