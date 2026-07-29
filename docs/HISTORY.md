@@ -1361,3 +1361,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-28 — [DEPLOY] Learning feedback + review tools live
 - **[DEPLOY]** Operator-feedback RL + cal gallery teach UI live; Scout+Sniper healthy after auto-reboot. `deploy.sh` excludes `temp/`.
 - **[REVIEW]** Local report: `temp/jetson_review_20260728_224016/index.html` (7 cal + ~110 hunt).
+
+## 2026-07-29 — [OPS] Second Jetson 6h HTML review
+- **[OPS]** `./scripts/pull_jetson_review.sh 6` → `temp/jetson_review_20260729_041335/` (0 cal hits, 22 hunt captures, logs). Report: `index.html`.
