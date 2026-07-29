@@ -1401,3 +1401,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** SW-001 §2.15–2.16 → v5.22: RL is first-class; indoor dry-fire Insect Train never fires water.
 - **[CODE]** `insect_train_store.py`; `learning_store.record_insect_feedback` + per-class suppress used by hunt YOLO gate; APIs `/api/train/*`.
 - **[UI]** Dashboard tab **Insect Train**: capture/dry-ID, gallery teach Correct/Wrong/true class, distance + lighting notes.
+
+## 2026-07-29 — [DEPLOY] Insect Train dry-fire + ID RL live
+- **[DEPLOY]** Soft restart → CSI reboot path; `/api/train/status` + dry-shot smoke OK (`water_fired=false`).
