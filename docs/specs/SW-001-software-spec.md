@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.18  
-**Last Updated:** 2026-07-28
+**Version:** 5.19  
+**Last Updated:** 2026-07-28  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -456,6 +456,15 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
   + gravity drop vs LiDAR range (`hit_verdict.drop_px_for_distance`).
 - Still refuse foliage-wind / unstable AE; |offset| gate ±18°.
 - Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
+
+### 2.15 Operator-feedback reinforcement (splash priors)
+- Calibration gallery: **Correct / Wrong** on each saved splash; optional click on
+  AFTER image marks the true landing pixel.
+- `learning_store.py` applies reward-weighted EMA updates to HitDetector soft
+  priors (`right_bias_px`, `below_bonus`, `prior_sigma_frac`, `prior_strength`).
+- Persisted in `learning_state.json`; reloaded on boot; exposed via
+  `GET /api/learning/status` and `POST /api/learning/feedback`.
+- This is online policy improvement from human reward — not offline neural RL.
 
 ## 7. Training & Tuning Pipeline
 

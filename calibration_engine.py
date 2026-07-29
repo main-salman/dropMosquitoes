@@ -275,6 +275,8 @@ class HitDetector:
     # Operator: landing is always a bit right of aim; farther → lower (gravity)
     RIGHT_BIAS_PX = 70
     PRIOR_SIGMA_FRAC = 0.12   # soft Gaussian around expected impact
+    PRIOR_STRENGTH = 0.55     # blend weight for prior (learned via feedback)
+    BELOW_BONUS = 0.85        # reinforce lower-than-aim landings (learned)
     BURST_DURATION_S = 1.45
     BURST_TARGET_FPS = 30
 
@@ -602,15 +604,16 @@ class HitDetector:
                 # Soft prior: right + gravity-expected impact (does not replace seeing)
                 dist_prior = math.hypot(cx - exp_xy[0], cy - exp_xy[1])
                 prior = math.exp(-0.5 * (dist_prior / prior_sigma) ** 2)
-                # Prefer slightly right/low of raw aim (operator physics)
+                # Prefer slightly right/low of raw aim (operator physics + RL)
                 right = max(0.0, (cx - aim_xy[0]) / float(w))
                 below = max(0.0, (cy - aim_xy[1]) / float(h))
-                geom = (1.0 + 0.6 * right) * (1.0 + 0.9 * below)
+                geom = (1.0 + 0.6 * right) * (1.0 + float(self.BELOW_BONUS) * below)
                 surf = self._surface_weight(after_bgr, mask)
                 dark_term = min((max(peak_dark, mean_dark) / 28.0) ** 1.25, 2.6)
                 motion_term = 0.7 + 0.3 * min(peak_motion / 40.0, 1.5)
                 area_term = max(0.35, min(1.0, 1.0 - abs(area - 1000.0) / 10000.0))
-                score = ((0.55 + 0.45 * prior) * (0.5 + 0.5 * circ) * area_term
+                ps = max(0.15, min(0.85, float(self.PRIOR_STRENGTH)))
+                score = (((1.0 - ps) + ps * prior) * (0.5 + 0.5 * circ) * area_term
                          * geom * surf * dark_term * motion_term
                          * (0.6 + 0.4 * min(contrast / 20.0, 1.5)))
                 cands.append({

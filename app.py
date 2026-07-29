@@ -37,6 +37,7 @@ from hardware import (
 from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
 from cal_hit_store import CalHitStore
+from learning_store import LearningStore
 from settings_store import SettingsStore
 from status_indicator import StatusIndicator
 from activity_log import init_activity_log, log_event
@@ -107,6 +108,8 @@ cal_table = CalibrationTable(
 )
 hit_detector = HitDetector()
 cal_hit_store = CalHitStore(APP_DIR)
+learning_store = LearningStore(APP_DIR)
+learning_store.apply_to_detector(hit_detector)
 auto_cal = AutoCalibrator(cal_table, hit_detector, hit_store=cal_hit_store)
 
 # Water Line Priming System
@@ -1459,6 +1462,54 @@ def api_cal_hit_image(hid, kind):
     return send_file(path, mimetype="image/jpeg")
 
 
+@app.route('/api/learning/status', methods=['GET'])
+def api_learning_status():
+    """Learned splash priors + recent feedback events (SW-001 §2.15)."""
+    return jsonify(learning_store.status())
+
+
+@app.route('/api/learning/feedback', methods=['POST'])
+def api_learning_feedback():
+    """
+    Operator reinforcement for splash localization.
+    Body: {
+      source: "cal_hit",
+      id: "<hit id>",
+      correct: true|false,
+      true_px?, true_py?,   # optional click of real landing
+      hit_px?, hit_py?,
+      aim_px?, aim_py?,
+      note?
+    }
+    """
+    data = request.get_json(force=True) or {}
+    source = str(data.get("source") or "cal_hit")
+    item_id = str(data.get("id") or "")
+    if not item_id:
+        return jsonify({"error": "id_required"}), 400
+    correct = bool(data.get("correct"))
+    result = learning_store.record_feedback(
+        source=source,
+        item_id=item_id,
+        correct=correct,
+        hit_px=data.get("hit_px"),
+        hit_py=data.get("hit_py"),
+        true_px=data.get("true_px"),
+        true_py=data.get("true_py"),
+        aim_px=int(data.get("aim_px") or 640),
+        aim_py=int(data.get("aim_py") or 360),
+        note=str(data.get("note") or ""),
+    )
+    learning_store.apply_to_detector(hit_detector)
+    try:
+        log_event("learning_feedback",
+                  correct=correct, id=item_id, source=source,
+                  priors=result.get("priors"))
+    except Exception:
+        pass
+    return jsonify(result)
+
+
 @app.route('/api/calibration/freefire', methods=['POST'])
 def api_cal_freefire():
     """Free-form calibration: aim → pressure-gated solenoid fire → detect hit.
@@ -1555,6 +1606,7 @@ def api_status():
         "hunt": hunter.get_status(),
         "timezone": "America/New_York",
         "time_et": stamp_full(),
+        "learning": learning_store.status(),
     })
 
 

@@ -33,7 +33,7 @@ activity.log
 activity.log.*
 .sentry.pid
 hunt_captures/
-cal_hits/
+learning_state.json
 *.engine
 *.onnx
 !requirements*.txt
@@ -69,5 +69,5 @@ yolov8n.pt
 models/yolov8n.pt
 tools/sentry_control_center/yolov8n.pt
 
-# Large media files (exceed GitHub 100MB limit)
-*.mp4
+# Local Jetson pull/review packages (large; regenerate via scripts/pull_jetson_review.sh)
+temp/

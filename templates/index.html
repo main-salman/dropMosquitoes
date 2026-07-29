@@ -766,7 +766,8 @@
 
     <!-- Last 10 successful splash hits -->
     <div class="card" style="grid-column:1/-1">
-      <div class="card-title">🎯 Last 10 Successful Hits <span class="cal-stat" id="cal-hits-count">0</span> <span style="font-size:11px;font-weight:400;color:var(--dim)">· times ET</span></div>
+      <div class="card-title">🎯 Last 10 Successful Hits <span class="cal-stat" id="cal-hits-count">0</span> <span style="font-size:11px;font-weight:400;color:var(--dim)">· times ET · teach with Correct/Wrong</span></div>
+      <div style="font-size:11px;color:var(--dim);margin:-4px 0 8px" id="learning-priors-line">Learning: —</div>
       <div class="card-body">
         <p style="font-size:11px;color:var(--dim);margin:0 0 10px">Saved when splash detection succeeds (auto-cal or free-fire). Each row: before → after with red diff.</p>
         <div id="cal-hits-gallery" style="display:flex;flex-direction:column;gap:12px;max-height:520px;overflow-y:auto"></div>
@@ -1537,16 +1538,68 @@ async function loadCalHitsGallery() {
         : `${h.source || 'hit'} · (${h.hit_px},${h.hit_py})`;
       const ts = (h.timestamp || h.id || '') + (h.timestamp ? ' ET' : '');
       const u = h.urls || {};
-      return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.25)">
+      const hid = h.id || '';
+      return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.25)" data-hid="${esc(hid)}">
         <div style="font-size:11px;color:var(--dim);margin-bottom:6px"><b style="color:var(--text)">${title}</b> · ${ts}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
           <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">BEFORE</div><img src="${u.before}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
-          <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">AFTER</div><img src="${u.after}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
+          <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">AFTER · click true landing if Wrong</div>
+            <img class="cal-teach-after" data-hid="${esc(hid)}" data-hitx="${h.hit_px||''}" data-hity="${h.hit_py||''}" src="${u.after}" style="width:100%;border-radius:6px;background:#111;cursor:crosshair" loading="lazy"></div>
           <div><div style="font-size:9px;color:#ff2d2d;margin-bottom:2px">DIFF (RED)</div><img src="${u.diff}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+          <button type="button" class="btn-sm" onclick="learningFeedback('${esc(hid)}',true,${h.hit_px||'null'},${h.hit_py||'null'})">✅ Correct</button>
+          <button type="button" class="btn-sm" onclick="learningFeedback('${esc(hid)}',false,${h.hit_px||'null'},${h.hit_py||'null'})">❌ Wrong</button>
+          <span class="cal-teach-status" id="learn-status-${esc(hid)}" style="font-size:11px;color:var(--dim)"></span>
         </div>
       </div>`;
     }).join('');
+    refreshLearningPriors();
+    document.querySelectorAll('img.cal-teach-after').forEach(img => {
+      img.onclick = (ev) => {
+        const r = img.getBoundingClientRect();
+        const nx = (ev.clientX - r.left) / r.width;
+        const ny = (ev.clientY - r.top) / r.height;
+        const true_px = Math.round(nx * 1280);
+        const true_py = Math.round(ny * 720);
+        const hid = img.dataset.hid;
+        const hx = img.dataset.hitx ? +img.dataset.hitx : null;
+        const hy = img.dataset.hity ? +img.dataset.hity : null;
+        learningFeedback(hid, false, hx, hy, true_px, true_py);
+      };
+    });
   } catch (e) { console.error(e); }
+}
+
+async function refreshLearningPriors() {
+  try {
+    const d = await fetch('/api/learning/status').then(r => r.json());
+    const p = d.priors || {};
+    const el = $('learning-priors-line');
+    if (el) el.textContent = `Learning: ✅${d.n_correct||0} / ❌${d.n_wrong||0} · right_bias=${(p.right_bias_px||0).toFixed?.(0) ?? p.right_bias_px}px · below=${p.below_bonus} · strength=${p.prior_strength}`;
+  } catch (e) {}
+}
+
+async function learningFeedback(hid, correct, hit_px, hit_py, true_px, true_py) {
+  const body = {
+    source: 'cal_hit', id: hid, correct: !!correct,
+    hit_px, hit_py, aim_px: 640, aim_py: 360,
+  };
+  if (true_px != null && true_py != null) {
+    body.true_px = true_px; body.true_py = true_py;
+  }
+  const d = await fetch('/api/learning/feedback', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body),
+  }).then(r => r.json());
+  const st = $('learn-status-' + hid);
+  if (st) {
+    st.textContent = correct
+      ? 'Reinforced ✅'
+      : (true_px != null ? `Taught landing @ (${true_px},${true_py})` : 'Marked wrong — click AFTER for true spot');
+  }
+  refreshLearningPriors();
+  if (d && d.ok) showToast('🧠 Learned', correct ? 'Positive reward' : 'Negative reward — priors updated');
 }
 
 async function calApplyOffset() {
