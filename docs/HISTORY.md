@@ -1393,3 +1393,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FIX]** Defaults / gate: `yolo_conf=0.75`, `opportunity_fire=false`, Scout T=40 / min_area=2000 / dead_zone=0.25 / `min_speed_px_s=80`, `center_ok_frac=0.12`.
 - **[SPEC]** SW-001 §2.13 → v5.21.
 - **[DOCS]** Remaining overhaul steps 2–5: `temp/insect_id_overhaul_next_steps.html`.
+
+## 2026-07-29 — [DEPLOY] Hunt Step 1 gates live
+- **[DEPLOY]** Soft restart → CSI reboot; Scout+Sniper healthy. Applied permanent settings: yolo_conf=0.75, opportunity_fire=false, Scout T=40/min_area=2000/min_speed=80.
