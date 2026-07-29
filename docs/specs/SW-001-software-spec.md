@@ -1,8 +1,8 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.19  
-**Last Updated:** 2026-07-28  
+**Version:** 5.20  
+**Last Updated:** 2026-07-29  
 **Owner:** Salman
 
 ## 1. Runtime Environment
@@ -458,10 +458,14 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 - Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
 
 ### 2.15 Operator-feedback reinforcement (splash priors)
-- Calibration gallery: **Correct / Wrong** on each saved splash; optional click on
-  AFTER image marks the true landing pixel.
+- **Sources (both required for field learning):**
+  - Calibration gallery (`source=cal_hit`): **Correct / Wrong** on each saved
+    splash; optional click on AFTER marks the true landing pixel.
+  - Live hunt gallery (`source=hunt_capture`): same teach controls on Control-tab
+    hunt attempt detail (prefer Sniper after still for true-landing click).
 - `learning_store.py` applies reward-weighted EMA updates to HitDetector soft
   priors (`right_bias_px`, `below_bonus`, `prior_sigma_frac`, `prior_strength`).
+  Feedback from hunt and cal share one prior state (splash physics is shared).
 - Persisted in `learning_state.json`; reloaded on boot; exposed via
   `GET /api/learning/status` and `POST /api/learning/feedback`.
 - This is online policy improvement from human reward — not offline neural RL.

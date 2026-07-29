@@ -1368,3 +1368,10 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-29 — [UI] Larger Jetson review images for insect verification
 - **[OPERATOR]** Both HTML reports: thumbnails too small to see/verify insects.
 - **[FIX]** `build_jetson_review_html.py`: full-width (2-col ≥1100px) shots, no tiny grid; click opens native JPG in new tab; prefer sniper annotated/after frames first. Regenerated both `temp/jetson_review_*/index.html`.
+
+## 2026-07-29 — [BUG FIX] Learning feedback deadlock + hunt teach UI
+- **[BUG]** Cal Correct/Wrong hung: `record_feedback` held `threading.Lock` then called `get_priors()` (same non-reentrant lock) → API deadlock.
+- **[FIX]** `_priors_unlocked()`; coerce pixel ints; API accepts `source=cal_hit|hunt_capture`.
+- **[FEATURE]** Control-tab hunt attempt detail: Correct/Wrong + click Sniper-after true landing (same prior EMA as cal).
+- **[SPEC]** SW-001 §2.15 → v5.20 (hunt + cal feedback share splash priors).
+- **[UI]** Cal buttons use data-attributes + `.btn` handlers with error toasts (no fragile inline onclick).

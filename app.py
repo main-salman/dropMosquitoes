@@ -1471,10 +1471,10 @@ def api_learning_status():
 @app.route('/api/learning/feedback', methods=['POST'])
 def api_learning_feedback():
     """
-    Operator reinforcement for splash localization.
+    Operator reinforcement for splash localization (SW-001 §2.15).
     Body: {
-      source: "cal_hit",
-      id: "<hit id>",
+      source: "cal_hit" | "hunt_capture",
+      id: "<hit or attempt id>",
       correct: true|false,
       true_px?, true_py?,   # optional click of real landing
       hit_px?, hit_py?,
@@ -1483,8 +1483,10 @@ def api_learning_feedback():
     }
     """
     data = request.get_json(force=True) or {}
-    source = str(data.get("source") or "cal_hit")
-    item_id = str(data.get("id") or "")
+    source = str(data.get("source") or "cal_hit").strip() or "cal_hit"
+    if source not in ("cal_hit", "hunt_capture"):
+        return jsonify({"error": "bad_source", "allowed": ["cal_hit", "hunt_capture"]}), 400
+    item_id = str(data.get("id") or "").strip()
     if not item_id:
         return jsonify({"error": "id_required"}), 400
     correct = bool(data.get("correct"))
@@ -1496,8 +1498,8 @@ def api_learning_feedback():
         hit_py=data.get("hit_py"),
         true_px=data.get("true_px"),
         true_py=data.get("true_py"),
-        aim_px=int(data.get("aim_px") or 640),
-        aim_py=int(data.get("aim_py") or 360),
+        aim_px=data.get("aim_px") if data.get("aim_px") is not None else 640,
+        aim_py=data.get("aim_py") if data.get("aim_py") is not None else 360,
         note=str(data.get("note") or ""),
     )
     learning_store.apply_to_detector(hit_detector)

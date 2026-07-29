@@ -374,13 +374,14 @@
     <div class="card">
       <div class="card-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span>🎯 Hunt Attempts</span>
-        <span style="font-weight:400;color:var(--dim2);font-size:12px">Recent 10 (any) · Insects 100 · water trajectory strip on fire · stills only</span>
+        <span style="font-weight:400;color:var(--dim2);font-size:12px">Recent 10 · Insects 100 · teach splash with Correct/Wrong</span>
         <span style="flex:1"></span>
         <span class="header-pill pill-paused" id="hc-count">0 / 10</span>
         <button class="btn btn-sm" id="hc-view-recent" onclick="hcSetView('recent')">Recent 10</button>
         <button class="btn btn-sm" id="hc-view-insects" onclick="hcSetView('insects')">Insects 100</button>
         <button class="btn btn-sm" onclick="hcRefresh()">🔄 Refresh</button>
       </div>
+      <div style="font-size:11px;color:var(--dim);margin:-2px 14px 8px" id="learning-priors-line-hunt">Learning: —</div>
       <div class="card-body">
         <div id="hc-empty" style="font-size:12px;color:var(--dim);padding:8px 0">No hunt attempts yet. Recent shows last 10 (reject or fire). Insects keeps last 100 YOLO insect sightings for field testing.</div>
         <div id="hc-grid" class="hc-grid"></div>
@@ -1288,7 +1289,7 @@ function hcOpen(id){
 }
 function hcShowDetail(it){
   const f=n=>hcFile(it,n);
-  const img=(url,cap)=>url?`<figure><figcaption>${cap}</figcaption><img src="${url}" alt="${cap}" loading="lazy" decoding="async"/></figure>`:'';
+  const img=(url,cap,extra='')=>url?`<figure><figcaption>${cap}</figcaption><img src="${url}" alt="${cap}" loading="lazy" decoding="async" ${extra}/></figure>`:'';
   const traj=f('trajectory.jpg');
   const hv=it.hit_verdict||{};
   const sig=hv.signals||{};
@@ -1299,6 +1300,26 @@ function hcShowDetail(it){
     const veto=s.veto?' (veto)':'';
     return `<span style="margin-right:10px;color:${ok?'var(--green)':(s.veto?'var(--red)':'var(--dim)')}">${ok?'✓':'✗'} ${name}${veto}</span>`;
   };
+  const hitPair = Array.isArray(it.hit_px) ? it.hit_px
+    : (it.hit_px!=null && it.hit_py!=null ? [it.hit_px, it.hit_py] : null);
+  const hx = hitPair ? hitPair[0] : null;
+  const hy = hitPair ? hitPair[1] : null;
+  const sniperTeach = f('sniper_after.jpg') || f('sniper_after_ann.jpg') || f('after.jpg');
+  const canTeach = !!(it.result==='fired' || hitPair || traj);
+  const teachBlock = canTeach ? `
+    <div style="margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,0.25)">
+      <div style="font-size:12px;margin-bottom:8px"><b>🧠 Teach splash priors</b>
+        <span style="color:var(--dim)"> · Correct/Wrong on detector HIT${hx!=null?` @ (${hx},${hy})`:''} · click Sniper after for true landing</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <button type="button" class="btn btn-sm btn-green" data-learn-src="hunt_capture" data-learn-id="${esc(it.id||'')}" data-learn-correct="1" data-hitx="${hx??''}" data-hity="${hy??''}">✅ Correct</button>
+        <button type="button" class="btn btn-sm btn-red" data-learn-src="hunt_capture" data-learn-id="${esc(it.id||'')}" data-learn-correct="0" data-hitx="${hx??''}" data-hity="${hy??''}">❌ Wrong</button>
+        <span class="cal-teach-status" id="learn-status-${esc(it.id||'')}" style="font-size:11px;color:var(--dim)"></span>
+      </div>
+      ${sniperTeach?`<figure style="margin:0"><figcaption>Sniper after · click true water landing if Wrong</figcaption>
+        <img class="hunt-teach-after" data-hid="${esc(it.id||'')}" data-hitx="${hx??''}" data-hity="${hy??''}"
+          src="${sniperTeach}" alt="sniper after teach" loading="lazy" decoding="async"
+          style="width:100%;max-height:360px;object-fit:contain;background:#111;border-radius:8px;cursor:crosshair"/></figure>`:''}
+    </div>` : '';
   $('hc-detail').style.display='block';
   $('hc-detail').innerHTML=`
     <div style="font-size:13px;margin-bottom:10px">
@@ -1307,10 +1328,11 @@ function hcShowDetail(it){
       · aim ${it.aim_pitch}°/${it.aim_yaw}° · ${it.distance_m!=null?(it.distance_m+' m'):'—'}
       · insect=${it.insect_detected?'YES':'NO'}
       · verdict=<b>${esc(hv.summary|| (it.hit_confirmed===true?'HIT':(it.hit_confirmed===false?'MISS':'—')))}</b>
-      ${it.hit_px?(' · splash@'+JSON.stringify(it.hit_px)) : ''}
+      ${hitPair?(' · splash@'+JSON.stringify(hitPair)) : ''}
       ${it.status==='recording'?' · <span style="color:var(--orange)">saving…</span>':''}
     </div>
     ${hv.score!=null?`<div style="font-size:12px;margin-bottom:10px;color:var(--dim)">${sigRow('lock',sig.insect_locked)}${sigRow('traj',sig.traj_through_path||sig.traj_through_bbox)}${sigRow('ballistic',sig.ballistic_on_target)}${sigRow('splash',sig.splash_optional||sig.splash_near_bbox)} · HIT needs ≥2/3 core; splash optional (— if not visible)</div>`:''}
+    ${teachBlock}
     ${traj?`<figure style="margin:0 0 12px"><figcaption>Water trajectory (Sniper burst during pulse)</figcaption><img src="${traj}" alt="trajectory" loading="lazy" decoding="async" style="width:100%;max-height:220px;object-fit:contain;background:#111;border-radius:8px"/></figure>`:''}
     <div class="hc-media">
       ${img(f('scout_before_ann.jpg')||f('scout_before.jpg'),'Scout before')}
@@ -1318,6 +1340,40 @@ function hcShowDetail(it){
       ${img(f('sniper_before_ann.jpg')||f('sniper_before.jpg'),'Sniper before')}
       ${img(f('sniper_after_ann.jpg')||f('sniper_after.jpg'),'Sniper after')}
     </div>`;
+  refreshLearningPriors();
+  $('hc-detail').querySelectorAll('[data-learn-id]').forEach(btn=>{
+    btn.onclick=(ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      const id=btn.getAttribute('data-learn-id');
+      const correct=btn.getAttribute('data-learn-correct')==='1';
+      const bx=btn.getAttribute('data-hitx');
+      const by=btn.getAttribute('data-hity');
+      learningFeedback({
+        source:'hunt_capture', id, correct,
+        hit_px: bx!=='' && bx!=null ? +bx : null,
+        hit_py: by!=='' && by!=null ? +by : null,
+      });
+    };
+  });
+  $('hc-detail').querySelectorAll('img.hunt-teach-after').forEach(im=>{
+    im.onclick=(ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      const r=im.getBoundingClientRect();
+      const nx=(ev.clientX-r.left)/Math.max(1,r.width);
+      const ny=(ev.clientY-r.top)/Math.max(1,r.height);
+      const true_px=Math.round(nx*1280);
+      const true_py=Math.round(ny*720);
+      const hid=im.dataset.hid;
+      const hx2=im.dataset.hitx!=='' && im.dataset.hitx!=null ? +im.dataset.hitx : null;
+      const hy2=im.dataset.hity!=='' && im.dataset.hity!=null ? +im.dataset.hity : null;
+      learningFeedback({
+        source:'hunt_capture', id:hid, correct:false,
+        hit_px:hx2, hit_py:hy2, true_px, true_py,
+      });
+    };
+  });
 }
 function hcStartPolling(){
   if(hcTimer)return;
@@ -1539,33 +1595,53 @@ async function loadCalHitsGallery() {
       const ts = (h.timestamp || h.id || '') + (h.timestamp ? ' ET' : '');
       const u = h.urls || {};
       const hid = h.id || '';
+      const hx = (h.hit_px != null && h.hit_px !== '') ? h.hit_px : '';
+      const hy = (h.hit_py != null && h.hit_py !== '') ? h.hit_py : '';
       return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.25)" data-hid="${esc(hid)}">
         <div style="font-size:11px;color:var(--dim);margin-bottom:6px"><b style="color:var(--text)">${title}</b> · ${ts}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
           <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">BEFORE</div><img src="${u.before}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
           <div><div style="font-size:9px;color:var(--dim);margin-bottom:2px">AFTER · click true landing if Wrong</div>
-            <img class="cal-teach-after" data-hid="${esc(hid)}" data-hitx="${h.hit_px||''}" data-hity="${h.hit_py||''}" src="${u.after}" style="width:100%;border-radius:6px;background:#111;cursor:crosshair" loading="lazy"></div>
+            <img class="cal-teach-after" data-hid="${esc(hid)}" data-hitx="${hx}" data-hity="${hy}" src="${u.after}" style="width:100%;border-radius:6px;background:#111;cursor:crosshair" loading="lazy"></div>
           <div><div style="font-size:9px;color:#ff2d2d;margin-bottom:2px">DIFF (RED)</div><img src="${u.diff}" style="width:100%;border-radius:6px;background:#111" loading="lazy"></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="btn-sm" onclick="learningFeedback('${esc(hid)}',true,${h.hit_px||'null'},${h.hit_py||'null'})">✅ Correct</button>
-          <button type="button" class="btn-sm" onclick="learningFeedback('${esc(hid)}',false,${h.hit_px||'null'},${h.hit_py||'null'})">❌ Wrong</button>
+          <button type="button" class="btn btn-sm btn-green" data-learn-src="cal_hit" data-learn-id="${esc(hid)}" data-learn-correct="1" data-hitx="${hx}" data-hity="${hy}">✅ Correct</button>
+          <button type="button" class="btn btn-sm btn-red" data-learn-src="cal_hit" data-learn-id="${esc(hid)}" data-learn-correct="0" data-hitx="${hx}" data-hity="${hy}">❌ Wrong</button>
           <span class="cal-teach-status" id="learn-status-${esc(hid)}" style="font-size:11px;color:var(--dim)"></span>
         </div>
       </div>`;
     }).join('');
     refreshLearningPriors();
-    document.querySelectorAll('img.cal-teach-after').forEach(img => {
+    gal.querySelectorAll('[data-learn-id]').forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const id = btn.getAttribute('data-learn-id');
+        const correct = btn.getAttribute('data-learn-correct') === '1';
+        const bx = btn.getAttribute('data-hitx');
+        const by = btn.getAttribute('data-hity');
+        learningFeedback({
+          source: 'cal_hit', id, correct,
+          hit_px: bx !== '' && bx != null ? +bx : null,
+          hit_py: by !== '' && by != null ? +by : null,
+        });
+      };
+    });
+    gal.querySelectorAll('img.cal-teach-after').forEach(img => {
       img.onclick = (ev) => {
         const r = img.getBoundingClientRect();
-        const nx = (ev.clientX - r.left) / r.width;
-        const ny = (ev.clientY - r.top) / r.height;
+        const nx = (ev.clientX - r.left) / Math.max(1, r.width);
+        const ny = (ev.clientY - r.top) / Math.max(1, r.height);
         const true_px = Math.round(nx * 1280);
         const true_py = Math.round(ny * 720);
         const hid = img.dataset.hid;
-        const hx = img.dataset.hitx ? +img.dataset.hitx : null;
-        const hy = img.dataset.hity ? +img.dataset.hity : null;
-        learningFeedback(hid, false, hx, hy, true_px, true_py);
+        const hx = img.dataset.hitx !== '' && img.dataset.hitx != null ? +img.dataset.hitx : null;
+        const hy = img.dataset.hity !== '' && img.dataset.hity != null ? +img.dataset.hity : null;
+        learningFeedback({
+          source: 'cal_hit', id: hid, correct: false,
+          hit_px: hx, hit_py: hy, true_px, true_py,
+        });
       };
     });
   } catch (e) { console.error(e); }
@@ -1575,31 +1651,69 @@ async function refreshLearningPriors() {
   try {
     const d = await fetch('/api/learning/status').then(r => r.json());
     const p = d.priors || {};
+    const txt = `Learning: ✅${d.n_correct||0} / ❌${d.n_wrong||0} · right_bias=${Number(p.right_bias_px||0).toFixed(0)}px · below=${p.below_bonus} · strength=${p.prior_strength}`;
     const el = $('learning-priors-line');
-    if (el) el.textContent = `Learning: ✅${d.n_correct||0} / ❌${d.n_wrong||0} · right_bias=${(p.right_bias_px||0).toFixed?.(0) ?? p.right_bias_px}px · below=${p.below_bonus} · strength=${p.prior_strength}`;
+    if (el) el.textContent = txt;
+    const el2 = $('learning-priors-line-hunt');
+    if (el2) el2.textContent = txt;
   } catch (e) {}
 }
 
-async function learningFeedback(hid, correct, hit_px, hit_py, true_px, true_py) {
-  const body = {
-    source: 'cal_hit', id: hid, correct: !!correct,
-    hit_px, hit_py, aim_px: 640, aim_py: 360,
-  };
-  if (true_px != null && true_py != null) {
-    body.true_px = true_px; body.true_py = true_py;
+async function learningFeedback(opts) {
+  // Accept object form (preferred) or legacy positional args.
+  let body;
+  if (opts && typeof opts === 'object' && !Array.isArray(opts) && ('id' in opts || 'source' in opts)) {
+    body = {
+      source: opts.source || 'cal_hit',
+      id: opts.id,
+      correct: !!opts.correct,
+      hit_px: opts.hit_px ?? null,
+      hit_py: opts.hit_py ?? null,
+      aim_px: opts.aim_px ?? 640,
+      aim_py: opts.aim_py ?? 360,
+    };
+    if (opts.true_px != null && opts.true_py != null) {
+      body.true_px = opts.true_px;
+      body.true_py = opts.true_py;
+    }
+    if (opts.note) body.note = opts.note;
+  } else {
+    const hid = arguments[0], correct = arguments[1];
+    const hit_px = arguments[2], hit_py = arguments[3];
+    const true_px = arguments[4], true_py = arguments[5];
+    body = {
+      source: 'cal_hit', id: hid, correct: !!correct,
+      hit_px, hit_py, aim_px: 640, aim_py: 360,
+    };
+    if (true_px != null && true_py != null) {
+      body.true_px = true_px; body.true_py = true_py;
+    }
   }
-  const d = await fetch('/api/learning/feedback', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(body),
-  }).then(r => r.json());
-  const st = $('learn-status-' + hid);
-  if (st) {
-    st.textContent = correct
-      ? 'Reinforced ✅'
-      : (true_px != null ? `Taught landing @ (${true_px},${true_py})` : 'Marked wrong — click AFTER for true spot');
+  try {
+    const r = await fetch('/api/learning/feedback', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    const hid = body.id;
+    const st = $('learn-status-' + hid);
+    if (!r.ok || !d || !d.ok) {
+      const err = (d && (d.error || d.message)) || (`HTTP ${r.status}`);
+      if (st) st.textContent = 'Failed: ' + err;
+      showToast('🧠 Learn failed', String(err));
+      return;
+    }
+    if (st) {
+      st.textContent = body.correct
+        ? 'Reinforced ✅'
+        : (body.true_px != null ? `Taught landing @ (${body.true_px},${body.true_py})` : 'Marked wrong — click AFTER for true spot');
+    }
+    refreshLearningPriors();
+    showToast('🧠 Learned', body.correct ? 'Positive reward' : 'Negative reward — priors updated');
+  } catch (e) {
+    console.error('learningFeedback', e);
+    showToast('🧠 Learn failed', e.message || String(e));
   }
-  refreshLearningPriors();
-  if (d && d.ok) showToast('🧠 Learned', correct ? 'Positive reward' : 'Negative reward — priors updated');
 }
 
 async function calApplyOffset() {

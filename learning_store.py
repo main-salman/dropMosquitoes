@@ -5,7 +5,7 @@ learning_store.py — Lightweight reinforcement learning from operator feedback.
 Not a neural RL agent: reward-weighted EMA updates to HitDetector soft priors
 (right bias, gravity/below weight, prior tightness) so splash localization
 improves over sessions when the operator marks HIT correct/wrong (and optionally
-clicks the true landing).
+clicks the true landing) on calibration OR live hunt captures.
 """
 
 from __future__ import annotations
@@ -33,6 +33,15 @@ DEFAULT_STATE = {
 MAX_EVENTS = 200
 ALPHA = 0.22                  # EMA learning rate on spatial corrections
 REWARD_ALPHA = 0.08           # slower tweak when only correct/wrong
+
+
+def _as_int(v) -> Optional[int]:
+    if v is None or v == "":
+        return None
+    try:
+        return int(round(float(v)))
+    except (TypeError, ValueError):
+        return None
 
 
 class LearningStore:
@@ -63,29 +72,26 @@ class LearningStore:
             f.write("\n")
         os.replace(tmp, self.path)
 
+    def _priors_unlocked(self) -> Dict[str, float]:
+        return {
+            "right_bias_px": float(self._state["right_bias_px"]),
+            "below_bonus": float(self._state["below_bonus"]),
+            "prior_sigma_frac": float(self._state["prior_sigma_frac"]),
+            "prior_strength": float(self._state["prior_strength"]),
+        }
+
     def get_priors(self) -> Dict[str, float]:
         with self._lock:
-            return {
-                "right_bias_px": float(self._state["right_bias_px"]),
-                "below_bonus": float(self._state["below_bonus"]),
-                "prior_sigma_frac": float(self._state["prior_sigma_frac"]),
-                "prior_strength": float(self._state["prior_strength"]),
-            }
+            return self._priors_unlocked()
 
     def status(self) -> Dict[str, Any]:
         with self._lock:
             ev = self._state.get("events") or []
-            priors = {
-                "right_bias_px": float(self._state["right_bias_px"]),
-                "below_bonus": float(self._state["below_bonus"]),
-                "prior_sigma_frac": float(self._state["prior_sigma_frac"]),
-                "prior_strength": float(self._state["prior_strength"]),
-            }
             return {
                 "n_correct": self._state["n_correct"],
                 "n_wrong": self._state["n_wrong"],
                 "n_corrections_xy": self._state["n_corrections_xy"],
-                "priors": priors,
+                "priors": self._priors_unlocked(),
                 "last_events": ev[-10:],
                 "path": self.path,
             }
@@ -127,6 +133,17 @@ class LearningStore:
         (true - aim).
         """
         reward = 1.0 if correct else -1.0
+        hit_px = _as_int(hit_px)
+        hit_py = _as_int(hit_py)
+        true_px = _as_int(true_px)
+        true_py = _as_int(true_py)
+        aim_px = _as_int(aim_px) if aim_px is not None else 640
+        aim_py = _as_int(aim_py) if aim_py is not None else 360
+        if aim_px is None:
+            aim_px = 640
+        if aim_py is None:
+            aim_py = 360
+
         with self._lock:
             if correct:
                 self._state["n_correct"] += 1
@@ -185,14 +202,12 @@ class LearningStore:
                 "aim_py": aim_py,
                 "note": note,
                 "priors_after": {
-                    "right_bias_px": round(float(self._state["right_bias_px"]), 1),
-                    "below_bonus": round(float(self._state["below_bonus"]), 3),
-                    "prior_sigma_frac": round(float(self._state["prior_sigma_frac"]), 3),
-                    "prior_strength": round(float(self._state["prior_strength"]), 3),
+                    k: round(v, 3 if k != "right_bias_px" else 1)
+                    for k, v in self._priors_unlocked().items()
                 },
             }
             ev: List[dict] = list(self._state.get("events") or [])
             ev.append(event)
             self._state["events"] = ev[-MAX_EVENTS:]
             self._save_unlocked()
-            return {"ok": True, "event": event, "priors": self.get_priors()}
+            return {"ok": True, "event": event, "priors": self._priors_unlocked()}
