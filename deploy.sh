@@ -59,6 +59,7 @@ rsync -avz --progress \
   --exclude='runs/' \
   --exclude='sentry.log' \
   --exclude='*.engine' \
+  --exclude='temp/' \
   --exclude='.env' \
   "${PROJECT_DIR}/" "${JETSON_USER}@${JETSON_HOST}:${JETSON_PATH}/"
 # Both Scout and Sniper use IMX219 NoIR sensors — native imx219-dual.dtbo handles both.

@@ -99,3 +99,4 @@
 2026-07-28 | [FIX] | HitDetector v5.18 dense post-fire burst to see water landing like a human; soft right+gravity prior
 2026-07-28 | [DEPLOY] | HitDetector v5.18 dense burst splash localization live on Jetson
 2026-07-28 | [FEATURE] | temp Jetson HTML review package + operator-feedback RL for splash priors (SW-001 §2.15)
+2026-07-28 | [DEPLOY] | Learning feedback API/UI live; Jetson review HTML at temp/jetson_review_20260728_224016/

@@ -1357,3 +1357,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[OPS]** Pulled ~7h Jetson results → `temp/jetson_review_20260728_224016/` (7 cal hits, ~110 hunt captures, logs). HTML report: `index.html`. Script: `scripts/pull_jetson_review.sh` + `build_jetson_review_html.py`. `temp/` gitignored.
 - **[SPEC]** SW-001 §2.15 v5.19: operator Correct/Wrong (+ click true landing) reinforces HitDetector soft priors via EMA (`learning_store.py`).
 - **[UI]** Calibration gallery teach buttons; `/api/learning/feedback` + `/api/learning/status`.
+
+## 2026-07-28 — [DEPLOY] Learning feedback + review tools live
+- **[DEPLOY]** Operator-feedback RL + cal gallery teach UI live; Scout+Sniper healthy after auto-reboot. `deploy.sh` excludes `temp/`.
+- **[REVIEW]** Local report: `temp/jetson_review_20260728_224016/index.html` (7 cal + ~110 hunt).
