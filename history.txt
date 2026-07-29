@@ -105,3 +105,4 @@
 2026-07-29 | [BUG FIX] | Learning deadlock: cal Correct/Wrong hung; hunt teach UI + SW-001 v5.20
 2026-07-29 | [DEPLOY] | Learning deadlock fix + hunt teach UI live (auto-reboot; cameras healthy)
 2026-07-29 | [UI] | Jetson review HTML omits calibration hits (hunt+logs only)
+2026-07-29 | [TROUBLESHOOT] | Insect ID overhaul: false YOLO + insects not on camera; staged plan in HISTORY

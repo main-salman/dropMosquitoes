@@ -1382,3 +1382,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 ## 2026-07-29 — [UI] Review HTML omits calibration hits
 - **[OPERATOR]** Reports should not include cal splash gallery.
 - **[FIX]** `build_jetson_review_html.py`: hunt captures + logs only. Regenerated both `temp/jetson_review_*/index.html`.
+
+## 2026-07-29 — [TROUBLESHOOT] Insect ID overhaul — logs + operator answers
+- **[OPERATOR]** All ladybug/caterpillar/dragonfly IDs wrong; nothing obvious in frames; insects visible in field but not on camera day/night; Scout tracks leaves/shadows; false positives dominate; unsure software path; asked for log-based suggestions.
+- **[LOGS]** Report1 (~7h): 109 hunts, 100 `insect_detected`, only 1 fired (99 fire_failed); top classes caterpillar/ladybug at conf 0.35–0.91 (median ~0.55). Report2 (6h): 22 hunts, 12 insect claims mostly caterpillar ~0.36–0.51; several `HUNT_FIRE` with `no_insect|opportunity` / low-conf caterpillar.
+- **[ROOT]** Stacked failure: (1) insects not resolved on Sniper/Scout pixels → model invents classes on texture; (2) Scout MOG2 over-triggers foliage; (3) 2026-07-28 field fix lowered `yolo_conf` 0.80→0.35 + ROI×2 + opportunity-fire, flooding false positives; (4) verify model is generic Roboflow daylight insects, not night 850nm backyard fliers at 2–3 m.
+- **[PLAN]** See chat: stop false fire first → prove insect pixels (optics/IR) → retrain on real night captures → then hardware only if pixels still invisible.
