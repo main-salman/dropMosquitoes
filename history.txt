@@ -101,3 +101,4 @@
 2026-07-28 | [FEATURE] | temp Jetson HTML review package + operator-feedback RL for splash priors (SW-001 §2.15)
 2026-07-28 | [DEPLOY] | Learning feedback API/UI live; Jetson review HTML at temp/jetson_review_20260728_224016/
 2026-07-29 | [OPS] | Jetson 6h review HTML at temp/jetson_review_20260729_041335/
+2026-07-29 | [UI] | Larger Jetson review images + click-to-open full JPG for insect verify

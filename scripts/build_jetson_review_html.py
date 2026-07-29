@@ -36,6 +36,17 @@ def build(review_dir: Path) -> Path:
     hit_yes = sum(1 for _, m, _ in hunt_rows if m.get("hit_confirmed") is True)
     hit_no = sum(1 for _, m, _ in hunt_rows if m.get("hit_confirmed") is False)
 
+    def _img_cell(label: str, p: Path) -> str:
+        rel = p.relative_to(review_dir).as_posix()
+        esc = html.escape(rel)
+        return (
+            f'<figure class="shot">'
+            f'<figcaption>{html.escape(label)} · click to enlarge</figcaption>'
+            f'<a href="{esc}" target="_blank" rel="noopener">'
+            f'<img src="{esc}" loading="lazy" alt="{html.escape(label)}"></a>'
+            f'</figure>'
+        )
+
     def cal_card(name, meta, d):
         before = d / "before.jpg"
         after = d / "after.jpg"
@@ -47,40 +58,35 @@ def build(review_dir: Path) -> Path:
         imgs = ""
         for label, p in (("BEFORE", before), ("AFTER", after), ("DIFF", diff)):
             if p.exists():
-                rel = p.relative_to(review_dir).as_posix()
-                imgs += (
-                    f'<div class="img"><div class="cap">{label}</div>'
-                    f'<img src="{html.escape(rel)}" loading="lazy"></div>'
-                )
+                imgs += _img_cell(label, p)
         detail = html.escape(json.dumps(meta, indent=2)[:1200])
         return (
             f'<article class="card"><h3>{html.escape(str(title))}</h3>'
             f'<div class="meta">{html.escape(meta.get("timestamp", name))} · '
             f'id={html.escape(name)}</div>'
-            f'<div class="grid3">{imgs}</div>'
+            f'<div class="shots">{imgs}</div>'
             f'<pre>{detail}</pre></article>'
         )
 
     def hunt_card(name, meta, d):
-        # prefer common stills
+        # Prefer sniper/trajectory stills first (insects are tiny — need those frames large).
         stills = []
+        seen = set()
         for cand in (
-            "trajectory.jpg", "sniper_fire.jpg", "after.jpg", "before.jpg",
-            "scout.jpg", "sniper.jpg", "contact.jpg",
+            "sniper_after_ann.jpg", "sniper_before_ann.jpg",
+            "sniper_after.jpg", "sniper_before.jpg", "sniper_fire.jpg",
+            "sniper.jpg", "trajectory.jpg", "contact.jpg",
+            "after.jpg", "before.jpg", "scout.jpg",
         ):
             p = d / cand
             if p.exists():
                 stills.append((cand, p))
-        # also any jpg
-        if not stills:
-            stills = [(p.name, p) for p in sorted(d.glob("*.jpg"))[:4]]
-        imgs = ""
-        for label, p in stills[:4]:
-            rel = p.relative_to(review_dir).as_posix()
-            imgs += (
-                f'<div class="img"><div class="cap">{html.escape(label)}</div>'
-                f'<img src="{html.escape(rel)}" loading="lazy"></div>'
-            )
+                seen.add(cand)
+        for p in sorted(d.glob("*.jpg")):
+            if p.name not in seen:
+                stills.append((p.name, p))
+                seen.add(p.name)
+        imgs = "".join(_img_cell(label, p) for label, p in stills[:6])
         verdict = meta.get("hit_verdict") or {}
         summary = verdict.get("summary") or (
             "HIT" if meta.get("hit_confirmed") is True
@@ -98,8 +104,9 @@ def build(review_dir: Path) -> Path:
         return (
             f'<article class="card {cls}"><h3>{html.escape(name)} · '
             f'{html.escape(str(summary))}</h3>'
-            f'<div class="meta">{html.escape(str(meta.get("timestamp", "")))}</div>'
-            f'<div class="grid">{imgs}</div>'
+            f'<div class="meta">{html.escape(str(meta.get("timestamp", "")))} · '
+            f'images open full-size in a new tab</div>'
+            f'<div class="shots">{imgs}</div>'
             f'<pre>{detail}</pre></article>'
         )
 
@@ -132,19 +139,30 @@ main {{ padding:16px 32px 48px; }}
 .stat {{ background:var(--card); padding:14px 18px; border-radius:12px; min-width:140px; }}
 .stat b {{ display:block; font-size:22px; }}
 .stat span {{ color:var(--dim); font-size:12px; }}
-.card {{ background:var(--card); border:1px solid #2a3746; border-radius:14px; padding:14px; margin:0 0 16px; }}
+.card {{ background:var(--card); border:1px solid #2a3746; border-radius:14px; padding:18px; margin:0 0 28px; }}
 .card.hit {{ border-color:#2f8f62; }}
 .card.miss {{ border-color:#8f3a3a; }}
-.card h3 {{ margin:0 0 6px; font-size:16px; }}
-.meta {{ color:var(--dim); font-size:12px; margin-bottom:10px; }}
-.grid3 {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }}
-.grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px; }}
-.img img {{ width:100%; border-radius:8px; background:#000; display:block; }}
-.cap {{ font-size:10px; color:var(--dim); margin-bottom:4px; }}
-pre {{ background:#0b1016; color:#b7c4d2; padding:10px; border-radius:8px; overflow:auto; font-size:11px; max-height:220px; }}
+.card h3 {{ margin:0 0 6px; font-size:18px; }}
+.meta {{ color:var(--dim); font-size:13px; margin-bottom:12px; }}
+.shots {{ display:grid; grid-template-columns:1fr; gap:16px; }}
+@media (min-width:1100px) {{
+  .shots {{ grid-template-columns:1fr 1fr; }}
+}}
+.shot {{ margin:0; }}
+.shot figcaption {{ font-size:12px; color:var(--dim); margin:0 0 6px; letter-spacing:0.02em; }}
+.shot a {{ display:block; border-radius:10px; overflow:hidden; border:1px solid #2a3746; background:#000; }}
+.shot img {{
+  width:100%;
+  height:auto;
+  max-height:none;
+  display:block;
+  image-rendering:auto;
+  cursor:zoom-in;
+}}
+pre {{ background:#0b1016; color:#b7c4d2; padding:10px; border-radius:8px; overflow:auto; font-size:11px; max-height:220px; margin-top:14px; }}
 section {{ margin-top:28px; }}
-h2 {{ font-size:20px; margin:0 0 12px; }}
-@media (max-width:900px) {{ .grid3 {{ grid-template-columns:1fr; }} main,header,nav {{ padding-left:16px; padding-right:16px; }} }}
+h2 {{ font-size:22px; margin:0 0 12px; }}
+@media (max-width:900px) {{ main,header,nav {{ padding-left:16px; padding-right:16px; }} }}
 </style>
 </head>
 <body>

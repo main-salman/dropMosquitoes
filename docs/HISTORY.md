@@ -1364,3 +1364,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [OPS] Second Jetson 6h HTML review
 - **[OPS]** `./scripts/pull_jetson_review.sh 6` → `temp/jetson_review_20260729_041335/` (0 cal hits, 22 hunt captures, logs). Report: `index.html`.
+
+## 2026-07-29 — [UI] Larger Jetson review images for insect verification
+- **[OPERATOR]** Both HTML reports: thumbnails too small to see/verify insects.
+- **[FIX]** `build_jetson_review_html.py`: full-width (2-col ≥1100px) shots, no tiny grid; click opens native JPG in new tab; prefer sniper annotated/after frames first. Regenerated both `temp/jetson_review_*/index.html`.
