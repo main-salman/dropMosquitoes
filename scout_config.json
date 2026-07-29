@@ -1,6 +1,6 @@
 {
   "history": 500,
-  "threshold": 16,
-  "min_area": 500,
+  "threshold": 40,
+  "min_area": 2000,
   "detect_shadows": false
 }

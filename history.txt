@@ -106,3 +106,4 @@
 2026-07-29 | [DEPLOY] | Learning deadlock fix + hunt teach UI live (auto-reboot; cameras healthy)
 2026-07-29 | [UI] | Jetson review HTML omits calibration hits (hunt+logs only)
 2026-07-29 | [TROUBLESHOOT] | Insect ID overhaul: false YOLO + insects not on camera; staged plan in HISTORY
+2026-07-29 | [FIX] | Hunt step1: yolo_conf=0.75, opportunity_fire off, Scout tightened

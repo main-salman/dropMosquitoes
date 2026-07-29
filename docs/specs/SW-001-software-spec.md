@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.20  
+**Version:** 5.21  
 **Last Updated:** 2026-07-29  
 **Owner:** Salman
 
@@ -292,14 +292,15 @@ Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online bor
   UI + YOLO + hit-detect all see an upright image (`settings.sniper.rotate_180`).
 - **Scout→gimbal geometry:** track aim uses Scout FOV × `hunt.fov_scale` ×
   `hunt.pitch_sign` / `yaw_sign` + online **camera** boresight/mount bias.
-  Field defaults: `fov_scale=1.0`, Scout `threshold≈32`, `min_area≈1200`,
-  `dead_zone_frac≈0.22`, `min_speed_px_s≈55`, servo ~55°/s.
-  **Sniper verify:** `hunt.yolo_conf` (default **0.35**), optional center
+  Field defaults: `fov_scale=1.0`, Scout `threshold≈40`, `min_area≈2000`,
+  `dead_zone_frac≈0.25`, `min_speed_px_s≈80`, servo ~55°/s.
+  **Sniper verify:** `hunt.yolo_conf` (default **0.75**), optional center
   **ROI digital zoom** `hunt.roi_zoom` (default **2×**) so small insects fill
   more pixels without raising native capture resolution. `center_ok_frac`
-  (default **0.18**). If an insect is verified but not perfectly centered,
-  hunt **opportunity-fires** after refine attempts / ~1.2 s (and once more at
-  track end) so confirmed bugs are not dropped (ladybug miss mode).
+  (default **0.12**). Fire requires YOLO insect **near crosshair**.
+  `hunt.opportunity_fire` (default **false**) — when true, may fire after
+  refine / end-of-track even if not perfectly centered (disabled after field
+  false-positive flood from 0.35 conf + opportunity mode).
   **Nozzle calibration offsets** (`calibration.offset_*`) apply on **FIRE only**
   so camera pointing is not biased ~30° by nozzle-vs-lens cal. Hunt optical
   range is the Scout FOV cone (not the full mechanical cal sweep).

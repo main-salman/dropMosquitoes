@@ -1388,3 +1388,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[LOGS]** Report1 (~7h): 109 hunts, 100 `insect_detected`, only 1 fired (99 fire_failed); top classes caterpillar/ladybug at conf 0.35–0.91 (median ~0.55). Report2 (6h): 22 hunts, 12 insect claims mostly caterpillar ~0.36–0.51; several `HUNT_FIRE` with `no_insect|opportunity` / low-conf caterpillar.
 - **[ROOT]** Stacked failure: (1) insects not resolved on Sniper/Scout pixels → model invents classes on texture; (2) Scout MOG2 over-triggers foliage; (3) 2026-07-28 field fix lowered `yolo_conf` 0.80→0.35 + ROI×2 + opportunity-fire, flooding false positives; (4) verify model is generic Roboflow daylight insects, not night 850nm backyard fliers at 2–3 m.
 - **[PLAN]** See chat: stop false fire first → prove insect pixels (optics/IR) → retrain on real night captures → then hardware only if pixels still invisible.
+
+## 2026-07-29 — [FIX] Hunt Step 1: stop false-positive fire flood
+- **[FIX]** Defaults / gate: `yolo_conf=0.75`, `opportunity_fire=false`, Scout T=40 / min_area=2000 / dead_zone=0.25 / `min_speed_px_s=80`, `center_ok_frac=0.12`.
+- **[SPEC]** SW-001 §2.13 → v5.21.
+- **[DOCS]** Remaining overhaul steps 2–5: `temp/insect_id_overhaul_next_steps.html`.

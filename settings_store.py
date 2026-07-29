@@ -73,10 +73,11 @@ DEFAULTS: dict[str, Any] = {
     },
     "scout": {
         "history": 500,
-        "threshold": 32,       # outdoor: less leaf noise; allow flies (live-test had 40)
-        "min_area": 1200,      # flies at 1–3 m (was 500, then 2000 too strict)
+        # Step-1 anti-false-positive outdoor temper (leaves/shadows)
+        "threshold": 40,
+        "min_area": 2000,
         "detect_shadows": False,
-        "dead_zone_frac": 0.22,
+        "dead_zone_frac": 0.25,
     },
     "sniper": {
         "rotate_180": True,  # Physical upside-down mount on gimbal
@@ -88,13 +89,15 @@ DEFAULTS: dict[str, Any] = {
         # Amplify Scout FOV→gimbal mapping (1.0 = pure IMX219 FOV; >1 = snappier follow)
         "fov_scale": 1.0,  # tempered outdoor default (was 1.35)
         # Ignore nearly-static MOG2 blobs (px/s); flying insects usually faster
-        "min_speed_px_s": 55.0,
-        # Sniper YOLO: lower for first field success (flies/bees); was hard-coded 0.80
-        "yolo_conf": 0.35,
+        "min_speed_px_s": 80.0,
+        # Sniper YOLO: high gate — stop texture false positives (was 0.35 field trial)
+        "yolo_conf": 0.75,
         # Digital zoom on center ROI before YOLO (2× ≈ crop half-frame, upscale)
         "roi_zoom": 2.0,
         # How close to crosshair counts as "centered" (fraction of frame)
-        "center_ok_frac": 0.18,
+        "center_ok_frac": 0.12,
+        # Fire only when YOLO insect is centered (no off-center / end-track opportunity)
+        "opportunity_fire": False,
         # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
         # Align button + online boresight refine this while hunting.
         "sniper_mount_pitch_deg": 0.0,

@@ -217,9 +217,11 @@ class HuntController:
                     "pitch_sign": self._pitch_sign,
                     "yaw_sign": self._yaw_sign,
                     "fov_scale": getattr(self, "_fov_scale", 1.0),
-                    "yolo_conf": getattr(self, "_yolo_conf", 0.35),
+                    "min_speed_px_s": getattr(self, "_min_speed_px_s", 80.0),
+                    "yolo_conf": getattr(self, "_yolo_conf", 0.75),
                     "roi_zoom": getattr(self, "_roi_zoom", 2.0),
-                    "center_ok_frac": getattr(self.boresight, "center_ok_frac", 0.18),
+                    "center_ok_frac": getattr(self.boresight, "center_ok_frac", 0.12),
+                    "opportunity_fire": getattr(self, "_opportunity_fire", False),
                     "mount_pitch": self._mount_pitch,
                     "mount_yaw": self._mount_yaw,
                 },
@@ -242,14 +244,15 @@ class HuntController:
             self._yaw_sign = float(hunt.get("yaw_sign", 1.0)) or 1.0
             self._fov_scale = float(hunt.get("fov_scale", 1.0)) or 1.0
             self._min_speed_px_s = max(
-                0.0, float(hunt.get("min_speed_px_s", 55.0) or 0.0))
+                0.0, float(hunt.get("min_speed_px_s", 80.0) or 0.0))
             self._yolo_conf = max(
-                0.10, min(0.95, float(hunt.get("yolo_conf", 0.35) or 0.35)))
+                0.10, min(0.95, float(hunt.get("yolo_conf", 0.75) or 0.75)))
             self._roi_zoom = max(
                 1.0, min(4.0, float(hunt.get("roi_zoom", 2.0) or 2.0)))
             center_frac = max(
-                0.05, min(0.40, float(hunt.get("center_ok_frac", 0.18) or 0.18)))
+                0.05, min(0.40, float(hunt.get("center_ok_frac", 0.12) or 0.12)))
             self.boresight.center_ok_frac = center_frac
+            self._opportunity_fire = bool(hunt.get("opportunity_fire", False))
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -260,6 +263,7 @@ class HuntController:
                   f"min_speed={self._min_speed_px_s:.0f}px/s "
                   f"yolo_conf={self._yolo_conf:.2f} roi_zoom={self._roi_zoom:.1f} "
                   f"center_ok={center_frac:.2f} "
+                  f"opportunity_fire={self._opportunity_fire} "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
@@ -501,6 +505,7 @@ class HuntController:
 
             elapsed = time.monotonic() - t0
             centered = self.boresight.is_centered(center[0], center[1])
+            allow_opportunity = bool(getattr(self, "_opportunity_fire", False))
             # Closed-loop refine toward insect, but don't miss the shot window
             if (not centered and refine_count < MAX_CENTER_REFINES
                     and elapsed < OPPORTUNITY_FIRE_AFTER_SEC + 1.5):
@@ -516,15 +521,21 @@ class HuntController:
                 print(f"[Hunt] Track refine #{refine_count} Δp={err_p:.2f} Δy={err_y:.2f} "
                       f"bias={self.boresight.status()} ({detail})")
                 time.sleep(SETTLE_SEC)
-                # Opportunity: after enough time/refines, fire even if not perfect
-                if refine_count >= 2 and elapsed >= OPPORTUNITY_FIRE_AFTER_SEC:
+                # Optional: after enough time/refines, fire even if not perfect
+                if (allow_opportunity and refine_count >= 2
+                        and elapsed >= OPPORTUNITY_FIRE_AFTER_SEC):
                     pass  # fall through to fire below
                 else:
                     continue
-            elif not centered and elapsed < OPPORTUNITY_FIRE_AFTER_SEC:
-                continue
+            elif not centered:
+                if allow_opportunity and elapsed >= OPPORTUNITY_FIRE_AFTER_SEC:
+                    pass  # fall through
+                else:
+                    continue
 
-            # Verified insect — fire (centered or opportunity after refine)
+            # Verified insect — fire when centered (or opportunity if enabled)
+            if not centered and not allow_opportunity:
+                continue
             aim_pitch, aim_yaw, distance_m = self._aim_from_scout(
                 last_tx, last_ty, 0.0, 0.0, for_fire=True)
             # Final nudge toward last insect pixel so nozzle tracks the bug
@@ -550,8 +561,9 @@ class HuntController:
             )
             return
 
-        # End of track: if we saw an insect but never fired, one last opportunity shot
-        if saw_insect and last_center is not None:
+        # End of track: optional opportunity shot if insect was seen but never centered
+        if (getattr(self, "_opportunity_fire", False)
+                and saw_insect and last_center is not None):
             print(f"[Hunt] Opportunity fire at end of track ({last_detail})")
             err_p, err_y = self.boresight.pixel_error_to_deg(
                 last_center[0], last_center[1])
@@ -823,7 +835,7 @@ class HuntController:
         if self._insect_model is None:
             return False, "no_insect_model", [], None
 
-        conf_min = float(getattr(self, "_yolo_conf", 0.35) or 0.35)
+        conf_min = float(getattr(self, "_yolo_conf", 0.75) or 0.75)
         view, mapper = self._sniper_yolo_view(frame)
 
         try:
