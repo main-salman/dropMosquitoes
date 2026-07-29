@@ -1410,3 +1410,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[CODE]** `min_verify_frames=3` streak before fire; `sliced_infer` SAHI-lite tiles; Insect Train saves `crop.jpg` for offline classify.
 - **[SPEC]** SW-001 §2.13 → v5.23.
 - **[DOCS]** Expanded `temp/insect_id_overhaul_next_steps.html` with diffs, repo links, operator checklist.
+
+## 2026-07-29 — [DEPLOY] Streak + sliced infer live
+- **[DEPLOY]** Applied `min_verify_frames=3`, `sliced_infer=true` on Jetson; cameras healthy after reboot path.

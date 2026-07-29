@@ -111,3 +111,4 @@
 2026-07-29 | [FEATURE] | Insect Train GUI (dry-fire) + insect ID RL suppress policy
 2026-07-29 | [DEPLOY] | Insect Train tab + insect ID RL live on Jetson
 2026-07-29 | [RESEARCH] | Peer insect projects → streak+sliced infer; next-steps HTML updated with repos
+2026-07-29 | [DEPLOY] | min_verify_frames=3 + sliced_infer live on Jetson
