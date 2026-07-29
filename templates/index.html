@@ -452,6 +452,7 @@
           <button class="btn btn-blue" onclick="trainCapture()">📷 Capture view + ID</button>
           <button class="btn btn-amber" onclick="trainDryShot()">🎯 Dry aim + ID (no water)</button>
           <button class="btn btn-sm" onclick="trainRefreshGallery()">🔄 Refresh gallery</button>
+          <button class="btn btn-sm" onclick="trainExportAL()" title="Sort crops into insect_train/export/{class}/ for Roboflow/Colab">📦 Export for retrain</button>
         </div>
         <div class="cal-result" id="train-log" style="margin-top:10px">Ready — water will not fire.</div>
       </div>
@@ -1267,6 +1268,21 @@ async function trainAim(ev,el){
     if(typeof aim==='function'){aim(ev,el,1280,720);return}
   }catch(e){}
   showToast('Train','Use Control tab WASD/click aim, then return here for dry ID');
+}
+async function trainExportAL(){
+  $('train-log').textContent='Exporting crops for active learning…';
+  try{
+    const r=await fetch('/api/train/export',{method:'POST'});
+    const d=await r.json();
+    const counts=d.counts||{};
+    const summary=Object.keys(counts).length
+      ? Object.entries(counts).map(([k,v])=>`${k}:${v}`).join(' · ')
+      : 'no samples';
+    $('train-log').textContent=d.ok
+      ? `Export OK → ${d.export_dir||'insect_train/export'} · ${summary}`
+      : (`Export failed: `+(d.error||r.status));
+    showToast('Train export', d.ok?summary:'failed');
+  }catch(e){$('train-log').textContent=e.message}
 }
 async function trainCapture(){
   $('train-log').textContent='Capturing (no water)…';

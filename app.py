@@ -1623,24 +1623,7 @@ def api_train_dry_shot():
         scout_bgr=result.get("scout_bgr"),
         meta=meta,
     )
-    # Insect Detect lesson: also save a tight crop for later offline classification
-    try:
-        if sid and top and result.get("sniper_raw") is not None:
-            import cv2
-            x1, y1, x2, y2 = top.get("bbox") or (0, 0, 0, 0)
-            raw = result["sniper_raw"]
-            h, w = raw.shape[:2]
-            pad = 24
-            x1, y1 = max(0, int(x1) - pad), max(0, int(y1) - pad)
-            x2, y2 = min(w, int(x2) + pad), min(h, int(y2) + pad)
-            crop = raw[y1:y2, x1:x2]
-            if crop.size:
-                folder = os.path.join(APP_DIR, "insect_train", sid)
-                okc, bufc = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 92])
-                if okc:
-                    open(os.path.join(folder, "crop.jpg"), "wb").write(bufc.tobytes())
-    except Exception as e:
-        print(f"[train] crop save skip: {e}")
+    _train_save_crop(sid, top, result.get("sniper_raw"))
     try:
         log_event("INSECT_TRAIN_DRY", id=sid, verify=meta.get("verify"),
                   lighting=lighting, distance_m=distance_m)
@@ -1661,6 +1644,7 @@ def api_train_dry_shot():
         "urls": {
             "sniper": f"/api/train/samples/{sid}/sniper.jpg" if sid else None,
             "scout": f"/api/train/samples/{sid}/scout.jpg" if sid else None,
+            "crop": f"/api/train/samples/{sid}/crop.jpg" if sid else None,
         },
         "learning": learning_store.status().get("insect"),
         "hunt_was_paused": was_hunting,
@@ -1708,6 +1692,7 @@ def api_train_capture():
         scout_bgr=result.get("scout_bgr"),
         meta=meta,
     )
+    _train_save_crop(sid, top, result.get("sniper_raw"))
     return jsonify({
         "ok": True, "water_fired": False, "id": sid,
         "verify": meta.get("verify"), "verified": meta.get("verified"),
@@ -1715,8 +1700,41 @@ def api_train_capture():
         "urls": {
             "sniper": f"/api/train/samples/{sid}/sniper.jpg" if sid else None,
             "scout": f"/api/train/samples/{sid}/scout.jpg" if sid else None,
+            "crop": f"/api/train/samples/{sid}/crop.jpg" if sid else None,
         },
     })
+
+
+def _train_save_crop(sid, top, sniper_raw):
+    """Insect Detect–style HQ crop from bbox (SW-001 §2.16)."""
+    if not sid or not top or sniper_raw is None:
+        return
+    try:
+        import cv2
+        x1, y1, x2, y2 = top.get("bbox") or (0, 0, 0, 0)
+        h, w = sniper_raw.shape[:2]
+        pad = 24
+        x1, y1 = max(0, int(x1) - pad), max(0, int(y1) - pad)
+        x2, y2 = min(w, int(x2) + pad), min(h, int(y2) + pad)
+        crop = sniper_raw[y1:y2, x1:x2]
+        if crop.size:
+            folder = os.path.join(APP_DIR, "insect_train", sid)
+            okc, bufc = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 92])
+            if okc:
+                open(os.path.join(folder, "crop.jpg"), "wb").write(bufc.tobytes())
+    except Exception as e:
+        print(f"[train] crop save skip: {e}")
+
+
+@app.route('/api/train/export', methods=['POST'])
+def api_train_export():
+    """Sort insect_train crops into export/{class}/ for active-learning retrain."""
+    result = insect_train_store.export_active_learning()
+    try:
+        log_event("INSECT_TRAIN_EXPORT", counts=result.get("counts"))
+    except Exception:
+        pass
+    return jsonify(result)
 
 
 @app.route('/api/train/feedback', methods=['POST'])

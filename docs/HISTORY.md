@@ -1413,3 +1413,13 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [DEPLOY] Streak + sliced infer live
 - **[DEPLOY]** Applied `min_verify_frames=3`, `sliced_infer=true` on Jetson; cameras healthy after reboot path.
+
+## 2026-07-29 — [RESEARCH] Insect Detect deep review → software + hardware call
+- **[RESEARCH]** Full pass of https://maxsitt.github.io/insect-detect-docs/ (software usage, LQ∥HQ detection, classification, 2024 BOM: OAK-1 + Pi Zero + flower platform).
+- **[CODE]** Binary insect fire mode (`binary_insect_mode`), `yolo_imgsz=320`, bbox area frac gates; prefer `insect.engine`/`insect.pt`; `insect_train/metadata.csv` + `POST /api/train/export` + GUI Export button; crop on capture+dry-shot.
+- **[SPEC]** SW-001 §2.16 + §7.2 updated for Insect Detect–aligned train/detect path.
+- **[DOCS]** Rewrote `temp/insect_id_overhaul_next_steps.html` with software gap table + buy/don’t-buy hardware (narrow Sniper lens YES; OAK kit NO).
+- **[HARDWARE]** Operator: buy narrower Sniper lens + DIY training backdrop; do not buy OAK-1/Pi Zero stack.
+
+## 2026-07-29 — [DEPLOY] Insect Detect software alignment live
+- **[DEPLOY]** Deploy binary/imgsz/bbox gates + train export APIs to Jetson via `./run-ai.sh --restart`.

@@ -112,3 +112,7 @@
 2026-07-29 | [DEPLOY] | Insect Train tab + insect ID RL live on Jetson
 2026-07-29 | [RESEARCH] | Peer insect projects → streak+sliced infer; next-steps HTML updated with repos
 2026-07-29 | [DEPLOY] | min_verify_frames=3 + sliced_infer live on Jetson
+2026-07-29 | [RESEARCH] | Insect Detect deep review → binary detect + metadata/export; buy narrow lens, not OAK
+2026-07-29 | [CODE] | binary_insect_mode, yolo_imgsz=320, bbox frac, metadata.csv, /api/train/export
+2026-07-29 | [SPEC] | SW-001 §2.16/§7.2 Insect Detect–aligned path
+2026-07-29 | [DEPLOY] | Insect Detect software alignment to Jetson

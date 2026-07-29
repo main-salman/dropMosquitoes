@@ -19,6 +19,7 @@ from timeutil import stamp_file, stamp_iso
 
 DIR_NAME = "insect_train"
 MAX_SAMPLES = 200
+META_CSV = "metadata.csv"
 INSECT_CLASS_CHOICES = [
     "mosquito", "fly", "bee", "wasp", "moth", "butterfly", "ladybug",
     "beetle", "ant", "spider", "dragonfly", "grasshopper", "caterpillar",
@@ -97,6 +98,7 @@ class InsectTrainStore:
         with open(os.path.join(folder, "meta.json"), "w") as f:
             json.dump(payload, f, indent=2, default=str)
             f.write("\n")
+        self._append_metadata_csv(payload)
         with self._lock:
             ids = self._load_index()
             if sid in ids:
@@ -105,6 +107,86 @@ class InsectTrainStore:
             ids = self._prune(ids)
             self._save_index(ids)
         return sid
+
+    def _append_metadata_csv(self, meta: dict) -> None:
+        """Insect Detect–style rolling metadata for active learning / offline classify."""
+        import csv
+        path = os.path.join(self.root, META_CSV)
+        fields = [
+            "id", "timestamp", "lighting", "distance_m", "label", "confidence",
+            "predicted_class", "true_class", "verified", "verify",
+            "x_min", "y_min", "x_max", "y_max", "file_path", "crop_path",
+            "water_fired", "note",
+        ]
+        bbox = None
+        boxes = meta.get("boxes") or []
+        if boxes:
+            top = max(boxes, key=lambda b: float(b.get("confidence") or 0))
+            bbox = top.get("bbox")
+        row = {
+            "id": meta.get("id"),
+            "timestamp": meta.get("timestamp"),
+            "lighting": meta.get("lighting"),
+            "distance_m": meta.get("distance_m"),
+            "label": meta.get("predicted_class") or "insect",
+            "confidence": meta.get("predicted_confidence"),
+            "predicted_class": meta.get("predicted_class"),
+            "true_class": meta.get("true_class"),
+            "verified": meta.get("verified"),
+            "verify": meta.get("verify"),
+            "x_min": bbox[0] if bbox else "",
+            "y_min": bbox[1] if bbox else "",
+            "x_max": bbox[2] if bbox else "",
+            "y_max": bbox[3] if bbox else "",
+            "file_path": f"{meta.get('id')}/sniper.jpg",
+            "crop_path": f"{meta.get('id')}/crop.jpg",
+            "water_fired": False,
+            "note": meta.get("note") or "",
+        }
+        write_header = not os.path.isfile(path)
+        with open(path, "a", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=fields)
+            if write_header:
+                w.writeheader()
+            w.writerow(row)
+
+    def export_active_learning(self) -> dict:
+        """
+        Sort crops into export/{class}/ for Roboflow/Colab retrain
+        (Insect Detect active-learning loop).
+        """
+        import shutil
+        export_root = os.path.join(self.root, "export")
+        os.makedirs(export_root, exist_ok=True)
+        counts: Dict[str, int] = {}
+        with self._lock:
+            ids = self._load_index()
+        for sid in ids:
+            meta_path = os.path.join(self.root, sid, "meta.json")
+            crop = os.path.join(self.root, sid, "crop.jpg")
+            sniper = os.path.join(self.root, sid, "sniper.jpg")
+            src = crop if os.path.isfile(crop) else sniper
+            if not os.path.isfile(src):
+                continue
+            meta = {}
+            if os.path.isfile(meta_path):
+                try:
+                    meta = json.load(open(meta_path, "r"))
+                except Exception:
+                    meta = {}
+            cls = (meta.get("true_class") or meta.get("predicted_class") or "unlabeled")
+            cls = str(cls).lower().strip() or "unlabeled"
+            if meta.get("insect_present") is False or cls in ("none",):
+                cls = "empty"
+            dest_dir = os.path.join(export_root, cls)
+            os.makedirs(dest_dir, exist_ok=True)
+            dest = os.path.join(dest_dir, f"{sid}.jpg")
+            try:
+                shutil.copy2(src, dest)
+                counts[cls] = counts.get(cls, 0) + 1
+            except OSError:
+                pass
+        return {"ok": True, "export_dir": export_root, "counts": counts}
 
     def update_meta(self, sid: str, patch: Dict[str, Any]) -> Optional[dict]:
         if "/" in sid or "\\" in sid or ".." in sid:
@@ -138,12 +220,13 @@ class InsectTrainStore:
             entry["urls"] = {
                 "sniper": f"/api/train/samples/{sid}/sniper.jpg",
                 "scout": f"/api/train/samples/{sid}/scout.jpg",
+                "crop": f"/api/train/samples/{sid}/crop.jpg",
             }
             out.append(entry)
         return out
 
     def file_path(self, sid: str, kind: str) -> Optional[str]:
-        if kind not in ("sniper", "scout"):
+        if kind not in ("sniper", "scout", "crop"):
             return None
         if "/" in sid or "\\" in sid or ".." in sid:
             return None

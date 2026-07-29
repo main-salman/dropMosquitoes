@@ -123,9 +123,14 @@ class HuntController:
         except ImportError:
             print("[Hunt] ultralytics missing — YOLO verify disabled")
             return
-        for name in ("best.engine", "best.pt",
-                     os.path.join("models", "trained", "best.engine"),
-                     os.path.join("models", "trained", "best.pt")):
+        for name in (
+            "insect.engine", "insect.pt",  # preferred: 1-class Insect Detect style
+            "best.engine", "best.pt",
+            os.path.join("models", "insect.engine"),
+            os.path.join("models", "insect.pt"),
+            os.path.join("models", "trained", "best.engine"),
+            os.path.join("models", "trained", "best.pt"),
+        ):
             path = name if os.path.isabs(name) else os.path.join(root, name)
             if not os.path.exists(path):
                 continue
@@ -226,6 +231,10 @@ class HuntController:
                     "opportunity_fire": getattr(self, "_opportunity_fire", False),
                     "min_verify_frames": getattr(self, "_min_verify_frames", 3),
                     "sliced_infer": getattr(self, "_sliced_infer", True),
+                    "binary_insect_mode": getattr(self, "_binary_insect_mode", True),
+                    "yolo_imgsz": getattr(self, "_yolo_imgsz", 320),
+                    "max_bbox_area_frac": getattr(self, "_max_bbox_area_frac", 0.12),
+                    "min_bbox_area_frac": getattr(self, "_min_bbox_area_frac", 0.00008),
                     "mount_pitch": self._mount_pitch,
                     "mount_yaw": self._mount_yaw,
                 },
@@ -260,6 +269,13 @@ class HuntController:
             self._min_verify_frames = max(
                 1, min(10, int(hunt.get("min_verify_frames", 3) or 3)))
             self._sliced_infer = bool(hunt.get("sliced_infer", True))
+            self._binary_insect_mode = bool(hunt.get("binary_insect_mode", True))
+            self._yolo_imgsz = max(
+                160, min(1280, int(hunt.get("yolo_imgsz", 320) or 320)))
+            self._max_bbox_area_frac = max(
+                0.01, min(0.5, float(hunt.get("max_bbox_area_frac", 0.12) or 0.12)))
+            self._min_bbox_area_frac = max(
+                0.0, min(0.05, float(hunt.get("min_bbox_area_frac", 0.00008) or 0.0)))
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -273,6 +289,8 @@ class HuntController:
                   f"opportunity_fire={self._opportunity_fire} "
                   f"min_verify={self._min_verify_frames} "
                   f"sliced={self._sliced_infer} "
+                  f"binary={self._binary_insect_mode} "
+                  f"imgsz={self._yolo_imgsz} "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
@@ -886,9 +904,15 @@ class HuntController:
             "scout_bgr": scout,
         }
 
-    def _yolo_collect(self, view, mapper, conf_floor, conf_min, suppress):
+    def _yolo_collect(self, view, mapper, conf_floor, conf_min, suppress, frame_wh):
         """Run YOLO on one view; map boxes to full-frame coords."""
-        results = self._insect_model(view, conf=conf_floor, verbose=False)
+        imgsz = int(getattr(self, "_yolo_imgsz", 320) or 320)
+        results = self._insect_model(view, conf=conf_floor, imgsz=imgsz, verbose=False)
+        fw, fh = frame_wh
+        frame_area = max(1.0, float(fw) * float(fh))
+        max_frac = float(getattr(self, "_max_bbox_area_frac", 0.12) or 0.12)
+        min_frac = float(getattr(self, "_min_bbox_area_frac", 0.0) or 0.0)
+        binary = bool(getattr(self, "_binary_insect_mode", True))
         boxes = []
         best = None
         near = None
@@ -898,25 +922,34 @@ class HuntController:
             for box in r.boxes:
                 cls_id = int(box.cls[0])
                 conf = float(box.conf[0])
-                name = str(r.names.get(cls_id, "")).lower()
+                name = str(r.names.get(cls_id, "")).lower().strip()
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cx_v, cy_v = (x1 + x2) // 2, (y1 + y2) // 2
                 cx, cy = mapper(cx_v, cy_v)
                 fx1, fy1 = mapper(x1, y1)
                 fx2, fy2 = mapper(x2, y2)
+                area_frac = abs(fx2 - fx1) * abs(fy2 - fy1) / frame_area
+                insectish = (name in INSECT_CLASSES) or (name in ("insect", "bug"))
                 boxes.append({
                     "bbox": (fx1, fy1, fx2, fy2),
                     "label": f"{name} {conf:.0%}",
                     "class": name,
                     "confidence": conf,
+                    "area_frac": round(area_frac, 5),
                 })
-                if name in INSECT_CLASSES:
-                    gate = conf_min + 0.35 * float(suppress.get(name, 0.0) or 0.0)
-                    if near is None or conf > near[0]:
-                        near = (conf, name, cx, cy)
-                    if conf >= gate:
-                        if best is None or conf > best[0]:
-                            best = (conf, name, cx, cy)
+                if not insectish:
+                    continue
+                # Insect Detect: insects are small on frame — giant boxes are usually foliage/FP
+                if area_frac > max_frac or area_frac < min_frac:
+                    continue
+                gate = conf_min + 0.35 * float(suppress.get(name, 0.0) or 0.0)
+                # In binary mode, also apply suppress for the raw class but fire as "insect"
+                report = "insect" if binary else name
+                if near is None or conf > near[0]:
+                    near = (conf, report, cx, cy, name)
+                if conf >= gate:
+                    if best is None or conf > best[0]:
+                        best = (conf, report, cx, cy, name)
         return boxes, best, near
 
     def _sliced_views(self, frame):
@@ -967,21 +1000,27 @@ class HuntController:
             suppress = {}
 
         try:
+            h, w = frame.shape[:2]
             boxes = []
             best = None
             near = None
             for view, mapper in self._sliced_views(frame):
                 b, best_i, near_i = self._yolo_collect(
-                    view, mapper, conf_floor, conf_min, suppress)
+                    view, mapper, conf_floor, conf_min, suppress, (w, h))
                 boxes.extend(b)
                 if best_i and (best is None or best_i[0] > best[0]):
                     best = best_i
                 if near_i and (near is None or near_i[0] > near[0]):
                     near = near_i
             if best:
-                return True, f"{best[1]}:{best[0]:.2f}", boxes, (best[2], best[3])
+                conf, report, cx, cy, raw = best
+                detail = f"{report}:{conf:.2f}"
+                if report == "insect" and raw and raw != "insect":
+                    detail += f"|as={raw}"
+                return True, detail, boxes, (cx, cy)
             if near is not None:
-                return False, f"no_insect:best={near[1]}:{near[0]:.2f}", boxes, None
+                conf, report, cx, cy, raw = near
+                return False, f"no_insect:best={report}:{conf:.2f}", boxes, None
             return False, "no_insect", boxes, None
         except Exception as e:
             return False, f"insect_err:{e}", [], None

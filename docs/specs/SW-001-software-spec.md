@@ -483,9 +483,18 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
   indoor use with live insects.
 - Operator teaches: insect present?, YOLO class correct?, true class, click
   insect location on Sniper frame.
+- Insect Detect–aligned data path:
+  - HQ `crop.jpg` from bbox (pad) for offline classification
+  - rolling `insect_train/metadata.csv` (timestamp, conf, bbox, paths)
+  - `POST /api/train/export` sorts crops into `insect_train/export/{class}/`
+    for Roboflow/Colab active learning
+- Hunt verify (related): `binary_insect_mode` (default true) fires on insect
+  presence, not species name; `yolo_imgsz=320`; bbox area frac gates reject
+  foliage-sized FPs; prefers `insect.engine`/`insect.pt` when present.
 - APIs: `GET /api/train/status`, `POST /api/train/capture`,
   `POST /api/train/dry-shot`, `POST /api/train/feedback`,
-  `GET /api/train/samples`, `GET /api/train/samples/<id>/<file>`.
+  `POST /api/train/export`, `GET /api/train/samples`,
+  `GET /api/train/samples/<id>/<file>` (`sniper|scout|crop`).
 
 ## 7. Training & Tuning Pipeline
 
@@ -499,9 +508,15 @@ Online operator reinforcement (SW-001 §2.15–2.16) runs on the Jetson dashboar
 
 ### 7.2 Sniper Training (YOLOv8 — GPU-Intensive)
 - Tool: `tools/sentry_control_center/app.py` Tab 2
-- Provide labeled dataset (`data.yaml` from Roboflow Universe `tiger-emltm/insects-9yf6s` v2)
-- Sourced and managed via `tools/sentry_control_center/download_dataset.py` using `ROBOFLOW_API_KEY`
-- Train model → collect `best.pt`
-- Copy `best.pt` to Jetson → convert to TensorRT `.engine` (see `gemini.md` §3)
+- **Preferred (Insect Detect pattern):** train a **1-class `insect`** detector on
+  real NoIR/IR crops from `insect_train/export/` (and Zenodo Insect Detect
+  detection dataset as optional seed). Export `insect.pt` → Jetson TensorRT
+  `insect.engine`. Hunt `binary_insect_mode` uses this for fire decisions.
+- Legacy multi-class Roboflow insects (`best.pt`) remains a fallback for
+  labeling UI only — do not trust species names for outdoor fire until false
+  positives are rare.
+- Species/group classification (EfficientNet-style on HQ crops) is offline on
+  the Windows workstation after detect+crop; not required to shoot water.
+- Copy weights to Jetson → convert to TensorRT `.engine` (see `gemini.md` §3)
 
 > **Important Rule:** NEVER create dummy data (dummy videos, generated images, fake datasets, etc.) for tuning or training. If sample data is not provided, prompt the user for real data.

@@ -102,6 +102,13 @@ DEFAULTS: dict[str, Any] = {
         "min_verify_frames": 3,
         # SAHI-style 2×2 tiled infer for tiny insects (YOLito / Ultralytics SAHI lesson)
         "sliced_infer": True,
+        # Insect Detect lesson: fire on generic "insect" presence, not species name
+        "binary_insect_mode": True,
+        # LQ detect size (Insect Detect uses ~320 for speed/tracker); HQ crop stays full frame
+        "yolo_imgsz": 320,
+        # Reject foliage-sized false boxes (fraction of full Sniper frame area)
+        "max_bbox_area_frac": 0.12,
+        "min_bbox_area_frac": 0.00008,
         # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
         # Align button + online boresight refine this while hunting.
         "sniper_mount_pitch_deg": 0.0,
