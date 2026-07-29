@@ -224,6 +224,8 @@ class HuntController:
                     "roi_zoom": getattr(self, "_roi_zoom", 2.0),
                     "center_ok_frac": getattr(self.boresight, "center_ok_frac", 0.12),
                     "opportunity_fire": getattr(self, "_opportunity_fire", False),
+                    "min_verify_frames": getattr(self, "_min_verify_frames", 3),
+                    "sliced_infer": getattr(self, "_sliced_infer", True),
                     "mount_pitch": self._mount_pitch,
                     "mount_yaw": self._mount_yaw,
                 },
@@ -255,6 +257,9 @@ class HuntController:
                 0.05, min(0.40, float(hunt.get("center_ok_frac", 0.12) or 0.12)))
             self.boresight.center_ok_frac = center_frac
             self._opportunity_fire = bool(hunt.get("opportunity_fire", False))
+            self._min_verify_frames = max(
+                1, min(10, int(hunt.get("min_verify_frames", 3) or 3)))
+            self._sliced_infer = bool(hunt.get("sliced_infer", True))
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -266,6 +271,8 @@ class HuntController:
                   f"yolo_conf={self._yolo_conf:.2f} roi_zoom={self._roi_zoom:.1f} "
                   f"center_ok={center_frac:.2f} "
                   f"opportunity_fire={self._opportunity_fire} "
+                  f"min_verify={self._min_verify_frames} "
+                  f"sliced={self._sliced_infer} "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
@@ -472,6 +479,7 @@ class HuntController:
         saw_insect = False
         last_center = None
         refine_count = 0
+        verify_streak = 0  # consecutive YOLO confirms (research: multi-step kill / tracking)
 
         while time.monotonic() - t0 < TRACK_MAX_SEC:
             with self._lock:
@@ -500,8 +508,12 @@ class HuntController:
             if verified and center is not None:
                 saw_insect = True
                 last_center = center
+                verify_streak += 1
+            else:
+                verify_streak = 0
 
-            if not verified or center is None:
+            need = int(getattr(self, "_min_verify_frames", 3) or 3)
+            if not verified or center is None or verify_streak < need:
                 time.sleep(0.03)
                 continue
 
@@ -521,7 +533,7 @@ class HuntController:
                 )
                 refine_count += 1
                 print(f"[Hunt] Track refine #{refine_count} Δp={err_p:.2f} Δy={err_y:.2f} "
-                      f"bias={self.boresight.status()} ({detail})")
+                      f"bias={self.boresight.status()} ({detail}) streak={verify_streak}")
                 time.sleep(SETTLE_SEC)
                 # Optional: after enough time/refines, fire even if not perfect
                 if (allow_opportunity and refine_count >= 2
@@ -558,7 +570,7 @@ class HuntController:
                 aim_pitch=aim_pitch,
                 aim_yaw=aim_yaw,
                 distance_m=distance_m,
-                detail=detail + ("" if centered else "|opportunity"),
+                detail=detail + f"|streak{verify_streak}" + ("" if centered else "|opportunity"),
                 boxes=boxes,
             )
             return
@@ -874,6 +886,68 @@ class HuntController:
             "scout_bgr": scout,
         }
 
+    def _yolo_collect(self, view, mapper, conf_floor, conf_min, suppress):
+        """Run YOLO on one view; map boxes to full-frame coords."""
+        results = self._insect_model(view, conf=conf_floor, verbose=False)
+        boxes = []
+        best = None
+        near = None
+        for r in results:
+            if r.boxes is None:
+                continue
+            for box in r.boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                name = str(r.names.get(cls_id, "")).lower()
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cx_v, cy_v = (x1 + x2) // 2, (y1 + y2) // 2
+                cx, cy = mapper(cx_v, cy_v)
+                fx1, fy1 = mapper(x1, y1)
+                fx2, fy2 = mapper(x2, y2)
+                boxes.append({
+                    "bbox": (fx1, fy1, fx2, fy2),
+                    "label": f"{name} {conf:.0%}",
+                    "class": name,
+                    "confidence": conf,
+                })
+                if name in INSECT_CLASSES:
+                    gate = conf_min + 0.35 * float(suppress.get(name, 0.0) or 0.0)
+                    if near is None or conf > near[0]:
+                        near = (conf, name, cx, cy)
+                    if conf >= gate:
+                        if best is None or conf > best[0]:
+                            best = (conf, name, cx, cy)
+        return boxes, best, near
+
+    def _sliced_views(self, frame):
+        """
+        SAHI-lite 2×2 overlapped tiles + optional center ROI (YOLito / Ultralytics SAHI).
+        Yields (view_bgr, mapper_fn) in full-frame coordinates.
+        """
+        import cv2
+        h, w = frame.shape[:2]
+        # Center ROI (existing path)
+        yield self._sniper_yolo_view(frame)
+        if not getattr(self, "_sliced_infer", True):
+            return
+        # 2×2 tiles with ~20% overlap
+        tw, th = max(64, int(w * 0.55)), max(64, int(h * 0.55))
+        xs = [0, max(0, w - tw)]
+        ys = [0, max(0, h - th)]
+        for y0 in ys:
+            for x0 in xs:
+                crop = frame[y0:y0 + th, x0:x0 + tw]
+                if crop.size == 0:
+                    continue
+                view = cv2.resize(crop, (w, h), interpolation=cv2.INTER_LINEAR)
+
+                def mapper(vx, vy, _x0=x0, _y0=y0, _tw=tw, _th=th, _w=w, _h=h):
+                    fx = _x0 + (float(vx) / max(_w, 1)) * _tw
+                    fy = _y0 + (float(vy) / max(_h, 1)) * _th
+                    return int(fx), int(fy)
+
+                yield view, mapper
+
     def _verify_sniper(self):
         """Return (ok, detail, boxes, center_xy|None). YOLO insects required."""
         frame = self._sniper_cam.get_frame()
@@ -884,47 +958,26 @@ class HuntController:
             return False, "no_insect_model", [], None
 
         conf_min = float(getattr(self, "_yolo_conf", 0.75) or 0.75)
+        conf_floor = max(0.10, conf_min * 0.5)
         suppress = {}
         try:
             if self._learning is not None:
                 suppress = (self._learning.get_insect_policy() or {}).get("suppress") or {}
         except Exception:
             suppress = {}
-        view, mapper = self._sniper_yolo_view(frame)
 
         try:
-            # Run slightly below gate so we can log near-misses in detail
-            results = self._insect_model(view, conf=max(0.10, conf_min * 0.5),
-                                         verbose=False)
             boxes = []
-            best = None  # (conf, name, cx, cy)
+            best = None
             near = None
-            for r in results:
-                if r.boxes is None:
-                    continue
-                for box in r.boxes:
-                    cls_id = int(box.cls[0])
-                    conf = float(box.conf[0])
-                    name = str(r.names.get(cls_id, "")).lower()
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    cx_v, cy_v = (x1 + x2) // 2, (y1 + y2) // 2
-                    cx, cy = mapper(cx_v, cy_v)
-                    fx1, fy1 = mapper(x1, y1)
-                    fx2, fy2 = mapper(x2, y2)
-                    boxes.append({
-                        "bbox": (fx1, fy1, fx2, fy2),
-                        "label": f"{name} {conf:.0%}",
-                        "class": name,
-                        "confidence": conf,
-                    })
-                    if name in INSECT_CLASSES:
-                        # Learned suppress raises the bar for repeatedly-wrong classes
-                        gate = conf_min + 0.35 * float(suppress.get(name, 0.0) or 0.0)
-                        if near is None or conf > near[0]:
-                            near = (conf, name, cx, cy)
-                        if conf >= gate:
-                            if best is None or conf > best[0]:
-                                best = (conf, name, cx, cy)
+            for view, mapper in self._sliced_views(frame):
+                b, best_i, near_i = self._yolo_collect(
+                    view, mapper, conf_floor, conf_min, suppress)
+                boxes.extend(b)
+                if best_i and (best is None or best_i[0] > best[0]):
+                    best = best_i
+                if near_i and (near is None or near_i[0] > near[0]):
+                    near = near_i
             if best:
                 return True, f"{best[1]}:{best[0]:.2f}", boxes, (best[2], best[3])
             if near is not None:

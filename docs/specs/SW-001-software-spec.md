@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.22  
+**Version:** 5.23  
 **Last Updated:** 2026-07-29  
 **Owner:** Salman
 
@@ -301,6 +301,10 @@ Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online bor
   `hunt.opportunity_fire` (default **false**) — when true, may fire after
   refine / end-of-track even if not perfectly centered (disabled after field
   false-positive flood from 0.35 conf + opportunity mode).
+  **`min_verify_frames`** (default **3**): require consecutive YOLO confirms
+  before fire (Insect Detect / fairtrack persistence lesson).
+  **`sliced_infer`** (default **true**): SAHI-lite 2×2 overlapped tiles + center
+  ROI for tiny insects (YOLito / Ultralytics SAHI).
   **Nozzle calibration offsets** (`calibration.offset_*`) apply on **FIRE only**
   so camera pointing is not biased ~30° by nozzle-vs-lens cal. Hunt optical
   range is the Scout FOV cone (not the full mechanical cal sweep).

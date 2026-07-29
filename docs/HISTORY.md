@@ -1404,3 +1404,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [DEPLOY] Insect Train dry-fire + ID RL live
 - **[DEPLOY]** Soft restart → CSI reboot path; `/api/train/status` + dry-shot smoke OK (`water_fired=false`).
+
+## 2026-07-29 — [RESEARCH] Peer insect-ID projects → platform + next-steps HTML
+- **[RESEARCH]** Compared YOLito (SAHI), Insect Detect (1-class+crop classify), autonomous-mosquito-turret (narrow FOV/global shutter), Laser_control, fairtrack/Insect-Track (ByteTrack), Photonic Fence (IR silhouette).
+- **[CODE]** `min_verify_frames=3` streak before fire; `sliced_infer` SAHI-lite tiles; Insect Train saves `crop.jpg` for offline classify.
+- **[SPEC]** SW-001 §2.13 → v5.23.
+- **[DOCS]** Expanded `temp/insect_id_overhaul_next_steps.html` with diffs, repo links, operator checklist.

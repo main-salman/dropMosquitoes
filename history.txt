@@ -110,3 +110,4 @@
 2026-07-29 | [DEPLOY] | Hunt step1 gates live on Jetson (yolo 0.75, no opportunity fire)
 2026-07-29 | [FEATURE] | Insect Train GUI (dry-fire) + insect ID RL suppress policy
 2026-07-29 | [DEPLOY] | Insect Train tab + insect ID RL live on Jetson
+2026-07-29 | [RESEARCH] | Peer insect projects → streak+sliced infer; next-steps HTML updated with repos

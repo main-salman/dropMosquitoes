@@ -1623,6 +1623,24 @@ def api_train_dry_shot():
         scout_bgr=result.get("scout_bgr"),
         meta=meta,
     )
+    # Insect Detect lesson: also save a tight crop for later offline classification
+    try:
+        if sid and top and result.get("sniper_raw") is not None:
+            import cv2
+            x1, y1, x2, y2 = top.get("bbox") or (0, 0, 0, 0)
+            raw = result["sniper_raw"]
+            h, w = raw.shape[:2]
+            pad = 24
+            x1, y1 = max(0, int(x1) - pad), max(0, int(y1) - pad)
+            x2, y2 = min(w, int(x2) + pad), min(h, int(y2) + pad)
+            crop = raw[y1:y2, x1:x2]
+            if crop.size:
+                folder = os.path.join(APP_DIR, "insect_train", sid)
+                okc, bufc = cv2.imencode(".jpg", crop, [cv2.IMWRITE_JPEG_QUALITY, 92])
+                if okc:
+                    open(os.path.join(folder, "crop.jpg"), "wb").write(bufc.tobytes())
+    except Exception as e:
+        print(f"[train] crop save skip: {e}")
     try:
         log_event("INSECT_TRAIN_DRY", id=sid, verify=meta.get("verify"),
                   lighting=lighting, distance_m=distance_m)

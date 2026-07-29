@@ -98,6 +98,10 @@ DEFAULTS: dict[str, Any] = {
         "center_ok_frac": 0.12,
         # Fire only when YOLO insect is centered (no off-center / end-track opportunity)
         "opportunity_fire": False,
+        # Require N consecutive YOLO verifies before fire (Insect Detect / turret multi-confirm)
+        "min_verify_frames": 3,
+        # SAHI-style 2×2 tiled infer for tiny insects (YOLito / Ultralytics SAHI lesson)
+        "sliced_infer": True,
         # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
         # Align button + online boresight refine this while hunting.
         "sniper_mount_pitch_deg": 0.0,
