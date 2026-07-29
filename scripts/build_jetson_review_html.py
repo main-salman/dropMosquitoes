@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # Implements: SW-001 §6 — offline Jetson result review HTML
-"""Build a self-contained HTML report for a temp/jetson_review_* folder."""
+"""Build a self-contained HTML report for a temp/jetson_review_* folder.
+
+Hunt captures + logs only (calibration hits omitted from the report UI).
+"""
 
 from __future__ import annotations
 
@@ -30,7 +33,6 @@ def _meta_rows(folder: Path):
 def build(review_dir: Path) -> Path:
     review_dir = review_dir.resolve()
     man = _load_json(review_dir / "manifest.json") or {}
-    cal_rows = _meta_rows(review_dir / "cal_hits")
     hunt_rows = _meta_rows(review_dir / "hunt_captures")
 
     hit_yes = sum(1 for _, m, _ in hunt_rows if m.get("hit_confirmed") is True)
@@ -45,27 +47,6 @@ def build(review_dir: Path) -> Path:
             f'<a href="{esc}" target="_blank" rel="noopener">'
             f'<img src="{esc}" loading="lazy" alt="{html.escape(label)}"></a>'
             f'</figure>'
-        )
-
-    def cal_card(name, meta, d):
-        before = d / "before.jpg"
-        after = d / "after.jpg"
-        diff = d / "diff.jpg"
-        title = (
-            f"Point {meta.get('point', '?')} · {meta.get('pulse_ms', '?')}ms · "
-            f"HIT ({meta.get('hit_px')},{meta.get('hit_py')})"
-        )
-        imgs = ""
-        for label, p in (("BEFORE", before), ("AFTER", after), ("DIFF", diff)):
-            if p.exists():
-                imgs += _img_cell(label, p)
-        detail = html.escape(json.dumps(meta, indent=2)[:1200])
-        return (
-            f'<article class="card"><h3>{html.escape(str(title))}</h3>'
-            f'<div class="meta">{html.escape(meta.get("timestamp", name))} · '
-            f'id={html.escape(name)}</div>'
-            f'<div class="shots">{imgs}</div>'
-            f'<pre>{detail}</pre></article>'
         )
 
     def hunt_card(name, meta, d):
@@ -110,7 +91,6 @@ def build(review_dir: Path) -> Path:
             f'<pre>{detail}</pre></article>'
         )
 
-    cal_html = "\n".join(cal_card(*r) for r in cal_rows) or "<p>No cal hits in window.</p>"
     hunt_html = "\n".join(hunt_card(*r) for r in hunt_rows) or "<p>No hunt captures in window.</p>"
 
     activity = review_dir / "logs" / "activity_6h.log"
@@ -170,25 +150,18 @@ h2 {{ font-size:22px; margin:0 0 12px; }}
   <h1>Jetson field review</h1>
   <p><b>{html.escape(review_dir.name)}</b></p>
   <p>Window: {html.escape(str(man.get('cut_et','?')))} → {html.escape(str(man.get('now_et','?')))}</p>
-  <p>{html.escape(str(man.get('window_note','')))}</p>
+  <p>{html.escape(str(man.get('window_note','')))} · hunt captures only (cal hits omitted)</p>
 </header>
 <nav>
-  <a href="#cal">Calibration hits ({len(cal_rows)})</a>
   <a href="#hunt">Hunt captures ({len(hunt_rows)})</a>
   <a href="#logs">Logs</a>
 </nav>
 <main>
   <div class="stats">
-    <div class="stat"><b>{len(cal_rows)}</b><span>cal splash hits</span></div>
     <div class="stat"><b>{len(hunt_rows)}</b><span>hunt attempts</span></div>
     <div class="stat"><b>{hit_yes}</b><span>hunt HIT</span></div>
     <div class="stat"><b>{hit_no}</b><span>hunt MISS / not HIT</span></div>
   </div>
-
-  <section id="cal">
-    <h2>Calibration splash gallery</h2>
-    {cal_html}
-  </section>
 
   <section id="hunt">
     <h2>Hunt captures</h2>

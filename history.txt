@@ -104,3 +104,4 @@
 2026-07-29 | [UI] | Larger Jetson review images + click-to-open full JPG for insect verify
 2026-07-29 | [BUG FIX] | Learning deadlock: cal Correct/Wrong hung; hunt teach UI + SW-001 v5.20
 2026-07-29 | [DEPLOY] | Learning deadlock fix + hunt teach UI live (auto-reboot; cameras healthy)
+2026-07-29 | [UI] | Jetson review HTML omits calibration hits (hunt+logs only)

@@ -1378,3 +1378,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [DEPLOY] Learning deadlock fix + hunt teach live
 - **[DEPLOY]** Soft restart → Sniper CSI dead → auto-reboot; Scout+Sniper healthy. Learning API smoke OK (`hunt_capture` feedback returns immediately).
+
+## 2026-07-29 — [UI] Review HTML omits calibration hits
+- **[OPERATOR]** Reports should not include cal splash gallery.
+- **[FIX]** `build_jetson_review_html.py`: hunt captures + logs only. Regenerated both `temp/jetson_review_*/index.html`.
