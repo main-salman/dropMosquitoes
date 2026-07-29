@@ -1375,3 +1375,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FEATURE]** Control-tab hunt attempt detail: Correct/Wrong + click Sniper-after true landing (same prior EMA as cal).
 - **[SPEC]** SW-001 §2.15 → v5.20 (hunt + cal feedback share splash priors).
 - **[UI]** Cal buttons use data-attributes + `.btn` handlers with error toasts (no fragile inline onclick).
+
+## 2026-07-29 — [DEPLOY] Learning deadlock fix + hunt teach live
+- **[DEPLOY]** Soft restart → Sniper CSI dead → auto-reboot; Scout+Sniper healthy. Learning API smoke OK (`hunt_capture` feedback returns immediately).
