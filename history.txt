@@ -117,3 +117,4 @@
 2026-07-29 | [SPEC] | SW-001 §2.16/§7.2 Insect Detect–aligned path
 2026-07-29 | [DEPLOY] | Insect Detect software alignment to Jetson
 2026-07-29 | [DOCS] | next-steps HTML: prioritized A–F checklist for 1–5m yard detect
+2026-07-29 | [DOCS] | next-steps HTML: why Roboflow fails for yard + detailed A–F instructions

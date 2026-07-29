@@ -1426,3 +1426,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [DOCS] Next-steps HTML: prioritized operator sequence
 - **[DOCS]** Rewrote `temp/insect_id_overhaul_next_steps.html` with ordered Steps A–F (pixel test → optics → collect → insect.engine → field → later), checklist, 1–5 m yard vs peer scenes, mosquito-turret marked incomplete.
+
+## 2026-07-29 — [DOCS] Next-steps HTML: why Roboflow isn’t enough + detailed A–F
+- **[DOCS]** Expanded `temp/insect_id_overhaul_next_steps.html` with domain-shift explanation vs Roboflow `insects-9yf6s`, plus click-by-click instructions for Steps A–F.
