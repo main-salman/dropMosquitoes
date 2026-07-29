@@ -1,7 +1,7 @@
 # SW-001: Software Specification
 
 **Status:** APPROVED  
-**Version:** 5.21  
+**Version:** 5.22  
 **Last Updated:** 2026-07-29  
 **Owner:** Salman
 
@@ -458,22 +458,35 @@ setpoint, calibrate, hunt, review trajectory stills, then adjust PSI if needed.
 - Still refuse foliage-wind / unstable AE; |offset| gate ±18°.
 - Pulse ladder **30 / 30 / 35 / 40 ms**. Save if ≥3 accepted hits.
 
-### 2.15 Operator-feedback reinforcement (splash priors)
-- **Sources (both required for field learning):**
-  - Calibration gallery (`source=cal_hit`): **Correct / Wrong** on each saved
-    splash; optional click on AFTER marks the true landing pixel.
-  - Live hunt gallery (`source=hunt_capture`): same teach controls on Control-tab
-    hunt attempt detail (prefer Sniper after still for true-landing click).
-- `learning_store.py` applies reward-weighted EMA updates to HitDetector soft
-  priors (`right_bias_px`, `below_bonus`, `prior_sigma_frac`, `prior_strength`).
-  Feedback from hunt and cal share one prior state (splash physics is shared).
+### 2.15 Operator-feedback reinforcement (splash + insect ID)
+- Reinforcement learning is a **first-class** online improvement path (human
+  reward → policy EMA). Not offline neural RL on the Jetson.
+- **Splash priors** (`source=cal_hit|hunt_capture`): Correct / Wrong (+ optional
+  true-landing click) update HitDetector soft priors via `learning_store.py`.
+- **Insect ID policy** (`source=insect_train`): Correct / Wrong / true-class
+  labels from the Insect Training tab update per-class suppress weights and
+  effective confidence gates used by hunt Sniper verify.
 - Persisted in `learning_state.json`; reloaded on boot; exposed via
-  `GET /api/learning/status` and `POST /api/learning/feedback`.
-- This is online policy improvement from human reward — not offline neural RL.
+  `GET /api/learning/status` and feedback POSTs.
+- Labeled indoor stills are also kept under `insect_train/` for later offline
+  retrain on the Windows workstation (real captures only — no dummy data).
+
+### 2.16 Insect Training Mode (indoor dry-fire)
+- Dashboard tab **Insect Train**: view Scout/Sniper, aim gimbal, run YOLO ID,
+  save labeled samples at operator-noted distance / lighting — **never fires
+  water** (no accumulator arm/fire from this tab).
+- Dry-shot = aim (optional) + Sniper YOLO verify + save stills/meta; SAFE for
+  indoor use with live insects.
+- Operator teaches: insect present?, YOLO class correct?, true class, click
+  insect location on Sniper frame.
+- APIs: `GET /api/train/status`, `POST /api/train/capture`,
+  `POST /api/train/dry-shot`, `POST /api/train/feedback`,
+  `GET /api/train/samples`, `GET /api/train/samples/<id>/<file>`.
 
 ## 7. Training & Tuning Pipeline
 
 Training and tuning are performed on a **separate Windows workstation** (RTX 3070 8GB), NOT on the Jetson.
+Online operator reinforcement (SW-001 §2.15–2.16) runs on the Jetson dashboard.
 
 ### 7.1 Scout Tuning (OpenCV — No AI)
 - Tool: `tools/sentry_control_center/app.py` Tab 1

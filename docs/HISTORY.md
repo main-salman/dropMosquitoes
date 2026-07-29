@@ -1396,3 +1396,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-29 — [DEPLOY] Hunt Step 1 gates live
 - **[DEPLOY]** Soft restart → CSI reboot; Scout+Sniper healthy. Applied permanent settings: yolo_conf=0.75, opportunity_fire=false, Scout T=40/min_area=2000/min_speed=80.
+
+## 2026-07-29 — [FEATURE] Insect Training tab + insect ID reinforcement
+- **[SPEC]** SW-001 §2.15–2.16 → v5.22: RL is first-class; indoor dry-fire Insect Train never fires water.
+- **[CODE]** `insect_train_store.py`; `learning_store.record_insect_feedback` + per-class suppress used by hunt YOLO gate; APIs `/api/train/*`.
+- **[UI]** Dashboard tab **Insect Train**: capture/dry-ID, gallery teach Correct/Wrong/true class, distance + lighting notes.

@@ -108,3 +108,4 @@
 2026-07-29 | [TROUBLESHOOT] | Insect ID overhaul: false YOLO + insects not on camera; staged plan in HISTORY
 2026-07-29 | [FIX] | Hunt step1: yolo_conf=0.75, opportunity_fire off, Scout tightened
 2026-07-29 | [DEPLOY] | Hunt step1 gates live on Jetson (yolo 0.75, no opportunity fire)
+2026-07-29 | [FEATURE] | Insect Train GUI (dry-fire) + insect ID RL suppress policy

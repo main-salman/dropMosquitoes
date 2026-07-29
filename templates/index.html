@@ -219,6 +219,7 @@
 
 <div class="tab-bar">
   <button class="tab-btn active" onclick="tab('ctrl')">🕹️ Control</button>
+  <button class="tab-btn" onclick="tab('train')">🪲 Insect Train</button>
   <button class="tab-btn" onclick="tab('sol')">💉 Solenoid</button>
   <button class="tab-btn" onclick="tab('cal')">🔧 Calibration</button>
   <button class="tab-btn" onclick="tab('tests')">🧪 Tests</button>
@@ -389,6 +390,80 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ===================== INSECT TRAIN TAB (SW-001 §2.16) ===================== -->
+<div class="tab-pane" id="p-train">
+  <div style="padding:14px 14px 0">
+    <div class="card" style="border-color:#8a5a2a;background:rgba(90,58,26,0.25)">
+      <div class="card-title">🪲 Insect Training · Indoor Dry-Fire</div>
+      <div class="card-body">
+        <p style="font-size:13px;margin:0 0 8px;color:var(--orange);font-weight:600">
+          Water never fires from this tab. Use live insects indoors at different distances and lighting; teach Correct/Wrong so reinforcement learning improves ID for outdoor hunt.
+        </p>
+        <p style="font-size:12px;color:var(--dim);margin:0" id="train-learn-line">Insect RL: —</p>
+      </div>
+    </div>
+  </div>
+  <div class="cal-section"><div class="cal-grid">
+    <div class="card">
+      <div class="card-title">Live view · aim · dry ID</div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:11px;color:var(--dim);margin-bottom:4px">Scout</div>
+            <div class="feed" style="aspect-ratio:16/9;background:#111;border-radius:10px;overflow:hidden">
+              <img src="/stream/scout" style="width:100%;height:100%;object-fit:contain" alt="scout train">
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--dim);margin-bottom:4px">Sniper · click to aim (no water)</div>
+            <div class="feed" id="train-sniper-feed" onclick="trainAim(event,this)" style="aspect-ratio:16/9;background:#111;border-radius:10px;overflow:hidden;cursor:crosshair;position:relative">
+              <img id="train-sniper-img" src="/stream/sniper" style="width:100%;height:100%;object-fit:contain" alt="sniper train">
+            </div>
+          </div>
+        </div>
+        <div class="cal-row">
+          <label>True insect</label>
+          <select id="train-true-class" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.35);color:var(--text)">
+            <option value="">— select —</option>
+          </select>
+        </div>
+        <div class="cal-row">
+          <label>Lighting</label>
+          <select id="train-lighting" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.35);color:var(--text)">
+            <option value="indoor">indoor</option>
+            <option value="day">day</option>
+            <option value="dusk">dusk</option>
+            <option value="night_ir">night + IR</option>
+            <option value="night_no_ir">night no IR</option>
+          </select>
+        </div>
+        <div class="cal-row">
+          <label>Distance m</label>
+          <input type="number" id="train-dist" step="0.1" min="0.2" max="20" placeholder="LiDAR or type" style="width:100px">
+          <span style="font-size:11px;color:var(--dim)">optional · LiDAR used if blank</span>
+        </div>
+        <div class="cal-row">
+          <label>Note</label>
+          <input type="text" id="train-note" placeholder="e.g. moth near lamp" style="flex:1">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-blue" onclick="trainCapture()">📷 Capture view + ID</button>
+          <button class="btn btn-amber" onclick="trainDryShot()">🎯 Dry aim + ID (no water)</button>
+          <button class="btn btn-sm" onclick="trainRefreshGallery()">🔄 Refresh gallery</button>
+        </div>
+        <div class="cal-result" id="train-log" style="margin-top:10px">Ready — water will not fire.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Training gallery · teach RL <span class="cal-stat" id="train-count">0</span></div>
+      <div class="card-body">
+        <div id="train-gallery" style="display:flex;flex-direction:column;gap:12px;max-height:640px;overflow-y:auto"></div>
+        <div id="train-empty" style="font-size:12px;color:var(--dim)">No samples yet — capture a dry ID of a real insect.</div>
+      </div>
+    </div>
+  </div></div>
 </div>
 
 <!-- ===================== SOLENOID TAB ===================== -->
@@ -1148,7 +1223,147 @@ async function drainPipe() {
 function showToast(title,body){$('toast-title').textContent=title;$('toast-body').textContent=body;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),4000)}
 
 // ---- Tabs ----
-function tab(t){const ti={ctrl:0,sol:1,cal:2,tests:3,diag:4,settings:5};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal');loadCalHitsGallery()}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else{psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}if(t==='ctrl')hcStartPolling();else hcStopPolling()}
+function tab(t){const ti={ctrl:0,train:1,sol:2,cal:3,tests:4,diag:5,settings:6};document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===ti[t]));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===ti[t]));if(t==='tests'&&!tl)loadTests();if(t==='diag'&&!dgLoaded)dgLoad();if(t==='cal'){calRefresh();calPsiInit();psiLiveStart('cal');loadCalHitsGallery()}else if(t==='settings'){loadSettings();setPsiLoad();psiLiveStart('set')}else if(t!=='cal'&&t!=='settings'){psiLiveStop()}if(t==='sol'){solPollStart();acConfigLoad()}else{solPollStop();ptStopLive()}if(t==='ctrl')hcStartPolling();else hcStopPolling();if(t==='train'){trainInit();trainRefreshGallery()}}
+
+// ---- Insect Train (SW-001 §2.16) — NEVER fires water ----
+let trainClasses=[];
+async function trainInit(){
+  try{
+    const d=await fetch('/api/train/status').then(r=>r.json());
+    trainClasses=d.classes||[];
+    const sel=$('train-true-class');
+    if(sel && sel.options.length<=1){
+      trainClasses.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+    }
+    trainPaintLearn(d.learning);
+  }catch(e){console.warn(e)}
+}
+function trainPaintLearn(learning){
+  const insect=(learning&&learning.insect)||{};
+  const el=$('train-learn-line');
+  if(!el)return;
+  const top=Object.entries(insect.suppress||{}).sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([k,v])=>`${k}:${Number(v).toFixed(2)}`).join(' · ')||'—';
+  el.textContent=`Insect RL: ✅${insect.n_correct||0} / ❌${insect.n_wrong||0} · suppress ${top}`;
+  const splash=$('learning-priors-line');
+  if(splash&&learning){
+    const p=learning.priors||{};
+    splash.textContent=`Learning: splash ✅${learning.n_correct||0}/❌${learning.n_wrong||0} · insect ✅${insect.n_correct||0}/❌${insect.n_wrong||0} · right_bias=${Number(p.right_bias_px||0).toFixed(0)}px`;
+  }
+}
+function trainBody(){
+  const dist=$('train-dist').value;
+  const body={
+    lighting:$('train-lighting').value,
+    true_class:$('train-true-class').value||'',
+    note:$('train-note').value||'',
+  };
+  if(dist!=='')body.distance_m=+dist;
+  return body;
+}
+async function trainAim(ev,el){
+  // Map click → approximate pitch/yaw nudge via existing aim helper if available
+  try{
+    if(typeof aim==='function'){aim(ev,el,1280,720);return}
+  }catch(e){}
+  showToast('Train','Use Control tab WASD/click aim, then return here for dry ID');
+}
+async function trainCapture(){
+  $('train-log').textContent='Capturing (no water)…';
+  try{
+    const r=await fetch('/api/train/capture',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(trainBody())});
+    const d=await r.json();
+    $('train-log').textContent=d.ok
+      ? `Saved ${d.id} · YOLO ${d.verify||'—'} · water_fired=${d.water_fired}`
+      : (`Failed: `+(d.error||r.status));
+    showToast('Train', d.ok?'Captured (dry)':(d.error||'failed'));
+    trainRefreshGallery();
+  }catch(e){$('train-log').textContent=e.message}
+}
+async function trainDryShot(){
+  $('train-log').textContent='Dry aim + ID (no water)…';
+  try{
+    const body=trainBody();
+    body.move_gimbal=false;
+    const r=await fetch('/api/train/dry-shot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    $('train-log').textContent=d.ok
+      ? `Dry shot ${d.id} · ${d.verify||'—'} · dist=${d.distance_m??'—'}m · WATER NOT FIRED`
+      : (`Failed: `+(d.error||r.status));
+    if(d.hunt_was_paused) showToast('Train','Hunt paused for dry train — restart Hunt when done');
+    else showToast('Train', d.ok?'Dry ID saved':'failed');
+    trainRefreshGallery();
+    trainInit();
+  }catch(e){$('train-log').textContent=e.message}
+}
+async function trainRefreshGallery(){
+  try{
+    const d=await fetch('/api/train/samples?limit=40').then(r=>r.json());
+    const items=d.items||[];
+    $('train-count').textContent=String((d.counts&&d.counts.samples)||items.length);
+    const gal=$('train-gallery'), empty=$('train-empty');
+    if(!items.length){gal.innerHTML='';if(empty)empty.style.display='block';return}
+    if(empty)empty.style.display='none';
+    gal.innerHTML=items.map(it=>{
+      const u=it.urls||{};
+      const pred=it.predicted_class|| (it.verify||'').split(':')[0] || '—';
+      const conf=it.predicted_confidence!=null?Number(it.predicted_confidence).toFixed(2):'';
+      const taught=it.taught? (it.teach_correct?' · taught ✅':' · taught ❌') : '';
+      return `<div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:rgba(0,0,0,0.25)" data-tid="${esc(it.id||'')}">
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px"><b style="color:var(--text)">${esc(it.id||'')}</b>
+          · ${esc(it.lighting||'')} · ${it.distance_m!=null?(it.distance_m+'m'):'—'} · YOLO <b>${esc(pred)}</b> ${conf}${taught}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div><div style="font-size:9px;color:var(--dim)">SNIPER · click insect if Wrong</div>
+            <img class="train-teach-img" data-tid="${esc(it.id||'')}" data-pred="${esc(pred)}" data-conf="${conf}"
+              src="${u.sniper}?t=1" style="width:100%;border-radius:6px;background:#111;cursor:crosshair" loading="lazy"></div>
+          <div><div style="font-size:9px;color:var(--dim)">SCOUT</div>
+            <img src="${u.scout||''}" style="width:100%;border-radius:6px;background:#111" loading="lazy" onerror="this.style.opacity=.2"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="btn btn-sm btn-green" data-tid="${esc(it.id||'')}" data-pred="${esc(pred)}" data-conf="${conf}" data-ok="1">✅ Correct ID</button>
+          <button type="button" class="btn btn-sm btn-red" data-tid="${esc(it.id||'')}" data-pred="${esc(pred)}" data-conf="${conf}" data-ok="0">❌ Wrong / empty</button>
+          <select class="train-true-sel" data-tid="${esc(it.id||'')}" style="padding:6px;border-radius:8px;border:1px solid var(--border);background:rgba(0,0,0,0.35);color:var(--text)">
+            <option value="">true class…</option>
+            ${(trainClasses||[]).map(c=>`<option value="${c}" ${it.true_class===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+          <span id="train-st-${esc(it.id||'')}" style="font-size:11px;color:var(--dim)"></span>
+        </div>
+      </div>`;
+    }).join('');
+    gal.querySelectorAll('button[data-tid]').forEach(btn=>{
+      btn.onclick=()=>trainFeedback(btn.getAttribute('data-tid'), btn.getAttribute('data-ok')==='1',
+        btn.getAttribute('data-pred'), btn.getAttribute('data-conf'));
+    });
+    gal.querySelectorAll('img.train-teach-img').forEach(img=>{
+      img.onclick=(ev)=>{
+        const r=img.getBoundingClientRect();
+        const nx=(ev.clientX-r.left)/Math.max(1,r.width);
+        const ny=(ev.clientY-r.top)/Math.max(1,r.height);
+        trainFeedback(img.dataset.tid, false, img.dataset.pred, img.dataset.conf, {
+          true_px: Math.round(nx*1280), true_py: Math.round(ny*720), insect_present: true,
+        });
+      };
+    });
+  }catch(e){console.warn(e)}
+}
+async function trainFeedback(id, correct, pred, conf, extra){
+  const sel=document.querySelector(`select.train-true-sel[data-tid="${id}"]`);
+  const true_class=sel?sel.value:'';
+  const body={
+    id, correct, predicted_class: pred||'', true_class,
+    confidence: conf!=='' && conf!=null ? +conf : null,
+    insect_present: correct ? true : (extra&&extra.insect_present!=null?extra.insect_present:false),
+  };
+  if(extra&&extra.true_px!=null){body.true_px=extra.true_px;body.true_py=extra.true_py;body.insect_present=true}
+  try{
+    const r=await fetch('/api/train/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    const st=$('train-st-'+id);
+    if(st) st.textContent=d.ok?(correct?'Reinforced ✅':'Suppressed / taught ❌'):('Fail '+(d.error||''));
+    showToast('Insect RL', d.ok?(correct?'Positive':'Negative — class suppress updated'):'failed');
+    trainInit();
+  }catch(e){showToast('Insect RL', e.message)}
+}
 
 // ---- Status poll (includes LiDAR telemetry + hunt) ----
 function renderHunt(h){
@@ -1651,11 +1866,13 @@ async function refreshLearningPriors() {
   try {
     const d = await fetch('/api/learning/status').then(r => r.json());
     const p = d.priors || {};
-    const txt = `Learning: ✅${d.n_correct||0} / ❌${d.n_wrong||0} · right_bias=${Number(p.right_bias_px||0).toFixed(0)}px · below=${p.below_bonus} · strength=${p.prior_strength}`;
+    const insect = d.insect || {};
+    const txt = `Learning: splash ✅${d.n_correct||0}/❌${d.n_wrong||0} · insect ✅${insect.n_correct||0}/❌${insect.n_wrong||0} · right_bias=${Number(p.right_bias_px||0).toFixed(0)}px · below=${p.below_bonus} · strength=${p.prior_strength}`;
     const el = $('learning-priors-line');
     if (el) el.textContent = txt;
     const el2 = $('learning-priors-line-hunt');
     if (el2) el2.textContent = txt;
+    trainPaintLearn(d);
   } catch (e) {}
 }
 

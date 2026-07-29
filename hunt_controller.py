@@ -64,6 +64,7 @@ class HuntController:
         is_busy: Optional[Callable[[], bool]] = None,
         settings_path: str = "settings.json",
         project_dir: Optional[str] = None,
+        learning_store=None,
     ):
         self._gimbal = gimbal
         self._scout_cam = scout_cam
@@ -75,6 +76,7 @@ class HuntController:
         self._detector = detector
         self._velocity_tracker = velocity_tracker
         self._hit_detector = hit_detector
+        self._learning = learning_store
         self._is_busy = is_busy or (lambda: False)
 
         root = project_dir or os.path.dirname(os.path.abspath(__file__))
@@ -826,6 +828,52 @@ class HuntController:
 
         return view, mapper
 
+    def dry_verify(self, annotate: bool = True) -> dict:
+        """
+        Sniper YOLO verify for indoor training — NEVER fires water.
+        Returns frames (optional annotated) + boxes + verify detail.
+        """
+        import cv2
+        frame = self._sniper_cam.get_frame()
+        scout = self._scout_cam.get_frame()
+        if frame is None:
+            return {"ok": False, "error": "no_sniper_frame", "water_fired": False}
+        verified, detail, boxes, center = self._verify_sniper()
+        ann = frame.copy()
+        if annotate:
+            h, w = ann.shape[:2]
+            cv2.drawMarker(ann, (w // 2, h // 2), (0, 255, 255),
+                           cv2.MARKER_CROSS, 24, 2)
+            for b in boxes or []:
+                x1, y1, x2, y2 = b.get("bbox") or (0, 0, 0, 0)
+                col = (0, 220, 0) if verified else (0, 140, 255)
+                cv2.rectangle(ann, (int(x1), int(y1)), (int(x2), int(y2)), col, 2)
+                cv2.putText(ann, str(b.get("label") or ""), (int(x1), max(14, int(y1) - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 1, cv2.LINE_AA)
+            if center is not None:
+                cv2.circle(ann, (int(center[0]), int(center[1])), 10, (255, 80, 80), 2)
+        dist = None
+        try:
+            dist = self._lidar.read_distance() if self._lidar else None
+        except Exception:
+            dist = None
+        st = self._gimbal.get_status() if self._gimbal else {}
+        return {
+            "ok": True,
+            "water_fired": False,
+            "dry_fire": True,
+            "verified": bool(verified),
+            "verify": detail,
+            "boxes": boxes or [],
+            "center": list(center) if center else None,
+            "distance_m": dist,
+            "aim_pitch": st.get("pitch"),
+            "aim_yaw": st.get("yaw"),
+            "sniper_bgr": ann,
+            "sniper_raw": frame,
+            "scout_bgr": scout,
+        }
+
     def _verify_sniper(self):
         """Return (ok, detail, boxes, center_xy|None). YOLO insects required."""
         frame = self._sniper_cam.get_frame()
@@ -836,6 +884,12 @@ class HuntController:
             return False, "no_insect_model", [], None
 
         conf_min = float(getattr(self, "_yolo_conf", 0.75) or 0.75)
+        suppress = {}
+        try:
+            if self._learning is not None:
+                suppress = (self._learning.get_insect_policy() or {}).get("suppress") or {}
+        except Exception:
+            suppress = {}
         view, mapper = self._sniper_yolo_view(frame)
 
         try:
@@ -853,7 +907,6 @@ class HuntController:
                     conf = float(box.conf[0])
                     name = str(r.names.get(cls_id, "")).lower()
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    # Map from zoomed view back to full Sniper frame
                     cx_v, cy_v = (x1 + x2) // 2, (y1 + y2) // 2
                     cx, cy = mapper(cx_v, cy_v)
                     fx1, fy1 = mapper(x1, y1)
@@ -865,9 +918,11 @@ class HuntController:
                         "confidence": conf,
                     })
                     if name in INSECT_CLASSES:
+                        # Learned suppress raises the bar for repeatedly-wrong classes
+                        gate = conf_min + 0.35 * float(suppress.get(name, 0.0) or 0.0)
                         if near is None or conf > near[0]:
                             near = (conf, name, cx, cy)
-                        if conf >= conf_min:
+                        if conf >= gate:
                             if best is None or conf > best[0]:
                                 best = (conf, name, cx, cy)
             if best:

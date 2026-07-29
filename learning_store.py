@@ -1,11 +1,9 @@
-# Implements: SW-001 §2.15 — Operator-feedback reinforcement for splash priors
+# Implements: SW-001 §2.15 — Operator-feedback reinforcement (splash + insect ID)
 """
-learning_store.py — Lightweight reinforcement learning from operator feedback.
+learning_store.py — Online reinforcement from operator feedback.
 
-Not a neural RL agent: reward-weighted EMA updates to HitDetector soft priors
-(right bias, gravity/below weight, prior tightness) so splash localization
-improves over sessions when the operator marks HIT correct/wrong (and optionally
-clicks the true landing) on calibration OR live hunt captures.
+Splash priors (cal/hunt) + insect-class suppress policy (insect_train dry-fire).
+Human reward → EMA updates. Not offline neural RL on the Jetson.
 """
 
 from __future__ import annotations
@@ -18,21 +16,26 @@ from typing import Any, Dict, List, Optional
 from timeutil import stamp_iso
 
 DEFAULT_STATE = {
-    "version": 1,
+    "version": 2,
     "n_correct": 0,
     "n_wrong": 0,
     "n_corrections_xy": 0,
-    # Soft priors consumed by HitDetector
     "right_bias_px": 70.0,
     "below_bonus": 0.85,
     "prior_sigma_frac": 0.12,
-    "prior_strength": 0.55,   # weight of prior vs pure vision in score blend
-    "events": [],             # rolling feedback log (last N)
+    "prior_strength": 0.55,
+    "insect": {
+        "n_correct": 0,
+        "n_wrong": 0,
+        "by_class": {},   # class -> {correct, wrong, suppress}
+    },
+    "events": [],
 }
 
 MAX_EVENTS = 200
-ALPHA = 0.22                  # EMA learning rate on spatial corrections
-REWARD_ALPHA = 0.08           # slower tweak when only correct/wrong
+ALPHA = 0.22
+REWARD_ALPHA = 0.08
+INSECT_ALPHA = 0.20
 
 
 def _as_int(v) -> Optional[int]:
@@ -48,7 +51,7 @@ class LearningStore:
     def __init__(self, root_dir: str, filename: str = "learning_state.json"):
         self.path = os.path.join(root_dir, filename)
         self._lock = threading.Lock()
-        self._state = dict(DEFAULT_STATE)
+        self._state = json.loads(json.dumps(DEFAULT_STATE))
         self._load()
 
     def _load(self) -> None:
@@ -56,12 +59,23 @@ class LearningStore:
             return
         try:
             data = json.load(open(self.path, "r"))
-            if isinstance(data, dict):
-                merged = dict(DEFAULT_STATE)
-                merged.update({k: data[k] for k in DEFAULT_STATE if k in data})
-                if isinstance(data.get("events"), list):
-                    merged["events"] = data["events"][-MAX_EVENTS:]
-                self._state = merged
+            if not isinstance(data, dict):
+                return
+            merged = json.loads(json.dumps(DEFAULT_STATE))
+            for k in DEFAULT_STATE:
+                if k == "insect":
+                    continue
+                if k in data:
+                    merged[k] = data[k]
+            insect = data.get("insect") if isinstance(data.get("insect"), dict) else {}
+            merged["insect"] = {
+                "n_correct": int(insect.get("n_correct", 0) or 0),
+                "n_wrong": int(insect.get("n_wrong", 0) or 0),
+                "by_class": dict(insect.get("by_class") or {}),
+            }
+            if isinstance(data.get("events"), list):
+                merged["events"] = data["events"][-MAX_EVENTS:]
+            self._state = merged
         except Exception as e:
             print(f"[Learning] load failed: {e}")
 
@@ -80,9 +94,28 @@ class LearningStore:
             "prior_strength": float(self._state["prior_strength"]),
         }
 
+    def _insect_unlocked(self) -> Dict[str, Any]:
+        insect = self._state.get("insect") or {}
+        by = insect.get("by_class") or {}
+        suppress = {
+            str(k): float((v or {}).get("suppress", 0.0) or 0.0)
+            for k, v in by.items()
+        }
+        return {
+            "n_correct": int(insect.get("n_correct", 0) or 0),
+            "n_wrong": int(insect.get("n_wrong", 0) or 0),
+            "by_class": by,
+            "suppress": suppress,
+        }
+
     def get_priors(self) -> Dict[str, float]:
         with self._lock:
             return self._priors_unlocked()
+
+    def get_insect_policy(self) -> Dict[str, Any]:
+        """Per-class suppress in [0,1] → hunt raises effective conf gate."""
+        with self._lock:
+            return self._insect_unlocked()
 
     def status(self) -> Dict[str, Any]:
         with self._lock:
@@ -92,12 +125,12 @@ class LearningStore:
                 "n_wrong": self._state["n_wrong"],
                 "n_corrections_xy": self._state["n_corrections_xy"],
                 "priors": self._priors_unlocked(),
-                "last_events": ev[-10:],
+                "insect": self._insect_unlocked(),
+                "last_events": ev[-12:],
                 "path": self.path,
             }
 
     def apply_to_detector(self, detector) -> None:
-        """Push learned priors into a HitDetector instance."""
         p = self.get_priors()
         if detector is None:
             return
@@ -106,11 +139,80 @@ class LearningStore:
             detector.BELOW_BONUS = float(p["below_bonus"])
             detector.PRIOR_SIGMA_FRAC = float(p["prior_sigma_frac"])
             detector.PRIOR_STRENGTH = float(p["prior_strength"])
-            print(f"[Learning] applied priors right={detector.RIGHT_BIAS_PX:.0f}px "
+            print(f"[Learning] splash priors right={detector.RIGHT_BIAS_PX:.0f}px "
                   f"below={detector.BELOW_BONUS:.2f} sigma={detector.PRIOR_SIGMA_FRAC:.3f} "
                   f"strength={detector.PRIOR_STRENGTH:.2f}")
         except Exception as e:
             print(f"[Learning] apply_to_detector: {e}")
+
+    def _class_bucket_unlocked(self, name: str) -> dict:
+        insect = self._state.setdefault("insect", {"n_correct": 0, "n_wrong": 0, "by_class": {}})
+        by = insect.setdefault("by_class", {})
+        key = (name or "unknown").lower().strip() or "unknown"
+        if key not in by or not isinstance(by[key], dict):
+            by[key] = {"correct": 0, "wrong": 0, "suppress": 0.0}
+        return by[key]
+
+    def record_insect_feedback(
+        self,
+        *,
+        item_id: str,
+        correct: bool,
+        predicted_class: str = "",
+        true_class: str = "",
+        confidence: Optional[float] = None,
+        insect_present: Optional[bool] = None,
+        note: str = "",
+    ) -> Dict[str, Any]:
+        """Reinforce insect ID policy from dry-train / operator labels."""
+        pred = (predicted_class or "").lower().strip()
+        true = (true_class or "").lower().strip()
+        with self._lock:
+            insect = self._state.setdefault(
+                "insect", {"n_correct": 0, "n_wrong": 0, "by_class": {}})
+            if correct:
+                insect["n_correct"] = int(insect.get("n_correct", 0)) + 1
+                if pred:
+                    b = self._class_bucket_unlocked(pred)
+                    b["correct"] = int(b.get("correct", 0)) + 1
+                    b["suppress"] = max(
+                        0.0, float(b.get("suppress", 0.0)) * (1.0 - INSECT_ALPHA))
+            else:
+                insect["n_wrong"] = int(insect.get("n_wrong", 0)) + 1
+                # Wrong prediction → suppress that class; if true_class given, reward it
+                if pred and pred not in ("", "none", "unknown"):
+                    b = self._class_bucket_unlocked(pred)
+                    b["wrong"] = int(b.get("wrong", 0)) + 1
+                    b["suppress"] = min(
+                        1.0, float(b.get("suppress", 0.0)) + INSECT_ALPHA)
+                if true and true not in ("", "none", "unknown") and true != pred:
+                    tb = self._class_bucket_unlocked(true)
+                    tb["correct"] = int(tb.get("correct", 0)) + 1
+                    tb["suppress"] = max(
+                        0.0, float(tb.get("suppress", 0.0)) * (1.0 - INSECT_ALPHA * 0.5))
+                # False positive on empty frame
+                if insect_present is False and pred:
+                    b = self._class_bucket_unlocked(pred)
+                    b["suppress"] = min(1.0, float(b.get("suppress", 0.0)) + INSECT_ALPHA)
+
+            event = {
+                "timestamp": stamp_iso(),
+                "source": "insect_train",
+                "id": item_id,
+                "correct": correct,
+                "reward": 1.0 if correct else -1.0,
+                "predicted_class": pred or None,
+                "true_class": true or None,
+                "confidence": confidence,
+                "insect_present": insect_present,
+                "note": note,
+                "insect_after": self._insect_unlocked(),
+            }
+            ev: List[dict] = list(self._state.get("events") or [])
+            ev.append(event)
+            self._state["events"] = ev[-MAX_EVENTS:]
+            self._save_unlocked()
+            return {"ok": True, "event": event, "insect": self._insect_unlocked()}
 
     def record_feedback(
         self,
@@ -126,12 +228,7 @@ class LearningStore:
         aim_py: int = 360,
         note: str = "",
     ) -> Dict[str, Any]:
-        """
-        Reinforcement step.
-        reward = +1 correct, -1 wrong.
-        If true_px/true_py given on a wrong (or refine), update spatial priors toward
-        (true - aim).
-        """
+        """Splash localization reinforcement (cal_hit / hunt_capture)."""
         reward = 1.0 if correct else -1.0
         hit_px = _as_int(hit_px)
         hit_py = _as_int(hit_py)
@@ -147,7 +244,6 @@ class LearningStore:
         with self._lock:
             if correct:
                 self._state["n_correct"] += 1
-                # Correct → tighten prior slightly, reinforce current right bias
                 self._state["prior_sigma_frac"] = max(
                     0.06,
                     float(self._state["prior_sigma_frac"]) * (1.0 - REWARD_ALPHA * 0.5),
@@ -158,7 +254,6 @@ class LearningStore:
                 )
             else:
                 self._state["n_wrong"] += 1
-                # Wrong → widen search prior, rely more on vision next time
                 self._state["prior_sigma_frac"] = min(
                     0.22,
                     float(self._state["prior_sigma_frac"]) * (1.0 + REWARD_ALPHA),
@@ -172,17 +267,14 @@ class LearningStore:
                 self._state["n_corrections_xy"] += 1
                 dx = float(true_px) - float(aim_px)
                 dy = float(true_py) - float(aim_py)
-                # Learn right bias from horizontal offset of true landing vs aim
                 rb = float(self._state["right_bias_px"])
                 self._state["right_bias_px"] = max(
                     10.0, min(180.0, (1.0 - ALPHA) * rb + ALPHA * dx)
                 )
-                # More below aim → increase below_bonus
                 if dy > 0:
                     bb = float(self._state["below_bonus"])
                     target = min(1.6, 0.5 + dy / 400.0)
                     self._state["below_bonus"] = (1.0 - ALPHA) * bb + ALPHA * target
-                # If operator moved hit markedly right of detector HIT, note it
                 if hit_px is not None and abs(float(true_px) - float(hit_px)) > 40:
                     self._state["prior_strength"] = max(
                         0.3, float(self._state["prior_strength"]) - 0.05

@@ -38,6 +38,7 @@ from vision import CameraStream, YOLODetector, VelocityTracker
 from calibration_engine import CalibrationTable, HitDetector, AutoCalibrator
 from cal_hit_store import CalHitStore
 from learning_store import LearningStore
+from insect_train_store import InsectTrainStore, INSECT_CLASS_CHOICES
 from settings_store import SettingsStore
 from status_indicator import StatusIndicator
 from activity_log import init_activity_log, log_event
@@ -110,6 +111,7 @@ hit_detector = HitDetector()
 cal_hit_store = CalHitStore(APP_DIR)
 learning_store = LearningStore(APP_DIR)
 learning_store.apply_to_detector(hit_detector)
+insect_train_store = InsectTrainStore(APP_DIR)
 auto_cal = AutoCalibrator(cal_table, hit_detector, hit_store=cal_hit_store)
 
 # Water Line Priming System
@@ -131,6 +133,7 @@ hunter = HuntController(
     is_busy=lambda: bool(auto_cal.get_status().get("running")),
     settings_path=settings.path,
     project_dir=APP_DIR,
+    learning_store=learning_store,
 )
 
 
@@ -1507,6 +1510,244 @@ def api_learning_feedback():
         log_event("learning_feedback",
                   correct=correct, id=item_id, source=source,
                   priors=result.get("priors"))
+    except Exception:
+        pass
+    return jsonify(result)
+
+
+# ============================================================================
+# INSECT TRAINING (dry-fire) — SW-001 §2.16
+# ============================================================================
+
+@app.route('/api/train/status', methods=['GET'])
+def api_train_status():
+    """Indoor insect training status + learning insect policy."""
+    return jsonify({
+        "ok": True,
+        "water_armed_for_train": False,
+        "note": "Insect Train never fires water.",
+        "classes": INSECT_CLASS_CHOICES,
+        "samples": insect_train_store.counts(),
+        "learning": learning_store.status(),
+        "hunt": {
+            "yolo_conf": (hunter.get_status().get("geometry") or {}).get("yolo_conf"),
+            "opportunity_fire": (hunter.get_status().get("geometry") or {}).get("opportunity_fire"),
+        },
+    })
+
+
+@app.route('/api/train/samples', methods=['GET'])
+def api_train_samples():
+    limit = request.args.get("limit", 40, type=int)
+    return jsonify({
+        "items": insect_train_store.list_samples(limit=limit),
+        "counts": insect_train_store.counts(),
+    })
+
+
+@app.route('/api/train/samples/<sid>/<kind>.jpg')
+def api_train_sample_image(sid, kind):
+    path = insect_train_store.file_path(sid, kind)
+    if not path:
+        return jsonify({"error": "not_found"}), 404
+    return send_file(path, mimetype="image/jpeg")
+
+
+@app.route('/api/train/dry-shot', methods=['POST'])
+def api_train_dry_shot():
+    """
+    Aim (optional) + Sniper YOLO ID + save sample. NEVER fires water.
+    Body: {
+      pitch?, yaw?, lighting?, distance_m?, true_class?, note?,
+      move_gimbal?: bool
+    }
+    """
+    data = request.get_json(force=True) or {}
+    # Soft-pause hunt so dry-train doesn't race a live engagement
+    was_hunting = False
+    try:
+        st = hunter.get_status()
+        was_hunting = st.get("mode") == "HUNTING"
+        if was_hunting:
+            hunter.stop()
+    except Exception:
+        pass
+
+    if data.get("move_gimbal") and ("pitch" in data or "yaw" in data):
+        try:
+            cur = gimbal.get_status()
+            pitch = float(data["pitch"]) if "pitch" in data else float(cur.get("pitch", 0))
+            yaw = float(data["yaw"]) if "yaw" in data else float(cur.get("yaw", 0))
+            gimbal.set_angles(pitch, yaw)
+            time.sleep(0.35)
+        except Exception as e:
+            return jsonify({"ok": False, "error": f"aim_failed:{e}", "water_fired": False}), 400
+
+    result = hunter.dry_verify(annotate=True)
+    if not result.get("ok"):
+        return jsonify({**result, "water_fired": False}), 503
+
+    lighting = str(data.get("lighting") or "indoor").strip()
+    true_class = str(data.get("true_class") or "").strip().lower()
+    note = str(data.get("note") or "")
+    distance_m = data.get("distance_m")
+    if distance_m is None:
+        distance_m = result.get("distance_m")
+    try:
+        distance_m = float(distance_m) if distance_m is not None else None
+    except (TypeError, ValueError):
+        distance_m = None
+
+    boxes = result.get("boxes") or []
+    top = None
+    if boxes:
+        top = max(boxes, key=lambda b: float(b.get("confidence") or 0))
+    meta = {
+        "lighting": lighting,
+        "distance_m": distance_m,
+        "true_class": true_class or None,
+        "note": note,
+        "verify": result.get("verify"),
+        "verified": result.get("verified"),
+        "boxes": boxes,
+        "predicted_class": (top or {}).get("class"),
+        "predicted_confidence": (top or {}).get("confidence"),
+        "center": result.get("center"),
+        "aim_pitch": result.get("aim_pitch"),
+        "aim_yaw": result.get("aim_yaw"),
+        "water_fired": False,
+        "dry_fire": True,
+    }
+    sid = insect_train_store.save_sample(
+        sniper_bgr=result.get("sniper_bgr"),
+        scout_bgr=result.get("scout_bgr"),
+        meta=meta,
+    )
+    try:
+        log_event("INSECT_TRAIN_DRY", id=sid, verify=meta.get("verify"),
+                  lighting=lighting, distance_m=distance_m)
+    except Exception:
+        pass
+
+    out = {
+        "ok": True,
+        "water_fired": False,
+        "id": sid,
+        "verify": meta.get("verify"),
+        "verified": meta.get("verified"),
+        "boxes": boxes,
+        "predicted_class": meta.get("predicted_class"),
+        "predicted_confidence": meta.get("predicted_confidence"),
+        "distance_m": distance_m,
+        "lighting": lighting,
+        "urls": {
+            "sniper": f"/api/train/samples/{sid}/sniper.jpg" if sid else None,
+            "scout": f"/api/train/samples/{sid}/scout.jpg" if sid else None,
+        },
+        "learning": learning_store.status().get("insect"),
+        "hunt_was_paused": was_hunting,
+        "note": "Dry shot complete — water not fired.",
+    }
+    return jsonify(out)
+
+
+@app.route('/api/train/capture', methods=['POST'])
+def api_train_capture():
+    """Save current Scout/Sniper view + YOLO ID without moving gimbal. No water."""
+    data = request.get_json(force=True) or {}
+    result = hunter.dry_verify(annotate=True)
+    if not result.get("ok"):
+        return jsonify({**result, "water_fired": False}), 503
+    lighting = str(data.get("lighting") or "indoor").strip()
+    true_class = str(data.get("true_class") or "").strip().lower()
+    note = str(data.get("note") or "")
+    distance_m = data.get("distance_m", result.get("distance_m"))
+    try:
+        distance_m = float(distance_m) if distance_m is not None else None
+    except (TypeError, ValueError):
+        distance_m = None
+    boxes = result.get("boxes") or []
+    top = max(boxes, key=lambda b: float(b.get("confidence") or 0)) if boxes else None
+    meta = {
+        "lighting": lighting,
+        "distance_m": distance_m,
+        "true_class": true_class or None,
+        "note": note,
+        "verify": result.get("verify"),
+        "verified": result.get("verified"),
+        "boxes": boxes,
+        "predicted_class": (top or {}).get("class"),
+        "predicted_confidence": (top or {}).get("confidence"),
+        "center": result.get("center"),
+        "aim_pitch": result.get("aim_pitch"),
+        "aim_yaw": result.get("aim_yaw"),
+        "water_fired": False,
+        "dry_fire": True,
+        "capture_only": True,
+    }
+    sid = insect_train_store.save_sample(
+        sniper_bgr=result.get("sniper_bgr"),
+        scout_bgr=result.get("scout_bgr"),
+        meta=meta,
+    )
+    return jsonify({
+        "ok": True, "water_fired": False, "id": sid,
+        "verify": meta.get("verify"), "verified": meta.get("verified"),
+        "boxes": boxes, "predicted_class": meta.get("predicted_class"),
+        "urls": {
+            "sniper": f"/api/train/samples/{sid}/sniper.jpg" if sid else None,
+            "scout": f"/api/train/samples/{sid}/scout.jpg" if sid else None,
+        },
+    })
+
+
+@app.route('/api/train/feedback', methods=['POST'])
+def api_train_feedback():
+    """
+    Teach insect ID from a dry-train sample.
+    Body: {
+      id, correct, predicted_class?, true_class?, confidence?,
+      insect_present?, note?, true_px?, true_py?
+    }
+    """
+    data = request.get_json(force=True) or {}
+    sid = str(data.get("id") or "").strip()
+    if not sid:
+        return jsonify({"error": "id_required"}), 400
+    correct = bool(data.get("correct"))
+    predicted = str(data.get("predicted_class") or "").strip().lower()
+    true_class = str(data.get("true_class") or "").strip().lower()
+    insect_present = data.get("insect_present")
+    if insect_present is not None:
+        insect_present = bool(insect_present)
+    conf = data.get("confidence")
+    try:
+        conf = float(conf) if conf is not None else None
+    except (TypeError, ValueError):
+        conf = None
+
+    result = learning_store.record_insect_feedback(
+        item_id=sid,
+        correct=correct,
+        predicted_class=predicted,
+        true_class=true_class,
+        confidence=conf,
+        insect_present=insect_present,
+        note=str(data.get("note") or ""),
+    )
+    patch = {
+        "taught": True,
+        "teach_correct": correct,
+        "true_class": true_class or None,
+        "insect_present": insect_present,
+    }
+    if data.get("true_px") is not None and data.get("true_py") is not None:
+        patch["true_px"] = data.get("true_px")
+        patch["true_py"] = data.get("true_py")
+    insect_train_store.update_meta(sid, patch)
+    try:
+        log_event("INSECT_TRAIN_FEEDBACK", id=sid, correct=correct,
+                  predicted=predicted, true_class=true_class)
     except Exception:
         pass
     return jsonify(result)
