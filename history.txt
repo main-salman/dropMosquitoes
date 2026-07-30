@@ -119,3 +119,4 @@
 2026-07-29 | [DOCS] | next-steps HTML: prioritized A–F checklist for 1–5m yard detect
 2026-07-29 | [DOCS] | next-steps HTML: why Roboflow fails for yard + detailed A–F instructions
 2026-07-30 | [OPS] | GitHub rename dropMosquitoes → bugsniper; origin URL updated; old URL redirects
+2026-07-30 | [DOCS] | README → Bug Sniper; fix fluid/nozzle/turret; drop Orbit sprinkler claim

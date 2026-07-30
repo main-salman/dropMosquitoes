@@ -1,6 +1,17 @@
-# 🎯 Sniper Messy Mortar
+# Bug Sniper
 
-An autonomous AI-powered mosquito sentry turret built on the NVIDIA Jetson Orin Nano.
+An autonomous backyard insect turret: find the bug, aim, and hit it with a short, high-pressure water shot — built around an NVIDIA Jetson Orin Nano.
+
+**Repo:** [github.com/main-salman/bugsniper](https://github.com/main-salman/bugsniper)  
+(formerly `dropMosquitoes` — that URL still redirects)
+
+## Intro
+
+Bug Sniper started as a half-serious answer to “can I automate the patio slap?” and turned into a full electromechanical build: dual cameras, a pan-tilt payload, night IR, closed-loop water pressure, and a phone-friendly web dashboard. The idea is simple — Scout watches a wide scene for motion, Sniper verifies on the gimbal, then a pressure-gated solenoid fires a brief straight stream at the aim point — but making that reliable outdoors (foliage false positives, tiny targets at a few meters, plumbing that actually holds PSI) is most of the work.
+
+This is a living DIY project, not a product. Some nights Scout chases leaves and YOLO hallucinates ladybugs on empty frames; other nights the hunt loop locks, tracks, and punches a clean shot. Hardware has migrated hard since v1 (brushless drone gimbal → geared servo turret; relay-timed pump mist → accumulator + solenoid gate). Software lives in a Flask dashboard with hunt mode, calibration, Insect Train dry-fire, and operator Correct/Wrong feedback — specs in `docs/specs/`, full story in `docs/HISTORY.md`.
+
+If you want the walkthrough with footage, watch the video that accompanies this repo. The sections below are the accurate snapshot of what’s running now.
 
 ## License
 
@@ -8,86 +19,103 @@ An autonomous AI-powered mosquito sentry turret built on the NVIDIA Jetson Orin 
 
 Commercial use of any part of this project (code, firmware, hardware designs, docs) requires a license. Contact: [salmannaqvi.com](https://salmannaqvi.com/centered-heading-with-contact-form/). See [COMMERCIAL.md](COMMERCIAL.md).
 
-## How It Works
+## How it works
 
-The system uses a **"Two-Brain" dual-pipeline architecture**:
+**Two-camera handoff**
 
-1. **The Scout** (OpenCV) — A NoIR camera (IMX219 @ 60FPS) detects motion using background subtraction. Its lack of an IR-cut filter enables 24/7 operation with the 850nm IR illuminator at night. When it spots a flying insect, it hands off coordinates to the gimbal.
+1. **Scout** (OpenCV MOG2) — Fixed Arducam NoIR IMX219 watches a wide FOV for motion (daylight pink cast is fine; night uses always-on 850 nm IR). Highest-confidence moving blob → pixel coords + velocity to the turret.
+2. **Sniper** (YOLOv8 / TensorRT) — Gimbal-mounted IMX219 with motorized IR-cut (LDR auto day/night) verifies the target. Hunt gates prefer a binary “insect present” decision (domain `insect.engine` when available); multi-class Roboflow weights are legacy bootstrap, not the long-term fire model.
+3. **Shot** — Pump only **charges** a pre-pressurized accumulator. A **GOODRIG NC solenoid** on the turret (0° / straight-stream nozzle mounted **directly** on the valve — no Orbit mist sprinkler) opens for a short Pico-timed pulse when PSI is at target. Gimbal may lead/sweep along the track; water is a directed stream, not a fog cloud.
 
-2. **The Sniper** (YOLOv8) — A precision RGB-IR camera (IMX219 @ 30FPS) mounted on the gimbal verifies the target using a custom-trained neural network. If it confirms "mosquito" with >80% confidence, it authorizes the shot.
+**Safety (high level):** human-in-frame checks, pressure sensor fault → disarm + alarm, yaw/pitch software limits, Insect Train never fires water. See [SAFE-001](docs/specs/SAFE-001-safety-spec.md).
 
-3. **Stream and Sweep** — Instead of a static shot, the system fires the 12V diaphragm pump while simultaneously sweeping the gimbal along the target's predicted flight path. This creates a moving "wall of water" that intercepts the insect mid-flight. The mist is lobbed *above* the target's trajectory and falls as a wide area-of-effect cloud.
-
-## Project Structure
+## Fluid path (ECO-2026-004)
 
 ```
-├── main.py                  # Async orchestrator (the brain)
-├── scout_vision.py          # Pipeline 1: OpenCV MOG2 motion tracking
-├── sniper_vision.py         # Pipeline 2: YOLOv8 target verification
-├── gimbal_controller.py     # Storm32 gimbal serial interface
-├── weapon_system.py         # GPIO relay control (water pump)
-├── ir_controller.py         # IR illuminator dusk/dawn automation
-├── hardware.py              # LiDAR, ballistics, velocity tracking
-├── phantom_ping.py          # Stream arc calibration tool
-├── app.py                   # Flask web dashboard (manual control)
-├── deploy.sh                # Dev machine → Jetson deployment
-├── sentry.service           # Systemd auto-start on boot
-├── scout_config.json        # MOG2 tuning parameters
-├── docs/
-│   ├── specs/               # Formal specifications (SW-001, HW-001, SAFE-001)
-│   ├── HISTORY.md           # Project changelog
-│   └── DATASET_STRATEGY.md  # How to build the training dataset
-├── tools/
-│   └── sentry_control_center/  # Windows Streamlit app for tuning & training
-├── tests/                   # 112 automated tests
-└── diagrams/                # Draw.io wiring & architecture diagrams
+Reservoir → diaphragm pump → check valve → accumulator tank
+         → pressure tee + transducer (ADS1115)
+         → GOODRIG solenoid (on turret) → 0° stream nozzle (direct mount)
 ```
 
-## Quick Start
+- **Pump** charges only (solenoid closed) until target PSI.
+- **Check valve** (Feelers 1/4" inline) between pump and tank holds pressure when the pump is off.
+- **Accumulator** (Swess ~0.75 L) flattens cam pulsation for repeatable shots.
+- **Transducer** (AUTEX 0–100 PSI) closes the pressure loop in software.
+- **Solenoid pulse** via Raspberry Pi Pico W → IRLB8721 MOSFET (USB CDC from Jetson). Pump stays on Monk Makes relay CH1.
 
-### On Your Dev Machine (Windows/Mac)
+## Hardware (as-built)
+
+| Piece | What |
+|-------|------|
+| Compute | Yahboom Jetson Orin Nano SUPER 8 GB (JetPack 6) |
+| Scout | Arducam NoIR IMX219 — fixed to enclosure, CSI-0 |
+| Sniper | Arducam IMX219 + motorized IR-cut (UC-350 Mode A LDR) — on turret, CSI-1 |
+| Turret | Geared servo pan/tilt (MG996R + PCA9685) — replaced Storm32 BGC ([ADR-002](docs/specs/ADR-002-geared-turret-migration.md)) |
+| Illumination | Univivi 850 nm IR flood (hardwired with system power) |
+| Ranging | Benewake TF-Luna LiDAR (I2C) |
+| Pump | 12 V diaphragm (charge only) via Monk Makes dual relay CH1 |
+| Tank | Swess 0.75 L mini accumulator |
+| Valve | GOODRIG 12 V NC solenoid + **0° / straight stream nozzle** (direct; **not** Orbit 66190 Flex-Mist) |
+| Check | Feelers 1/4" one-way (pump → accumulator) |
+| Pressure | AUTEX transducer + ADS1115 |
+| Solenoid drive | Pico W + IRLB8721 (production); legacy MOSFET-module path optional |
+
+## Software
+
+Primary runtime is the **Flask dashboard** (`app.py` / `sentry.service`) with autonomous **HuntController**, settings in `settings.json`, calibration, diagnostics, and Insect Train. Legacy asyncio agents in `main.py` remain for reference; day-to-day ops are dashboard-first.
+
+```
+├── app.py                 # Web dashboard + hunt / cal / train APIs
+├── hunt_controller.py     # Autonomous Scout → aim → verify → fire
+├── scout_vision.py        # MOG2 motion (Scout)
+├── sniper_vision.py       # YOLO verify helpers
+├── hardware.py            # Relay, accumulator, servo turret, LiDAR, pressure
+├── pico_solenoid.py       # USB CDC solenoid pulses
+├── settings_store.py      # settings.json + backups
+├── learning_store.py      # Operator Correct/Wrong RL
+├── insect_train_store.py  # Dry-fire training samples
+├── run-ai.sh / deploy.sh  # Deploy to Jetson
+├── docs/specs/            # SW-001, HW-001, SAFE-001, …
+├── docs/HISTORY.md        # Full changelog
+├── firmware/pico_solenoid/
+├── tools/sentry_control_center/  # Windows Scout tune + YOLO train
+└── diagrams/              # Wiring & fluid draw.io
+```
+
+## Quick start
+
+### Dev machine (tune / train)
 
 ```bash
-# Tune Scout parameters & train the YOLO model
 cd tools/sentry_control_center
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-### On the Jetson
+### Jetson
 
 ```bash
-# Deploy code from dev machine
-./deploy.sh <jetson-ip>
+# From your Mac/PC (preferred)
+./run-ai.sh              # deploy + reboot (clean CSI)
+./run-ai.sh --restart    # deploy + soft restart
 
-# Or manually:
-pip install -r requirements.txt
-python3 main.py
+# Dashboard
+open http://<jetson-ip>:8000
 ```
 
-### Calibrate
-
-```bash
-# Interactive calibration — fire test shots at different offsets
-python3 phantom_ping.py
-```
+Manual: `pip install -r requirements.txt`, then `python3 app.py` (or enable `sentry.service`).
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [SW-001](docs/specs/SW-001-software-spec.md) | Software architecture & agent specifications |
-| [HW-001](docs/specs/HW-001-hardware-spec.md) | Hardware BOM, wiring, GPIO pinout |
-| [SAFE-001](docs/specs/SAFE-001-safety-spec.md) | Safety interlocks & operational procedures |
-| [Dataset Strategy](docs/DATASET_STRATEGY.md) | How to build the mosquito training dataset |
-| [Project History](docs/HISTORY.md) | Full changelog with timestamps |
+| [SW-001](docs/specs/SW-001-software-spec.md) | Software architecture |
+| [HW-001](docs/specs/HW-001-hardware-spec.md) | Hardware, GPIO, fluid path |
+| [SAFE-001](docs/specs/SAFE-001-safety-spec.md) | Safety interlocks |
+| [ADR-002](docs/specs/ADR-002-geared-turret-migration.md) | Storm32 → servo turret |
+| [Dataset strategy](docs/DATASET_STRATEGY.md) | Training data notes |
+| [History](docs/HISTORY.md) | Changelog |
 
-## Hardware
+## Status (honest)
 
-- **Compute:** NVIDIA Jetson Orin Nano SUPER 8GB
-- **Scout Camera:** IMX219 NoIR (60FPS, fixed mount, 24/7 day+night)
-- **Sniper Camera:** IMX219 NoIR with IR-Cut (on gimbal)
-- **Gimbal:** Storm32 2-Axis BGC
-- **Pump:** 12V micro diaphragm via Monk Makes relay
-- **Nozzle:** Orbit 66190 Flex-Mist Micro Sprinkler
-- **Ranging:** Benewake TF-Luna LiDAR (I2C)
+Outdoor insect ID at 1–5 m is still an active fight (pixels, FOV, domain weights). Plumbing and pressure-gated fire are much further along. See `temp/insect_id_overhaul_next_steps.html` (local) and HISTORY for the current insect-ID plan — binary detector + narrower Sniper optics, not more Roboflow species names alone.

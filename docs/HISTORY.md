@@ -1432,3 +1432,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-30 — [OPS] GitHub repo renamed dropMosquitoes → bugsniper
 - **[OPS]** Renamed GitHub repository `main-salman/dropMosquitoes` → `main-salman/bugsniper`. Old URL redirects per GitHub (do not recreate `dropMosquitoes`). Local `origin` updated to new URL.
+
+## 2026-07-30 — [DOCS] README rewrite for Bug Sniper (as-built)
+- **[DOCS]** Replaced outdated “Sniper Messy Mortar” README: name Bug Sniper; fluid path = pump → check valve → accumulator → transducer → solenoid + 0° stream nozzle (removed Orbit 66190 Flex-Mist); servo turret (ADR-002); Pico solenoid; dashboard-first `app.py`; richer intro + honest status.
