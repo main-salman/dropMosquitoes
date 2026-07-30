@@ -1435,3 +1435,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-30 — [DOCS] README rewrite for Bug Sniper (as-built)
 - **[DOCS]** Replaced outdated “Sniper Messy Mortar” README: name Bug Sniper; fluid path = pump → check valve → accumulator → transducer → solenoid + 0° stream nozzle (removed Orbit 66190 Flex-Mist); servo turret (ADR-002); Pico solenoid; dashboard-first `app.py`; richer intro + honest status.
+
+## 2026-07-30 — [DOCS] README: blog + YouTube links
+- **[DOCS]** Added Introducing Bug Sniper blog + YouTube thumbnail embed (`79xdgrtEbzE`) to README.

@@ -5,13 +5,21 @@ An autonomous backyard insect turret: find the bug, aim, and hit it with a short
 **Repo:** [github.com/main-salman/bugsniper](https://github.com/main-salman/bugsniper)  
 (formerly `dropMosquitoes` — that URL still redirects)
 
+**Blog:** [Introducing Bug Sniper!](https://salmannaqvi.com/2026/07/30/introducing-bug-sniper/)
+
+### Watch the walkthrough
+
+[![Bug Sniper — YouTube](https://img.youtube.com/vi/79xdgrtEbzE/maxresdefault.jpg)](https://www.youtube.com/watch?v=79xdgrtEbzE)
+
+*[Watch on YouTube](https://www.youtube.com/watch?v=79xdgrtEbzE)* · *[Read the post](https://salmannaqvi.com/2026/07/30/introducing-bug-sniper/)*
+
 ## Intro
 
 Bug Sniper started as a half-serious answer to “can I automate the patio slap?” and turned into a full electromechanical build: dual cameras, a pan-tilt payload, night IR, closed-loop water pressure, and a phone-friendly web dashboard. The idea is simple — Scout watches a wide scene for motion, Sniper verifies on the gimbal, then a pressure-gated solenoid fires a brief straight stream at the aim point — but making that reliable outdoors (foliage false positives, tiny targets at a few meters, plumbing that actually holds PSI) is most of the work.
 
 This is a living DIY project, not a product. Some nights Scout chases leaves and YOLO hallucinates ladybugs on empty frames; other nights the hunt loop locks, tracks, and punches a clean shot. Hardware has migrated hard since v1 (brushless drone gimbal → geared servo turret; relay-timed pump mist → accumulator + solenoid gate). Software lives in a Flask dashboard with hunt mode, calibration, Insect Train dry-fire, and operator Correct/Wrong feedback — specs in `docs/specs/`, full story in `docs/HISTORY.md`.
 
-If you want the walkthrough with footage, watch the video that accompanies this repo. The sections below are the accurate snapshot of what’s running now.
+Full walkthrough (architecture, plumbing, hunt loop, fails) is in the [video](https://www.youtube.com/watch?v=79xdgrtEbzE) and [blog post](https://salmannaqvi.com/2026/07/30/introducing-bug-sniper/). The sections below are the accurate snapshot of what’s running now.
 
 ## License
 
