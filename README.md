@@ -9,7 +9,7 @@ An autonomous backyard insect turret: find the bug, aim, and hit it with a short
 
 ### Watch the walkthrough
 
-[![Bug Sniper — YouTube](https://img.youtube.com/vi/79xdgrtEbzE/maxresdefault.jpg)](https://www.youtube.com/watch?v=79xdgrtEbzE)
+[![Watch the video](https://img.youtube.com/vi/79xdgrtEbzE/0.jpg)](https://www.youtube.com/watch?v=79xdgrtEbzE)
 
 *[Watch on YouTube](https://www.youtube.com/watch?v=79xdgrtEbzE)* · *[Read the post](https://salmannaqvi.com/2026/07/30/introducing-bug-sniper/)*
 

@@ -121,3 +121,4 @@
 2026-07-30 | [OPS] | GitHub rename dropMosquitoes → bugsniper; origin URL updated; old URL redirects
 2026-07-30 | [DOCS] | README → Bug Sniper; fix fluid/nozzle/turret; drop Orbit sprinkler claim
 2026-07-30 | [DOCS] | README: blog + YouTube walkthrough links
+2026-07-30 | [DOCS] | README YouTube embed thumb → /0.jpg (GFG pattern)

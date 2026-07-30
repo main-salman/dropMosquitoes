@@ -1438,3 +1438,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-30 — [DOCS] README: blog + YouTube links
 - **[DOCS]** Added Introducing Bug Sniper blog + YouTube thumbnail embed (`79xdgrtEbzE`) to README.
+
+## 2026-07-30 — [DOCS] README YouTube thumb uses /0.jpg (GFG pattern)
+- **[DOCS]** Switched README embed to `img.youtube.com/vi/…/0.jpg` per common GitHub Markdown pattern.
