@@ -109,6 +109,11 @@ DEFAULTS: dict[str, Any] = {
         # Reject foliage-sized false boxes (fraction of full Sniper frame area)
         "max_bbox_area_frac": 0.12,
         "min_bbox_area_frac": 0.00008,
+        # LiDAR engage window (LeSonar “range bin” lesson) — meters
+        "min_engage_m": 0.5,
+        "max_engage_m": 2.5,
+        # Future ultrasonic wingbeat confirm (ADR-003); off until hardware
+        "wingbeat_confirm": False,
         # Mechanical: Sniper looks lower than Scout when gimbal reads 0,0
         # Align button + online boresight refine this while hunting.
         "sniper_mount_pitch_deg": 0.0,

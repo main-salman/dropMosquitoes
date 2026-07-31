@@ -305,6 +305,13 @@ Scout MOG2 (shared scout_cam) → Track while moving → Aim (+ cal + online bor
   before fire (Insect Detect / fairtrack persistence lesson).
   **`sliced_infer`** (default **true**): SAHI-lite 2×2 overlapped tiles + center
   ROI for tiny insects (YOLito / Ultralytics SAHI).
+  **`min_engage_m` / `max_engage_m`** (defaults **0.5 / 2.5**): LiDAR range
+  gate before fire (LeSonar2 “range bin” lesson — ADR-003). Out-of-window
+  distances skip the shot (track may continue). Missing LiDAR reading does
+  not block fire.
+  **`wingbeat_confirm`** (default **false**): reserved for optional ultrasonic
+  micro-Doppler confirm (Tornyol/LeSonar2 pattern). No AGPL code vendored;
+  enable only when a host driver + hardware exist.
   **Nozzle calibration offsets** (`calibration.offset_*`) apply on **FIRE only**
   so camera pointing is not biased ~30° by nozzle-vs-lens cal. Hunt optical
   range is the Scout FOV cone (not the full mechanical cal sweep).

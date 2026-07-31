@@ -1441,3 +1441,9 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-30 — [DOCS] README YouTube thumb uses /0.jpg (GFG pattern)
 - **[DOCS]** Switched README embed to `img.youtube.com/vi/…/0.jpg` per common GitHub Markdown pattern.
+
+## 2026-07-31 — [RESEARCH] LeSonar2 → Bug Sniper detection techniques
+- **[RESEARCH]** Studied Tornyol LeSonar2 (AGPL): phased array + CF pulse micro-Doppler wingbeat; Supercon talk / github.com/tornyol/lesonar2.
+- **[SPEC]** ADR-003 ultrasonic wingbeat confirm; SW-001 hunt `min/max_engage_m` + reserved `wingbeat_confirm`.
+- **[CODE]** LiDAR engage range gate before fire (default 0.5–2.5 m) — sonar “range bin” lesson without buying the kit.
+- **[DOCS]** Next-steps HTML: LeSonar lessons + buy-after-vision order. Do not vendor AGPL sources.

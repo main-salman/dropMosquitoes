@@ -235,6 +235,9 @@ class HuntController:
                     "yolo_imgsz": getattr(self, "_yolo_imgsz", 320),
                     "max_bbox_area_frac": getattr(self, "_max_bbox_area_frac", 0.12),
                     "min_bbox_area_frac": getattr(self, "_min_bbox_area_frac", 0.00008),
+                    "min_engage_m": getattr(self, "_min_engage_m", 0.5),
+                    "max_engage_m": getattr(self, "_max_engage_m", 2.5),
+                    "wingbeat_confirm": getattr(self, "_wingbeat_confirm", False),
                     "mount_pitch": self._mount_pitch,
                     "mount_yaw": self._mount_yaw,
                 },
@@ -276,6 +279,12 @@ class HuntController:
                 0.01, min(0.5, float(hunt.get("max_bbox_area_frac", 0.12) or 0.12)))
             self._min_bbox_area_frac = max(
                 0.0, min(0.05, float(hunt.get("min_bbox_area_frac", 0.00008) or 0.0)))
+            self._min_engage_m = max(
+                0.0, min(10.0, float(hunt.get("min_engage_m", 0.5) or 0.0)))
+            self._max_engage_m = max(
+                self._min_engage_m,
+                min(20.0, float(hunt.get("max_engage_m", 2.5) or 2.5)))
+            self._wingbeat_confirm = bool(hunt.get("wingbeat_confirm", False))
             self._mount_pitch = float(hunt.get("sniper_mount_pitch_deg", 0.0) or 0.0)
             self._mount_yaw = float(hunt.get("sniper_mount_yaw_deg", 0.0) or 0.0)
             self._apply_nozzle_cal_on_fire = bool(
@@ -291,10 +300,25 @@ class HuntController:
                   f"sliced={self._sliced_infer} "
                   f"binary={self._binary_insect_mode} "
                   f"imgsz={self._yolo_imgsz} "
+                  f"engage={self._min_engage_m:.1f}-{self._max_engage_m:.1f}m "
                   f"mount=({self._mount_pitch},{self._mount_yaw}) "
                   f"nozzle_on_fire={self._apply_nozzle_cal_on_fire}")
         except Exception as e:
             print(f"[Hunt] geometry load skip: {e}")
+
+    def _in_engage_range(self, distance_m) -> bool:
+        """LeSonar range-bin lesson: only shoot inside the kill cone (LiDAR)."""
+        if distance_m is None:
+            return True  # no reading → don't block
+        try:
+            d = float(distance_m)
+        except (TypeError, ValueError):
+            return True
+        if d <= 0:
+            return True
+        lo = float(getattr(self, "_min_engage_m", 0.5) or 0.0)
+        hi = float(getattr(self, "_max_engage_m", 2.5) or 2.5)
+        return lo <= d <= hi
 
     def _nozzle_offsets(self, distance_m: float, pitch: float, yaw: float):
         if not self._apply_nozzle_cal_on_fire:
@@ -570,6 +594,12 @@ class HuntController:
                 continue
             aim_pitch, aim_yaw, distance_m = self._aim_from_scout(
                 last_tx, last_ty, 0.0, 0.0, for_fire=True)
+            if not self._in_engage_range(distance_m):
+                print(f"[Hunt] skip fire — LiDAR {distance_m}m outside "
+                      f"{getattr(self, '_min_engage_m', 0.5)}-"
+                      f"{getattr(self, '_max_engage_m', 2.5)}m engage window")
+                time.sleep(0.03)
+                continue
             # Final nudge toward last insect pixel so nozzle tracks the bug
             if last_center is not None and not self.boresight.is_centered(
                     last_center[0], last_center[1]):
@@ -607,6 +637,10 @@ class HuntController:
             time.sleep(SETTLE_SEC)
             aim_pitch, aim_yaw, distance_m = self._aim_from_scout(
                 last_tx, last_ty, 0.0, 0.0, for_fire=True)
+            if not self._in_engage_range(distance_m):
+                print(f"[Hunt] skip end-track opportunity — LiDAR {distance_m}m "
+                      f"outside engage window")
+                return
             time.sleep(SETTLE_SEC)
             self._fire_and_verify_hit(
                 target_px=(last_tx, last_ty),
