@@ -60,7 +60,7 @@ Reservoir → diaphragm pump → check valve → accumulator tank
 | Sniper | Arducam IMX219 + motorized IR-cut (UC-350 Mode A LDR) — on turret, CSI-1 |
 | Turret | Geared servo pan/tilt (MG996R + PCA9685) — replaced Storm32 BGC ([ADR-002](docs/specs/ADR-002-geared-turret-migration.md)) |
 | Illumination | Univivi 850 nm IR flood (hardwired with system power) |
-| Ranging | Benewake TF-Luna LiDAR (I2C) |
+| Ranging | Benewake TF-Luna LiDAR (I2C) — **optional; currently not installed** (last unit shorted). Software reports `connected: false` / `distance_m: null` (no fake ranges). |
 | Pump | 12 V diaphragm (charge only) via Monk Makes dual relay CH1 |
 | Tank | Swess 0.75 L mini accumulator |
 | Valve | GOODRIG 12 V NC solenoid + **0° / straight stream nozzle** (direct; **not** Orbit 66190 Flex-Mist) |

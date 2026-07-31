@@ -1450,3 +1450,8 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 
 ## 2026-07-31 — [DOCS] Next-steps: clear Tornyol → Bug Sniper explanation
 - **[DOCS]** Expanded `temp/insect_id_overhaul_next_steps.html` LeSonar section: plain-English what Tornyol does, transferable ideas vs what not to copy, kit-as-confirm path.
+
+## 2026-07-31 — [BUG FIX] LiDAR stub invented distances; operator has no TF-Luna
+- **[FINDING]** Operator: TF-Luna not installed (prior unit shorted ~2 months ago). Software still opened I2C bus 7 / 0x10 and **fabricated random 1.5–3.5 m** when absent — misled engage gate / ballistics / UI.
+- **[FIX]** `LiDARController`: no synthetic data; `read_distance()` → `None` when disconnected (same rule as PressureSensor). Ballistic helpers accept `None`.
+- **[DOCS]** README + next-steps HTML: LiDAR optional / currently absent; Yahboom bus-7 caveat.

@@ -2359,6 +2359,9 @@ def _unbind_ina3221():
 # Mounted co-axial with Sniper camera on gimbal payload plate.
 # ============================================================================
 
+# Historical note: Yahboom Pin 3/5 → Gen8 I2C is DISABLED in DTB (ECO-2026-009).
+# Code still opens bus 7 for a TF-Luna wired to those pins; without a module
+# (or if the bus is dead) we report disconnected — NEVER invent distances.
 LIDAR_I2C_BUS = 7  # Yahboom 40-pin header Pin 3/5 = Bus 7 (c250000.i2c)
 LIDAR_I2C_ADDR = 0x10
 LIDAR_REG_DIST_LO = 0x00   # Distance low byte
@@ -2369,19 +2372,17 @@ LIDAR_REG_AMP_HI = 0x03    # Signal amplitude (strength) high
 
 class LiDARController:
     """
-    I2C driver for the Benewake TF-Luna LiDAR.
+    I2C driver for the Benewake TF-Luna LiDAR (optional).
 
-    HW-001 §6: I2C Bus 1, address 0x10, Jetson Pins 3 (SDA) & 5 (SCL).
-    SW-001 §2.5: Background polling at ~100Hz, exposes read_distance().
-
-    The TF-Luna returns distance in centimeters. We convert to meters.
-    Signal strength (amplitude) is also captured for quality filtering.
+    Intended mount: co-axial with Sniper on the turret payload (HW-001 §6).
+    Address 0x10. When no sensor is present, read_distance() returns None —
+    same “no synthetic data” rule as PressureSensor.
     """
 
     def __init__(self):
-        self._distance_cm = 0       # Raw distance in cm
-        self._distance_m = 0.0      # Converted to meters
-        self._signal_strength = 0   # Amplitude (higher = better signal)
+        self._distance_cm = 0
+        self._distance_m = None  # meters, or None if disconnected / no reading
+        self._signal_strength = 0
         self._lock = threading.Lock()
         self._running = False
         self._thread = None
@@ -2390,26 +2391,26 @@ class LiDARController:
         if I2C_AVAILABLE:
             try:
                 self._bus = smbus2.SMBus(LIDAR_I2C_BUS)
-                # Test read to verify device is present
                 self._bus.read_byte_data(LIDAR_I2C_ADDR, LIDAR_REG_DIST_LO)
-                print(f"[LiDARController] TF-Luna found on I2C bus {LIDAR_I2C_BUS}, addr 0x{LIDAR_I2C_ADDR:02X}")
+                print(f"[LiDARController] TF-Luna found on I2C bus {LIDAR_I2C_BUS}, "
+                      f"addr 0x{LIDAR_I2C_ADDR:02X}")
             except Exception as e:
-                print(f"[LiDARController] I2C FAILED: {e}. Running in STUB mode.")
+                print(f"[LiDARController] I2C FAILED: {e}. "
+                      f"No LiDAR — reporting disconnected (no synthetic data).")
                 self._bus = None
         else:
-            print("[LiDARController] STUB MODE — smbus2 not available.")
+            print("[LiDARController] smbus2 unavailable — reporting disconnected "
+                  "(no synthetic data).")
 
-        # Start background polling
         self._running = True
         self._thread = threading.Thread(target=self._poll_loop, daemon=True)
         self._thread.start()
 
     def _poll_loop(self):
-        """Background thread: continuously reads LiDAR distance."""
+        """Background thread: continuously reads LiDAR distance when connected."""
         while self._running:
             if self._bus is not None:
                 try:
-                    # Read 4 bytes: dist_lo, dist_hi, amp_lo, amp_hi
                     data = self._bus.read_i2c_block_data(
                         LIDAR_I2C_ADDR, LIDAR_REG_DIST_LO, 4
                     )
@@ -2423,28 +2424,28 @@ class LiDARController:
                 except Exception:
                     pass  # Transient I2C errors are normal, skip
             else:
-                # STUB: simulate a distance for dev testing
-                import random
                 with self._lock:
-                    self._distance_cm = random.randint(150, 350)  # 1.5m - 3.5m
-                    self._distance_m = self._distance_cm / 100.0
-                    self._signal_strength = random.randint(500, 2000)
+                    self._distance_m = None
+                    self._signal_strength = 0
+                time.sleep(0.5)  # idle when absent
+                continue
 
-            time.sleep(0.01)  # ~100Hz polling
+            time.sleep(0.01)  # ~100Hz polling when connected
 
-    def read_distance(self) -> float:
-        """Return the latest LiDAR distance reading in meters."""
+    def read_distance(self):
+        """Return latest distance in meters, or None if LiDAR not connected."""
         with self._lock:
             return self._distance_m
 
     def get_status(self) -> dict:
         """Return full LiDAR telemetry as a dict."""
         with self._lock:
+            d = self._distance_m
             return {
-                "distance_m": round(self._distance_m, 2),
-                "distance_cm": self._distance_cm,
+                "distance_m": round(d, 2) if d is not None else None,
+                "distance_cm": self._distance_cm if d is not None else None,
                 "signal_strength": self._signal_strength,
-                "connected": self._bus is not None
+                "connected": self._bus is not None,
             }
 
     def cleanup(self):
@@ -2633,7 +2634,7 @@ def compute_ballistic_offset(pitch_deg: float, yaw_deg: float,
     we apply a slight negative pitch offset (aiming closer to the horizon)
     to compensate for the drop.
     """
-    if distance_m < 0.3 or distance_m > 8.0:
+    if distance_m is None or distance_m < 0.3 or distance_m > 8.0:
         return pitch_deg, yaw_deg, {
             "drop_offset_deg": 0.0,
             "distance_m": distance_m,
@@ -2717,7 +2718,7 @@ def compute_predictive_lead(raw_pitch: float, raw_yaw: float,
       2. + lead_pitch / lead_yaw  (velocity-corrected aim point)
       3. + drop_offset_deg        (compensate for stream gravity drop)
     """
-    if distance_m < 0.3 or distance_m > 8.0:
+    if distance_m is None or distance_m < 0.3 or distance_m > 8.0:
         return raw_pitch, raw_yaw, {
             "in_range": False,
             "distance_m": distance_m,
