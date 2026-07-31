@@ -124,3 +124,4 @@
 2026-07-30 | [DOCS] | README YouTube embed thumb → /0.jpg (GFG pattern)
 2026-07-31 | [RESEARCH] | LeSonar2 lessons → ADR-003; LiDAR engage gate 0.5–2.5m live path
 2026-07-31 | [CODE] | hunt min/max_engage_m range gate before fire
+2026-07-31 | [DOCS] | next-steps HTML: clear Tornyol/LeSonar → Bug Sniper explanation

@@ -1447,3 +1447,6 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[SPEC]** ADR-003 ultrasonic wingbeat confirm; SW-001 hunt `min/max_engage_m` + reserved `wingbeat_confirm`.
 - **[CODE]** LiDAR engage range gate before fire (default 0.5–2.5 m) — sonar “range bin” lesson without buying the kit.
 - **[DOCS]** Next-steps HTML: LeSonar lessons + buy-after-vision order. Do not vendor AGPL sources.
+
+## 2026-07-31 — [DOCS] Next-steps: clear Tornyol → Bug Sniper explanation
+- **[DOCS]** Expanded `temp/insect_id_overhaul_next_steps.html` LeSonar section: plain-English what Tornyol does, transferable ideas vs what not to copy, kit-as-confirm path.
