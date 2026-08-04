@@ -126,3 +126,4 @@
 2026-07-31 | [CODE] | hunt min/max_engage_m range gate before fire
 2026-07-31 | [DOCS] | next-steps HTML: clear Tornyol/LeSonar → Bug Sniper explanation
 2026-07-31 | [BUG FIX] | LiDAR stub no longer invents 1.5–3.5m; None when disconnected (no TF-Luna installed)
+2026-08-03 | [RESEARCH] | Photon Matrix: LiDAR Δrange+size detect lessons → ADR-004 + next-steps HTML

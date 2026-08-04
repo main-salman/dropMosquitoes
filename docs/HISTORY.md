@@ -1455,3 +1455,7 @@ Three factors combine to make sub-10ms relay-gated diaphragm pump shots inherent
 - **[FINDING]** Operator: TF-Luna not installed (prior unit shorted ~2 months ago). Software still opened I2C bus 7 / 0x10 and **fabricated random 1.5–3.5 m** when absent — misled engage gate / ballistics / UI.
 - **[FIX]** `LiDARController`: no synthetic data; `read_distance()` → `None` when disconnected (same rule as PressureSensor). Ballistic helpers accept `None`.
 - **[DOCS]** README + next-steps HTML: LiDAR optional / currently absent; Yahboom bus-7 caveat.
+
+## 2026-08-03 — [RESEARCH] Photon Matrix LiDAR mosquito detect → Bug Sniper
+- **[RESEARCH]** Photon Matrix (photonmatrixlab.com): detect = LiDAR plane scan vs solid background + size (2–20 mm) + track/predict; laser kill not adopted. FAQ also lists mmWave + vision.
+- **[SPEC]** ADR-004; next-steps HTML `#photon` section — ranging anomaly confirm is the transferable lesson; blocked until TF-Luna (or equivalent) reinstalled.
